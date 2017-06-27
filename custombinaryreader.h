@@ -63,7 +63,9 @@ class CustomBinaryStream {
   bool SetStreamLength(std::uint64_t length);
 
   // Returns the number of bytes remaining in the stream.
-  size_t GetRemainingStreamLength() { return std::distance(iterator_, end_); }
+  std::size_t GetRemainingStreamLength() const {
+    return std::distance(iterator_, end_);
+  }
 
   // Reads the next byte in the stream. Returns false if the byte
   // cannot be read.
