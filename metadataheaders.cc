@@ -14,6 +14,8 @@
 
 #include "metadataheaders.h"
 
+#include <assert.h>
+
 #include "custombinaryreader.h"
 
 namespace google_cloud_debugger_portable_pdb {
@@ -24,9 +26,8 @@ using std::array;
 
 bool ParseFrom(CustomBinaryStream *binary_reader,
                MetadataRootHeader *root_header) {
-  if (!binary_reader && !root_header) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(root_header != nullptr);
 
   if (!binary_reader->ReadUInt32(&root_header->signature)) {
     return false;
@@ -88,9 +89,8 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 }
 
 bool ParseFrom(CustomBinaryStream *binary_reader, StreamHeader *stream_header) {
-  if (!binary_reader && !stream_header) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(stream_header != nullptr);
 
   if (!binary_reader->ReadUInt32(&stream_header->offset)) {
     return false;
@@ -131,9 +131,8 @@ bool ParseFrom(CustomBinaryStream *binary_reader, StreamHeader *stream_header) {
 
 bool ParseFrom(CustomBinaryStream *binary_reader,
                PortablePdbMetadataSectionHeader *pdb_metadata_header) {
-  if (!binary_reader && !pdb_metadata_header) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(pdb_metadata_header != nullptr);
 
   uint32_t bytes_read = 0;
   if (!binary_reader->ReadBytes(pdb_metadata_header->pdb_id.data(),
@@ -171,9 +170,8 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 
 bool ParseFrom(CustomBinaryStream *binary_reader,
                CompressedMetadataTableHeader *table_header) {
-  if (!binary_reader && !table_header) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(table_header != nullptr);
 
   if (!binary_reader->ReadUInt32(&table_header->reserved) &&
       table_header->reserved != 0) {
