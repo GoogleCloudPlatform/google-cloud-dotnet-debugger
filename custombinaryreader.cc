@@ -39,7 +39,7 @@ const std::uint32_t kCompressedUIntFourByteUncompressMask = 0x1FFFFFFF;
 
 const std::uint32_t kCompressedSignedIntOneByteUncompressMask = 0xFFFFFFC0;
 const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
-const std::uint32_t kCompressedSignedIntThreeByteUncompressMask = 0xF0000000;
+const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
 
 bool CustomBinaryStream::ConsumeFile(const string &file) {
   ifstream file_stream(file, ios::in | ios::binary | ios::ate);
@@ -105,7 +105,7 @@ bool CustomBinaryStream::Peek(uint8_t *result) const {
 }
 
 bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
-  if ((iterator_ + index) > end_) {
+  if (std::distance(iterator_, end_) < index) {
     return false;
   }
 
@@ -115,7 +115,7 @@ bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
 
 bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
   auto begin = file_content_.begin();
-  if ((begin + position) > end_) {
+  if (std::distance(begin, end_) < position) {
     return false;
   }
 
@@ -124,7 +124,7 @@ bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
 }
 
 bool CustomBinaryStream::SetStreamLength(uint64_t length) {
-  if ((iterator_ + length) > end_) {
+  if (std::distance(iterator_, end_) < length) {
     return false;
   }
 
@@ -192,7 +192,8 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   // Mask it with 0b11000000 (0xC0) and confirm the result is 0b10000000 (0x80).
   // Result should be in the range 0x80 - 0x3FFF.
   if ((first_byte & kCompressedIntTwoByteMask) == kCompressedIntOneByteMask) {
-    *uncompress_int = ((first_byte << 8) | second_byte) & kCompressedSignedIntTwoByteUncompressMask;
+    *uncompress_int = ((first_byte << 8) | second_byte) &
+      kCompressedUIntTwoByteUncompressMask;
     return true;
   }
 
@@ -208,7 +209,7 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   if ((first_byte & kCompressedIntFourByteMask) == kCompressedIntTwoByteMask) {
     *uncompress_int = ((first_byte << 24) | (second_byte << 16) |
                        (third_byte << 8) | fourth_byte) &
-                      kCompressedSignedIntThreeByteUncompressMask;
+                      kCompressedUIntFourByteUncompressMask;
     return true;
   }
 
@@ -244,10 +245,12 @@ bool CustomBinaryStream::ReadCompressSignedInt32(int32_t *uncompressed_int) {
     // bits. Get the width by checking the first byte again.
     if ((first_byte & kCompressedIntOneByteMask) == 0) {
       result |= kCompressedSignedIntOneByteUncompressMask;
-    } else if ((first_byte & kCompressedIntTwoByteMask) == kCompressedIntOneByteMask) {
+    } else if ((first_byte & kCompressedIntTwoByteMask) ==
+      kCompressedIntOneByteMask) {
       result |= kCompressedSignedIntTwoByteUncompressMask;
-    } else if ((first_byte & kCompressedIntFourByteMask) == kCompressedIntTwoByteMask) {
-      result |= kCompressedSignedIntThreeByteUncompressMask;
+    } else if ((first_byte & kCompressedIntFourByteMask) ==
+      kCompressedIntTwoByteMask) {
+      result |= kCompressedSignedIntFourByteUncompressMask;
     } else {
       return false;
     }

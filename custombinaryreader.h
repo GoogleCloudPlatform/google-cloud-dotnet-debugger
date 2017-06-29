@@ -59,7 +59,7 @@ extern const std::uint32_t kCompressedSignedIntOneByteUncompressMask;
 extern const std::uint32_t kCompressedSignedIntTwoByteUncompressMask;
 
 // This mask is used to uncompress four bytes compressed signed int.
-extern const std::uint32_t kCompressedSignedIntThreeByteUncompressMask;
+extern const std::uint32_t kCompressedSignedIntFourByteUncompressMask;
 
 // Class that consumes a file or a uint8_t vector and produces a
 // binary stream. This stream is used to read byte, integers,
