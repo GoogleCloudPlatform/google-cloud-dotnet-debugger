@@ -91,6 +91,18 @@ enum MetadataTable {
   MaxValue = 64
 };
 
+// GUID for SHA-1.
+extern const std::string kSha1Guid;
+// GUID for SHA-256.
+extern const std::string kSha256Guid;
+
+// GUID for C# language.
+extern const std::string kCSharpGuid;
+// GUID for VB language.
+extern const std::string kVisualBasicGuid;
+// GUID for F# language.
+extern const std::string kFSharpGuid;
+
 // Document metadata table row.
 // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#DocumentTable
 struct DocumentRow {
@@ -105,18 +117,6 @@ struct DocumentRow {
 
   // GUID heap index.
   std::uint32_t language = 0;
-
-  // GUID for SHA-1.
-  static const std::string kSha1;
-  // GUID for SHA-256.
-  static const std::string kSha256;
-
-  // GUID for C# language.
-  static const std::string kCSharp;
-  // GUID for VB language.
-  static const std::string kVisualBasic;
-  // GUID for F# language.
-  static const std::string kFSharp;
 };
 
 // MethodDebugInformation metadata table row.
@@ -132,10 +132,12 @@ struct MethodDebugInformationRow {
   std::uint32_t sequence_points = 0;
 };
 
+extern const std::uint32_t kDocumentChangeSequencePointLine;
+extern const std::uint32_t kHiddenSequencePointLine;
+
 // Expansion of a binary encoding of a method's sequence points. See
 // MethodDebugInformation.
-class MethodSequencePointInformation {
- public:
+struct MethodSequencePointInformation {
   // Method sequence point or document transition (for methods than span
   // multiple files.)
   struct SequencePointRecord {
@@ -148,9 +150,6 @@ class MethodSequencePointInformation {
     std::uint32_t start_col = 0;
     std::uint32_t end_col = 0;
 
-    static const std::uint32_t kDocumentChangeLine = 0xFDDFDD;
-    static const std::uint32_t kHiddenSequencePointLine = 0xFEEFEE;
-
     // This property is not in the spec. But rather an aspect of this specific
     // implementation, since document-record objects get encoded as Steps.
     // The document is stored in ilDelta.
@@ -159,34 +158,6 @@ class MethodSequencePointInformation {
     bool IsHidden();
   };
 
-  static bool ParseFrom(std::uint32_t starting_document,
-                        CustomBinaryStream *binary_reader,
-                        MethodSequencePointInformation *sequence_point_info);
-
-  // Parses the very first entity of a SequencePointBlob. May be a
-  // sequence-point-record or a hidden-sequence-point-record.
-  static bool ParseFirstRecord(CustomBinaryStream *binary_reader,
-                               SequencePointRecord *record);
-
-  // Parses the next entity in the SequencePointBlob. May be a
-  // sequence-point-record, hidden-sequence-point-record, or document-record.
-  static bool ParseNextRecord(CustomBinaryStream *binary_reader,
-                              SequencePointRecord *last_non_hidden_step,
-                              SequencePointRecord *record);
-
-  // Returns a SequencePointRecord that represents a hidden sequence point.
-  static SequencePointRecord NewHiddenSequencePoint(std::uint32_t il_delta);
-
-  // Returns a SequencePointRecord that represents a document change sequence
-  // point.
-  static SequencePointRecord NewDocumentChangeSequencePoint(
-      std::uint32_t document);
-
-  std::vector<SequencePointRecord> &GetSequencePointRecords() {
-    return records;
-  }
-
- private:
   // Index into the StandAloneSig table. (In the main assembly's metadata.)
   std::uint32_t stand_alone_signature;
 
@@ -233,6 +204,10 @@ struct LocalScopeRow {
   std::uint32_t length;
 };
 
+// Variable shouldn’t appear in the list of variables displayed by the
+// debugger.
+extern const uint16_t kDebuggerHidden;
+
 // LocalVariable metadata table row.
 //
 // Conceptually, every row in the LocalVariable table is owned by one, and only
@@ -242,10 +217,6 @@ struct LocalScopeRow {
 struct LocalVariableRow {
   // Attributes(LocalVariableAttributes value, encoding: uint16).
   uint16_t attributes;
-
-  // Variable shouldn’t appear in the list of variables displayed by the
-  // debugger.
-  static const uint16_t kDebuggerHidden = 0x0001;
 
   // Index (integer [0..0x10000), encoding: uint16)
   // Slot index in the local signature of the containing MethodDef.
@@ -295,10 +266,33 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
                LocalConstantRow *local_constant);
 
 // Given a GUID, returns the appropriate language name.
-std::string GetLanguageName(const std::string &guid);
+const std::string &GetLanguageName(const std::string &guid);
 
 // Given a GUID, returns the appropriate hash algorithm name.
-std::string GetHashAlgorithmName(const std::string &guid);
+const std::string &GetHashAlgorithmName(const std::string &guid);
+
+bool ParseFrom(std::uint32_t starting_document,
+                      CustomBinaryStream *binary_reader,
+                      MethodSequencePointInformation *sequence_point_info);
+
+// Parses the very first entity of a SequencePointBlob. May be a
+// sequence-point-record or a hidden-sequence-point-record.
+bool ParseFirstRecord(CustomBinaryStream *binary_reader,
+                      MethodSequencePointInformation::SequencePointRecord *record);
+
+// Parses the next entity in the SequencePointBlob. May be a
+// sequence-point-record, hidden-sequence-point-record, or document-record.
+bool ParseNextRecord(CustomBinaryStream *binary_reader,
+                     MethodSequencePointInformation::SequencePointRecord *last_non_hidden_step,
+                     MethodSequencePointInformation::SequencePointRecord *record);
+
+// Returns a SequencePointRecord that represents a hidden sequence point.
+MethodSequencePointInformation::SequencePointRecord NewHiddenSequencePoint(std::uint32_t il_delta);
+
+// Returns a SequencePointRecord that represents a document change sequence
+// point.
+MethodSequencePointInformation::SequencePointRecord NewDocumentChangeSequencePoint(
+    std::uint32_t document);
 
 }  // namespace google_cloud_debugger_portable_pdb
 

@@ -14,6 +14,8 @@
 
 #include "metadatatables.h"
 
+#include <assert.h>
+
 #include "custombinaryreader.h"
 #include "metadataheaders.h"
 
@@ -22,19 +24,23 @@ using std::string;
 
 namespace google_cloud_debugger_portable_pdb {
 
-const string DocumentRow::kSha1 = "ff1816ec-aa5e-4d10-87f7-6f4963833460";
-const string DocumentRow::kSha256 = "8829d00f-11b8-4213-878b-770e8597ac16";
+const string kSha1Guid = "ff1816ec-aa5e-4d10-87f7-6f4963833460";
+const string kSha256Guid = "8829d00f-11b8-4213-878b-770e8597ac16";
 
-const string DocumentRow::kCSharp = "3f5162f8-07c6-11d3-9053-00c04fa302a1";
-const string DocumentRow::kVisualBasic = "3a12d0b8-c26c-11d0-b442-00a0244a1dd2";
-const string DocumentRow::kFSharp = "ab4f38c9-b6e6-43ba-be3b-58080b2ccce3";
+const string kCSharpGuid = "3f5162f8-07c6-11d3-9053-00c04fa302a1";
+const string kVisualBasicGuid = "3a12d0b8-c26c-11d0-b442-00a0244a1dd2";
+const string kFSharpGuid = "ab4f38c9-b6e6-43ba-be3b-58080b2ccce3";
+
+const std::uint32_t kDocumentChangeSequencePointLine = 0xFDDFDD;
+const std::uint32_t kHiddenSequencePointLine = 0xFEEFEE;
+
+const uint16_t kDebuggerHidden = 0x0001;
 
 bool ParseFrom(CustomBinaryStream *binary_reader,
                const CompressedMetadataTableHeader &header,
                DocumentRow *document_table) {
-  if (!binary_reader || !document_table) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(document_table != nullptr);
 
   if (!binary_reader->ReadTableIndex(Heap::BlobsHeap, header.heap_sizes,
                                      &document_table->name)) {
@@ -62,9 +68,8 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 bool ParseFrom(CustomBinaryStream *binary_reader,
                const CompressedMetadataTableHeader &header,
                MethodDebugInformationRow *method_debug) {
-  if (!binary_reader || !method_debug) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(method_debug != nullptr);
 
   if (!binary_reader->ReadTableIndex(Heap::BlobsHeap, header.heap_sizes,
                                      &method_debug->document)) {
@@ -80,7 +85,7 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 }
 
 bool MethodSequencePointInformation::SequencePointRecord::IsDocumentChange() {
-  return start_line == end_line && end_line == kDocumentChangeLine &&
+  return start_line == end_line && end_line == kDocumentChangeSequencePointLine &&
          start_col == end_col && end_col == 0;
 }
 
@@ -90,34 +95,32 @@ bool MethodSequencePointInformation::SequencePointRecord::IsHidden() {
 }
 
 MethodSequencePointInformation::SequencePointRecord
-MethodSequencePointInformation::NewHiddenSequencePoint(uint32_t il_delta) {
-  SequencePointRecord step;
+NewHiddenSequencePoint(uint32_t il_delta) {
+  MethodSequencePointInformation::SequencePointRecord step;
   step.il_delta = il_delta;
-  step.start_line = SequencePointRecord::kHiddenSequencePointLine;
-  step.end_line = SequencePointRecord::kHiddenSequencePointLine;
+  step.start_line = kHiddenSequencePointLine;
+  step.end_line = kHiddenSequencePointLine;
   step.start_col = 0;
   step.end_col = 0;
   return step;
 }
 
 MethodSequencePointInformation::SequencePointRecord
-MethodSequencePointInformation::NewDocumentChangeSequencePoint(
+NewDocumentChangeSequencePoint(
     uint32_t document) {
-  SequencePointRecord step;
+  MethodSequencePointInformation::SequencePointRecord step;
   step.il_delta = document;
-  step.start_line = SequencePointRecord::kDocumentChangeLine;
-  step.end_line = SequencePointRecord::kDocumentChangeLine;
+  step.start_line = kDocumentChangeSequencePointLine;
+  step.end_line = kDocumentChangeSequencePointLine;
   step.start_col = 0;
   step.end_col = 0;
   return step;
 }
 
-bool MethodSequencePointInformation::ParseFrom(
-    uint32_t starting_document, CustomBinaryStream *binary_reader,
+bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
     MethodSequencePointInformation *sequence_point_info) {
-  if (!binary_reader || !sequence_point_info) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(sequence_point_info != nullptr);
 
   // Parse the header.
   if (!binary_reader->ReadCompressedUInt32(
@@ -137,17 +140,16 @@ bool MethodSequencePointInformation::ParseFrom(
       return false;
     }
     sequence_point_info->records.push_back(
-        MethodSequencePointInformation::NewDocumentChangeSequencePoint(
+        NewDocumentChangeSequencePoint(
             initial_doc));
   }
 
-  SequencePointRecord first_record;
-  if (!MethodSequencePointInformation::ParseFirstRecord(binary_reader,
-                                                        &first_record)) {
+  MethodSequencePointInformation::SequencePointRecord first_record;
+  if (!ParseFirstRecord(binary_reader, &first_record)) {
     return false;
   }
 
-  SequencePointRecord last_non_hidden_record;
+  MethodSequencePointInformation::SequencePointRecord last_non_hidden_record;
   bool no_non_hidden_record_yet = true;
 
   if (!first_record.IsHidden()) {
@@ -158,15 +160,14 @@ bool MethodSequencePointInformation::ParseFrom(
   sequence_point_info->records.push_back(std::move(first_record));
 
   while (binary_reader->HasNext()) {
-    SequencePointRecord next_record;
+    MethodSequencePointInformation::SequencePointRecord next_record;
     if (no_non_hidden_record_yet) {
-      if (!MethodSequencePointInformation::ParseNextRecord(
-              binary_reader, nullptr, &next_record)) {
+      if (!ParseNextRecord(binary_reader, nullptr, &next_record)) {
         return false;
       }
     } else {
-      if (!MethodSequencePointInformation::ParseNextRecord(
-              binary_reader, &last_non_hidden_record, &next_record)) {
+      if (!ParseNextRecord(binary_reader, &last_non_hidden_record,
+        &next_record)) {
         return false;
       }
     }
@@ -182,14 +183,14 @@ bool MethodSequencePointInformation::ParseFrom(
   return true;
 }
 
-bool MethodSequencePointInformation::ParseFirstRecord(
-    CustomBinaryStream *binary_reader, SequencePointRecord *record) {
+bool ParseFirstRecord(CustomBinaryStream *binary_reader,
+  MethodSequencePointInformation::SequencePointRecord *record) {
+  assert(binary_reader != nullptr);
+  assert(record != nullptr);
+
   uint32_t il_delta;
   uint32_t delta_lines;
   uint32_t delta_cols;
-  if (!binary_reader || !record) {
-    return false;
-  }
 
   if (!binary_reader->ReadCompressedUInt32(&il_delta) ||
       !binary_reader->ReadCompressedUInt32(&delta_lines) ||
@@ -199,7 +200,7 @@ bool MethodSequencePointInformation::ParseFirstRecord(
 
   // If there is no actual code span, it is a hidden-sequence-point-record.
   if (delta_lines == 0 && delta_cols == 0) {
-    *record = MethodSequencePointInformation::NewHiddenSequencePoint(il_delta);
+    *record = NewHiddenSequencePoint(il_delta);
     return true;
   }
 
@@ -220,14 +221,14 @@ bool MethodSequencePointInformation::ParseFirstRecord(
   return true;
 }
 
-bool MethodSequencePointInformation::ParseNextRecord(
-    CustomBinaryStream *binary_reader,
-    SequencePointRecord *last_non_hidden_record, SequencePointRecord *record) {
+bool ParseNextRecord(CustomBinaryStream *binary_reader,
+    MethodSequencePointInformation::SequencePointRecord *last_non_hidden_record,
+    MethodSequencePointInformation::SequencePointRecord *record) {
+  assert(binary_reader != nullptr);
+  assert(record != nullptr);
+
   uint32_t first_compressed_uint;
   uint32_t second_compressed_uint;
-  if (!binary_reader || !record) {
-    return false;
-  }
 
   if (!binary_reader->ReadCompressedUInt32(&first_compressed_uint) ||
       !binary_reader->ReadCompressedUInt32(&second_compressed_uint)) {
@@ -237,7 +238,7 @@ bool MethodSequencePointInformation::ParseNextRecord(
   // If the first compressed integer is usually the IL Delta, but in the
   // case of 0 it indiciates a document-record.
   if (first_compressed_uint == 0) {
-    *record = MethodSequencePointInformation::NewDocumentChangeSequencePoint(
+    *record = NewDocumentChangeSequencePoint(
         second_compressed_uint);
     return true;
   }
@@ -263,7 +264,7 @@ bool MethodSequencePointInformation::ParseNextRecord(
   }
 
   if (delta_lines == 0 && unsigned_delta_cols == 0) {
-    *record = MethodSequencePointInformation::NewHiddenSequencePoint(il_delta);
+    *record = NewHiddenSequencePoint(il_delta);
     return true;
   }
 
@@ -305,9 +306,8 @@ bool MethodSequencePointInformation::ParseNextRecord(
 bool ParseFrom(CustomBinaryStream *binary_reader,
                const CompressedMetadataTableHeader &header,
                LocalScopeRow *local_scope) {
-  if (!binary_reader || !local_scope) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(local_scope != nullptr);
 
   if (!binary_reader->ReadTableIndex(MetadataTable::Method, header,
                                      &local_scope->method_def)) {
@@ -343,9 +343,8 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 bool ParseFrom(CustomBinaryStream *binary_reader,
                const CompressedMetadataTableHeader &header,
                LocalVariableRow *variable_table) {
-  if (!binary_reader || !variable_table) {
-    return false;
-  }
+  assert(binary_reader != nullptr);
+  assert(variable_table != nullptr);
 
   if (!binary_reader->ReadUInt16(&variable_table->attributes)) {
     return false;
@@ -383,17 +382,26 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
   return true;
 }
 
-string GetLanguageName(const string &guid) {
-  if (guid == DocumentRow::kCSharp) return "C#";
-  if (guid == DocumentRow::kVisualBasic) return "VB .NET";
-  if (guid == DocumentRow::kFSharp) return "F#";
-  return "Unknown";
+const string &GetLanguageName(const string &guid) {
+  static const string kCSharp = "C#";
+  static const string kVBNet = "VB .NET";
+  static const string kFSharp = "F#";
+  static const string kUnknown = "Unknown";
+
+  if (guid == kCSharpGuid) return kCSharp;
+  if (guid == kVisualBasicGuid) return kVBNet;
+  if (guid == kFSharpGuid) return kFSharp;
+  return kUnknown;
 }
 
-string GetHashAlgorithmName(const string &guid) {
-  if (guid == DocumentRow::kSha1) return "SHA-1";
-  if (guid == DocumentRow::kSha256) return "SHA-256";
-  return "Unknown";
+const string &GetHashAlgorithmName(const string &guid) {
+  static const string kSha1 = "SHA-1";
+  static const string kSha256 = "SHA-256";
+  static const string kUnknown = "Unknown";
+
+  if (guid == kSha1Guid) return kSha1;
+  if (guid == kSha256Guid) return kSha256;
+  return kUnknown;
 }
 
 }  // namespace google_cloud_debugger_portable_pdb
