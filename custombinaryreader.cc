@@ -30,6 +30,17 @@ const int one = 1;
 
 namespace google_cloud_debugger_portable_pdb {
 
+const std::uint32_t kCompressedIntOneByteMask = 0x80;
+const std::uint32_t kCompressedIntTwoByteMask = 0xC0;
+const std::uint32_t kCompressedIntFourByteMask = 0xE0;
+
+const std::uint32_t kCompressedUIntTwoByteUncompressMask = 0x3FFF;
+const std::uint32_t kCompressedUIntFourByteUncompressMask = 0x1FFFFFFF;
+
+const std::uint32_t kCompressedSignedIntOneByteUncompressMask = 0xFFFFFFC0;
+const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
+const std::uint32_t kCompressedSignedIntThreeByteUncompressMask = 0xF0000000;
+
 bool CustomBinaryStream::ConsumeFile(const string &file) {
   ifstream file_stream(file, ios::in | ios::binary | ios::ate);
   if (file_stream.is_open()) {
@@ -73,7 +84,9 @@ bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
       return false;
     }
 
-    *(result++) = *(iterator_++);
+    *result = *iterator_;
+    result++;
+    iterator_++;
     ++(*bytes_read);
   }
   return true;
@@ -92,7 +105,7 @@ bool CustomBinaryStream::Peek(uint8_t *result) const {
 }
 
 bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
-  if (iterator_ + index > end_) {
+  if ((iterator_ + index) > end_) {
     return false;
   }
 
@@ -101,8 +114,8 @@ bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
-  binary_stream_iter begin = file_content_.begin();
-  if (begin + position > end_) {
+  auto begin = file_content_.begin();
+  if ((begin + position) > end_) {
     return false;
   }
 
@@ -111,7 +124,7 @@ bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
 }
 
 bool CustomBinaryStream::SetStreamLength(uint64_t length) {
-  if (iterator_ + length > end_) {
+  if ((iterator_ + length) > end_) {
     return false;
   }
 
@@ -165,7 +178,7 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   }
 
   // If the first bit is a 0, return the value. Range 0 - 0x7F.
-  if ((first_byte & 0x80) == 0) {
+  if ((first_byte & kCompressedIntOneByteMask) == 0) {
     *uncompress_int = first_byte;
     return true;
   }
@@ -178,8 +191,8 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   // If the first two bits are "10", return the first two bytes.
   // Mask it with 0b11000000 (0xC0) and confirm the result is 0b10000000 (0x80).
   // Result should be in the range 0x80 - 0x3FFF.
-  if ((first_byte & 0xC0) == 0x80) {
-    *uncompress_int = ((first_byte << 8) | second_byte) & 0x3FFF;
+  if ((first_byte & kCompressedIntTwoByteMask) == kCompressedIntOneByteMask) {
+    *uncompress_int = ((first_byte << 8) | second_byte) & kCompressedSignedIntTwoByteUncompressMask;
     return true;
   }
 
@@ -192,10 +205,10 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   // If the first three bits are "110", return the first four bytes.
   // Mask it with 0b11100000 (0xE0) and confirm the result is 0b11000000 (0xC0).
   // Result should be in the range 0x4000 - 0x1FFFFFFF.
-  if ((first_byte & 0xE0) == 0xC0) {
+  if ((first_byte & kCompressedIntFourByteMask) == kCompressedIntTwoByteMask) {
     *uncompress_int = ((first_byte << 24) | (second_byte << 16) |
                        (third_byte << 8) | fourth_byte) &
-                      0x1FFFFFFF;
+                      kCompressedSignedIntThreeByteUncompressMask;
     return true;
   }
 
@@ -229,12 +242,12 @@ bool CustomBinaryStream::ReadCompressSignedInt32(int32_t *uncompressed_int) {
     // To apply two's complement we merge the bits in based on the width.
     // 1 byte uses 6 bits, 2 byte values use 14 bits, and 4 byte values use 28
     // bits. Get the width by checking the first byte again.
-    if ((first_byte & 0x80) == 0) {
-      result |= 0xFFFFFFC0;
-    } else if ((first_byte & 0xC0) == 0x80) {
-      result |= 0xFFFFE000;
-    } else if ((first_byte & 0xE0) == 0xC0) {
-      result |= 0xF0000000;
+    if ((first_byte & kCompressedIntOneByteMask) == 0) {
+      result |= kCompressedSignedIntOneByteUncompressMask;
+    } else if ((first_byte & kCompressedIntTwoByteMask) == kCompressedIntOneByteMask) {
+      result |= kCompressedSignedIntTwoByteUncompressMask;
+    } else if ((first_byte & kCompressedIntFourByteMask) == kCompressedIntTwoByteMask) {
+      result |= kCompressedSignedIntThreeByteUncompressMask;
     } else {
       return false;
     }

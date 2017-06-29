@@ -34,6 +34,33 @@ enum Heap : std::uint8_t {
   BlobsHeap = 0x04
 };
 
+// This mask is used on the first byte to check whether the compressed int
+// (signed and unsigned) is one byte long.
+extern const std::uint32_t kCompressedIntOneByteMask;
+
+// This mask is used on the first byte to check whether the compressed int
+// (signed and unsigned) is two bytes long.
+extern const std::uint32_t kCompressedIntTwoByteMask;
+
+// This mask is used on the first byte to check whether the compressed int
+// (signed and unsigned) is four bytes long.
+extern const std::uint32_t kCompressedIntFourByteMask;
+
+// This mask is used to uncompress two bytes compressed unsigned int.
+extern const std::uint32_t kCompressedUIntTwoByteUncompressMask;
+
+// This mask is used to uncompress four bytes compressed unsigned int.
+extern const std::uint32_t kCompressedUIntFourByteUncompressMask;
+
+// This mask is used to uncompress one byte compressed signed int.
+extern const std::uint32_t kCompressedSignedIntOneByteUncompressMask;
+
+// This mask is used to uncompress two bytes compressed signed int.
+extern const std::uint32_t kCompressedSignedIntTwoByteUncompressMask;
+
+// This mask is used to uncompress four bytes compressed signed int.
+extern const std::uint32_t kCompressedSignedIntThreeByteUncompressMask;
+
 // Class that consumes a file or a uint8_t vector and produces a
 // binary stream. This stream is used to read byte, integers,
 // compressed integers and table index.
