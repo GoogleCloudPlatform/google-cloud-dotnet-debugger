@@ -84,19 +84,20 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
   return true;
 }
 
-bool MethodSequencePointInformation::SequencePointRecord::IsDocumentChange() {
-  return start_line == end_line && end_line == kDocumentChangeSequencePointLine &&
-         start_col == end_col && end_col == 0;
+bool IsDocumentChange(SequencePointRecord record) {
+  return record.start_line == record.end_line &&
+    record.end_line == kDocumentChangeSequencePointLine &&
+    record.start_col == record.end_col && record.end_col == 0;
 }
 
-bool MethodSequencePointInformation::SequencePointRecord::IsHidden() {
-  return start_line == end_line && end_line == kHiddenSequencePointLine &&
-         start_col == end_col && end_col == 0;
+bool IsHidden(SequencePointRecord record) {
+  return record.start_line == record.end_line &&
+    record.end_line == kHiddenSequencePointLine &&
+    record.start_col == record.end_col && record.end_col == 0;
 }
 
-MethodSequencePointInformation::SequencePointRecord
-NewHiddenSequencePoint(uint32_t il_delta) {
-  MethodSequencePointInformation::SequencePointRecord step;
+SequencePointRecord NewHiddenSequencePoint(uint32_t il_delta) {
+  SequencePointRecord step;
   step.il_delta = il_delta;
   step.start_line = kHiddenSequencePointLine;
   step.end_line = kHiddenSequencePointLine;
@@ -105,10 +106,8 @@ NewHiddenSequencePoint(uint32_t il_delta) {
   return step;
 }
 
-MethodSequencePointInformation::SequencePointRecord
-NewDocumentChangeSequencePoint(
-    uint32_t document) {
-  MethodSequencePointInformation::SequencePointRecord step;
+SequencePointRecord NewDocumentChangeSequencePoint(uint32_t document) {
+  SequencePointRecord step;
   step.il_delta = document;
   step.start_line = kDocumentChangeSequencePointLine;
   step.end_line = kDocumentChangeSequencePointLine;
@@ -144,15 +143,15 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
             initial_doc));
   }
 
-  MethodSequencePointInformation::SequencePointRecord first_record;
+  SequencePointRecord first_record;
   if (!ParseFirstRecord(binary_reader, &first_record)) {
     return false;
   }
 
-  MethodSequencePointInformation::SequencePointRecord last_non_hidden_record;
+  SequencePointRecord last_non_hidden_record;
   bool no_non_hidden_record_yet = true;
 
-  if (!first_record.IsHidden()) {
+  if (!IsHidden(first_record)) {
     last_non_hidden_record = first_record;
     no_non_hidden_record_yet = false;
   }
@@ -160,7 +159,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
   sequence_point_info->records.push_back(std::move(first_record));
 
   while (binary_reader->HasNext()) {
-    MethodSequencePointInformation::SequencePointRecord next_record;
+    SequencePointRecord next_record;
     if (no_non_hidden_record_yet) {
       if (!ParseNextRecord(binary_reader, nullptr, &next_record)) {
         return false;
@@ -172,7 +171,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
       }
     }
 
-    if (!next_record.IsHidden()) {
+    if (!IsHidden(next_record)) {
       last_non_hidden_record = next_record;
       no_non_hidden_record_yet = false;
     }
@@ -184,7 +183,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
 }
 
 bool ParseFirstRecord(CustomBinaryStream *binary_reader,
-  MethodSequencePointInformation::SequencePointRecord *record) {
+  SequencePointRecord *record) {
   assert(binary_reader != nullptr);
   assert(record != nullptr);
 
@@ -222,8 +221,8 @@ bool ParseFirstRecord(CustomBinaryStream *binary_reader,
 }
 
 bool ParseNextRecord(CustomBinaryStream *binary_reader,
-    MethodSequencePointInformation::SequencePointRecord *last_non_hidden_record,
-    MethodSequencePointInformation::SequencePointRecord *record) {
+    SequencePointRecord *last_non_hidden_record,
+    SequencePointRecord *record) {
   assert(binary_reader != nullptr);
   assert(record != nullptr);
 

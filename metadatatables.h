@@ -91,18 +91,6 @@ enum MetadataTable {
   MaxValue = 64
 };
 
-// GUID for SHA-1.
-extern const std::string kSha1Guid;
-// GUID for SHA-256.
-extern const std::string kSha256Guid;
-
-// GUID for C# language.
-extern const std::string kCSharpGuid;
-// GUID for VB language.
-extern const std::string kVisualBasicGuid;
-// GUID for F# language.
-extern const std::string kFSharpGuid;
-
 // Document metadata table row.
 // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#DocumentTable
 struct DocumentRow {
@@ -132,32 +120,22 @@ struct MethodDebugInformationRow {
   std::uint32_t sequence_points = 0;
 };
 
-extern const std::uint32_t kDocumentChangeSequencePointLine;
-extern const std::uint32_t kHiddenSequencePointLine;
+// Method sequence point or document transition (for methods than span
+// multiple files.)
+struct SequencePointRecord {
+  // This is the change in IL offset (in bytes) from the previous step. Use
+  // literally if it is the first Step in a list.
+  std::uint32_t il_delta = 0;
+
+  std::uint32_t start_line = 0;
+  std::uint32_t end_line = 0;
+  std::uint32_t start_col = 0;
+  std::uint32_t end_col = 0;
+};
 
 // Expansion of a binary encoding of a method's sequence points. See
 // MethodDebugInformation.
 struct MethodSequencePointInformation {
-  // Method sequence point or document transition (for methods than span
-  // multiple files.)
-  struct SequencePointRecord {
-    // This is the change in IL offset (in bytes) from the previous step. Use
-    // literally if it is the first Step in a list.
-    std::uint32_t il_delta = 0;
-
-    std::uint32_t start_line = 0;
-    std::uint32_t end_line = 0;
-    std::uint32_t start_col = 0;
-    std::uint32_t end_col = 0;
-
-    // This property is not in the spec. But rather an aspect of this specific
-    // implementation, since document-record objects get encoded as Steps.
-    // The document is stored in ilDelta.
-    bool IsDocumentChange();
-
-    bool IsHidden();
-  };
-
   // Index into the StandAloneSig table. (In the main assembly's metadata.)
   std::uint32_t stand_alone_signature;
 
@@ -278,21 +256,27 @@ bool ParseFrom(std::uint32_t starting_document,
 // Parses the very first entity of a SequencePointBlob. May be a
 // sequence-point-record or a hidden-sequence-point-record.
 bool ParseFirstRecord(CustomBinaryStream *binary_reader,
-                      MethodSequencePointInformation::SequencePointRecord *record);
+                      SequencePointRecord *record);
 
 // Parses the next entity in the SequencePointBlob. May be a
 // sequence-point-record, hidden-sequence-point-record, or document-record.
 bool ParseNextRecord(CustomBinaryStream *binary_reader,
-                     MethodSequencePointInformation::SequencePointRecord *last_non_hidden_step,
-                     MethodSequencePointInformation::SequencePointRecord *record);
+                     SequencePointRecord *last_non_hidden_step,
+                     SequencePointRecord *record);
 
 // Returns a SequencePointRecord that represents a hidden sequence point.
-MethodSequencePointInformation::SequencePointRecord NewHiddenSequencePoint(std::uint32_t il_delta);
+SequencePointRecord NewHiddenSequencePoint(std::uint32_t il_delta);
 
 // Returns a SequencePointRecord that represents a document change sequence
 // point.
-MethodSequencePointInformation::SequencePointRecord NewDocumentChangeSequencePoint(
-    std::uint32_t document);
+SequencePointRecord NewDocumentChangeSequencePoint(std::uint32_t document);
+
+// This property is not in the spec. But rather an aspect of this specific
+// implementation, since document-record objects get encoded as Steps.
+// The document is stored in ilDelta.
+bool IsDocumentChange(SequencePointRecord record);
+
+bool IsHidden(SequencePointRecord record);
 
 }  // namespace google_cloud_debugger_portable_pdb
 
