@@ -34,7 +34,7 @@ bool PortablePdbFile::GetStream(const string &name,
   StreamHeader *stream_header) const {
   assert(stream_header != nullptr);
 
-  auto result = std::find_if(stream_headers_.begin(),
+  const auto& result = std::find_if(stream_headers_.begin(),
     stream_headers_.end(),
     [&name](const StreamHeader& stream) {
     return name.compare(stream.name) == 0;
@@ -69,7 +69,7 @@ bool PortablePdbFile::InitializeStringsHeap() {
 }
 
 const string &PortablePdbFile::GetHeapString(uint32_t index) {
-  if (heap_strings_[index].size() == 0) {
+  if (heap_strings_[index].empty()) {
     size_t str_len = 0;
     while (string_heap_data_[index + str_len] != 0) {
       ++str_len;

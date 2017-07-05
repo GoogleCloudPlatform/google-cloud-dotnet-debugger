@@ -198,7 +198,6 @@ class PortablePdbFile {
 
   // Parses the compressed metadata tables stream.
   bool ParseCompressedMetadataTableStream();
-
 };
 
 }  // namespace google_cloud_debugger_portable_pdb
