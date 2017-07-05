@@ -1,5 +1,16 @@
 // Copyright 2017 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef PORTABLE_PDB_H_
 #define PORTABLE_PDB_H_
@@ -7,58 +18,53 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "ccomptr.h"
+#include "cor.h"
+#include "cordebug.h"
 #include "custombinaryreader.h"
 #include "documentindex.h"
 #include "metadataheaders.h"
 #include "metadatatables.h"
-#include "cor.h"
-#include "cordebug.h"
-#include "ccomptr.h"
 
 namespace google_cloud_debugger_portable_pdb {
+
 // PortablePDB file. Wraps all the gory details of PE headers and metadata
 // compression.
 //
 // The file format is very information dense, and we expand all of the
-// compressed metadata into arrays which are exposed as read only lists. If load
-// time and/or memory pressure become concerns, an alternative implemenation
-// could lock the file and generate the necessary structures on-demand.
+// compressed metadata into arrays which are exposed as read only vectors.
+// If load time and/or memory pressure become concerns, an alternative
+// implemenation could lock the file and generate the necessary structures
+// on-demand.
+//
+// To use this class, create a PortablePdbFile object and calls
+// InitializeFromFile with the path to the pdb file.
 class PortablePdbFile {
  public:
+  // Parse the pdb file. This method initializes the class.
+  bool InitializeFromFile(const std::string &file_path);
+
   // Finds the stream header with a given name. Returns false if not found.
+  // name is the name of the stream header.
+  // stream_header is the stream header that has name name.
   bool GetStream(const std::string &name, StreamHeader *stream_header) const;
 
-  // Parses the strings heap.
-  bool InitializeStringsHeap();
-
   // Get string from the heap at index index.
-  std::string GetHeapString(uint32_t index) const;
-
-  // Parse the pdb file.
-  bool ParsePdbFile(const std::string &file_path);
-
-  // Parses the Blobs heap.
-  bool InitializeBlobHeap();
+  const std::string &GetHeapString(std::uint32_t index);
 
   // Get data from the blob heap.
-  bool GetHeapBlobStream(uint32_t index, CustomBinaryStream *binary_stream);
+  bool GetHeapBlobStream(std::uint32_t index, CustomBinaryStream *binary_stream);
 
-  // Returns the name of a document using the provided blob heap index.
+  // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
-  // spec.
-  std::string GetDocumentName(uint32_t index);
-
-  // Parses the GUID heap.
-  bool InitializeGuidHeap();
+  // spec. Returns true if succeeds.
+  bool GetDocumentName(std::uint32_t index, std::string *doc_name);
 
   // Gets GUID based on index;
-  std::string GetHeapGuid(uint32_t index) const;
-
-  // Parses the PDB metadata section's header.
-  bool ParsePortablePdbStream();
-
-  // Parses the compressed metadata tables stream.
-  bool ParseCompressedMetadataTableStream();
+  const std::string &GetHeapGuid(std::uint32_t index) const {
+    return guids_heap_data_[index];
+  }
 
   // Returns the document table.
   const std::vector<DocumentRow> &GetDocumentTable() const {
@@ -97,7 +103,7 @@ class PortablePdbFile {
   }
 
   // Gets the name of the module of this PDB.
-  std::string GetModuleName() const { return module_name_; }
+  const std::string &GetModuleName() const { return module_name_; }
 
   // Sets the ICorDebugModule of the module of this PDB.
   HRESULT SetDebugModule(ICorDebugModule *debug_module);
@@ -142,6 +148,10 @@ class PortablePdbFile {
   std::vector<LocalVariableRow> local_variable_table_;
   std::vector<LocalConstantRow> local_constant_table_;
 
+  // Vectors that contains all the strings in the Strings Heap.
+  // This vector is used to cache the strings.
+  std::vector<std::string> heap_strings_;
+
   // Vector of all document indices inside this pdb.
   std::vector<DocumentIndex> document_indices_;
 
@@ -173,6 +183,22 @@ class PortablePdbFile {
 
     return true;
   }
+
+  // Parses the Blobs heap.
+  bool InitializeBlobHeap();
+
+  // Parses the GUID heap.
+  bool InitializeGuidHeap();
+
+  // Parses the strings heap.
+  bool InitializeStringsHeap();
+
+  // Parses the PDB metadata section's header.
+  bool ParsePortablePdbStream();
+
+  // Parses the compressed metadata tables stream.
+  bool ParseCompressedMetadataTableStream();
+
 };
 
 }  // namespace google_cloud_debugger_portable_pdb
