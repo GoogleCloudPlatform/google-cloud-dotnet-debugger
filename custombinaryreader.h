@@ -117,7 +117,7 @@ class CustomBinaryStream {
   binary_stream_iter End() { return end_; }
 
   // Returns the beginning position of the stream.
-  binary_stream_iter Begin() { return begin_; }
+  binary_stream_iter begin() { return begin_; }
 
  private:
   // The binary content of the file (if this stream s from a file).
