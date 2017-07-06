@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package google.cloud.diagnostics.debug;
+
+message Breakpoint {
+  string id = 1;
+  SourceLocation location = 2;
+  bool is_final_state = 3;
+  google.protobuf.Timestamp create_time = 4;
+  google.protobuf.Timestamp final_time = 5;
+}
+
+message SourceLocation {
+  string path = 1;
+  int32 line = 2;
+}
