@@ -1,0 +1,10 @@
+.vs
+*.pyc
+*.user
+obj
+bin
+Debug
+*~
+.cr
+*.o
+*.obj
