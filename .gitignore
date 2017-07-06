@@ -4,6 +4,7 @@
 obj
 bin
 Debug
+Release
 *~
 .cr
 *.o
