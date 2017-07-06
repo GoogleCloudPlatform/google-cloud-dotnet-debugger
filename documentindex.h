@@ -24,6 +24,98 @@
 namespace google_cloud_debugger_portable_pdb {
 class PortablePdbFile;
 
+// Struct that represents a sequence point in a method.
+// Unlike SequencePointRecord struct, this struct has
+// the absoluate IL Offset.
+struct SequencePoint {
+  // IL Offset of this sequence point.
+  std::uint32_t il_offset = 0;
+
+  // Start line of this sequence point.
+  std::uint32_t start_line = 0;
+
+  // Start column of this sequence point.
+  std::uint32_t start_col = 0;
+
+  // End line of this sequence point.
+  std::uint32_t end_line = 0;
+
+  // End column of this sequence point.
+  std::uint32_t end_col = 0;
+
+  // True if this is a hidden or document change sequence point.
+  bool is_hidden = false;
+};
+
+// Struct that represents a local variable in a method.
+struct LocalVariableInfo {
+  // The slot (index) of the variable in the method.
+  std::uint16_t slot = 0;
+
+  // Name of the variable.
+  std::string name;
+
+  // True if the variable should be hidden from the debugger.
+  bool debugger_hidden = false;
+};
+
+// Struct that represents constant in a method.
+struct LocalConstantInfo {
+  // TODO(quoct): Parse constant type and value information.
+  std::string name;
+};
+
+// Struct that represents the local scope of a method.
+// Each local scope will be mapped bijectively to a number of
+// rows in the LocalVariable table of the PDB. That means
+// each row in the LocalVariable table is owned by only 1 scope.
+struct Scope {
+  // Index of this scope in the LocalScope table.
+  std::uint32_t index = 0;
+
+  // The start row of the local variables owned by this scope.
+  std::uint32_t local_var_row_start_index = 0;
+
+  // The end row of the local variables owned by this scope.
+  std::uint32_t local_var_row_end_index = 0;
+
+  // The start row of the local constant owned by this scope.
+  std::uint32_t local_const_row_start_index = 0;
+
+  // The end row of the local constant owned by this scope.
+  std::uint32_t local_const_row_end_index = 0;
+
+  // Start IL offset of this scope.
+  std::uint32_t start_offset = 0;
+
+  // The length of this scope (in terms of IL offset).
+  std::uint32_t length = 0;
+
+  // Local variables owned by this scope.
+  std::vector<LocalVariableInfo> local_variables;
+
+  // Local constants owned by this scope.
+  std::vector<LocalConstantInfo> local_constants;
+};
+
+// Struct that represents a method in a document.
+struct MethodInfo {
+  // MethodDef for this method.
+  std::uint32_t method_def = 0;
+
+  // First line of this method.
+  std::uint32_t first_line = 0;
+
+  // Last line of this method.
+  std::uint32_t last_line = 0;
+
+  // Vector of sequence points of this method.
+  std::vector<SequencePoint> sequence_points;
+
+  // Vector of local scopes of this method.
+  std::vector<Scope> local_scope;
+};
+
 // Index for a single source file described in a Portable PDB. Essentially a
 // user-friendly copy of all the data encoded in the PDB's metadata table.
 //
@@ -32,111 +124,19 @@ class DocumentIndex {
  public:
   // Initialize this document index to the document at index doc_index
   // in the DocumentTable of the Portable PDB file pdb.
-  bool Initialize(PortablePdbFile *pdb, int doc_index);
-
-  // Struct that represents a sequence point in a method.
-  // Unlike SequencePointRecord struct, this struct has
-  // the absoluate IL Offset.
-  struct SequencePoint {
-    // IL Offset of this sequence point.
-    std::uint32_t il_offset;
-
-    // Start line of this sequence point.
-    std::uint32_t start_line;
-
-    // Start column of this sequence point.
-    std::uint32_t start_col;
-
-    // End line of this sequence point.
-    std::uint32_t end_line;
-
-    // End column of this sequence point.
-    std::uint32_t end_col;
-
-    // True if this is a hidden or document change sequence point.
-    bool is_hidden;
-  };
-
-  // Struct that represents a local variable in a method.
-  struct Variable {
-    // The slot (index) of the variable in the method.
-    std::uint16_t slot;
-
-    // Name of the variable.
-    std::string name;
-
-    // True if the variable should be hidden from the debugger.
-    bool debugger_hidden;
-  };
-
-  // Struct that represents constant.
-  struct Constant {
-    // TODO(chrsmith): Parse constant type and value information.
-    std::string name;
-  };
-
-  // Struct that represents the local scope of a method.
-  // Each local scope will be mapped bijectively to a number of
-  // rows in the LocalVariable table of the PDB. That means
-  // each row in the LocalVariable table is owned by only 1 scope.
-  struct Scope {
-    // Index of this scope in the LocalScope table.
-    std::uint32_t index;
-
-    // The start row of the local variables owned by this scope.
-    std::uint32_t local_var_row_start_index;
-
-    // The end row of the local variables owned by this scope.
-    std::uint32_t local_var_row_end_index;
-
-    // The start row of the local constant owned by this scope.
-    std::uint32_t local_const_row_start_index;
-
-    // The end row of the local constant owned by this scope.
-    std::uint32_t local_const_row_end_index;
-
-    // Start IL offset of this scope.
-    std::uint32_t start_offset;
-
-    // The length of this scope (in terms of IL offset).
-    std::uint32_t length;
-
-    // Local variables owned by this scope.
-    std::vector<Variable> local_variables;
-
-    // Local constants owned by this scope.
-    std::vector<Constant> local_constants;
-  };
-
-  // Struct that represents a method in a document.
-  struct Method {
-    // MethodDef for this method.
-    std::uint32_t method_def;
-
-    // First line of this method.
-    std::uint32_t first_line;
-
-    // Last line of this method.
-    std::uint32_t last_line;
-
-    // Vector of sequence points of this method.
-    std::vector<SequencePoint> sequence_points;
-
-    // Vector of local scopes of this method.
-    std::vector<Scope> local_scope;
-  };
+  bool Initialize(PortablePdbFile &pdb, int doc_index);
 
   // Returns the file path of this document.
-  std::string GetFilePath() const { return file_path_; }
+  const std::string &GetFilePath() const { return file_path_; }
 
   // Returns all the methods in this document.
-  std::vector<Method> &GetMethods() { return methods_; }
+  const std::vector<MethodInfo> &GetMethods() const { return methods_; }
 
  private:
   // Populate a method object that corresponds to MethodDebugInformationRow
   // debug_info_row. This function assumes that the method only spans
   // 1 document.
-  bool ParseMethod(Method *method, PortablePdbFile *pdb,
+  bool ParseMethod(MethodInfo *method, PortablePdbFile &pdb,
     const MethodDebugInformationRow &debug_info_row,
     std::uint32_t method_def, std::uint32_t doc_index);
 
@@ -144,7 +144,8 @@ class DocumentIndex {
   // local_scope_row. The Scope object will have its variable
   // and constant tables filled up with variables and constants that
   // belong to the scope.
-  Scope ParseScope(PortablePdbFile *pdb, const LocalScopeRow &local_scope_row,
+  bool ParseScope(Scope *scope, PortablePdbFile &pdb,
+    const LocalScopeRow &local_scope_row,
     const std::vector<LocalScopeRow> &local_scope_table,
     const std::vector<LocalVariableRow> &local_variable_table,
     const std::vector<LocalConstantRow> &local_constant_table,
@@ -163,7 +164,7 @@ class DocumentIndex {
   std::vector<uint8_t> hash_;
 
   // The methods of this document.
-  std::vector<Method> methods_;
+  std::vector<MethodInfo> methods_;
 };
 
 }  // namespace google_cloud_debugger_portable_pdb
