@@ -21,6 +21,9 @@ using System.Threading.Tasks;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
+    /// <summary>
+    /// A server to read and write breakpoints with clients.
+    /// </summary>
     public class BreakpointServer : IDisposable
     {
         /// <summary>A semaphore to protect the buffer.</summary>
@@ -29,7 +32,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>A buffer to store partial breakpoint messages.</summary>
         private List<byte> _buffer = new List<byte>();
 
-        /// <summary>>The pipe to send and receive breakpoint messages with.</summary>
+        /// <summary>The pipe to send and receive breakpoint messages with.</summary>
         private readonly INamedPipe _pipe;
 
         /// <summary>
@@ -79,9 +82,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
                 var newBytes = buffer.GetRange(
                     startIndex + Constants.StartBreakpointMessage.Length, endIndex - startIndex - Constants.StartBreakpointMessage.Length);
-
                 _buffer.AddRange(buffer.Skip(endIndex + Constants.EndBreakpointMessage.Length));
-
                 return Breakpoint.Parser.ParseFrom(newBytes.ToArray());
             }
             finally
@@ -105,6 +106,12 @@ namespace Google.Cloud.Diagnostics.Debug
             return _pipe.WriteAsync(bytes.ToArray(), cancellationToken);
         }
 
+        /// <summary>
+        /// Get the start index of a sequence.
+        /// </summary>
+        /// <param name="array">The array of bytes to look for a sequence in.</param>
+        /// <param name="sequence">The sequence to search for.</param>
+        /// <returns>The start index of the first sequence or -1 if none is found.</returns>
         private int IndexOfSequence(byte[] array, byte[] sequence)
         {
             for (int i = 0; i < array.Length; i++)
