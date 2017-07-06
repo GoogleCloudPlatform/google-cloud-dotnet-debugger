@@ -19,13 +19,19 @@
 #include <string>
 #include <vector>
 
+#include "metadatatables.h"
+
 namespace google_cloud_debugger_portable_pdb {
 class PortablePdbFile;
 
 // Index for a single source file described in a Portable PDB. Essentially a
 // user-friendly copy of all the data encoded in the PDB's metadata table.
+//
+// A document index is initialized by calling the Initialize method.
 class DocumentIndex {
  public:
+  // Initialize this document index to the document at index doc_index
+  // in the DocumentTable of the Portable PDB file pdb.
   bool Initialize(PortablePdbFile *pdb, int doc_index);
 
   // Struct that represents a sequence point in a method.
@@ -127,6 +133,23 @@ class DocumentIndex {
   std::vector<Method> &GetMethods() { return methods_; }
 
  private:
+  // Populate a method object that corresponds to MethodDebugInformationRow
+  // debug_info_row. This function assumes that the method only spans
+  // 1 document.
+  bool ParseMethod(Method *method, PortablePdbFile *pdb,
+    const MethodDebugInformationRow &debug_info_row,
+    std::uint32_t method_def, std::uint32_t doc_index);
+
+  // Returns a Scope object that corresponds with LocalScopeRow
+  // local_scope_row. The Scope object will have its variable
+  // and constant tables filled up with variables and constants that
+  // belong to the scope.
+  Scope ParseScope(PortablePdbFile *pdb, const LocalScopeRow &local_scope_row,
+    const std::vector<LocalScopeRow> &local_scope_table,
+    const std::vector<LocalVariableRow> &local_variable_table,
+    const std::vector<LocalConstantRow> &local_constant_table,
+    std::uint32_t method_def, std::uint32_t scope_index);
+
   // The file path of this document.
   std::string file_path_;
 
