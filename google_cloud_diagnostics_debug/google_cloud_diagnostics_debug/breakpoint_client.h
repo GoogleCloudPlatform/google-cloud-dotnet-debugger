@@ -28,7 +28,7 @@ using namespace google::cloud::diagnostics::debug;
 
 namespace google_cloud_debugger {
 
-class BreakpointClient  {
+class BreakpointClient {
   public:
     // Creates a breakpoint client and accepts a NamedPipeClient.
     BreakpointClient(NamedPipeClient *pipe);
@@ -55,8 +55,7 @@ class BreakpointClient  {
       NamedPipeClient *pipe_ = nullptr;
 
       // A buffer to hold partial breakpoint messages.
-      std::string buffer_;
-      
+      std::string buffer_;  
   };
 
 }  // namespace google_cloud_debugger

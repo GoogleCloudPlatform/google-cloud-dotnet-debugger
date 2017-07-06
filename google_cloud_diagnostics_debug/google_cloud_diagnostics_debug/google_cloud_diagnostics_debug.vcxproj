@@ -136,7 +136,6 @@
   <ItemGroup>
     <ClCompile Include="breakpoint.pb.cc" />
     <ClCompile Include="breakpoint_client.cc" />
-    <ClCompile Include="console.cc" />
     <ClCompile Include="named_pipe_client_unix.cc" />
     <ClCompile Include="named_pipe_client_windows.cc" />
   </ItemGroup>

@@ -4,6 +4,8 @@ import "google/protobuf/timestamp.proto";
 
 package google.cloud.diagnostics.debug;
 
+// NOTE: This is just a temporary proto to use until we have a real one.
+
 message Breakpoint {
   string id = 1;
   SourceLocation location = 2;

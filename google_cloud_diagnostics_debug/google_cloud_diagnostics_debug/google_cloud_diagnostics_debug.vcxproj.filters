@@ -38,9 +38,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="console.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="named_pipe_client_unix.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
