@@ -110,10 +110,10 @@ class PortablePdbFile {
   HRESULT SetDebugModule(ICorDebugModule *debug_module);
 
   // Gets the ICorDebugModule of the module of this PDB.
-  HRESULT GetDebugModule(ICorDebugModule **debug_module);
+  HRESULT GetDebugModule(ICorDebugModule **debug_module) const;
 
   // Gets the MetadataImport of the module of this PDB.
-  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import);
+  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import) const;
 
  private:
   // Name of the module that corresponds to this pdb.

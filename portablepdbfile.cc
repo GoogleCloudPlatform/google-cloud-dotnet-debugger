@@ -348,7 +348,8 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
   return S_OK;
 }
 
-HRESULT PortablePdbFile::GetDebugModule(ICorDebugModule **debug_module) {
+HRESULT PortablePdbFile::GetDebugModule(
+  ICorDebugModule **debug_module) const {
   if (!debug_module) {
     return E_INVALIDARG;
   }
@@ -358,11 +359,11 @@ HRESULT PortablePdbFile::GetDebugModule(ICorDebugModule **debug_module) {
     debug_module_->AddRef();
     return S_OK;
   }
-
   return E_FAIL;
 }
 
-HRESULT PortablePdbFile::GetMetaDataImport(IMetaDataImport **metadata_import) {
+HRESULT PortablePdbFile::GetMetaDataImport(
+  IMetaDataImport **metadata_import) const {
   if (!metadata_import) {
     return E_INVALIDARG;
   }
