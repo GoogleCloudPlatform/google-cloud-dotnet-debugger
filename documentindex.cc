@@ -28,15 +28,13 @@ using std::vector;
 
 namespace google_cloud_debugger_portable_pdb {
 
-bool DocumentIndex::Initialize(PortablePdbFile *pdb, int doc_index) {
-  assert(pdb != nullptr);
-
+bool DocumentIndex::Initialize(const PortablePdbFile &pdb, int doc_index) {
   if (doc_index == 0) {
     cerr << "Document index has to be larger than 0.";
     return false;
   }
 
-  const vector<DocumentRow> &document_table = pdb->GetDocumentTable();
+  const vector<DocumentRow> &document_table = pdb.GetDocumentTable();
   if (document_table.size() <= doc_index) {
     cerr << "Document index " << std::to_string(doc_index)
       << " is larger than the Document Table size.";
@@ -45,20 +43,20 @@ bool DocumentIndex::Initialize(PortablePdbFile *pdb, int doc_index) {
 
   const DocumentRow &doc_row = document_table[doc_index];
 
-  if (!pdb->GetDocumentName(doc_row.name, &file_path_)) {
+  if (!pdb.GetDocumentName(doc_row.name, &file_path_)) {
     cerr << "Failed to get document name for file "
       << file_path_ << std::endl;
     return false;
   }
 
   source_language_ =
-    GetLanguageName(pdb->GetHeapGuid(doc_row.language));
+    GetLanguageName(pdb.GetHeapGuid(doc_row.language));
   hash_algorithm_ =
-    GetHashAlgorithmName(pdb->GetHeapGuid(doc_row.hash_algorithm));
+    GetHashAlgorithmName(pdb.GetHeapGuid(doc_row.hash_algorithm));
 
   CustomBinaryStream binary_stream;
 
-  if (!pdb->GetHeapBlobStream(doc_row.hash, &binary_stream)) {
+  if (!pdb.GetHeapBlobStream(doc_row.hash, &binary_stream)) {
     cerr << "Failed to get heap blob stream.";
     return false;
   }
@@ -73,7 +71,7 @@ bool DocumentIndex::Initialize(PortablePdbFile *pdb, int doc_index) {
 
   // We rely on the 1:1 mapping between the Method and MethodDebugInfo tables.
   vector<MethodDebugInformationRow> method_debug_info_rows =
-    pdb->GetMethodDebugInfoTable();
+    pdb.GetMethodDebugInfoTable();
   size_t num_of_methods = method_debug_info_rows.size();
   methods_.reserve(num_of_methods);
 
@@ -99,10 +97,9 @@ bool DocumentIndex::Initialize(PortablePdbFile *pdb, int doc_index) {
   return true;
 }
 
-bool DocumentIndex::ParseMethod(MethodInfo *method, PortablePdbFile *pdb,
+bool DocumentIndex::ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
   const MethodDebugInformationRow &debug_info_row,
   uint32_t method_def, uint32_t doc_index) {
-  assert(pdb != nullptr);
   assert(method != nullptr);
 
   method->method_def = method_def;
@@ -110,7 +107,7 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, PortablePdbFile *pdb,
   method->last_line = 0;
 
   CustomBinaryStream sequence_point_blob_stream;
-  if (!pdb->GetHeapBlobStream(debug_info_row.sequence_points,
+  if (!pdb.GetHeapBlobStream(debug_info_row.sequence_points,
     &sequence_point_blob_stream)) {
     cerr << "Failed to get heap blob stream for MethodDebugInfo row.";
     return false;
@@ -152,11 +149,11 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, PortablePdbFile *pdb,
   }
 
   bool first_scope = true;
-  const vector<LocalScopeRow> &local_scope_table = pdb->GetLocalScopeTable();
+  const vector<LocalScopeRow> &local_scope_table = pdb.GetLocalScopeTable();
   const vector<LocalVariableRow> &local_variable_table =
-    pdb->GetLocalVariableTable();
+    pdb.GetLocalVariableTable();
   const vector<LocalConstantRow> &local_constant_table =
-    pdb->GetLocalConstantTable();
+    pdb.GetLocalConstantTable();
   for (size_t index = 1; index < local_scope_table.size(); ++index) {
     const LocalScopeRow &local_scope_row = local_scope_table[index];
     if (local_scope_row.method_def != method_def) {
@@ -176,14 +173,12 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, PortablePdbFile *pdb,
   return true;
 }
 
-bool DocumentIndex::ParseScope(Scope *local_scope, PortablePdbFile *pdb,
+bool DocumentIndex::ParseScope(Scope *local_scope, const PortablePdbFile &pdb,
   const LocalScopeRow &local_scope_row,
   const std::vector<LocalScopeRow> &local_scope_table,
   const std::vector<LocalVariableRow> &local_variable_table,
   const std::vector<LocalConstantRow> &local_constant_table,
   uint32_t method_def, uint32_t scope_index) {
-  assert(pdb != nullptr);
-
   if (scope_index >= local_scope_table.size()) {
     cerr << "Scope index is out of range for Local Scope table.";
     return false;
@@ -226,7 +221,7 @@ bool DocumentIndex::ParseScope(Scope *local_scope, PortablePdbFile *pdb,
     new_variable.debugger_hidden = (local_variable_row.attributes ==
       kDebuggerHidden);
     new_variable.slot = local_variable_row.index;
-    new_variable.name = pdb->GetHeapString(local_variable_row.name);
+    new_variable.name = pdb.GetHeapString(local_variable_row.name);
 
     local_scope->local_variables.push_back(std::move(new_variable));
   }
@@ -244,7 +239,7 @@ bool DocumentIndex::ParseScope(Scope *local_scope, PortablePdbFile *pdb,
     const_idx < local_scope->local_const_row_end_index; ++const_idx) {
     const LocalConstantRow &local_constant_row = local_constant_table[const_idx];
     LocalConstantInfo new_const;
-    new_const.name = pdb->GetHeapString(local_constant_row.name);
+    new_const.name = pdb.GetHeapString(local_constant_row.name);
 
     local_scope->local_constants.push_back(std::move(new_const));
   }

@@ -124,7 +124,7 @@ class DocumentIndex {
  public:
   // Initialize this document index to the document at index doc_index
   // in the DocumentTable of the Portable PDB file pdb.
-  bool Initialize(PortablePdbFile *pdb, int doc_index);
+  bool Initialize(const PortablePdbFile &pdb, int doc_index);
 
   // Returns the file path of this document.
   const std::string &GetFilePath() const { return file_path_; }
@@ -136,7 +136,7 @@ class DocumentIndex {
   // Populate a method object that corresponds to MethodDebugInformationRow
   // debug_info_row. This function assumes that the method only spans
   // 1 document.
-  bool ParseMethod(MethodInfo *method, PortablePdbFile *pdb,
+  bool ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
     const MethodDebugInformationRow &debug_info_row,
     std::uint32_t method_def, std::uint32_t doc_index);
 
@@ -144,7 +144,7 @@ class DocumentIndex {
   // local_scope_row. The Scope object will have its variable
   // and constant tables filled up with variables and constants that
   // belong to the scope.
-  bool ParseScope(Scope *scope, PortablePdbFile *pdb,
+  bool ParseScope(Scope *scope, const PortablePdbFile &pdb,
     const LocalScopeRow &local_scope_row,
     const std::vector<LocalScopeRow> &local_scope_table,
     const std::vector<LocalVariableRow> &local_variable_table,
