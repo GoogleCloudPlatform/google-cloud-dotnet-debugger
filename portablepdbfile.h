@@ -51,16 +51,16 @@ class PortablePdbFile {
   bool GetStream(const std::string &name, StreamHeader *stream_header) const;
 
   // Get string from the heap at index index.
-	const std::string &GetHeapString(std::uint32_t index) const;
+  const std::string &GetHeapString(std::uint32_t index) const;
 
   // Get data from the blob heap.
-	bool GetHeapBlobStream(std::uint32_t index,
+  bool GetHeapBlobStream(std::uint32_t index,
 		CustomBinaryStream *binary_stream) const;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
   // spec. Returns true if succeeds.
-	bool GetDocumentName(std::uint32_t index, std::string *doc_name) const;
+  bool GetDocumentName(std::uint32_t index, std::string *doc_name) const;
 
   // Gets GUID based on index;
   const std::string &GetHeapGuid(std::uint32_t index) const {
