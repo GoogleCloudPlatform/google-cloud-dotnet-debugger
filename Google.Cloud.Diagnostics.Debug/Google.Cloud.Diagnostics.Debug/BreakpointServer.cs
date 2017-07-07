@@ -56,33 +56,29 @@ namespace Google.Cloud.Diagnostics.Debug
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                List<byte> buffer = _buffer;
+                List<byte> previousBuffer = _buffer;
                 _buffer = new List<byte>();
 
                 // Check if we have a full breakpoint message in the buffer.
                 // If so just use it and do not try and read another breakpoint.
-                int endIndex = IndexOfSequence(buffer.ToArray(), Constants.EndBreakpointMessage);
-                if (endIndex == -1)
+                int endIndex = IndexOfSequence(previousBuffer.ToArray(), Constants.EndBreakpointMessage);
+                while (endIndex == -1)
                 {
-                    do
-                    {
-                        byte[] bytes = await _pipe.ReadAsync(cancellationToken);
-                        buffer.AddRange(bytes);
-                        endIndex = IndexOfSequence(bytes, Constants.EndBreakpointMessage);
-                    }
-                    while (endIndex == -1);
+                    byte[] bytes = await _pipe.ReadAsync(cancellationToken);
+                    previousBuffer.AddRange(bytes);
+                    endIndex = IndexOfSequence(bytes, Constants.EndBreakpointMessage);
                 }
 
                 // Ensure we have a start to the breakpoint message.
-                int startIndex = IndexOfSequence(buffer.ToArray(), Constants.StartBreakpointMessage);
+                int startIndex = IndexOfSequence(previousBuffer.ToArray(), Constants.StartBreakpointMessage);
                 if (startIndex == -1)
                 {
                     throw new InvalidOperationException("Invalid breakpoint message.");
                 }
 
-                var newBytes = buffer.GetRange(
+                var newBytes = previousBuffer.GetRange(
                     startIndex + Constants.StartBreakpointMessage.Length, endIndex - startIndex - Constants.StartBreakpointMessage.Length);
-                _buffer.AddRange(buffer.Skip(endIndex + Constants.EndBreakpointMessage.Length));
+                _buffer.AddRange(previousBuffer.Skip(endIndex + Constants.EndBreakpointMessage.Length));
                 return Breakpoint.Parser.ParseFrom(newBytes.ToArray());
             }
             finally
