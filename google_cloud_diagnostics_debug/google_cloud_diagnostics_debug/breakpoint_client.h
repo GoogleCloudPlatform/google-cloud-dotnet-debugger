@@ -52,7 +52,7 @@ class BreakpointClient {
 
   private:
       // The pipe client to send messages.
-      NamedPipeClient *pipe_ = nullptr;
+      std::unique_ptr<NamedPipeClient> pipe_;
 
       // A buffer to hold partial breakpoint messages.
       std::string buffer_;  

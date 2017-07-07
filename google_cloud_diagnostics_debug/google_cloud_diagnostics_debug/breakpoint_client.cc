@@ -20,6 +20,8 @@
 #include "constants.h"
 
 
+using std::string;
+using std::cerr;
 using namespace google::cloud::diagnostics::debug;
 
 // Mutex to protect the buffer
@@ -29,7 +31,7 @@ namespace google_cloud_debugger {
 
 
 BreakpointClient::BreakpointClient(NamedPipeClient *pipe) {
-    pipe_ = pipe;
+    pipe_.reset(pipe);
 }
 
 HRESULT BreakpointClient::Initialize() {
@@ -42,47 +44,45 @@ HRESULT BreakpointClient::WaitForConnection() {
 
 HRESULT BreakpointClient::ReadBreakpoint(Breakpoint *breakpoint) {
     std::lock_guard<std::mutex> lock(mutex_);
-    std::string buffer = buffer_;
-    buffer_ = std::string();
-    std::string str;
+    string buffer = buffer_;
+    buffer_ = string();
+    string str;
 
     // Check if we have a full breakpoint message in the buffer.
     // If so just use it and do not try and read another breakpoint.
-    std::size_t foundEnd = buffer.find(kEndBreakpointMessage);
-    if (foundEnd == std::string::npos) {
-        do {
-            HRESULT result = pipe_->Read(&str);
-            if (FAILED(result))
-            {
-                return result;
-            }
-            buffer += str;
-            str.clear();
-            foundEnd = buffer.find(kEndBreakpointMessage);
-        } while (foundEnd == std::string::npos);
-    }
+    std::size_t found_end = buffer.find(kEndBreakpointMessage);
+    while (found_end == string::npos) {
+        HRESULT result = pipe_->Read(&str);
+        if (FAILED(result))
+        {
+            return result;
+        }
+        buffer += str;
+        str.clear();
+        found_end = buffer.find(kEndBreakpointMessage);
+    } 
 
     // Ensure we have a start to the breakpoint message.
-    std::size_t foundStart = buffer.find(kStartBreakpointMessage);
-    if (foundEnd == std::string::npos) {
-        std::cerr << "invalid breakpoint message" << std::endl;
+    std::size_t found_start = buffer.find(kStartBreakpointMessage);
+    if (found_end == string::npos) {
+        cerr << "invalid breakpoint message" << std::endl;
         return E_FAIL;
     }
 
-    std::string newStr = buffer.substr(foundStart + strlen(kStartBreakpointMessage), foundEnd - foundStart - strlen(kStartBreakpointMessage));
-    buffer_.append(buffer.substr(foundEnd + strlen(kEndBreakpointMessage)));
+    string newStr = buffer.substr(found_start + strlen(kStartBreakpointMessage), found_end - found_start - strlen(kStartBreakpointMessage));
+    buffer_.append(buffer.substr(found_end + strlen(kEndBreakpointMessage)));
 
     if (!breakpoint->ParseFromString(newStr)) {
-        std::cerr << "failed to serialize from protobuf" << std::endl;
+        cerr << "failed to serialize from protobuf" << std::endl;
         return E_FAIL;
     }
     return S_OK;
 }
 
 HRESULT BreakpointClient::WriteBreakpoint(const Breakpoint &breakpoint) {
-    std::string bp_str;
+    string bp_str;
     if (!breakpoint.SerializeToString(&bp_str)) {
-        std::cerr << "failed to serialize to protobuf" << std::endl;
+        cerr << "failed to serialize to protobuf" << std::endl;
         return E_FAIL;
     }
     return pipe_->Write(kStartBreakpointMessage + bp_str + kEndBreakpointMessage);

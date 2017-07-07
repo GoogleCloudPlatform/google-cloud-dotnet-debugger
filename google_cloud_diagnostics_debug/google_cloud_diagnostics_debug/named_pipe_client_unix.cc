@@ -21,6 +21,7 @@
 
 #include "named_pipe_client_unix.h"
 
+using std::cerr;
 using std::string;
 
 namespace google_cloud_debugger {
@@ -30,14 +31,14 @@ NamedPipeClient::~NamedPipeClient() {
     return;
   }
   if (close(pipe_) == -1) {
-    std::cerr << "close error: " << strerror(errno) << std::endl;
+    cerr << "close error: " << strerror(errno) << std::endl;
   }
 }
 
 HRESULT NamedPipeClient::Initialize() {
   pipe_ = socket(PF_UNIX, SOCK_STREAM, 0);
   if (pipe_ == -1) {
-    std::cerr << "socket error: " << strerror(errno) << std::endl;
+    cerr << "socket error: " << strerror(errno) << std::endl;
     return E_FAIL;
   }
   return S_OK;
@@ -59,7 +60,7 @@ HRESULT NamedPipeClient::WaitForConnection() {
     }
 
     if (conn == -1 && errno != ENOENT) {
-      std::cerr << "connect error: " << strerror(errno) << std::endl;
+      cerr << "connect error: " << strerror(errno) << std::endl;
       return E_FAIL;
     }
 
@@ -68,7 +69,7 @@ HRESULT NamedPipeClient::WaitForConnection() {
   }
 
   if (!file_found) {
-    std::cerr << "connect error: " << strerror(errno) << std::endl;
+    cerr << "connect error: " << strerror(errno) << std::endl;
     return E_FAIL;
   }
 
@@ -84,7 +85,7 @@ HRESULT NamedPipeClient::Write(string *message) {
   int read = recv(pipe_, buff, kBufferSize, 0);
 
   if (read == -1) {
-    std::cerr << "recv error: " << strerror(errno) << std::endl;
+    cerr << "recv error: " << strerror(errno) << std::endl;
     return E_FAIL;
   }
 
@@ -101,7 +102,7 @@ HRESULT NamedPipeClient::Write(const string &message) {
 
     int written = send(pipe_, buf, write, 0);
     if (written == -1) {
-      std::cerr << "send error: " << strerror(errno) << std::endl;
+      cerr << "send error: " << strerror(errno) << std::endl;
       return E_FAIL;
     }
 

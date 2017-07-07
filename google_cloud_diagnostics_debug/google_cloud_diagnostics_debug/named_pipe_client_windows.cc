@@ -87,23 +87,23 @@ HRESULT NamedPipeClient::Read(string *message) {
 }
 
 HRESULT NamedPipeClient::Write(const string &message) {
-    const CHAR *buf = message.c_str();
-    DWORD bytes_left = message.size();
+  const CHAR *buf = message.c_str();
+  DWORD bytes_left = message.size();
 
-    while (bytes_left > 0) {
-        DWORD written = 0;
-        int write = bytes_left > kBufferSize ? kBufferSize : bytes_left;
+  while (bytes_left > 0) {
+    DWORD written = 0;
+    int write = bytes_left > kBufferSize ? kBufferSize : bytes_left;
 
-        BOOL success = WriteFile(pipe_, buf, write, &written, NULL);
-        if (!success) {
-            std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-            return HRESULT_FROM_WIN32(GetLastError());
-        }
-
-        bytes_left -= written;
-        buf += written;
+    BOOL success = WriteFile(pipe_, buf, write, &written, NULL);
+    if (!success) {
+      std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+      return HRESULT_FROM_WIN32(GetLastError());
     }
-    return S_OK;
+
+    bytes_left -= written;
+    buf += written;
+  }
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger
