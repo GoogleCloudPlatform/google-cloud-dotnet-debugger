@@ -65,14 +65,11 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
   return false;
 }
 
-bool CustomBinaryStream::ConsumeVector(std::vector<uint8_t> *byte_vector) {
-  if (!byte_vector) {
-    return false;
-  }
-
-  iterator_ = byte_vector->begin();
-  begin_ = byte_vector->begin();
-  end_ = byte_vector->end();
+bool CustomBinaryStream::ConsumeVector(
+	const std::vector<uint8_t> &byte_vector) {
+  iterator_ = byte_vector.begin();
+  begin_ = byte_vector.begin();
+  end_ = byte_vector.end();
   return true;
 }
 
@@ -114,7 +111,7 @@ bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
-  auto begin = file_content_.begin();
+  binary_stream_iter begin = file_content_.begin();
   if (std::distance(begin, end_) < position) {
     return false;
   }

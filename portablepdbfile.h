@@ -51,15 +51,16 @@ class PortablePdbFile {
   bool GetStream(const std::string &name, StreamHeader *stream_header) const;
 
   // Get string from the heap at index index.
-  const std::string &GetHeapString(std::uint32_t index);
+  const std::string &GetHeapString(std::uint32_t index) const;
 
   // Get data from the blob heap.
-  bool GetHeapBlobStream(std::uint32_t index, CustomBinaryStream *binary_stream);
+  bool GetHeapBlobStream(std::uint32_t index,
+		CustomBinaryStream *binary_stream) const;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
   // spec. Returns true if succeeds.
-  bool GetDocumentName(std::uint32_t index, std::string *doc_name);
+  bool GetDocumentName(std::uint32_t index, std::string *doc_name) const;
 
   // Gets GUID based on index;
   const std::string &GetHeapGuid(std::uint32_t index) const {
@@ -109,10 +110,10 @@ class PortablePdbFile {
   HRESULT SetDebugModule(ICorDebugModule *debug_module);
 
   // Gets the ICorDebugModule of the module of this PDB.
-  HRESULT GetDebugModule(ICorDebugModule **debug_module);
+  HRESULT GetDebugModule(ICorDebugModule **debug_module) const;
 
   // Gets the MetadataImport of the module of this PDB.
-  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import);
+  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import) const;
 
  private:
   // Name of the module that corresponds to this pdb.
@@ -150,7 +151,7 @@ class PortablePdbFile {
 
   // Vectors that contains all the strings in the Strings Heap.
   // This vector is used to cache the strings.
-  std::vector<std::string> heap_strings_;
+  mutable std::vector<std::string> heap_strings_;
 
   // Vector of all document indices inside this pdb.
   std::vector<DocumentIndex> document_indices_;

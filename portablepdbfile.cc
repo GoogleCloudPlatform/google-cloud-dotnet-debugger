@@ -68,7 +68,7 @@ bool PortablePdbFile::InitializeStringsHeap() {
   return true;
 }
 
-const string &PortablePdbFile::GetHeapString(uint32_t index) {
+const string &PortablePdbFile::GetHeapString(uint32_t index) const {
   if (heap_strings_[index].empty()) {
     size_t str_len = 0;
     while (string_heap_data_[index + str_len] != 0) {
@@ -114,7 +114,7 @@ bool PortablePdbFile::InitializeFromFile(const string &file_path) {
     document_indices_.reserve(document_table_.size() - 1);
     for (size_t i = 1; i < document_table_.size(); ++i) {
       DocumentIndex document_index;
-      if (!document_index.Initialize(this, i)) {
+      if (!document_index.Initialize(*this, i)) {
         return false;
       }
       document_indices_.push_back(std::move(document_index));
@@ -142,10 +142,10 @@ bool PortablePdbFile::InitializeBlobHeap() {
 }
 
 bool PortablePdbFile::GetHeapBlobStream(uint32_t index,
-  CustomBinaryStream *binary_stream) {
+  CustomBinaryStream *binary_stream) const {
   assert(binary_stream != nullptr);
 
-  binary_stream->ConsumeVector(&blob_heap_data_);
+  binary_stream->ConsumeVector(blob_heap_data_);
   if (!binary_stream->SeekFromCurrent(index)) {
     return false;
   }
@@ -163,7 +163,7 @@ bool PortablePdbFile::GetHeapBlobStream(uint32_t index,
 }
 
 bool PortablePdbFile::GetDocumentName(uint32_t index,
-  string *doc_name) {
+  string *doc_name) const {
   if (index == 0) {
     return false;
   }
@@ -348,7 +348,8 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
   return S_OK;
 }
 
-HRESULT PortablePdbFile::GetDebugModule(ICorDebugModule **debug_module) {
+HRESULT PortablePdbFile::GetDebugModule(
+  ICorDebugModule **debug_module) const {
   if (!debug_module) {
     return E_INVALIDARG;
   }
@@ -358,11 +359,11 @@ HRESULT PortablePdbFile::GetDebugModule(ICorDebugModule **debug_module) {
     debug_module_->AddRef();
     return S_OK;
   }
-
   return E_FAIL;
 }
 
-HRESULT PortablePdbFile::GetMetaDataImport(IMetaDataImport **metadata_import) {
+HRESULT PortablePdbFile::GetMetaDataImport(
+  IMetaDataImport **metadata_import) const {
   if (!metadata_import) {
     return E_INVALIDARG;
   }

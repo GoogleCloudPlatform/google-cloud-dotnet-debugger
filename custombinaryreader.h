@@ -23,7 +23,7 @@
 
 #include "metadatatables.h"
 
-typedef std::vector<uint8_t>::iterator binary_stream_iter;
+typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
 
 namespace google_cloud_debugger_portable_pdb {
 struct CompressedMetadataTableHeader;
@@ -45,7 +45,7 @@ class CustomBinaryStream {
   // Consumes a uint8_t vector and exposes it as a binary stream.
   // The caller must ensure that the vector remains valid while
   // using this stream.
-  bool ConsumeVector(std::vector<uint8_t> *byte_vector);
+  bool ConsumeVector(const std::vector<uint8_t> &byte_vector);
 
   // Returns true if there is a next byte in the stream.
   bool HasNext() const;
