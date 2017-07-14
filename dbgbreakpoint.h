@@ -57,6 +57,7 @@ class DbgBreakpoint {
 
   // Returns the method token of the method this breakpoint is in.
   mdMethodDef GetMethodToken() { return method_token_; }
+
   // Sets the method token.
   void SetMethodToken(mdMethodDef method_token) {
     method_token_ = method_token;
@@ -80,10 +81,12 @@ class DbgBreakpoint {
     method_name_ = method_name;
   }
 
-  // Gets the lin number of this breakpoint.
+  // Gets the line number of this breakpoint.
   uint32_t GetLine() const { return line_; }
 
   // Returns true if this breakpoint is set.
+  // When a breakpoint is set, its list of local variables and local vectors
+  // are filled. This happens after TrySetBreakpoint method is called.
   bool IsSet() const { return set_; }
 
   // Returns the unique ID of this breakpoint.
@@ -97,6 +100,11 @@ class DbgBreakpoint {
   HRESULT GetCorDebugBreakpoint(ICorDebugBreakpoint **debug_breakpoint) const;
 
  private:
+  // Given a method, try to see whether we can set this breakpoint in
+  // the method.
+  bool TrySetBreakpointInMethod(
+    const google_cloud_debugger_portable_pdb::MethodInfo &method);
+
   // True if this breakpoint is set (through TryGetBreakpoint).
   bool set_;
 
@@ -138,11 +146,6 @@ class DbgBreakpoint {
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;
 };
-
-// Returns true if the first string and the second string are equal
-// ignoring case.
-bool EqualIgnoreCase(const std::string &first_string,
-                     const std::string &second_string);
 
 }  // namespace google_cloud_debugger
 

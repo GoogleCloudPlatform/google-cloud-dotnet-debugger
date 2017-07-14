@@ -45,9 +45,9 @@ void DbgBreakpoint::Initialize(const string &file_name, const string &id,
                                uint32_t line, uint32_t column) {
   file_name_ = file_name;
   id_ = id;
-  for (size_t i = 0; i < file_name_.size(); ++i) {
-    file_name_[i] = tolower(file_name[i]);
-  }
+  std::transform(
+      file_name_.begin(), file_name_.end(), file_name_.begin(),
+      [](unsigned char c) -> unsigned char { return std::tolower(c); });
   line_ = line;
   column_ = column;
 }
@@ -69,11 +69,13 @@ HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
 
 bool DbgBreakpoint::TrySetBreakpoint(
     const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file) {
-  bool found_breakpoint = false;
   uint32_t current_doc_index_index = -1;
   uint32_t best_match_index = current_doc_index_index;
   size_t best_file_name_location_matched = UINT32_MAX;
-  // Loop through all the document and try to find the one that
+  vector<google_cloud_debugger_portable_pdb::DocumentIndex> docs =
+      pdb_file.GetDocumentIndexTable();
+
+  // Loop through all the documents and try to find the one that
   // best matches the breakpoint's file name.
   for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
     ++current_doc_index_index;
@@ -85,9 +87,9 @@ bool DbgBreakpoint::TrySetBreakpoint(
       continue;
     }
 
-    for (size_t i = 0; i < document_name.size(); ++i) {
-      document_name[i] = tolower(document_name[i]);
-    }
+    std::transform(
+        document_name.begin(), document_name.end(), document_name.begin(),
+        [](unsigned char c) -> unsigned char { return std::tolower(c); });
 
     size_t file_name_location = document_name.rfind(file_name_);
     // Has to matched from the end.
@@ -96,77 +98,68 @@ bool DbgBreakpoint::TrySetBreakpoint(
     }
 
     // Try to find the best match.
+    // Best match here means the file with the longest path that matches
+    // the file name so file_name_location should be as small as possible.
     if (file_name_location < best_file_name_location_matched) {
-      best_file_name_location_matched = file_name_location;
-      best_match_index = current_doc_index_index;
-    }
-  }
+      // Checks that the line number indeed matches up.
+      google_cloud_debugger_portable_pdb::DocumentIndex matched_doc =
+          docs[current_doc_index_index];
 
-  if (best_match_index == -1) {
-    return false;
-  }
-
-  vector<google_cloud_debugger_portable_pdb::DocumentIndex> docs =
-      pdb_file.GetDocumentIndexTable();
-  google_cloud_debugger_portable_pdb::DocumentIndex matched_doc =
-      docs[best_match_index];
-
-  // Loop through the methods in the document to see which one the
-  // breakpoint falls into.
-  for (auto &&method : matched_doc.GetMethods()) {
-    if (method.first_line <= line_ && method.last_line >= line_) {
-      for (auto &&sequence_point : method.sequence_points) {
-        if (sequence_point.start_line <= line_ &&
-            sequence_point.end_line >= line_) {
-          il_offset_ = sequence_point.il_offset;
-          method_def_ = method.method_def;
-
-          // Loop through all scopes of method to retrieve local variables and
-          // constants. We are only interested in scopes that encompasses this
-          // sequence point.
-          for (auto &&local_scope : method.local_scope) {
-            if (local_scope.start_offset > il_offset_ ||
-                local_scope.start_offset + local_scope.length < il_offset_) {
-              continue;
-            }
-
-            local_variables_.insert(local_variables_.end(),
-                                    local_scope.local_variables.begin(),
-                                    local_scope.local_variables.end());
-
-            local_constants_.insert(local_constants_.end(),
-                                    local_scope.local_constants.begin(),
-                                    local_scope.local_constants.end());
-          }
-
+      bool found_breakpoint = false;
+      for (auto &&method : matched_doc.GetMethods()) {
+        if (TrySetBreakpointInMethod(method)) {
           found_breakpoint = true;
           break;
         }
       }
 
       if (found_breakpoint) {
-        break;
+        best_file_name_location_matched = file_name_location;
+        best_match_index = current_doc_index_index;
       }
     }
   }
 
-  set_ = found_breakpoint;
-  return found_breakpoint;
+  set_ = best_match_index != -1;
+  return set_;
 }
 
-bool EqualIgnoreCase(const std::string &first_string,
-                     const std::string &second_string) {
-  if (first_string.length() != second_string.length()) {
+bool DbgBreakpoint::TrySetBreakpointInMethod(
+    const google_cloud_debugger_portable_pdb::MethodInfo &method) {
+  if (method.first_line > line_ || method.last_line < line_) {
     return false;
   }
 
-  for (size_t i = 0; i < first_string.length(); ++i) {
-    if (tolower(first_string[i]) != tolower(second_string[i])) {
-      return false;
+  for (auto &&sequence_point : method.sequence_points) {
+    if (sequence_point.start_line > line_ || sequence_point.end_line < line_) {
+      continue;
     }
+
+    il_offset_ = sequence_point.il_offset;
+    method_def_ = method.method_def;
+
+    // Loop through all scopes of method to retrieve local variables and
+    // constants. We are only interested in scopes that encompasses this
+    // sequence point.
+    for (auto &&local_scope : method.local_scope) {
+      if (local_scope.start_offset > il_offset_ ||
+          local_scope.start_offset + local_scope.length < il_offset_) {
+        continue;
+      }
+
+      local_variables_.insert(local_variables_.end(),
+                              local_scope.local_variables.begin(),
+                              local_scope.local_variables.end());
+
+      local_constants_.insert(local_constants_.end(),
+                              local_scope.local_constants.begin(),
+                              local_scope.local_constants.end());
+    }
+
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 }  // namespace google_cloud_debugger
