@@ -20,10 +20,10 @@
 namespace google_cloud_debugger {
 
 // The name of the named pipe.
-static const char* kPipeName = "dotnet-debugger";
+static const std::string kPipeName = "dotnet-debugger";
 
 // The name of the named pipe as a wide string.
-static const wchar_t* kPipeNameW = L"dotnet-debugger";
+static const std::wstring kPipeNameW = L"dotnet-debugger";
 
 // The buffer size to read and write pipes.
 static const int kBufferSize = 1024;
@@ -35,10 +35,10 @@ static const int kConnectionWaitTimeoutMs = 20000;
 static const int kConnectionSleepTimeoutMs = 2000;
 
 // The start of a breakpoint message.
-static const char* kStartBreakpointMessage = "START_DEBUG_MESSAGE";
+static const std::string kStartBreakpointMessage = "START_DEBUG_MESSAGE";
 
 // The end of a breakpoint message.
-static const char* kEndBreakpointMessage = "END_DEBUG_MESSAGE";
+static const std::string kEndBreakpointMessage = "END_DEBUG_MESSAGE";
 
 }  // namespace google_cloud_debugger
 

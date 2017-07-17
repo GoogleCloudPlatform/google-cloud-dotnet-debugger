@@ -31,7 +31,7 @@ namespace google_cloud_debugger {
 class BreakpointClient {
   public:
     // Creates a breakpoint client and accepts a NamedPipeClient.
-    BreakpointClient(NamedPipeClient *pipe);
+    BreakpointClient(std::unique_ptr<NamedPipeClient> pipe);
 
     // Initializes the client and returns an HRESULT.
     HRESULT Initialize();
@@ -56,6 +56,9 @@ class BreakpointClient {
 
       // A buffer to hold partial breakpoint messages.
       std::string buffer_;  
+
+      // Mutex to protect the buffer.
+      std::mutex mutex_;
   };
 
 }  // namespace google_cloud_debugger

@@ -19,20 +19,13 @@
 #include "breakpoint_client.h"
 #include "constants.h"
 
-
 using std::string;
 using std::cerr;
 using namespace google::cloud::diagnostics::debug;
 
-// Mutex to protect the buffer
-std::mutex mutex_;
-
 namespace google_cloud_debugger {
 
-
-BreakpointClient::BreakpointClient(NamedPipeClient *pipe) {
-    pipe_.reset(pipe);
-}
+BreakpointClient::BreakpointClient(std::unique_ptr<NamedPipeClient> pipe) : pipe_(std::move(pipe)) { }
 
 HRESULT BreakpointClient::Initialize() {
     return pipe_->Initialize();
@@ -44,8 +37,8 @@ HRESULT BreakpointClient::WaitForConnection() {
 
 HRESULT BreakpointClient::ReadBreakpoint(Breakpoint *breakpoint) {
     std::lock_guard<std::mutex> lock(mutex_);
-    string buffer = buffer_;
-    buffer_ = string();
+    string buffer;
+    std::swap(buffer, buffer_);
     string str;
 
     // Check if we have a full breakpoint message in the buffer.
@@ -69,8 +62,8 @@ HRESULT BreakpointClient::ReadBreakpoint(Breakpoint *breakpoint) {
         return E_FAIL;
     }
 
-    string newStr = buffer.substr(found_start + strlen(kStartBreakpointMessage), found_end - found_start - strlen(kStartBreakpointMessage));
-    buffer_.append(buffer.substr(found_end + strlen(kEndBreakpointMessage)));
+    string newStr = buffer.substr(found_start + kStartBreakpointMessage.size(), found_end - found_start - kStartBreakpointMessage.size());
+    buffer_.append(buffer, found_end + kEndBreakpointMessage.size());
 
     if (!breakpoint->ParseFromString(newStr)) {
         cerr << "failed to serialize from protobuf" << std::endl;
@@ -85,7 +78,9 @@ HRESULT BreakpointClient::WriteBreakpoint(const Breakpoint &breakpoint) {
         cerr << "failed to serialize to protobuf" << std::endl;
         return E_FAIL;
     }
-    return pipe_->Write(kStartBreakpointMessage + bp_str + kEndBreakpointMessage);
+    bp_str.insert(0, kStartBreakpointMessage);
+    bp_str.append(kEndBreakpointMessage);
+    return pipe_->Write(bp_str);
 }
 
 }  // namespace google_cloud_debugger
