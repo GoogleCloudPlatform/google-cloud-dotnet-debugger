@@ -140,6 +140,7 @@ class DbgObject : public StringStreamWrapper {
   //    "value": "4"
   //  }]
   // }
+  // TODO(quoct): Look into potential JSON library we can use.
   virtual HRESULT OutputJSON(const std::string &obj_name,
                             EvalCoordinator *eval_coordinator);
 
