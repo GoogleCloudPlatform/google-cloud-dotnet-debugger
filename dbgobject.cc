@@ -3,6 +3,7 @@
 
 #include "dbgobject.h"
 
+#include <assert.h>
 #include <cstdint>
 #include <iostream>
 
@@ -12,22 +13,67 @@
 #include "dbgstring.h"
 #include "evalcoordinator.h"
 
-namespace google_cloud_debugger {
+using std::string;
 using std::unique_ptr;
-using std::cerr;
-using std::cout;
+using std::ostringstream;
+
+namespace google_cloud_debugger {
 
 DbgObject::DbgObject(ICorDebugType *debug_type, int depth) {
   debug_type_ = debug_type;
   depth_ = depth;
 }
 
+HRESULT DbgObject::OutputType(ostringstream *output_stream) {
+  if (!output_stream) {
+    return E_INVALIDARG;
+  }
+
+  unique_ptr<ostringstream> old_stream =
+    unique_ptr<ostringstream>(SetOutputStream(output_stream));
+  HRESULT hr = OutputType();
+
+  SetOutputStream(old_stream.release());
+  return hr;
+}
+
+HRESULT DbgObject::OutputValue(std::ostringstream *output_stream) {
+  if (!output_stream) {
+    return E_INVALIDARG;
+  }
+
+  unique_ptr<ostringstream> old_stream =
+    unique_ptr<ostringstream>(SetOutputStream(output_stream));
+  HRESULT hr = OutputValue();
+
+  SetOutputStream(old_stream.release());
+  return hr;
+}
+
+HRESULT DbgObject::OutputMembers(
+  std::ostringstream *output_stream,
+  EvalCoordinator *eval_coordinator) {
+  if (!output_stream) {
+    return E_INVALIDARG;
+  }
+
+  unique_ptr<ostringstream> old_stream =
+    unique_ptr<ostringstream>(SetOutputStream(output_stream));
+  HRESULT hr = OutputMembers(eval_coordinator);
+
+  SetOutputStream(old_stream.release());
+  return hr;
+}
+
 HRESULT DbgObject::CreateDbgObjectHelper(
     ICorDebugValue *debug_value, ICorDebugType *debug_type,
     CorElementType cor_element_type, BOOL is_null, int depth,
-    std::unique_ptr<DbgObject> *result_object) {
+    std::unique_ptr<DbgObject> *result_object,
+    ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   if (!result_object) {
-    cerr << "result_object cannot be a null pointer";
+    *err_stream << "result_object cannot be a null pointer";
     return E_INVALIDARG;
   }
 
@@ -100,6 +146,7 @@ HRESULT DbgObject::CreateDbgObjectHelper(
       break;
     case CorElementType::ELEMENT_TYPE_CLASS:
     case CorElementType::ELEMENT_TYPE_VALUETYPE:
+    case CorElementType::ELEMENT_TYPE_OBJECT:
       temp_object =
           unique_ptr<DbgObject>(new (std::nothrow) DbgClass(debug_type, depth));
       break;
@@ -108,14 +155,9 @@ HRESULT DbgObject::CreateDbgObjectHelper(
   }
 
   if (temp_object) {
-    HRESULT hr = temp_object->Initialize(debug_value, is_null);
-    if (FAILED(hr)) {
-      temp_object = nullptr;
-      cerr << "Failed to call initialize on DbgObject: " << std::hex << hr;
-      return hr;
-    }
+    temp_object->Initialize(debug_value, is_null);
   } else {
-    cerr << "Failed to create DbgObject.";
+    *err_stream << "Failed to create DbgObject.";
     return E_OUTOFMEMORY;
   }
 
@@ -124,22 +166,83 @@ HRESULT DbgObject::CreateDbgObjectHelper(
 }
 
 HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
-                                   unique_ptr<DbgObject> *result_object) {
+                                   unique_ptr<DbgObject> *result_object,
+                                   ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   CorElementType cor_element_type;
   HRESULT hr;
 
   hr = debug_type->GetType(&cor_element_type);
   if (FAILED(hr)) {
-    cerr << "Failed to get type: " << std::hex << hr;
+    *err_stream << "Failed to get type: " << std::hex << hr;
     return hr;
   }
 
   return DbgObject::CreateDbgObjectHelper(nullptr, debug_type, cor_element_type,
-                                          TRUE, 0, result_object);
+                                          TRUE, 0, result_object, err_stream);
+}
+
+HRESULT DbgObject::OutputJSON(const string &obj_name,
+                             EvalCoordinator *eval_coordinator) {
+  HRESULT hr;
+
+  WriteOutput("{ ");
+  WriteOutput("\"name\": \"" + obj_name + "\", ");
+
+  ostringstream type_stream;
+  hr = OutputType(&type_stream);
+
+  if (FAILED(hr)) {
+    WriteOutput("\"type\": null, ");
+    WriteOutput(GetErrorStatusMessage() + " }");
+    return hr;
+  }
+
+  WriteOutput("\"type\": \"");
+  WriteOutput(type_stream.str());
+  WriteOutput("\"");
+
+  if (GetIsNull()) {
+    WriteOutput(", \"value\": null }");
+    return S_OK;
+  }
+
+  if (HasValue()) {
+    WriteOutput(", \"value\": ");
+
+    ostringstream value_stream;
+    hr = OutputValue(&value_stream);
+    if (FAILED(hr)) {
+      WriteOutput("null, ");
+      WriteOutput(GetErrorStatusMessage() + " }");
+      return hr;
+    }
+    WriteOutput(value_stream.str());
+  }
+
+  if (HasMembers()) {
+    WriteOutput(", \"members\": ");
+
+    ostringstream members_stream;
+    hr = OutputMembers(&members_stream, eval_coordinator);
+    if (FAILED(hr)) {
+      WriteOutput("null, ");
+      WriteOutput(GetErrorStatusMessage() + " }");
+      return hr;
+    }
+    WriteOutput(members_stream.str());
+  }
+
+  WriteOutput(" }");
+  return S_OK;
 }
 
 HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
-                                   unique_ptr<DbgObject> *result_object) {
+                                   unique_ptr<DbgObject> *result_object,
+                                   ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   HRESULT hr;
   BOOL is_null = FALSE;
   CComPtr<ICorDebugValue> dereferenced_and_unboxed_value;
@@ -148,9 +251,9 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
   CorElementType cor_element_type;
 
   hr = DereferenceAndUnbox(debug_value, &dereferenced_and_unboxed_value,
-                           &is_null);
+                           &is_null, err_stream);
   if (FAILED(hr)) {
-    cerr << "Failed to dereference and unbox.";
+    *err_stream << "Failed to dereference and unbox.";
     return hr;
   }
 
@@ -168,18 +271,22 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
 
   if (FAILED(hr)) {
     // Nothing we can do here.
-    cerr << "Failed to get type.";
+    *err_stream << "Failed to get type.";
     return hr;
   }
 
   return CreateDbgObjectHelper(dereferenced_and_unboxed_value, debug_type,
-                               cor_element_type, is_null, depth, result_object);
+                               cor_element_type, is_null, depth,
+                               result_object, err_stream);
 }
 
 HRESULT Dereference(ICorDebugValue *debug_value,
-                    ICorDebugValue **dereferenced_value, BOOL *is_null) {
+                    ICorDebugValue **dereferenced_value,
+                    BOOL *is_null, ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   if (!dereferenced_value) {
-    cerr << "dereferenced_value cannot be a null pointer.";
+    *err_stream << "dereferenced_value cannot be a null pointer.";
     return E_INVALIDARG;
   }
 
@@ -201,14 +308,14 @@ HRESULT Dereference(ICorDebugValue *debug_value,
       *is_null = FALSE;
       break;
     } else if (FAILED(hr)) {
-      cerr << "Failed to convert ICorDebugValue to ICorDebugReferenceValue";
+      *err_stream << "Failed to convert ICorDebugValue to ICorDebugReferenceValue";
       return hr;
     }
 
     hr = debug_reference->IsNull(&local_is_null);
 
     if (FAILED(hr)) {
-      cerr << "Failed to check whether reference is null or not.";
+      *err_stream << "Failed to check whether reference is null or not.";
       return hr;
     }
 
@@ -226,7 +333,7 @@ HRESULT Dereference(ICorDebugValue *debug_value,
   }
 
   if (reference_depth == kReferenceDepth) {
-    cerr << "Cannot dereference more than " << kReferenceDepth << " times!";
+    *err_stream << "Cannot dereference more than " << kReferenceDepth << " times!";
     return E_FAIL;
   }
 
@@ -236,9 +343,10 @@ HRESULT Dereference(ICorDebugValue *debug_value,
   return S_OK;
 }
 
-HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value) {
+HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
+              ostringstream *err_stream) {
   if (!unboxed_value) {
-    cerr << "dereferenced_value cannot be a null pointer.";
+    *err_stream << "dereferenced_value cannot be a null pointer.";
     return E_INVALIDARG;
   }
 
@@ -253,7 +361,7 @@ HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value) {
     debug_value->AddRef();
     return S_OK;
   } else if (FAILED(hr)) {
-    cerr << "Failed to query ICorDebugBoxValue.";
+    *err_stream << "Failed to query ICorDebugBoxValue.";
     return hr;
   }
 
@@ -261,7 +369,7 @@ HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value) {
   CComPtr<ICorDebugObjectValue> debug_object_value;
   hr = boxed_value->GetObject(&debug_object_value);
   if (FAILED(hr)) {
-    cerr << "Failed get underlying object from boxed object.";
+    *err_stream << "Failed get underlying object from boxed object.";
     return hr;
   }
 
@@ -273,20 +381,22 @@ HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value) {
 
 HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
                             ICorDebugValue **dereferenced_and_unboxed_value,
-                            BOOL *isNull) {
+                            BOOL *isNull, ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   HRESULT hr;
   CComPtr<ICorDebugValue> dereferenced_value;
   CComPtr<ICorDebugValue> unboxed_value;
 
-  hr = Dereference(debug_value, &dereferenced_value, isNull);
+  hr = Dereference(debug_value, &dereferenced_value, isNull, err_stream);
   if (FAILED(hr)) {
-    cerr << "Failed to dereference value.";
+    *err_stream << "Failed to dereference value.";
     return hr;
   }
 
-  hr = Unbox(dereferenced_value, &unboxed_value);
+  hr = Unbox(dereferenced_value, &unboxed_value, err_stream);
   if (FAILED(hr)) {
-    cerr << "Failed to unbox value.";
+    *err_stream << "Failed to unbox value.";
     return hr;
   }
 
@@ -296,9 +406,12 @@ HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
 }
 
 HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
-                           ICorDebugHandleValue **handle) {
+                           ICorDebugHandleValue **handle,
+                           ostringstream *err_stream) {
+  assert(err_stream != nullptr);
+
   if (!debug_value) {
-    cerr << "debug_value should not be null.";
+    *err_stream << "debug_value should not be null.";
     return E_INVALIDARG;
   }
 
@@ -308,31 +421,35 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
   hr = debug_value->QueryInterface(__uuidof(ICorDebugHeapValue2),
                                    reinterpret_cast<void **>(&heap_value));
   if (FAILED(hr)) {
-    cerr << "Failed to get heap value from ICorDebugValue.";
+    *err_stream << "Failed to get heap value from ICorDebugValue.";
     return hr;
   }
 
   return heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG, handle);
 }
 
-void PrintWcharString(const WCHAR *wchar_string) {
+string ConvertWCharPtrToString(const WCHAR *wchar_string) {
+  if (!wchar_string || !(*wchar_string)) {
+    return string();
+  }
 // PAL_STDCPP_COMPAT is the flag CORECLR uses
 // for non-Windows platform. Since we are compiling
 // using their headers, we need to use this macro.
 #ifdef PAL_STDCPP_COMPAT
+  std::wstring temp_wstring;
   while (wchar_string && *wchar_string) {
     WCHAR current_char = *wchar_string;
-    wchar_t truncated = static_cast<wchar_t>(current_char);
-    std::wcout << truncated;
+    temp_wstring += static_cast<wchar_t>(current_char);
     ++wchar_string;
   }
 #else
-  std::wcout << wchar_string;
+  std::wstring temp_wstring(wchar_string);
 #endif
+  return string(temp_wstring.begin(), temp_wstring.end());
 }
 
-void PrintWcharString(const vector<WCHAR> &wchar_vector) {
-  PrintWcharString(wchar_vector.data());
+string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {
+  return ConvertWCharPtrToString(wchar_vector.data());
 }
 
 }  //  namespace google_cloud_debugger
