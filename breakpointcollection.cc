@@ -15,6 +15,7 @@
 #include "breakpointcollection.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <algorithm>
 #include <iostream>
 
@@ -52,7 +53,7 @@ bool BreakpointCollection::ParseBreakpoints(
     }
 
     breakpoints->push_back(std::move(breakpoint));
-    input_string.erase(0, split_pos + kDelimiter.length());
+    input_string.erase(0, split_pos + kDelimiter.size());
     split_pos = input_string.find(kDelimiter);
   }
 
@@ -77,12 +78,15 @@ bool BreakpointCollection::ParseBreakpoint(const string &input,
 
   string file_name = input.substr(0, split_pos + kSplit.size() - 1);
 
-  size_t next_split_pos =
-      input.find(BreakpointCollection::kSplit, split_pos + 1);
+  size_t next_split_pos = input.find(kSplit, split_pos + 1);
   string line_number =
-      input.substr(split_pos + BreakpointCollection::kSplit.size(),
-                   next_split_pos - split_pos - 1);
-  uint32_t line = std::stoi(line_number);
+      input.substr(split_pos + kSplit.size(), next_split_pos - split_pos - 1);
+
+  uint32_t line = strtoul(line_number.c_str(), nullptr, 0);
+  if (errno == ERANGE) {
+    return false;
+  }
+
   string id = input.substr(next_split_pos + 1);
 
   breakpoint->Initialize(file_name, id, line, 0);
@@ -90,31 +94,17 @@ bool BreakpointCollection::ParseBreakpoint(const string &input,
   return true;
 }
 
-HRESULT BreakpointCollection::ActivateBreakpoints(
+HRESULT BreakpointCollection::InitializeBreakpoints(
     const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb) {
   HRESULT hr;
-  CComPtr<ICorDebugModule> debug_module;
-
-  hr = portable_pdb.GetDebugModule(&debug_module);
-  if (FAILED(hr)) {
-    cout << "Failed to get ICorDebugModule from portable PDB.";
-    return hr;
-  }
-
-  CComPtr<IMetaDataImport> metadata_import;
-  hr = portable_pdb.GetMetaDataImport(&metadata_import);
-  if (FAILED(hr)) {
-    cout << "Failed to get IMetaDataImport from portable PDB.";
-    return hr;
-  }
 
   for (auto &&breakpoint : breakpoints_) {
     if (!breakpoint.TrySetBreakpoint(portable_pdb)) {
+      // This may just means this breakpoint is not in this PDB.
       continue;
     }
 
-    hr = ActivateBreakpointHelper(&breakpoint, debug_module, metadata_import,
-                                  portable_pdb);
+    hr = ActivateBreakpointHelper(&breakpoint, portable_pdb);
     if (FAILED(hr)) {
       cerr << "Failed to update breakpoint.";
       return hr;
@@ -145,24 +135,7 @@ HRESULT BreakpointCollection::ActivateBreakpoint(
         continue;
       }
 
-      CComPtr<ICorDebugModule> debug_module;
-      CComPtr<IUnknown> temp_import;
-
-      hr = pdb_file.GetDebugModule(&debug_module);
-      if (FAILED(hr)) {
-        cout << "Failed to get ICorDebugModule from portable PDB.";
-        return hr;
-      }
-
-      CComPtr<IMetaDataImport> metadata_import;
-      hr = pdb_file.GetMetaDataImport(&metadata_import);
-      if (FAILED(hr)) {
-        cout << "Failed to get IMetaDataImport from portable PDB.";
-        return hr;
-      }
-
-      hr = ActivateBreakpointHelper(&new_breakpoint, debug_module,
-                                    metadata_import, pdb_file);
+      hr = ActivateBreakpointHelper(&new_breakpoint, pdb_file);
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
@@ -186,7 +159,7 @@ HRESULT BreakpointCollection::SyncBreakpoints(
     return E_INVALIDARG;
   }
 
-  // Removes all the breakpoints that is no longer in breakpoints_to_sync.
+  // Removes all the breakpoints that are no longer in breakpoints_to_sync.
   const auto &breakpoints_to_be_removed = std::remove_if(
       breakpoints_.begin(), breakpoints_.end(),
       [&breakpoints_to_sync](const DbgBreakpoint &existing_breakpoint) {
@@ -198,8 +171,7 @@ HRESULT BreakpointCollection::SyncBreakpoints(
               return EqualsIgnoreCase(existing_breakpoint.GetId(),
                                       breakpoint_to_sync.GetId());
             });
-        bool not_found = matched_breakpoint == breakpoints_to_sync.end();
-        return not_found;
+        return matched_breakpoint == breakpoints_to_sync.end();
       });
 
   HRESULT hr;
@@ -230,11 +202,10 @@ HRESULT BreakpointCollection::SyncBreakpoints(
 }
 
 HRESULT BreakpointCollection::ActivateBreakpointHelper(
-    DbgBreakpoint *breakpoint, ICorDebugModule *debug_module,
-    IMetaDataImport *metadata_import,
+    DbgBreakpoint *breakpoint,
     const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb) {
-  if (!breakpoint || !debug_module || !metadata_import) {
-    cerr << "Null arguments for ActivateBreakpoint.";
+  if (!breakpoint) {
+    cerr << "Null breakpoint argument for ActivateBreakpoint.";
     return E_INVALIDARG;
   }
 
@@ -243,11 +214,27 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
     return E_INVALIDARG;
   }
 
+  CComPtr<ICorDebugModule> debug_module;
+  CComPtr<IUnknown> temp_import;
+
+  HRESULT hr = portable_pdb.GetDebugModule(&debug_module);
+  if (FAILED(hr)) {
+    cout << "Failed to get ICorDebugModule from portable PDB.";
+    return hr;
+  }
+
+  CComPtr<IMetaDataImport> metadata_import;
+  hr = portable_pdb.GetMetaDataImport(&metadata_import);
+  if (FAILED(hr)) {
+    cout << "Failed to get IMetaDataImport from portable PDB.";
+    return hr;
+  }
+
   mdTypeDef type_def;
   vector<WCHAR> method_name;
   PCCOR_SIGNATURE signature;
-  HRESULT hr = GetMethodData(metadata_import, breakpoint->GetMethodDef(),
-                             &type_def, &signature, &method_name);
+  hr = GetMethodData(metadata_import, breakpoint->GetMethodDef(), &type_def,
+                     &signature, &method_name);
 
   if (FAILED(hr)) {
     return hr;
@@ -266,12 +253,11 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
     // So what we have to do here is search for a method in
     // IMetaDataImport->EnumMethodsWithName that has the same signature
     // and use its method token.
-    vector<mdMethodDef> method_tokens_;
-    method_tokens_.resize(100);
+    vector<mdMethodDef> method_tokens(100, 0);
     ULONG method_defs_returned = 0;
     hr = metadata_import->EnumMethodsWithName(
-        &cor_enum, type_def, method_name.data(), method_tokens_.data(),
-        method_tokens_.size(), &method_defs_returned);
+        &cor_enum, type_def, method_name.data(), method_tokens.data(),
+        method_tokens.size(), &method_defs_returned);
 
     if (FAILED(hr) || method_defs_returned == 0) {
       cerr << "Failed to get method from IMetadataImport.";
@@ -291,7 +277,7 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
       DWORD temp_flags2;
 
       hr = metadata_import->GetMethodProps(
-          method_tokens_[i], &type_def, nullptr, 0, &temp_method_name_length,
+          method_tokens[i], &type_def, nullptr, 0, &temp_method_name_length,
           &temp_flags1, &temp_signature, &temp_signature_blob, &temp_rva,
           &temp_flags2);
 
@@ -301,12 +287,12 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
 
       // Activates the breakpoint in this method.
       CComPtr<ICorDebugFunction> debug_function;
-      breakpoint->SetMethodToken(method_tokens_[i]);
-      hr = debug_module->GetFunctionFromToken(method_tokens_[i],
-                                              &debug_function);
+      breakpoint->SetMethodToken(method_tokens[i]);
+      hr =
+          debug_module->GetFunctionFromToken(method_tokens[i], &debug_function);
       if (FAILED(hr)) {
         cerr << "Failed to get function from function token "
-             << method_tokens_[i] << " with HRESULT " << std::hex << hr;
+             << method_tokens[i] << " with HRESULT " << std::hex << hr;
         has_error = true;
         break;
       }
@@ -443,11 +429,11 @@ HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,
 
 bool EqualsIgnoreCase(const std::string &first_string,
                       const std::string &second_string) {
-  if (first_string.length() != second_string.length()) {
+  if (first_string.size() != second_string.size()) {
     return false;
   }
 
-  for (size_t i = 0; i < first_string.length(); ++i) {
+  for (size_t i = 0; i < first_string.size(); ++i) {
     if (tolower(first_string[i]) != tolower(second_string[i])) {
       return false;
     }

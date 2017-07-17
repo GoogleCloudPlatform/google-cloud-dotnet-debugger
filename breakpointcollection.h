@@ -34,18 +34,21 @@ class BreakpointCollection {
   static const std::string kDelimiter;
 
   // Given a breakpoint string, try to parse it and populate
-  // a list of breakpoint for this collection.
+  // a list of breakpoints for this collection.
   // Given a Portable PDB file, try to activate all existing breakpoints.
   // Also set the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
   bool Initialize(std::string breakpoint_string,
                   DebuggerCallback *debugger_callback);
 
-  // Given a Portable PDB file, try to activate as many breakpoints
+  // Given a PortablePDBFile object, try to activate as many breakpoints
   // as possible in the collection.
   // When a breakpoint is activated, the Breakpoint function in
   // DebuggerCallback will be invoked whenever the breakpoint is hit.
-  HRESULT ActivateBreakpoints(
+  // This function should only be called once.
+  // Subsequent update for breakpoints should be done with SyncBreakpoints
+  // functions.
+  HRESULT InitializeBreakpoints(
       const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb);
 
   // Given a breakpoint, try to activate it. We first do this by
@@ -80,8 +83,7 @@ class BreakpointCollection {
   // This function should only be used if breakpoint is already set, i.e.
   // the TryGetBreakpoint method is called on the breakpoint.
   HRESULT ActivateBreakpointHelper(
-      DbgBreakpoint *breakpoint, ICorDebugModule *debug_module,
-      IMetaDataImport *metadata_import,
+      DbgBreakpoint *breakpoint,
       const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb);
 
   // Helper function to activate or deactivate an existing breakpoint.
