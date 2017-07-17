@@ -76,29 +76,30 @@ class EvalCoordinator;
 class DbgObject : public StringStreamWrapper {
  public:
   // Create a DbgObject with ICorDebugType debug_type.
-  // The object will only b esevaluated to a depth of depth.
+  // The object will only be evaluated to a depth of depth.
   DbgObject(ICorDebugType *debug_type, int depth);
   virtual ~DbgObject() {}
 
   // Initialize the DbgObject based on an ICorDebugValue object
   // and a boolean that indicates whether the object is null or not.
   // This function will set initialize_hr_ if there is any error.
+  // Any error during initialization should be written to the
+  // error stream of this object using OutputError.
+  // With this, the PrintJSON object can just check and print
+  // out the object with the correct error status.
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
   // Print out the type of the object to the member output_stream_.
-  // TODO(quoct): Currently, this is printing out to the standard output.
-  // Need to add a way to provide an output stream to this class.
-  // We can perhaps provide a stream argument to this function?
   virtual HRESULT OutputType() = 0;
 
-  // Same as PrintType but prints to a different output_stream.
+  // Same as OutputType but prints to a different output_stream.
   // The current output_stream will be preserved.
   HRESULT OutputType(std::ostringstream *output_stream);
 
   // Print out to the member output_stream_ the value of the object,
   virtual HRESULT OutputValue() { return S_OK; }
 
-  // Same as PrintValue but prints to a different output_stream.
+  // Same as OutputValue but prints to a different output_stream.
   // The current output_stream will be preserved.
   HRESULT OutputValue(std::ostringstream *output_stream);
 
@@ -108,7 +109,7 @@ class DbgObject : public StringStreamWrapper {
     return S_OK;
   }
 
-  // Same as PrintMembers but prints to a different output_stream.
+  // Same as OutputMembers but prints to a different output_stream.
   // The current output_stream will be preserved.
   HRESULT OutputMembers(std::ostringstream *output_stream,
                         EvalCoordinator *eval_coordinator);
@@ -121,7 +122,24 @@ class DbgObject : public StringStreamWrapper {
 
   // Prints out a JSON representation of the object to output_stream.
   // The JSON will have the keys name, type. It may have either value
-  // or members keys depending on the object type.
+  // or members keys depending on the object type. For example, an integer
+  // has members and not value and its JSON will be:
+  // { "name": "i", "type": "System.Int32", "value": "4" } where
+  // i is the obj_name.
+  // An array has members instead of value and its JSON will be:
+  // {
+  //  "name": "Test",
+  //  "type": "[]",
+  //  "members": [{
+  //    "name": "[0]",
+  //    "type": "System.Int32",
+  //    "value": "3"
+  //  }, {
+  //    "name": "[1]",
+  //    "type": "System.Int32",
+  //    "value": "4"
+  //  }]
+  // }
   virtual HRESULT OutputJSON(const std::string &obj_name,
                             EvalCoordinator *eval_coordinator);
 

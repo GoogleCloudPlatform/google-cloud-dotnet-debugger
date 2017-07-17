@@ -24,6 +24,7 @@ namespace google_cloud_debugger {
 // This class is meant to be inherited and used for outputting error and
 // output stream to the underlying ostringstream. It has methods to set the
 // underlying streams as well as collecting the output and error stream.
+// This class is NOT thread-safe.
 class StringStreamWrapper {
  public:
   // Sets output_stream_ to output_stream and returns the old output stream.
