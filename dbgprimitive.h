@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef DBG_PRIMITIVE_H_
 #define DBG_PRIMITIVE_H_
@@ -26,29 +37,22 @@ class DbgPrimitive : public DbgObject {
 
   // debug_value can be a null pointer, in which case value_ is just the default
   // value for the type.
-  HRESULT Initialize(ICorDebugValue *debug_value, BOOL is_null) override {
-    HRESULT hr;
+  void Initialize(ICorDebugValue *debug_value, BOOL is_null) override {
     CComPtr<ICorDebugType> debug_type;
-    CorElementType cor_element_type;
 
     debug_type = GetDebugType();
     if (debug_type) {
-      hr = debug_type->GetType(&cor_element_type);
-      if (FAILED(hr)) {
-        std::cerr << "Failed to extract type from ICorDebugType.";
-        return hr;
-      }
+      initialize_hr_ = debug_type->GetType(&cor_element_type_);
 
-      if (cor_element_type == ELEMENT_TYPE_I ||
-          cor_element_type == ELEMENT_TYPE_U) {
-        is_pointer_ = TRUE;
+      if (FAILED(initialize_hr_)) {
+        WriteError("Failed to extract type from ICorDebugType.");
+        return;
       }
     }
 
     if (debug_value) {
-      return SetValue(debug_value);
+      initialize_hr_ = SetValue(debug_value);
     }
-    return S_OK;
   }
 
   // Tease out the generic value interface from ICorDebugValue object
@@ -61,7 +65,7 @@ class DbgPrimitive : public DbgObject {
     hr = debug_value->QueryInterface(__uuidof(ICorDebugGenericValue),
                                      reinterpret_cast<void **>(&generic_value));
     if (FAILED(hr)) {
-      std::cerr << "Failed to extract generic value from ICorDebugValue.";
+      WriteError("Failed to extract generic value from ICorDebugValue.");
       return hr;
     }
 
@@ -69,14 +73,20 @@ class DbgPrimitive : public DbgObject {
   }
 
   // No evaluation is needed!
-  HRESULT PrintValue(EvalCoordinator *eval_coordinator) override {
-    std::cout << value_;
+  HRESULT OutputValue() override {
+    if (FAILED(initialize_hr_)) {
+      return initialize_hr_;
+    }
+
+    WriteOutput("\"" + std::to_string(value_) + "\"");
     return S_OK;
   }
 
-  HRESULT PrintType() override {
-    if (is_pointer_) {
-      PrintTypeCore(value_);
+  HRESULT OutputType() override {
+    if (cor_element_type_ == ELEMENT_TYPE_I) {
+      WriteOutput("System.IntPtr");
+    } else if (cor_element_type_ == ELEMENT_TYPE_U) {
+      WriteOutput("System.UIntPtr");
     } else {
       PrintTypeCore(value_);
     }
@@ -84,30 +94,21 @@ class DbgPrimitive : public DbgObject {
   }
 
  private:
-  void PrintTypeCore(char) { std::cout << "System.Char"; }
-  void PrintTypeCore(bool) { std::cout << "System.Boolean"; }
-  void PrintTypeCore(int8_t) { std::cout << "System.SByte"; }
-  void PrintTypeCore(uint8_t) { std::cout << "System.Byte"; }
-  void PrintTypeCore(int16_t) { std::cout << "System.Int16"; }
-  void PrintTypeCore(uint16_t) { std::cout << "System.UInt16"; }
-  void PrintTypeCore(int32_t) { std::cout << "System.Int32"; }
-  void PrintTypeCore(uint32_t) { std::cout << "System.UInt32"; }
-  void PrintTypeCore(int64_t) { std::cout << "System.Int64"; }
-  void PrintTypeCore(uint64_t) { std::cout << "System.UInt64"; }
-  void PrintTypeCore(float) { std::cout << "System.Single"; }
-  void PrintTypeCore(double) { std::cout << "System.Double"; }
+  void PrintTypeCore(char) { WriteOutput("System.Char"); }
+  void PrintTypeCore(bool) { WriteOutput("System.Boolean"); }
+  void PrintTypeCore(int8_t) { WriteOutput("System.SByte"); }
+  void PrintTypeCore(uint8_t) { WriteOutput("System.Byte"); }
+  void PrintTypeCore(int16_t) { WriteOutput("System.Int16"); }
+  void PrintTypeCore(uint16_t) { WriteOutput("System.UInt16"); }
+  void PrintTypeCore(int32_t) { WriteOutput("System.Int32"); }
+  void PrintTypeCore(uint32_t) { WriteOutput("System.UInt32"); }
+  void PrintTypeCore(int64_t) { WriteOutput("System.Int64"); }
+  void PrintTypeCore(uint64_t) { WriteOutput("System.UInt64"); }
+  void PrintTypeCore(float) { WriteOutput("System.Single"); }
+  void PrintTypeCore(double) { WriteOutput("System.Double"); }
 
-  // intptr_t can clash with other arithemtic types so it needs
-  // to have a different method signature.
-  void PrintTypeCorePointer(intptr_t) { std::cout << "System.IntPtr"; }
-  void PrintTypeCorePointer(uintptr_t) { std::cout << "System.UIntPtr"; }
-
-  // This field is true iff T is CorElementType of the debug object
-  // is either ELEMENT_TYPE_U or ELEMENT_TYPE_I. We need to distinguish
-  // between pointer and normal integral so we can decide which
-  // dispatch functions to call.
-  BOOL is_pointer_ = FALSE;
   T value_;
+  CorElementType cor_element_type_;
 };
 
 }  //  namespace google_cloud_debugger
