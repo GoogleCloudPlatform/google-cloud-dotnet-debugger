@@ -1,21 +1,27 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "dbgclass.h"
 
 #include <array>
 #include <iostream>
 
-#include "dbgclassfield.h"
-#include "dbgclassproperty.h"
-#include "dbgprimitive.h"
 #include "evalcoordinator.h"
 
 using namespace std;
 
 namespace google_cloud_debugger {
-using std::cerr;
-using std::cout;
 using std::array;
 
 HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
@@ -32,7 +38,7 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
         reinterpret_cast<void **>(&debug_obj_value));
 
     if (FAILED(hr)) {
-      cerr << "Cannot get class information.";
+      WriteError("Cannot get class information.");
       return hr;
     }
     hr = debug_obj_value->GetClass(&debug_class);
@@ -41,27 +47,27 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
   }
 
   if (FAILED(hr)) {
-    cerr << "Failed to get class from object value.";
+    WriteError("Failed to get class from object value.");
     return hr;
   }
 
   hr = debug_class->GetToken(&class_token_);
   if (FAILED(hr)) {
-    cerr << "Failed to get class token.";
+    WriteError("Failed to get class token.");
     return hr;
   }
 
   CComPtr<ICorDebugModule> debug_module;
   hr = debug_class->GetModule(&debug_module);
   if (FAILED(hr)) {
-    cerr << "Failed to get module";
+    WriteError("Failed to get module");
     return hr;
   }
 
   CComPtr<IMetaDataImport> metadata_import;
   hr = GetMetadataImportFromModule(debug_module, &metadata_import);
   if (FAILED(hr)) {
-    cerr << "Failed to get metadata";
+    WriteError("Failed to get metadata");
     return hr;
   }
 
@@ -74,21 +80,23 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
         __uuidof(ICorDebugObjectValue),
         reinterpret_cast<void **>(&debug_obj_value));
     if (FAILED(hr)) {
-      cerr << "Failed to cast ICorDebugValue to ICorDebugObjValue.";
+      WriteError("Failed to cast ICorDebugValue to ICorDebugObjValue.");
       return hr;
     }
 
     if (GetEvaluationDepth() >= 0) {
       hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
       if (FAILED(hr)) {
-        cerr << "Failed to populate class fields.";
+        WriteError("Failed to populate class fields.");
         return hr;
       }
 
-      hr = PopulateProperties(metadata_import);
-      if (FAILED(hr)) {
-        cerr << "Failed to populate class properties.";
-        return hr;
+      if (cor_type_ == ELEMENT_TYPE_CLASS) {
+        hr = PopulateProperties(metadata_import);
+        if (FAILED(hr)) {
+          WriteError("Failed to populate class properties.");
+          return hr;
+        }
       }
     }
   }
@@ -106,7 +114,7 @@ HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
   hr = metadata_import->GetTypeDefProps(
       class_token_, nullptr, 0, &len_class_name, &class_flags_, &parent_class_);
   if (FAILED(hr)) {
-    cerr << "Failed to get class name's length.";
+    WriteError("Failed to get class name's length.");
     return hr;
   }
 
@@ -116,7 +124,7 @@ HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
                                         len_class_name, &len_class_name,
                                         &class_flags_, &parent_class_);
   if (FAILED(hr)) {
-    cerr << "Failed to get class name.";
+    WriteError("Failed to get class name.");
     return hr;
   }
   return S_OK;
@@ -132,7 +140,7 @@ HRESULT DbgClass::CountGenericParams(IMetaDataImport *pMetaDataImport,
   hr = pMetaDataImport->QueryInterface(
       IID_IMetaDataImport2, reinterpret_cast<void **>(&metadata_import_2));
   if (FAILED(hr)) {
-    cerr << "Failed to extract IMetaDataImport2.";
+    WriteError("Failed to extract IMetaDataImport2.");
     return hr;
   }
 
@@ -148,7 +156,7 @@ HRESULT DbgClass::CountGenericParams(IMetaDataImport *pMetaDataImport,
         &generic_params_returned);
 
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate generic params.";
+      WriteError("Failed to enumerate generic params.");
       return hr;
     }
 
@@ -175,7 +183,7 @@ HRESULT DbgClass::PopulateParameterizedType() {
 
   hr = debug_type->EnumerateTypeParameters(&type_enum);
   if (FAILED(hr)) {
-    cerr << "Failed to populate parameterized type for class.";
+    WriteError("Failed to populate parameterized type for class.");
     return hr;
   }
 
@@ -184,7 +192,7 @@ HRESULT DbgClass::PopulateParameterizedType() {
 
   hr = type_enum->GetCount(&num_types);
   if (FAILED(hr)) {
-    cerr << "Failed to get the number of class parameter types.";
+    WriteError("Failed to get the number of class parameter types.");
     return hr;
   }
 
@@ -198,7 +206,7 @@ HRESULT DbgClass::PopulateParameterizedType() {
   hr = type_enum->Next(num_types, temp_types.data(), &num_types_fetched);
 
   if (FAILED(hr)) {
-    cerr << "Failed to fetch parameter types.";
+    WriteError("Failed to fetch parameter types.");
     return hr;
   }
 
@@ -211,11 +219,15 @@ HRESULT DbgClass::PopulateParameterizedType() {
     empty_generic_objects_.resize(num_types);
     for (int i = 0; i < num_types_fetched; ++i) {
       unique_ptr<DbgObject> empty_object;
-      hr = DbgObject::CreateDbgObject(generic_types_[i], &empty_object);
+      hr = DbgObject::CreateDbgObject(generic_types_[i], &empty_object,
+                                      GetErrorStream());
       if (SUCCEEDED(hr)) {
         empty_generic_objects_[i] = std::move(empty_object);
       } else {
-        cerr << "Failed to create a generic type object.";
+        WriteError("Failed to create a generic type object.");
+        if (empty_object) {
+          WriteError(empty_object->GetErrorString());
+        }
         return hr;
       }
     }
@@ -227,7 +239,7 @@ HRESULT DbgClass::PopulateParameterizedType() {
 HRESULT DbgClass::GetMetadataImportFromModule(
     ICorDebugModule *debug_module, IMetaDataImport **metadata_import) {
   if (!debug_module) {
-    cerr << "ICorDebugModule cannot be null.";
+    WriteError("ICorDebugModule cannot be null.");
     return E_INVALIDARG;
   }
 
@@ -237,14 +249,14 @@ HRESULT DbgClass::GetMetadataImportFromModule(
   hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
 
   if (FAILED(hr)) {
-    cout << "Failed to get metadata import.";
+    WriteError("Failed to get metadata import.");
     return hr;
   }
 
   hr = temp_import->QueryInterface(IID_IMetaDataImport,
                                    reinterpret_cast<void **>(metadata_import));
   if (FAILED(hr)) {
-    cout << "Failed to import metadata from module";
+    WriteError("Failed to import metadata from module");
     return hr;
   }
 
@@ -254,7 +266,11 @@ HRESULT DbgClass::GetMetadataImportFromModule(
 HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
                                  ICorDebugObjectValue *debug_obj_value,
                                  ICorDebugClass *debug_class) {
+  CComPtr<ICorDebugType> debug_type;
   HCORENUM cor_enum = nullptr;
+  int evaluation_depth = GetEvaluationDepth();
+
+  debug_type = GetDebugType();
   while (true) {
     HRESULT hr;
     array<mdFieldDef, 100> field_defs;
@@ -263,7 +279,7 @@ HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
     hr = metadata_import->EnumFields(&cor_enum, class_token_, field_defs.data(),
                                      field_defs.size(), &field_defs_returned);
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate class fields.";
+      WriteError("Failed to enumerate class fields.");
       return hr;
     }
 
@@ -274,20 +290,13 @@ HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
         unique_ptr<DbgClassField> class_field(new (std::nothrow)
                                                   DbgClassField());
         if (!class_field) {
-          cerr << "Run out of memory when trying to create field "
-               << field_defs[i] << " " << E_OUTOFMEMORY;
+          WriteError("Run out of memory when trying to create field ");
+          WriteError(std::to_string(field_defs[i]));
           return E_OUTOFMEMORY;
         }
 
-        hr = class_field->Initialize(field_defs[i], metadata_import,
-                                     debug_obj_value, debug_class,
-                                     GetEvaluationDepth() - 1);
-        if (FAILED(hr)) {
-          cerr << "Failed to initialize field " << field_defs[i] << " with hr "
-               << std::hex << hr;
-          return hr;
-        }
-
+        class_field->Initialize(field_defs[i], metadata_import, debug_obj_value,
+                                debug_class, debug_type, evaluation_depth - 1);
         class_fields_.push_back(std::move(class_field));
       }
     } else {
@@ -313,7 +322,7 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
         &cor_enum, class_token_, property_defs.data(), property_defs.size(),
         &property_defs_returned);
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate class properties.";
+      WriteError("Failed to enumerate class properties.");
       return hr;
     }
 
@@ -324,18 +333,13 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
         unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
                                                         DbgClassProperty());
         if (!class_property) {
-          cerr << "Ran out of memory while trying to initialize class property "
-               << property_defs[i] << " " << E_OUTOFMEMORY;
+          WriteError(
+              "Ran out of memory while trying to initialize class property ");
+          WriteError(std::to_string(property_defs[i]));
           return E_OUTOFMEMORY;
         }
 
-        hr = class_property->Initialize(property_defs[i], metadata_import);
-        if (FAILED(hr)) {
-          cerr << "Failed to initialize property " << property_defs[i]
-               << " with hr " << std::hex << hr;
-          return hr;
-        }
-
+        class_property->Initialize(property_defs[i], metadata_import);
         class_properties_.push_back(std::move(class_property));
       }
     } else {
@@ -350,178 +354,256 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
   return S_OK;
 }
 
-HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value) {
+HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value) {
 // TODO(quoct): Add more cases and make these variables static.
 #ifdef PAL_STDCPP_COMPAT
-  const WCHAR int32[] = u"System.Int32";
-  const WCHAR boolean[] = u"System.Boolean";
+  const WCHAR char_name[] = u"System.Char";
+  const WCHAR boolean_name[] = u"System.Boolean";
+  const WCHAR sbyte_name[] = u"System.SByte";
+  const WCHAR byte_name[] = u"System.Byte";
+  const WCHAR int16_name[] = u"System.Int16";
+  const WCHAR uint16_name[] = u"System.UInt16";
+  const WCHAR int32_name[] = u"System.Int32";
+  const WCHAR uint32_name[] = u"System.UInt32";
+  const WCHAR int64_name[] = u"System.Int64";
+  const WCHAR uint64_name[] = u"System.UInt64";
+  const WCHAR float_name[] = u"System.Single";
+  const WCHAR double_name[] = u"System.Double";
+  const WCHAR intptr_name[] = u"System.IntPtr";
+  const WCHAR uintptr_name[] = u"System.UIntPtr";
 #else
-  const WCHAR int32_name[] = L"System.Int32";
+  const WCHAR char_name[] = L"System.Char";
   const WCHAR boolean_name[] = L"System.Boolean";
+  const WCHAR sbyte_name[] = L"System.SByte";
+  const WCHAR byte_name[] = L"System.Byte";
+  const WCHAR int16_name[] = L"System.Int16";
+  const WCHAR uint16_name[] = L"System.UInt16";
+  const WCHAR int32_name[] = L"System.Int32";
+  const WCHAR uint32_name[] = L"System.UInt32";
+  const WCHAR int64_name[] = L"System.Int64";
+  const WCHAR uint64_name[] = L"System.UInt64";
+  const WCHAR float_name[] = L"System.Single";
+  const WCHAR double_name[] = L"System.Double";
+  const WCHAR intptr_name[] = L"System.IntPtr";
+  const WCHAR uintptr_name[] = L"System.UIntPtr";
 #endif
 
-  // TODO(quoct): For pointer type, create a new Initialize function
-  // in DbgPrimitive to set is_pointer_ to true because SetValue
-  // won't touch is_pointer_.
-  if (char_traits<WCHAR>::compare(int32_name, class_name_.data(),
-                                  char_traits<WCHAR>::length(int32_name)) ==
-      0) {
-    return ProcessValueTypeHelper<int32_t>(debug_value);
-  } else if (char_traits<WCHAR>::compare(
-                 boolean_name, class_name_.data(),
-                 char_traits<WCHAR>::length(boolean_name)) == 0) {
+#define TYPENAMECOMPARISON(name)                        \
+  char_traits<WCHAR>::compare(name, class_name_.data(), \
+                              char_traits<WCHAR>::length(int32_name))
+
+  if (TYPENAMECOMPARISON(char_name) == 0) {
+    return ProcessValueTypeHelper<char>(debug_value);
+  } else if (TYPENAMECOMPARISON(boolean_name) == 0) {
     return ProcessValueTypeHelper<bool>(debug_value);
+  } else if (TYPENAMECOMPARISON(sbyte_name) == 0) {
+    return ProcessValueTypeHelper<int8_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(byte_name) == 0) {
+    return ProcessValueTypeHelper<uint8_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(int16_name) == 0) {
+    return ProcessValueTypeHelper<int16_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(uint16_name) == 0) {
+    return ProcessValueTypeHelper<uint16_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(int32_name) == 0) {
+    return ProcessValueTypeHelper<int32_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(uint32_name) == 0) {
+    return ProcessValueTypeHelper<uint32_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(int64_name) == 0) {
+    return ProcessValueTypeHelper<int64_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(uint64_name) == 0) {
+    return ProcessValueTypeHelper<uint64_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(float_name) == 0) {
+    return ProcessValueTypeHelper<float>(debug_value);
+  } else if (TYPENAMECOMPARISON(double_name) == 0) {
+    return ProcessValueTypeHelper<double>(debug_value);
+  } else if (TYPENAMECOMPARISON(intptr_name) == 0) {
+    return ProcessValueTypeHelper<intptr_t>(debug_value);
+  } else if (TYPENAMECOMPARISON(uintptr_name) == 0) {
+    return ProcessValueTypeHelper<uintptr_t>(debug_value);
   }
 
-  cerr << "ValueType of the object is not supported.";
-  return E_INVALIDARG;
+  return E_NOTIMPL;
 }
 
-HRESULT DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
+void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   SetIsNull(is_null);
   CComPtr<ICorDebugType> debug_type;
-  HRESULT hr;
 
   debug_type = GetDebugType();
 
   if (debug_type) {
-    hr = debug_type->GetType(&cor_type_);
-    if (FAILED(hr)) {
-      cerr << "Failed to get CorElementType from ICorDebugType.";
-      return hr;
+    initialize_hr_ = debug_type->GetType(&cor_type_);
+    if (FAILED(initialize_hr_)) {
+      WriteError("Failed to get CorElementType from ICorDebugType.");
+      return;
     }
   }
 
-  hr = PopulateDefTokens(debug_value);
-  if (FAILED(hr)) {
-    cerr << "Failed to populate definition tokens.";
-    return hr;
-  }
-
-  if (!GetIsNull()) {
-    if (cor_type_ == ELEMENT_TYPE_CLASS) {
-      // Create a handle so we won't lose the object.
-      CComPtr<ICorDebugHeapValue2> heap_value_;
-
-      hr = debug_value->QueryInterface(__uuidof(ICorDebugHeapValue2),
-                                       reinterpret_cast<void **>(&heap_value_));
-      if (FAILED(hr)) {
-        cerr << "Failed to create heap value for object.";
-        return hr;
-      }
-
-      hr = heap_value_->CreateHandle(CorDebugHandleType::HANDLE_STRONG,
-                                     &class_handle_);
-      if (FAILED(hr)) {
-        cerr << "Failed to create handle for ICorDebugValue.";
-        return hr;
-      }
-    } else {
-      // Value type.
-      hr = ProcessValueType(debug_value);
-      if (FAILED(hr)) {
-        cerr << "Failed to process value type.";
-        return hr;
-      }
-    }
-  }
-
-  return S_OK;
-}
-
-HRESULT DbgClass::PrintValue(EvalCoordinator *eval_coordinator) {
-  if (!eval_coordinator) {
-    cout << "No Eval Coordinator, cannot do evaluation of properties.";
-    return E_INVALIDARG;
+  initialize_hr_ = PopulateDefTokens(debug_value);
+  if (FAILED(initialize_hr_)) {
+    WriteError("Failed to populate definition tokens.");
+    return;
   }
 
   if (GetIsNull()) {
-    cout << "NULL";
+    return;
+  }
+
+  if (cor_type_ != ELEMENT_TYPE_CLASS) {
+    // Value type.
+    initialize_hr_ = ProcessPrimitiveType(debug_value);
+    if (SUCCEEDED(initialize_hr_)) {
+      is_primitive_type_ = TRUE;
+      return;
+    }
+
+    // If we get E_NOTIMPL, just process it as a class.
+    if (initialize_hr_ == E_NOTIMPL) {
+      initialize_hr_ = S_OK;
+    } else if (FAILED(initialize_hr_) && initialize_hr_ != E_NOTIMPL) {
+      WriteError("Failed to process value type.");
+    }
+  }
+
+  // Create a handle if it is a class so we won't lose the object.
+  if (cor_type_ == ELEMENT_TYPE_CLASS) {
+    CComPtr<ICorDebugHeapValue2> heap_value_;
+
+    initialize_hr_ = debug_value->QueryInterface(
+        __uuidof(ICorDebugHeapValue2), reinterpret_cast<void **>(&heap_value_));
+    if (FAILED(initialize_hr_)) {
+      WriteError("Failed to create heap value for object.");
+      return;
+    }
+
+    initialize_hr_ = heap_value_->CreateHandle(
+        CorDebugHandleType::HANDLE_STRONG, &class_handle_);
+    if (FAILED(initialize_hr_)) {
+      WriteError("Failed to create handle for ICorDebugValue.");
+    }
+  }
+}
+
+BOOL DbgClass::HasMembers() { return !is_primitive_type_; }
+
+BOOL DbgClass::HasValue() { return is_primitive_type_; }
+
+HRESULT DbgClass::OutputValue() {
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
+  }
+
+  HRESULT hr = primitive_type_value_->OutputValue();
+  if (FAILED(hr)) {
+    WriteError(primitive_type_value_->GetErrorString());
+    return hr;
+  }
+
+  WriteOutput(primitive_type_value_->GetOutputString());
+  return hr;
+}
+
+HRESULT DbgClass::OutputMembers(EvalCoordinator *eval_coordinator) {
+  if (!eval_coordinator) {
+    WriteError("No Eval Coordinator, cannot do evaluation of properties.");
+    return E_INVALIDARG;
+  }
+
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
+  }
+
+  if (GetIsNull()) {
     return S_OK;
   }
 
   if (GetEvaluationDepth() == 0) {
-    return S_OK;
+    WriteError("... Object Inspection Depth Limit reached.");
+    return E_FAIL;
   }
 
   HRESULT hr;
   int new_depth = GetEvaluationDepth() - 1;
 
-  if (cor_type_ == ELEMENT_TYPE_VALUETYPE) {
-    if (valuetype_value_) {
-      valuetype_value_->PrintType();
-      cout << "  ";
-      valuetype_value_->PrintValue(eval_coordinator);
-      return S_OK;
-    }
-
-    cerr << "Value type was not processed.";
-    return E_FAIL;
-  }
-
-  cout << endl << "Printing field value" << endl;
+  WriteOutput("[ ");
+  bool not_first = false;
   for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
+    if (not_first) {
+      WriteOutput(", ");
+    } else {
+      not_first = true;
+    }
+
     if (*it) {
-      hr = (*it)->Print(eval_coordinator);
+      hr = (*it)->OutputJSON(eval_coordinator);
       if (FAILED(hr)) {
-        cerr << "Failed to print class field with hr " << std::hex << hr
-             << endl;
-        return hr;
+        WriteOutput("{ \"name\": \"" + (*it)->GetFieldName() + "\", ");
+        WriteOutput((*it)->GetErrorStatusMessage() + " }");
+      } else {
+        WriteOutput((*it)->GetOutputString());
       }
-      cout << endl;
     }
   }
 
-  cout << "End printing field value" << endl;
-  // TODO(quoct): Add property evaluation for value type.
-  if (cor_type_ != ELEMENT_TYPE_VALUETYPE) {
-    cout << "Printing property value" << endl;
+  for (auto it = begin(class_properties_); it != end(class_properties_); ++it) {
+    if (not_first) {
+      WriteOutput(", ");
+    } else {
+      not_first = true;
+    }
 
-    for (auto it = begin(class_properties_); it != end(class_properties_);
-         ++it) {
-      if (*it) {
-        hr = (*it)->Print(class_handle_, eval_coordinator, &generic_types_,
-                          new_depth);
-        if (FAILED(hr)) {
-          cerr << "Failed to evaluate and print class property with hr "
-               << std::hex << hr << endl;
-          return hr;
-        }
-
-        cout << endl;
+    if (*it) {
+      hr = (*it)->OutputJSON(class_handle_, eval_coordinator, &generic_types_,
+                             new_depth);
+      if (FAILED(hr)) {
+        WriteOutput("{ \"name\": \"" + (*it)->GetPropertyName() + "\", ");
+        WriteOutput((*it)->GetErrorStatusMessage() + " }");
+      } else {
+        WriteOutput((*it)->GetOutputString());
       }
     }
-    cout << "End printing property value";
   }
+
+  WriteOutput(" ]");
 
   return S_OK;
 }
 
-HRESULT DbgClass::PrintType() {
-  HRESULT hr;
-  if (!class_name_.empty()) {
-    PrintWcharString(class_name_);
+HRESULT DbgClass::OutputType() {
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
+  }
 
-    if (empty_generic_objects_.size() != 0) {
-      cout << "<";
+  if (class_name_.empty()) {
+    WriteError("Cannot get class name.");
+    return E_FAIL;
+  }
 
-      for (int i = 0; i < empty_generic_objects_.size(); ++i) {
-        if (empty_generic_objects_[i]) {
-          hr = empty_generic_objects_[i]->PrintType();
-          if (FAILED(hr)) {
-            cerr << "Failed to print generic type in class name.";
-            return hr;
-          }
+  WriteOutput(ConvertWCharPtrToString(class_name_));
 
-          if (i != 0 && i != empty_generic_objects_.size() - 1) {
-            cout << ", ";
-          }
-        }
+  if (empty_generic_objects_.size() == 0) {
+    return S_OK;
+  }
+
+  WriteOutput("<");
+
+  for (int i = 0; i < empty_generic_objects_.size(); ++i) {
+    if (empty_generic_objects_[i]) {
+      HRESULT hr = empty_generic_objects_[i]->OutputType();
+      if (FAILED(hr)) {
+        WriteError("Failed to print generic type in class");
+        return hr;
       }
+      WriteOutput(empty_generic_objects_[i]->GetOutputString());
 
-      cout << ">";
+      if (i != 0 && i != empty_generic_objects_.size() - 1) {
+        WriteOutput(", ");
+      }
     }
   }
+
+  WriteOutput(">");
+
   return S_OK;
 }
 }  // namespace google_cloud_debugger

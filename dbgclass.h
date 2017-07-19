@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef DBG_CLASS_H_
 #define DBG_CLASS_H_
@@ -7,11 +18,9 @@
 #include <memory>
 #include <vector>
 
-#include "cor.h"
-#include "cordebug.h"
 #include "dbgclassfield.h"
 #include "dbgclassproperty.h"
-#include "dbgobject.h"
+#include "dbgprimitive.h"
 
 namespace google_cloud_debugger {
 using std::unique_ptr;
@@ -26,15 +35,19 @@ class DbgClass : public DbgObject {
   // Creates a handle to the class if it is a normal .NET class
   // or stores the value of the class in valuetype_value if it is a value type.
   // Also populates the class metadata, fields and properties.
-  HRESULT Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
-  HRESULT PrintValue(EvalCoordinator *eval_coordinator) override;
-  HRESULT PrintType() override;
+  void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
+  HRESULT OutputValue() override;
+  HRESULT OutputMembers(EvalCoordinator *eval_coordinator) override;
+  HRESULT OutputType() override;
+
+  BOOL HasMembers() override;
+  BOOL HasValue() override;
 
  private:
   // Given an ICorDebugModule, extracts out IMetaDataImport and stores it in
   // metadata_import.
-  static HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
-                                             IMetaDataImport **metadata_import);
+  HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
+                                      IMetaDataImport **metadata_import);
 
   // Populates the class name, the generic parameters, fields and properties
   // of the class.
@@ -59,7 +72,7 @@ class DbgClass : public DbgObject {
   HRESULT PopulateProperties(IMetaDataImport *metadata_import);
 
   // Evaluates and stores the ValueType object in valuetype_value_.
-  HRESULT ProcessValueType(ICorDebugValue *debug_value);
+  HRESULT ProcessPrimitiveType(ICorDebugValue *debug_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
@@ -74,25 +87,22 @@ class DbgClass : public DbgObject {
     unique_ptr<DbgPrimitive<T>> primitive_value(new (std::nothrow)
                                                     DbgPrimitive<T>(nullptr));
     if (!primitive_value) {
-      cerr << "Failed to allocate memory for ValueType.";
+      WriteError("Failed to allocate memory for ValueType.");
       return E_OUTOFMEMORY;
     }
     hr = primitive_value->SetValue(debug_value);
 
     if (FAILED(hr)) {
-      cerr << "Failed to set ValueType's value.";
+      WriteError("Failed to set ValueType's value.");
       return hr;
     }
 
-    valuetype_value_ = std::move(primitive_value);
+    primitive_type_value_ = std::move(primitive_value);
     return S_OK;
   }
 
   // A strong handle to the class object.
   CComPtr<ICorDebugHandleValue> class_handle_;
-
-  // Object represents the value if this object is a ValueType.
-  std::unique_ptr<DbgObject> valuetype_value_;
 
   // String that represents the name of the class.
   std::vector<WCHAR> class_name_;
@@ -116,8 +126,14 @@ class DbgClass : public DbgObject {
   mdToken parent_class_;
 
   // The type of this object. Can either be ELEMENT_TYPE_CLASS
-  // or ELEMENT_TYPE_VALUETYPE.
+  // or ELEMENT_TYPE_VALUETYPE or ELEMENT_TYPE_OBJECT.
   CorElementType cor_type_;
+
+  // Object represents the value if this object is a ValueType.
+  std::unique_ptr<DbgObject> primitive_type_value_;
+
+  // True if this is a primitive type.
+  BOOL is_primitive_type_ = FALSE;
 
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;

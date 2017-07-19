@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "dbgstring.h"
 
@@ -8,32 +19,31 @@
 #include "evalcoordinator.h"
 
 namespace google_cloud_debugger {
-using std::cout;
-using std::cerr;
 
-HRESULT DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
+void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   SetIsNull(is_null);
 
   if (is_null) {
-    return S_OK;
+    return;
   }
 
   // Create a handle so we won't lose the object.
-  HRESULT hr;
   CComPtr<ICorDebugHeapValue2> heap_value;
 
-  hr = CreateStrongHandle(debug_value, &string_handle_);
-  if (FAILED(hr)) {
-    cerr << "Failed to create a handle for the string.";
-    return hr;
+  initialize_hr_ =
+      CreateStrongHandle(debug_value, &string_handle_, GetErrorStream());
+  if (FAILED(initialize_hr_)) {
+    WriteError("Failed to create a handle for the string.");
   }
-
-  return S_OK;
 }
 
-HRESULT DbgString::PrintValue(EvalCoordinator *eval_coordinator) {
+HRESULT DbgString::OutputValue() {
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
+  }
+
   if (GetIsNull()) {
-    cout << "NULL";
+    WriteOutput("null");
     return S_OK;
   }
 
@@ -47,7 +57,7 @@ HRESULT DbgString::PrintValue(EvalCoordinator *eval_coordinator) {
   hr = string_handle_->Dereference(&debug_value);
 
   if (FAILED(hr)) {
-    cerr << "Failed to dereference string reference.";
+    WriteError("Failed to dereference string reference.");
     return hr;
   }
 
@@ -55,13 +65,13 @@ HRESULT DbgString::PrintValue(EvalCoordinator *eval_coordinator) {
                                    reinterpret_cast<void **>(&debug_string));
 
   if (FAILED(hr)) {
-    cerr << "Failed to convert to ICorDebugStringValue.";
+    WriteError("Failed to convert to ICorDebugStringValue.");
     return hr;
   }
 
   hr = debug_string->GetLength(&str_len);
   if (FAILED(hr)) {
-    cerr << "Failed to get length of string.";
+    WriteError("Failed to get length of string.");
     return hr;
   }
 
@@ -76,16 +86,16 @@ HRESULT DbgString::PrintValue(EvalCoordinator *eval_coordinator) {
   hr = debug_string->GetString(str_len + 1, &str_returned_len,
                                string_value.get());
   if (FAILED(hr)) {
-    cerr << "Failed to extract the string.";
+    WriteError("Failed to extract the string.");
     return hr;
   }
 
-  PrintWcharString(string_value.get());
+  WriteOutput("\"" + ConvertWCharPtrToString(string_value.get()) + "\"");
   return S_OK;
 }
 
-HRESULT DbgString::PrintType() {
-  cout << "System.String";
+HRESULT DbgString::OutputType() {
+  WriteOutput("System.String");
   return S_OK;
 }
 
