@@ -87,13 +87,13 @@ class DbgClass : public DbgObject {
     unique_ptr<DbgPrimitive<T>> primitive_value(new (std::nothrow)
                                                     DbgPrimitive<T>(nullptr));
     if (!primitive_value) {
-      std::cerr << "Failed to allocate memory for ValueType.";
+      WriteError("Failed to allocate memory for ValueType.");
       return E_OUTOFMEMORY;
     }
     hr = primitive_value->SetValue(debug_value);
 
     if (FAILED(hr)) {
-      std::cerr << "Failed to set ValueType's value.";
+      WriteError("Failed to set ValueType's value.");
       return hr;
     }
 

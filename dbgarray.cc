@@ -177,8 +177,7 @@ HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
           dimensions_[current_dimension_index]) {
           dimensions_tracker[current_dimension_index] = 0;
           current_dimension_index -= 1;
-        }
-        else {
+        } else {
           break;
         }
       }
@@ -186,7 +185,7 @@ HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
 
     // Prints out the value at this index.
     CComPtr<ICorDebugValue> array_item;
-    // Minus one here since we increases it above.
+    // Minus one here since we increase it above.
     HRESULT hr = GetArrayItem(current_index - 1, &array_item);
 
     if (FAILED(hr)) {
