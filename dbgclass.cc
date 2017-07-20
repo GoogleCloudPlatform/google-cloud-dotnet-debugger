@@ -19,10 +19,11 @@
 
 #include "evalcoordinator.h"
 
-using namespace std;
+using std::array;
+using std::char_traits;
+using google::cloud::diagnostics::debug::Variable;
 
 namespace google_cloud_debugger {
-using std::array;
 
 HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
   HRESULT hr;
@@ -488,22 +489,30 @@ BOOL DbgClass::HasMembers() { return !is_primitive_type_; }
 
 BOOL DbgClass::HasValue() { return is_primitive_type_; }
 
-HRESULT DbgClass::OutputValue() {
+HRESULT DbgClass::PopulateValue(Variable *variable) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  HRESULT hr = primitive_type_value_->OutputValue();
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr = primitive_type_value_->PopulateValue(variable);
   if (FAILED(hr)) {
     WriteError(primitive_type_value_->GetErrorString());
     return hr;
   }
 
-  WriteOutput(primitive_type_value_->GetOutputString());
   return hr;
 }
 
-HRESULT DbgClass::OutputMembers(EvalCoordinator *eval_coordinator) {
+HRESULT DbgClass::PopulateMembers(Variable *variable,
+                                  EvalCoordinator *eval_coordinator) {
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
   if (!eval_coordinator) {
     WriteError("No Eval Coordinator, cannot do evaluation of properties.");
     return E_INVALIDARG;
@@ -525,53 +534,44 @@ HRESULT DbgClass::OutputMembers(EvalCoordinator *eval_coordinator) {
   HRESULT hr;
   int new_depth = GetEvaluationDepth() - 1;
 
-  WriteOutput("[ ");
   bool not_first = false;
   for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
-    if (not_first) {
-      WriteOutput(", ");
-    } else {
-      not_first = true;
-    }
-
     if (*it) {
-      hr = (*it)->OutputJSON(eval_coordinator);
+      Variable *class_field_var = variable->add_members();
+
+      class_field_var->set_name((*it)->GetFieldName());
+      hr = (*it)->PopulateVariableValue(class_field_var, eval_coordinator);
       if (FAILED(hr)) {
-        WriteOutput("{ \"name\": \"" + (*it)->GetFieldName() + "\", ");
-        WriteOutput((*it)->GetErrorStatusMessage() + " }");
-      } else {
-        WriteOutput((*it)->GetOutputString());
+        class_field_var->clear_type();
+        class_field_var->clear_members();
+        SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
       }
     }
   }
 
   for (auto it = begin(class_properties_); it != end(class_properties_); ++it) {
-    if (not_first) {
-      WriteOutput(", ");
-    } else {
-      not_first = true;
-    }
-
     if (*it) {
-      hr = (*it)->OutputJSON(class_handle_, eval_coordinator, &generic_types_,
-                             new_depth);
+      Variable *property_field_var = variable->add_members();
+      
+      property_field_var->set_name((*it)->GetPropertyName());
+      hr = (*it)->PopulateVariableValue(property_field_var, class_handle_,
+          eval_coordinator, &generic_types_, new_depth);
       if (FAILED(hr)) {
-        WriteOutput("{ \"name\": \"" + (*it)->GetPropertyName() + "\", ");
-        WriteOutput((*it)->GetErrorStatusMessage() + " }");
-      } else {
-        WriteOutput((*it)->GetOutputString());
+        SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
       }
     }
   }
 
-  WriteOutput(" ]");
-
   return S_OK;
 }
 
-HRESULT DbgClass::OutputType() {
+HRESULT DbgClass::PopulateType(Variable *variable) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
+  }
+
+  if (!variable) {
+    return E_INVALIDARG;
   }
 
   if (class_name_.empty()) {
@@ -579,30 +579,33 @@ HRESULT DbgClass::OutputType() {
     return E_FAIL;
   }
 
-  WriteOutput(ConvertWCharPtrToString(class_name_));
+  std::string class_name = (ConvertWCharPtrToString(class_name_));
 
   if (empty_generic_objects_.size() == 0) {
     return S_OK;
   }
 
-  WriteOutput("<");
+  class_name += "<";
+
+  unique_ptr<Variable> place_holder(new (std::nothrow) Variable());
 
   for (int i = 0; i < empty_generic_objects_.size(); ++i) {
     if (empty_generic_objects_[i]) {
-      HRESULT hr = empty_generic_objects_[i]->OutputType();
+      HRESULT hr = empty_generic_objects_[i]->PopulateType(place_holder.get());
       if (FAILED(hr)) {
         WriteError("Failed to print generic type in class");
         return hr;
       }
-      WriteOutput(empty_generic_objects_[i]->GetOutputString());
+      class_name += place_holder->type();
 
       if (i != 0 && i != empty_generic_objects_.size() - 1) {
-        WriteOutput(", ");
+        class_name += ", ";
       }
     }
   }
 
-  WriteOutput(">");
+  class_name += ">";
+  variable->set_type(class_name);
 
   return S_OK;
 }

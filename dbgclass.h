@@ -36,9 +36,12 @@ class DbgClass : public DbgObject {
   // or stores the value of the class in valuetype_value if it is a value type.
   // Also populates the class metadata, fields and properties.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
-  HRESULT OutputValue() override;
-  HRESULT OutputMembers(EvalCoordinator *eval_coordinator) override;
-  HRESULT OutputType() override;
+  HRESULT PopulateValue(
+      google::cloud::diagnostics::debug::Variable *variable) override;
+  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
+                          EvalCoordinator *eval_coordinator) override;
+  HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable) override;
 
   BOOL HasMembers() override;
   BOOL HasValue() override;

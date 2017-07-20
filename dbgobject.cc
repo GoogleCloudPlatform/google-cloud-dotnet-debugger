@@ -13,56 +13,18 @@
 #include "dbgstring.h"
 #include "evalcoordinator.h"
 
+using google::cloud::diagnostics::debug::Variable;
+using google::cloud::diagnostics::debug::Status;
+using std::ostringstream;
 using std::string;
 using std::unique_ptr;
-using std::ostringstream;
+using std::vector;
 
 namespace google_cloud_debugger {
 
 DbgObject::DbgObject(ICorDebugType *debug_type, int depth) {
   debug_type_ = debug_type;
   depth_ = depth;
-}
-
-HRESULT DbgObject::OutputType(ostringstream *output_stream) {
-  if (!output_stream) {
-    return E_INVALIDARG;
-  }
-
-  unique_ptr<ostringstream> old_stream =
-    unique_ptr<ostringstream>(SetOutputStream(output_stream));
-  HRESULT hr = OutputType();
-
-  SetOutputStream(old_stream.release());
-  return hr;
-}
-
-HRESULT DbgObject::OutputValue(std::ostringstream *output_stream) {
-  if (!output_stream) {
-    return E_INVALIDARG;
-  }
-
-  unique_ptr<ostringstream> old_stream =
-    unique_ptr<ostringstream>(SetOutputStream(output_stream));
-  HRESULT hr = OutputValue();
-
-  SetOutputStream(old_stream.release());
-  return hr;
-}
-
-HRESULT DbgObject::OutputMembers(
-  std::ostringstream *output_stream,
-  EvalCoordinator *eval_coordinator) {
-  if (!output_stream) {
-    return E_INVALIDARG;
-  }
-
-  unique_ptr<ostringstream> old_stream =
-    unique_ptr<ostringstream>(SetOutputStream(output_stream));
-  HRESULT hr = OutputMembers(eval_coordinator);
-
-  SetOutputStream(old_stream.release());
-  return hr;
 }
 
 HRESULT DbgObject::CreateDbgObjectHelper(
@@ -183,58 +145,44 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
                                           TRUE, 0, result_object, err_stream);
 }
 
-HRESULT DbgObject::OutputJSON(const string &obj_name,
-                             EvalCoordinator *eval_coordinator) {
+HRESULT DbgObject::PopulateVariableValue(
+    Variable *variable,
+    EvalCoordinator *eval_coordinator) {
+  if (!variable || !eval_coordinator) {
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
 
-  WriteOutput("{ ");
-  WriteOutput("\"name\": \"" + obj_name + "\", ");
-
-  ostringstream type_stream;
-  hr = OutputType(&type_stream);
+  hr = PopulateType(variable);
 
   if (FAILED(hr)) {
-    WriteOutput("\"type\": null, ");
-    WriteOutput(GetErrorStatusMessage() + " }");
+    variable->clear_type();
+    SetErrorStatusMessage(variable, GetErrorString());
     return hr;
   }
 
-  WriteOutput("\"type\": \"");
-  WriteOutput(type_stream.str());
-  WriteOutput("\"");
-
   if (GetIsNull()) {
-    WriteOutput(", \"value\": null }");
     return S_OK;
   }
 
   if (HasValue()) {
-    WriteOutput(", \"value\": ");
-
-    ostringstream value_stream;
-    hr = OutputValue(&value_stream);
+    hr = PopulateValue(variable);
     if (FAILED(hr)) {
-      WriteOutput("null, ");
-      WriteOutput(GetErrorStatusMessage() + " }");
+      variable->clear_value();
       return hr;
     }
-    WriteOutput(value_stream.str());
   }
 
   if (HasMembers()) {
-    WriteOutput(", \"members\": ");
-
-    ostringstream members_stream;
-    hr = OutputMembers(&members_stream, eval_coordinator);
+    hr = PopulateMembers(variable, eval_coordinator);
     if (FAILED(hr)) {
-      WriteOutput("null, ");
-      WriteOutput(GetErrorStatusMessage() + " }");
+      variable->clear_members();
+      SetErrorStatusMessage(variable, GetErrorString());
       return hr;
     }
-    WriteOutput(members_stream.str());
   }
 
-  WriteOutput(" }");
   return S_OK;
 }
 
@@ -450,6 +398,16 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
 
 string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {
   return ConvertWCharPtrToString(wchar_vector.data());
+}
+
+void SetErrorStatusMessage(Variable *variable, const string &err_string) {
+  assert(variable != nullptr);
+
+  unique_ptr<Status> status(new (std::nothrow) Status());
+  status->set_message(err_string);
+  status->set_iserror(true);
+
+  variable->set_allocated_status(status.release());
 }
 
 }  //  namespace google_cloud_debugger
