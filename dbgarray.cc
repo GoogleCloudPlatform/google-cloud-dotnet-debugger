@@ -16,8 +16,12 @@
 
 #include <iostream>
 
-namespace google_cloud_debugger {
+using google::cloud::diagnostics::debug::Variable;
 using std::string;
+using std::unique_ptr;
+using std::vector;
+
+namespace google_cloud_debugger {
 
 void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   SetIsNull(is_null);
@@ -113,17 +117,20 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
   return array_value->GetElementAtPosition(position, array_item);
 }
 
-HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
+HRESULT DbgArray::PopulateMembers(Variable *variable,
+    EvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  if (GetIsNull()) {
-    WriteOutput("null");
-    return S_OK;
+  if (!variable) {
+    return E_INVALIDARG;
   }
 
-  WriteOutput("[");
+  if (GetIsNull()) {
+    variable->clear_members();
+    return S_OK;
+  }
 
   int total_items = 1;
   for (int i = 0; i < dimensions_.size(); ++i) {
@@ -150,10 +157,6 @@ HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
   // 2 2 0 -> 2 2 1 -> 2 2 2 -> 2 2 3
   while (current_index < total_items &&
          current_index < kMaxArrayItemsToRetrieve) {
-    if (current_index != 0) {
-      WriteOutput(", ");
-    }
-
     // Uses the current combination as the name.
     string name = "[";
     for (int index = 0; index < dimensions_tracker.size(); ++index) {
@@ -183,15 +186,17 @@ HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
       }
     }
 
-    // Prints out the value at this index.
+    // Adds a member at this index.
+    Variable *member = variable->add_members();
+    member->set_name(name);
+
     CComPtr<ICorDebugValue> array_item;
     // Minus one here since we increase it above.
     HRESULT hr = GetArrayItem(current_index - 1, &array_item);
 
     if (FAILED(hr)) {
       // Output the error on why we failed to print out.
-      WriteOutput("{ \"name\": \"" + name + "\", ");
-      WriteOutput(GetErrorStatusMessage() + " }");
+      SetErrorStatusMessage(member, GetErrorString());
       ResetErrorStream();
       continue;
     }
@@ -204,30 +209,23 @@ HRESULT DbgArray::OutputMembers(EvalCoordinator *eval_coordinator) {
         WriteError(result_object->GetErrorString());
       }
       // Output the error on why we failed to print out.
-      WriteOutput("{ \"name\": \"" + name + "\", ");
-      WriteOutput(GetErrorStatusMessage() + " }");
+      SetErrorStatusMessage(member, GetErrorString());
       ResetErrorStream();
       continue;
     }
 
-    hr = result_object->OutputJSON(name, eval_coordinator);
+    hr = result_object->PopulateVariableValue(variable, eval_coordinator);
     if (FAILED(hr)) {
-      WriteError(result_object->GetErrorString());
-      // Output the error on why we failed to print out.
-      WriteOutput("{ \"name\": \"" + name + "\", ");
-      WriteOutput(GetErrorStatusMessage() + " }");
+      SetErrorStatusMessage(member, GetErrorString());
       ResetErrorStream();
       continue;
     }
-
-    WriteOutput(result_object->GetOutputString());
   }
 
-  WriteOutput("]");
   return S_OK;
 }
 
-HRESULT DbgArray::OutputType() {
+HRESULT DbgArray::PopulateType(Variable *variable) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
@@ -237,11 +235,13 @@ HRESULT DbgArray::OutputType() {
     return E_FAIL;
   }
 
-  empty_object_->OutputType();
+  empty_object_->PopulateType(variable);
+  std::string array_type = variable->type();
   for (int i = 0; i < dimensions_.size(); ++i) {
-    WriteOutput("[]");
+    array_type += "[]";
   }
 
+  variable->set_type(array_type);
   return S_OK;
 }
 

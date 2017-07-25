@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "breakpoint.pb.h"
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
@@ -66,6 +67,10 @@ std::string ConvertWCharPtrToString(const WCHAR *wchar_string);
 // PrintWcharString functions that takes in a vector instead of WCHAR array.
 std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
 
+// Sets the Status field of variable using error string err_string.
+void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
+                           const std::string &err_string);
+
 class EvalCoordinator;
 
 // This class represents a .NET object.
@@ -89,60 +94,34 @@ class DbgObject : public StringStreamWrapper {
   // out the object with the correct error status.
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
-  // Print out the type of the object to the member output_stream_.
-  virtual HRESULT OutputType() = 0;
+  // Sets the type of proto variable to the type of this object.
+  virtual HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable) = 0;
 
-  // Same as OutputType but prints to a different output_stream.
-  // The current output_stream will be preserved.
-  HRESULT OutputType(std::ostringstream *output_stream);
-
-  // Print out to the member output_stream_ the value of the object,
-  virtual HRESULT OutputValue() { return S_OK; }
-
-  // Same as OutputValue but prints to a different output_stream.
-  // The current output_stream will be preserved.
-  HRESULT OutputValue(std::ostringstream *output_stream);
-
-  // Print out to the member output_stream_ the members of the object,
-  // using eval_coordinator to perform any sort of evaluation if needed.
-  virtual HRESULT OutputMembers(EvalCoordinator *eval_coordinator) {
+  // Sets the value of proto variable to the value of this object.
+  virtual HRESULT PopulateValue(
+      google::cloud::diagnostics::debug::Variable *variable) {
     return S_OK;
   }
 
-  // Same as OutputMembers but prints to a different output_stream.
-  // The current output_stream will be preserved.
-  HRESULT OutputMembers(std::ostringstream *output_stream,
-                        EvalCoordinator *eval_coordinator);
+  // Sets the members of proto variable to the members of this object,
+  // using eval_coordinator to perform any sort of evaluation if needed.
+  virtual HRESULT PopulateMembers(
+      google::cloud::diagnostics::debug::Variable *variable,
+      EvalCoordinator *eval_coordinator) {
+    return S_OK;
+  }
 
-  // Returns true if this object has members that can be printed out.
+  // Returns true if this object has members.
   virtual BOOL HasMembers() { return false; }
 
-  // Returns true if this object has value that can be printed out.
+  // Returns true if this object has value.
   virtual BOOL HasValue() { return true; }
 
-  // Prints out a JSON representation of the object to output_stream.
-  // The JSON will have the keys name, type. It may have either value
-  // or members keys depending on the object type. For example, an integer
-  // has members and not value and its JSON will be:
-  // { "name": "i", "type": "System.Int32", "value": "4" } where
-  // i is the obj_name.
-  // An array has members instead of value and its JSON will be:
-  // {
-  //  "name": "Test",
-  //  "type": "[]",
-  //  "members": [{
-  //    "name": "[0]",
-  //    "type": "System.Int32",
-  //    "value": "3"
-  //  }, {
-  //    "name": "[1]",
-  //    "type": "System.Int32",
-  //    "value": "4"
-  //  }]
-  // }
-  // TODO(quoct): Look into potential JSON library we can use.
-  virtual HRESULT OutputJSON(const std::string &obj_name,
-                            EvalCoordinator *eval_coordinator);
+  // Populate variable proto with type, member and value from this object.
+  virtual HRESULT PopulateVariableValue(
+      google::cloud::diagnostics::debug::Variable *variable,
+      EvalCoordinator *eval_coordinator);
 
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
@@ -169,12 +148,11 @@ class DbgObject : public StringStreamWrapper {
 
  private:
   // Helper function to create a DbgObject.
-  static HRESULT CreateDbgObjectHelper(ICorDebugValue *debug_value,
-                                       ICorDebugType *debug_type,
-                                       CorElementType cor_element_type,
-                                       BOOL is_null, int depth,
-                                       std::unique_ptr<DbgObject> *result_object,
-                                       std::ostringstream *err_stream);
+  static HRESULT CreateDbgObjectHelper(
+      ICorDebugValue *debug_value, ICorDebugType *debug_type,
+      CorElementType cor_element_type, BOOL is_null, int depth,
+      std::unique_ptr<DbgObject> *result_object,
+      std::ostringstream *err_stream);
 
   // The underlying type of the object.
   CComPtr<ICorDebugType> debug_type_;
@@ -187,6 +165,7 @@ class DbgObject : public StringStreamWrapper {
   int depth_;
 
  protected:
+  // The HRESULT when Initialize is called.
   HRESULT initialize_hr_ = S_OK;
 };
 

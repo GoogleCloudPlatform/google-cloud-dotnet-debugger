@@ -31,11 +31,13 @@ class DbgString : public DbgObject {
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
 
   // Dereferences string_handle_ to get the underlying object
-  // and prints it out.
-  HRESULT OutputValue() override;
+  // and sets the value of variable to that object.
+  HRESULT PopulateValue(
+      google::cloud::diagnostics::debug::Variable *variable) override;
 
-  // Prints out System.String.
-  HRESULT OutputType() override;
+  // Sets type of variable to System.String.
+  HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable) override;
 
  private:
   // Handle to the underlying string object.

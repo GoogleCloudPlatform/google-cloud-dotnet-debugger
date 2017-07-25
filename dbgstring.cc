@@ -18,6 +18,8 @@
 
 #include "evalcoordinator.h"
 
+using google::cloud::diagnostics::debug::Variable;
+
 namespace google_cloud_debugger {
 
 void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
@@ -37,13 +39,17 @@ void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   }
 }
 
-HRESULT DbgString::OutputValue() {
+HRESULT DbgString::PopulateValue(Variable *variable) {
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
   if (GetIsNull()) {
-    WriteOutput("null");
+    variable->clear_value();
     return S_OK;
   }
 
@@ -90,12 +96,12 @@ HRESULT DbgString::OutputValue() {
     return hr;
   }
 
-  WriteOutput("\"" + ConvertWCharPtrToString(string_value.get()) + "\"");
+  variable->set_value(ConvertWCharPtrToString(string_value.get()));
   return S_OK;
 }
 
-HRESULT DbgString::OutputType() {
-  WriteOutput("System.String");
+HRESULT DbgString::PopulateType(Variable *variable) {
+  variable->set_type("System.String");
   return S_OK;
 }
 

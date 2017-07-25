@@ -21,8 +21,6 @@
 #include "dbgobject.h"
 
 namespace google_cloud_debugger {
-using std::unique_ptr;
-using std::vector;
 
 class EvalCoordinator;
 
@@ -58,11 +56,13 @@ class DbgArray : public DbgObject {
   // and GetArrayItem(10, array_item) will return multi[1, 0].
   HRESULT GetArrayItem(int position, ICorDebugValue **array_item);
 
-  // Prints out the objects in the array.
-  HRESULT OutputMembers(EvalCoordinator *eval_coordinator) override;
+  // Sets the members of variable to the items in the array.
+  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
+                          EvalCoordinator *eval_coordinator) override;
 
-  // Prints out the array type.
-  HRESULT OutputType() override;
+  // Sets the type of variable to this array type.
+  HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable) override;
 
   BOOL HasMembers() override { return true; }
 
@@ -79,13 +79,13 @@ class DbgArray : public DbgObject {
   CComPtr<ICorDebugType> array_type_;
 
   // This empty_object_ is an object of the type array_type_.
-  // We use this object to help us printing out the array type.
-  unique_ptr<DbgObject> empty_object_;
+  // We use this object to help us determine the array type.
+  std::unique_ptr<DbgObject> empty_object_;
 
   // An array that stores the dimensions of the array.
   // Each value in this array specifies the number of elements in
   // a dimension in this array.
-  vector<ULONG32> dimensions_;
+  std::vector<ULONG32> dimensions_;
 };
 
 }  //  namespace google_cloud_debugger

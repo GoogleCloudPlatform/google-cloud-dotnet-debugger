@@ -73,39 +73,85 @@ class DbgPrimitive : public DbgObject {
   }
 
   // No evaluation is needed!
-  HRESULT OutputValue() override {
+  HRESULT PopulateValue(
+      google::cloud::diagnostics::debug::Variable *variable) override {
     if (FAILED(initialize_hr_)) {
       return initialize_hr_;
     }
 
-    WriteOutput("\"" + std::to_string(value_) + "\"");
+    if (!variable) {
+      return E_INVALIDARG;
+    }
+
+    variable->set_value(std::to_string(value_));
     return S_OK;
   }
 
-  HRESULT OutputType() override {
+  HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable) override {
+    if (!variable) {
+      return E_INVALIDARG;
+    }
+
     if (cor_element_type_ == ELEMENT_TYPE_I) {
-      WriteOutput("System.IntPtr");
+      variable->set_type("System.IntPtr");
     } else if (cor_element_type_ == ELEMENT_TYPE_U) {
-      WriteOutput("System.UIntPtr");
+      variable->set_type("System.UIntPtr");
     } else {
-      PrintTypeCore(value_);
+      SetTypeCore(variable, value_);
     }
     return S_OK;
   }
 
  private:
-  void PrintTypeCore(char) { WriteOutput("System.Char"); }
-  void PrintTypeCore(bool) { WriteOutput("System.Boolean"); }
-  void PrintTypeCore(int8_t) { WriteOutput("System.SByte"); }
-  void PrintTypeCore(uint8_t) { WriteOutput("System.Byte"); }
-  void PrintTypeCore(int16_t) { WriteOutput("System.Int16"); }
-  void PrintTypeCore(uint16_t) { WriteOutput("System.UInt16"); }
-  void PrintTypeCore(int32_t) { WriteOutput("System.Int32"); }
-  void PrintTypeCore(uint32_t) { WriteOutput("System.UInt32"); }
-  void PrintTypeCore(int64_t) { WriteOutput("System.Int64"); }
-  void PrintTypeCore(uint64_t) { WriteOutput("System.UInt64"); }
-  void PrintTypeCore(float) { WriteOutput("System.Single"); }
-  void PrintTypeCore(double) { WriteOutput("System.Double"); }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   char value) {
+    variable->set_type("System.Char");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   bool value) {
+    variable->set_type("System.Boolean");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::int8_t value) {
+    variable->set_type("System.SByte");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::uint8_t value) {
+    variable->set_type("System.Byte");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::int16_t value) {
+    variable->set_type("System.Int16");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::uint16_t) {
+    variable->set_type("System.UInt16");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::int32_t value) {
+    variable->set_type("System.Int32");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::uint32_t) {
+    variable->set_type("System.UInt32");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::int64_t value) {
+    variable->set_type("System.Int64");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::uint64_t value) {
+    variable->set_type("System.UInt64");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::float_t value) {
+    variable->set_type("System.Single");
+  }
+  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
+                   std::double_t value) {
+    variable->set_type("System.Double");
+  }
 
   T value_;
   CorElementType cor_element_type_;
