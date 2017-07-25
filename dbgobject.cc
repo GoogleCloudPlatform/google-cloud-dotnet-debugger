@@ -170,6 +170,7 @@ HRESULT DbgObject::PopulateVariableValue(
     hr = PopulateValue(variable);
     if (FAILED(hr)) {
       variable->clear_value();
+      SetErrorStatusMessage(variable, GetErrorString());
       return hr;
     }
   }

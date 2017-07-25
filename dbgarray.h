@@ -60,7 +60,7 @@ class DbgArray : public DbgObject {
   HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
                           EvalCoordinator *eval_coordinator) override;
 
-  // Sets the type of variable to this array type..
+  // Sets the type of variable to this array type.
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
 
@@ -79,7 +79,7 @@ class DbgArray : public DbgObject {
   CComPtr<ICorDebugType> array_type_;
 
   // This empty_object_ is an object of the type array_type_.
-  // We use this object to help us determining the array type.
+  // We use this object to help us determine the array type.
   std::unique_ptr<DbgObject> empty_object_;
 
   // An array that stores the dimensions of the array.
