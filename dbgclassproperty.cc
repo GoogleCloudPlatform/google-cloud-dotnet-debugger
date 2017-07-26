@@ -185,13 +185,11 @@ HRESULT DbgClassProperty::PopulateVariableValueHelper(
     return E_FAIL;
   }
 
-  // TODO(quoct): Prints out JSON for exception.
   if (exception_occurred_) {
     // If there is an exception, the property_value_ will be the exception.
-    WriteError("throws exception ");
     std::ostringstream stream_type;
     property_value_->PopulateType(variable);
-    WriteError(variable->type());
+    WriteError("throws exception " + variable->type());
     variable->Clear();
     return E_FAIL;
   }

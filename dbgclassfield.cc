@@ -70,17 +70,13 @@ void DbgClassField::Initialize(mdFieldDef field_def,
   }
 
   if (initialized_hr_ == CORDBG_E_VARIABLE_IS_ACTUALLY_LITERAL) {
-    WriteError("Field is a literal optimized away and not available.");
+    WriteError("Field is a literal. It is optimized away and is not available.");
     return;
   }
 
   if (initialized_hr_ == CORDBG_E_FIELD_NOT_INSTANCE) {
     is_static_field_ = TRUE;
     initialized_hr_ = S_OK;
-    return;
-  }
-
-  if (FAILED(initialized_hr_)) {
     return;
   }
 

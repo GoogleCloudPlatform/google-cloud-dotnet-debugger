@@ -55,7 +55,7 @@ class DbgClassProperty : public StringStreamWrapper {
   }
 
  private:
-  // Helper function to sets the value of variable to this property's value.
+  // Helper function to set the value of variable to this property's value.
   HRESULT PopulateVariableValueHelper(
     google::cloud::diagnostics::debug::Variable *variable,
     EvalCoordinator *eval_coordinator);
