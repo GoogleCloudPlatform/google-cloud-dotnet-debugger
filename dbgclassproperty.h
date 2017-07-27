@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef DBG_CLASS_PROPERTY_H_
 #define DBG_CLASS_PROPERTY_H_
@@ -7,8 +18,8 @@
 #include <memory>
 #include <vector>
 
-#include "ccomptr.h"
 #include "dbgobject.h"
+#include "stringstreamwrapper.h"
 
 namespace google_cloud_debugger {
 class EvalCoordinator;
@@ -17,13 +28,14 @@ class EvalCoordinator;
 // The property is not evaluated by default unless EvaluateProperty
 // function is called.
 // TODO(quoct): Investigate static property.
-class DbgClassProperty {
+class DbgClassProperty : public StringStreamWrapper {
  public:
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
-  HRESULT Initialize(mdProperty property_def, IMetaDataImport *metadata_import);
+  void Initialize(mdProperty property_def, IMetaDataImport *metadata_import);
 
-  // Evaluate the property and stores the value in property_value_.
+  // Evaluate the property and stores the value in property_value_
+  // and also populate proto variable's fields.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function
   // evaluation (the getter property function).
@@ -32,13 +44,21 @@ class DbgClassProperty {
   // type array is (string, int).
   // Depth represents the level of inspection that we should perform on the
   // object we get back from the getter function.
-  HRESULT Print(ICorDebugReferenceValue *reference_value,
-                EvalCoordinator *eval_coordinator,
-                std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
+  HRESULT PopulateVariableValue(
+      google::cloud::diagnostics::debug::Variable *variable,
+      ICorDebugReferenceValue *reference_value,
+      EvalCoordinator *eval_coordinator,
+      std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
+
+  std::string GetPropertyName() {
+    return ConvertWCharPtrToString(property_name_);
+  }
 
  private:
-  // Helper function to print out the property value.
-  HRESULT PrintHelper(EvalCoordinator *eval_coordinator);
+  // Helper function to set the value of variable to this property's value.
+  HRESULT PopulateVariableValueHelper(
+    google::cloud::diagnostics::debug::Variable *variable,
+    EvalCoordinator *eval_coordinator);
 
   // Attribute flags applied to the property.
   DWORD property_attributes_ = 0;
@@ -83,6 +103,8 @@ class DbgClassProperty {
 
   // Value of the property.
   std::unique_ptr<DbgObject> property_value_;
+
+  HRESULT initialized_hr_ = S_OK;
 };
 
 }  //  namespace google_cloud_debugger

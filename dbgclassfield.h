@@ -1,27 +1,48 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef DBG_CLASS_FIELD_H_
 #define DBG_CLASS_FIELD_H_
 
 #include <memory>
+#include <sstream>
 #include <vector>
 
-#include "evalcoordinator.h"
+#include "dbgobject.h"
+#include "stringstreamwrapper.h"
 
 namespace google_cloud_debugger {
-class DbgObject;
+class EvalCoordinator;
 
 // Class that represents a field in a .NET class.
-class DbgClassField {
+class DbgClassField : public StringStreamWrapper {
  public:
   // Initialize the field names, metadata signature, flags and values.
-  HRESULT Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
-                     ICorDebugObjectValue *debug_obj_value,
-                     ICorDebugClass *debug_class, int depth);
+  // HRESULT will be stored in initialized_hr_.
+  void Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
+                  ICorDebugObjectValue *debug_obj_value,
+                  ICorDebugClass *debug_class,
+                  ICorDebugType *class_type, int depth);
 
-  // Prints the value of the field.
-  HRESULT Print(EvalCoordinator *eval_coordinator);
+  // Sets the value of variable to the value of this field.
+  HRESULT PopulateVariableValue(
+      google::cloud::diagnostics::debug::Variable *variable,
+      EvalCoordinator *eval_coordinator);
+
+  std::string GetFieldName() const {
+    return ConvertWCharPtrToString(field_name_);
+  }
 
  private:
   // Token for the class that the field belongs to.
@@ -57,6 +78,18 @@ class DbgClassField {
 
   // Value of the field.
   std::unique_ptr<DbgObject> field_value_;
+
+  // True if this is a static field.
+  BOOL is_static_field_ = FALSE;
+
+  // The HRESULT of initialization.
+  HRESULT initialized_hr_ = S_OK;
+
+  // Debug type of the class that this field belongs to.
+  CComPtr<ICorDebugType> class_type_;
+
+  // Depth of evaluation for this field.
+  int depth_ = 0;
 };
 
 }  //  namespace google_cloud_debugger

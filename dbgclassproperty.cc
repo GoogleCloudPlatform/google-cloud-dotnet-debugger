@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "dbgclassproperty.h"
 
@@ -10,34 +21,34 @@
 #include "dbgobject.h"
 #include "evalcoordinator.h"
 
-namespace google_cloud_debugger {
-using std::cout;
-using std::cerr;
+using google::cloud::diagnostics::debug::Variable;
 using std::vector;
 
-HRESULT DbgClassProperty::Initialize(mdProperty property_def,
-                                     IMetaDataImport *metadata_import) {
+namespace google_cloud_debugger {
+
+void DbgClassProperty::Initialize(mdProperty property_def,
+                                  IMetaDataImport *metadata_import) {
   ULONG property_name_length;
   ULONG other_methods_length;
 
   property_def_ = property_def;
   // First call to get length of array and length of other methods.
-  HRESULT hr = metadata_import->GetPropertyProps(
+  initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, nullptr, 0, &property_name_length,
       &property_attributes_, &signature_metadata_, &sig_metadata_length_,
       &default_value_type_flags, &default_value_, &default_value_len_,
       &property_setter_function, &property_getter_function, nullptr, 0,
       &other_methods_length);
 
-  if (FAILED(hr)) {
-    cerr << "Failed to get property metadata.";
-    return hr;
+  if (FAILED(initialized_hr_)) {
+    WriteError("Failed to get property metadata.");
+    return;
   }
 
   property_name_.resize(property_name_length);
   other_methods_.resize(other_methods_length);
 
-  hr = metadata_import->GetPropertyProps(
+  initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, property_name_.data(),
       property_name_.size(), &property_name_length, &property_attributes_,
       &signature_metadata_, &sig_metadata_length_, &default_value_type_flags,
@@ -45,30 +56,32 @@ HRESULT DbgClassProperty::Initialize(mdProperty property_def,
       &property_getter_function, other_methods_.data(), other_methods_.size(),
       &other_methods_length);
 
-  if (FAILED(hr)) {
-    cerr << "Failed to get property metadata.";
+  if (FAILED(initialized_hr_)) {
+    WriteError("Failed to get property metadata.");
   }
-
-  return hr;
 }
 
-HRESULT DbgClassProperty::Print(ICorDebugReferenceValue *reference_value,
-                                EvalCoordinator *eval_coordinator,
-                                vector<CComPtr<ICorDebugType>> *generic_types,
-                                int depth) {
+HRESULT DbgClassProperty::PopulateVariableValue(
+    Variable *variable, ICorDebugReferenceValue *reference_value,
+    EvalCoordinator *eval_coordinator,
+    vector<CComPtr<ICorDebugType>> *generic_types, int depth) {
   if (!generic_types) {
-    cerr << "Generic types array cannot be null.";
+    WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
   }
 
   if (!eval_coordinator) {
-    cerr << "Eval Coordinator cannot be null.";
+    WriteError("Eval Coordinator cannot be null.");
     return E_INVALIDARG;
   }
 
   if (!reference_value) {
-    cerr << "Reference value cannot be null.";
+    WriteError("Reference value cannot be null.");
     return E_INVALIDARG;
+  }
+
+  if (FAILED(initialized_hr_)) {
+    return initialized_hr_;
   }
 
   CComPtr<ICorDebugValue> debug_value;
@@ -82,39 +95,39 @@ HRESULT DbgClassProperty::Print(ICorDebugReferenceValue *reference_value,
 
   hr = reference_value->Dereference(&debug_value);
   if (FAILED(hr)) {
-    cerr << "Failed to dereference value to evaluate property.";
+    WriteError("Failed to dereference value to evaluate property.");
     return hr;
   }
 
   hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
                                    reinterpret_cast<void **>(&debug_obj_value));
   if (FAILED(hr)) {
-    cerr << "Failed to dereference value to evaluate property.";
+    WriteError("Failed to dereference value to evaluate property.");
     return hr;
   }
 
   hr = debug_obj_value->GetClass(&debug_class);
   if (FAILED(hr)) {
-    cerr << "Failed to get class from ICorDebugObjectValue.";
+    WriteError("Failed to get class from ICorDebugObjectValue.");
     return hr;
   }
 
   hr = debug_class->GetModule(&debug_module);
   if (FAILED(hr)) {
-    cerr << "Failed to get module from ICorDebugClass.";
+    WriteError("Failed to get module from ICorDebugClass.");
     return hr;
   }
 
   hr = debug_module->GetFunctionFromToken(property_getter_function,
                                           &debug_function);
   if (FAILED(hr)) {
-    cerr << "Failed to get ICorDebugFunction from function token.";
+    WriteError("Failed to get ICorDebugFunction from function token.");
     return hr;
   }
 
   hr = eval_coordinator->CreateEval(&debug_eval);
   if (FAILED(hr)) {
-    cerr << "Failed to create ICorDebugEval.";
+    WriteError("Failed to create ICorDebugEval.");
     return hr;
   }
 
@@ -122,7 +135,7 @@ HRESULT DbgClassProperty::Print(ICorDebugReferenceValue *reference_value,
                                   reinterpret_cast<void **>(&debug_eval_2));
 
   if (FAILED(hr)) {
-    cerr << "Failed to cast ICorDebugEval to ICorDebugEval2.";
+    WriteError("Failed to cast ICorDebugEval to ICorDebugEval2.");
     return hr;
   }
 
@@ -144,47 +157,49 @@ HRESULT DbgClassProperty::Print(ICorDebugReferenceValue *reference_value,
                                      &eval_result);
 
   if (FAILED(hr)) {
-    std::cout << "Failed to evaluate the property.";
+    WriteError("Failed to evaluate the property.");
     return E_FAIL;
   }
 
-  hr = DbgObject::CreateDbgObject(eval_result, depth - 1, &property_value_);
+  hr = DbgObject::CreateDbgObject(eval_result, depth - 1, &property_value_,
+                                  GetErrorStream());
   if (FAILED(hr)) {
-    std::cerr << "Failed to create class property object.";
+    if (property_value_) {
+      WriteError(property_value_->GetErrorString());
+    }
+    WriteError("Failed to create class property object.");
     return hr;
   }
 
-  return PrintHelper(eval_coordinator);
+  return PopulateVariableValueHelper(variable, eval_coordinator);
 }
 
-HRESULT DbgClassProperty::PrintHelper(EvalCoordinator *eval_coordinator) {
-  if (!property_name_.empty()) {
-    PrintWcharString(property_name_);
-    cout << "  ";
+HRESULT DbgClassProperty::PopulateVariableValueHelper(
+    Variable *variable, EvalCoordinator *eval_coordinator) {
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
+  if (!property_value_) {
+    WriteError("Property value not initialized.");
+    return E_FAIL;
   }
 
   if (exception_occurred_) {
     // If there is an exception, the property_value_ will be the exception.
-    cout << "throws exception ";
-  }
-
-  if (!property_value_) {
-    cerr << "Property value not initialized.";
+    std::ostringstream stream_type;
+    property_value_->PopulateType(variable);
+    WriteError("throws exception " + variable->type());
+    variable->Clear();
     return E_FAIL;
   }
 
-  HRESULT hr;
-  hr = property_value_->PrintType();
+  HRESULT hr =
+      property_value_->PopulateVariableValue(variable, eval_coordinator);
+
   if (FAILED(hr)) {
-    cerr << "Failed to print type of property.";
+    WriteError(property_value_->GetErrorString());
     return hr;
-  }
-
-  cout << "  ";
-
-  hr = property_value_->PrintValue(eval_coordinator);
-  if (FAILED(hr)) {
-    cerr << "Failed to print value of property.";
   }
 
   return hr;
