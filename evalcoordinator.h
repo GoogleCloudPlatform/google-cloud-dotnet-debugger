@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef EVAL_COORDINATOR_H_
 #define EVAL_COORDINATOR_H_
@@ -8,6 +19,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "ccomptr.h"
 #include "cor.h"
@@ -15,6 +27,7 @@
 
 namespace google_cloud_debugger {
 
+class DbgBreakpoint;
 class VariableManager;
 
 // TODO(quoct): Add a switch to turn off function evaluation by default.
@@ -63,7 +76,8 @@ class EvalCoordinator {
 
   // Prints out local variable from the Enumerable local_enum on debug_thread.
   HRESULT PrintLocalVariables(ICorDebugValueEnum *local_enum,
-                              ICorDebugThread *debug_thread);
+                              ICorDebugThread *debug_thread,
+                              DbgBreakpoint *breakpoint);
 
   // VariableManager calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
@@ -74,20 +88,24 @@ class EvalCoordinator {
   // finished all the evaluation.
   void SignalFinishedPrintingVariable();
 
+  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread);
+
  private:
-  // The thread that we are enumerating and printing the variables from.
-  std::thread variable_thread_;
+  // The threads that we are enumerating and printing the variables from.
+  std::vector<std::thread> variable_threads_;
 
   // The ICorDebugThread that the active VariableManager is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
 
   // variable_thread_ and the thread that DebuggerCallback object is on
   // will use this condition_variable_ and mutex_ to communicate.
-  std::condition_variable condition_variable_;
+  std::condition_variable variable_threads_cv_;
+
+  std::condition_variable debugger_callback_cv_;
+
   std::mutex mutex_;
 
   BOOL ready_to_print_variables_ = FALSE;
-  BOOL finished_printing_variables_ = FALSE;
   BOOL debuggercallback_can_continue_ = FALSE;
   BOOL eval_exception_occurred_ = FALSE;
 };

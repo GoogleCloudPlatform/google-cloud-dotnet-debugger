@@ -99,6 +99,9 @@ class DbgBreakpoint {
   // Gets the ICorDebugBreakpoint that corresponds with this breakpoint.
   HRESULT GetCorDebugBreakpoint(ICorDebugBreakpoint **debug_breakpoint) const;
 
+  void SetActivated(bool activated) { activated_ = activated; };
+  bool Activated() const { return activated_; }
+
  private:
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
@@ -131,6 +134,8 @@ class DbgBreakpoint {
 
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
+
+  bool activated_;
 
   // All local variables that this breakpoint has access to.
   std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>

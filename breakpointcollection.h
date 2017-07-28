@@ -15,8 +15,12 @@
 #ifndef BREAKPOINT_COLLECTION_H_
 #define BREAKPOINT_COLLECTION_H_
 
+#include <memory>
+#include <mutex>
 #include <vector>
 
+#include "breakpoint.pb.h"
+#include "breakpoint_client.h"
 #include "dbgbreakpoint.h"
 
 namespace google_cloud_debugger {
@@ -38,8 +42,7 @@ class BreakpointCollection {
   // Given a Portable PDB file, try to activate all existing breakpoints.
   // Also set the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
-  bool Initialize(std::string breakpoint_string,
-                  DebuggerCallback *debugger_callback);
+  HRESULT Initialize(DebuggerCallback *debugger_callback);
 
   // Given a PortablePDBFile object, try to activate as many breakpoints
   // as possible in the collection.
@@ -63,18 +66,22 @@ class BreakpointCollection {
   // will be removed from the collection and any breakpoint not in the
   // collection will be added. So the breakpoint string from this function
   // will become the source of truth.
-  HRESULT SyncBreakpoints(const std::string &breakpoint_string);
+  HRESULT SyncBreakpoints();
 
   // Returns all the breakpoints in the collection.
   std::vector<DbgBreakpoint> &GetBreakpoints() { return breakpoints_; }
 
+  // Writes a breakpoint to the named pipe server.
+  static HRESULT WriteBreakpoint(
+      const google::cloud::diagnostics::debug::Breakpoint &breakpoint);
+
+  // Reads a breakpoint from the named pipe server.
+  static HRESULT ReadBreakpoint(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint);
+
  private:
   // Parse a breakpoint string and populate breakpoints vector.
-  bool ParseBreakpoints(std::string input_string,
-                        std::vector<DbgBreakpoint> *breakpoints);
-
-  // Parse input string and stores the result in breakpoint.
-  bool ParseBreakpoint(const std::string &input, DbgBreakpoint *breakpoint);
+  HRESULT ParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
   std::vector<DbgBreakpoint> breakpoints_;
@@ -100,6 +107,22 @@ class BreakpointCollection {
   // is associated with. This is used to get the list of Portable PDB Files
   // that the DebuggerCallback object has.
   CComPtr<DebuggerCallback> debugger_callback_;
+
+  // Initializes a Breakpoint Client for reading breakpoints.
+  // We need 2 different pipes because this applicatin reads and writes
+  // breakpoints from the server on 2 different threads.
+  static HRESULT InitializeBreakpointClientRead();
+
+  // Initializes a Breakpoint Client for writing breakpoints.
+  static HRESULT InitializeBreakpointClientWrite();
+
+  // Named pipe server for reading breakpoints.
+  static std::unique_ptr<BreakpointClient> breakpoint_client_read_;
+
+  // Named pipe server for writing breakpoints.
+  static std::unique_ptr<BreakpointClient> breakpoint_client_write_;
+
+  std::mutex mutex_;
 };
 
 // Returns true if the first string and the second string are equal
