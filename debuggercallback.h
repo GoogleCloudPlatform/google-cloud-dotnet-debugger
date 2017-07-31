@@ -1,18 +1,33 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #ifndef DEBUGGERCALLBACK_H_
 #define DEBUGGERCALLBACK_H_
 
 #include <atomic>
+#include <iostream>
 #include <memory>
 
+#include "breakpointcollection.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "corsym.h"
 #include "evalcoordinator.h"
 
 namespace google_cloud_debugger {
+
+class BreakpointClient;
 
 // A DebuggerCallback object is used to set the managed handler of an ICorDebug
 // interface. Whenever an interesting event happens, the ICorDebug object
@@ -23,6 +38,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
                                ICorDebugManagedCallback2,
                                ICorDebugManagedCallback3 {
  public:
+  static const std::string kDllExtension;
+  static const std::string kPdbExtension;
+
   HRESULT Initialize();
 
   // IUnknown interface.
@@ -31,9 +49,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   ULONG STDMETHODCALLTYPE Release(void) override;
 
   // ICorDebugManagedCallback interface.
-  // This method is called when System.Debugger.Break() line is reached.
-  HRESULT STDMETHODCALLTYPE Break(ICorDebugAppDomain *appdomain,
-                                  ICorDebugThread *thread) override;
+  HRESULT STDMETHODCALLTYPE
+  Breakpoint(ICorDebugAppDomain *appdomain, ICorDebugThread *debug_thread,
+             ICorDebugBreakpoint *breakpoint) override;
   // This method is called when an exception is thrown by the debuggee.
   HRESULT STDMETHODCALLTYPE Exception(ICorDebugAppDomain *appdomain,
                                       ICorDebugThread *debug_thread,
@@ -46,6 +64,10 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   HRESULT STDMETHODCALLTYPE EvalException(ICorDebugAppDomain *appdomain,
                                           ICorDebugThread *debug_thread,
                                           ICorDebugEval *eval) override;
+
+  // This method is called when a module is loaded.
+  HRESULT STDMETHODCALLTYPE LoadModule(ICorDebugAppDomain *appdomain,
+                                       ICorDebugModule *debug_module) override;
 
 // This macro creates a callback function stub to override methods in
 // ICorDebugManagedCallback and ICorDebugManagedCallback2 interfaces
@@ -64,10 +86,8 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   }
 
   // Callback stubs for ICorDebugManagedCallback.
-  // TODO(quoct): Implement Breakpoint callback.
-  DEBUGGERCALLBACK_STUB(Breakpoint, ICorDebugAppDomain,
-                        ICorDebugThread *debug_thread,
-                        ICorDebugBreakpoint *breakpoint);
+  DEBUGGERCALLBACK_STUB(Break, ICorDebugAppDomain,
+                        ICorDebugThread *debug_thread);
   DEBUGGERCALLBACK_STUB(StepComplete, ICorDebugAppDomain,
                         ICorDebugThread *debug_thread,
                         ICorDebugStepper *stepper, CorDebugStepReason reason);
@@ -76,8 +96,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
                         ICorDebugThread *debug_thread);
   DEBUGGERCALLBACK_STUB(ExitThread, ICorDebugAppDomain,
                         ICorDebugThread *debug_thread);
-  DEBUGGERCALLBACK_STUB(LoadModule, ICorDebugAppDomain,
-                        ICorDebugModule *debug_module);
   DEBUGGERCALLBACK_STUB(UnloadModule, ICorDebugAppDomain,
                         ICorDebugModule *debug_module);
   DEBUGGERCALLBACK_STUB(LoadClass, ICorDebugAppDomain,
@@ -145,6 +163,74 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   HRESULT STDMETHODCALLTYPE CustomNotification(
       ICorDebugThread *debug_thread, ICorDebugAppDomain *appdomain) override;
 
+  // Sets the process being debugged by this callback.
+  void SetDebugProcess(ICorDebugProcess *debug_process) {
+    debug_process_ = debug_process;
+  };
+
+  // Enumerates all app domains in the application.
+  HRESULT EnumerateAppDomains(std::vector<CComPtr<ICorDebugAppDomain>> *result);
+
+  // Returns all the PDB files that are parsed.
+  std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+  GetPdbFiles() {
+    return portable_pdbs_;
+  }
+
+  // Given an ICorDebugBreakpoint, gets the function token and IL offset
+  // of the function that the breakpoint is in.
+  HRESULT GetFunctionTokenAndILOffset(ICorDebugBreakpoint *debug_breakpoint,
+                                      mdMethodDef *function_token,
+                                      ULONG32 *il_offset);
+
+  // Reads, parses and activates/deactivates incoming breakpoints.
+  HRESULT SyncBreakpoints() {
+    return breakpoint_collection_->SyncBreakpoints();
+  }
+
+  // Template function to enumerate different ICorDebug enumerations.
+  // All the enumerated items will be stored in vector result.
+  template <typename ICorDebugSpecifiedTypeEnum,
+            typename ICorDebugSpecifiedType>
+  static HRESULT EnumerateICorDebugSpecifiedType(
+      ICorDebugSpecifiedTypeEnum *debug_enum,
+      std::vector<CComPtr<ICorDebugSpecifiedType>> *result) {
+    if (!result) {
+      return E_FAIL;
+    }
+
+    size_t result_index = 0;
+    HRESULT hr = E_FAIL;
+    while (true) {
+      ULONG value_to_retrieve = 20;
+      ULONG value_retrieved = 0;
+
+      std::vector<ICorDebugSpecifiedType *> temp_values;
+      temp_values.resize(value_to_retrieve);
+
+      hr = debug_enum->Next(value_to_retrieve, temp_values.data(),
+                            &value_retrieved);
+
+      if (FAILED(hr)) {
+        std::cerr << "Failed to enumerate ICorDebug.";
+        return hr;
+      }
+
+      if (value_retrieved == 0) {
+        break;
+      }
+
+      result->resize(result->size() + value_retrieved);
+      for (size_t k = 0; k < value_retrieved; ++k) {
+        (*result)[result_index] = temp_values[k];
+        temp_values[k]->Release();
+        ++result_index;
+      }
+    }
+
+    return S_OK;
+  }
+
  private:
   // An EvalCoordinator is used to coordinate between DebuggerCallback object
   // and a VariableManager object when an evaluation is needed. See the
@@ -155,6 +241,19 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   // This field is used for reference counting (AddRef and Release).
   std::atomic<ULONG> ref_count_;
+
+  // Vector containing all the portable PDB files that are parsed.
+  std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+      portable_pdbs_;
+
+  // The ICorDebugProcess of the debugged process.
+  CComPtr<ICorDebugProcess> debug_process_;
+
+  // The collection of breakpoint used by the callback to store and
+  // manage breakpoints.
+  std::unique_ptr<BreakpointCollection> breakpoint_collection_;
+
+  bool initialized_success = false;
 };
 
 }  //  namespace google_cloud_debugger
