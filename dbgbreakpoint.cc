@@ -105,10 +105,11 @@ bool DbgBreakpoint::TrySetBreakpoint(
       google_cloud_debugger_portable_pdb::DocumentIndex matched_doc =
           docs[current_doc_index_index];
 
-      // Have to try to find the best method that matches.
-      // This is because the breakpoint can be inside method A but
-      // method A is inside method B and this means we should use method A
-      // to get the local variables instead of method B.
+      // Try to find the best matched method.
+      // This is because the breakpoint can be inside method A but if
+      // method A is defined inside method B then we should use method A
+      // to get the local variables instead of method B. An example is a
+      // delegate function that is defined inside a normal function.
       bool found_breakpoint = false;
       uint32_t best_matched_method_first_line = 0;
       for (auto &&method : matched_doc.GetMethods()) {
@@ -116,7 +117,7 @@ bool DbgBreakpoint::TrySetBreakpoint(
           continue;
         }
 
-        // If this method first line is greater than the previous one,
+        // If this method's first line is greater than the previous one,
         // this means that this method is inside it.
         if (method.first_line > best_matched_method_first_line) {
           // If this is false, it means no sequence points in the method

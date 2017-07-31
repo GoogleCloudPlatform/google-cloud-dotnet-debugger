@@ -23,15 +23,15 @@
 #include "debuggercallback.h"
 #include "evalcoordinator.h"
 
+using google::cloud::diagnostics::debug::Breakpoint;
+using google::cloud::diagnostics::debug::SourceLocation;
+using google::cloud::diagnostics::debug::Variable;
 using std::cerr;
 using std::cout;
 using std::ostringstream;
 using std::string;
 using std::unique_ptr;
 using std::vector;
-using google::cloud::diagnostics::debug::Breakpoint;
-using google::cloud::diagnostics::debug::SourceLocation;
-using google::cloud::diagnostics::debug::Variable;
 
 namespace google_cloud_debugger {
 
@@ -97,8 +97,8 @@ HRESULT VariableManager::PopulateLocalVariable(ICorDebugValueEnum *local_enum,
     }
 
     variables_.push_back(std::make_tuple(std::move(variable_name),
-                                          std::move(variable_value),
-                                          std::move(err_stream)));
+                                         std::move(variable_value),
+                                         std::move(err_stream)));
   }
 
   return S_OK;
@@ -125,15 +125,13 @@ HRESULT VariableManager::PrintVariables(
 
   location->set_line(line_number_);
   location->set_path(file_name_);
-  
+
   int i = 0;
-  bool first = true;
   for (const auto &variable_tuple : variables_) {
     Variable *variable = breakpoint.add_variables();
-    
+
     variable->set_name(std::get<0>(variable_tuple));
-    const unique_ptr<DbgObject> &variable_value =
-        std::get<1>(variable_tuple);
+    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
     const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {

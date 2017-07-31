@@ -21,22 +21,23 @@
 
 #include "debuggercallback.h"
 
+using google::cloud::diagnostics::debug::Breakpoint;
+using google::cloud::diagnostics::debug::SourceLocation;
 using std::cerr;
 using std::cout;
 using std::string;
 using std::unique_ptr;
 using std::vector;
-using google::cloud::diagnostics::debug::SourceLocation;
-using google::cloud::diagnostics::debug::Breakpoint;
 
 namespace google_cloud_debugger {
-
 
 const std::string BreakpointCollection::kSplit = ":";
 const std::string BreakpointCollection::kDelimiter = ";";
 
-unique_ptr<BreakpointClient> BreakpointCollection::breakpoint_client_read_ = nullptr;
-unique_ptr<BreakpointClient> BreakpointCollection::breakpoint_client_write_ = nullptr;
+std::unique_ptr<BreakpointClient>
+    BreakpointCollection::breakpoint_client_read_ = nullptr;
+std::unique_ptr<BreakpointClient>
+    BreakpointCollection::breakpoint_client_write_ = nullptr;
 
 HRESULT BreakpointCollection::Initialize(DebuggerCallback *debugger_callback) {
   if (!debugger_callback) {
@@ -48,9 +49,10 @@ HRESULT BreakpointCollection::Initialize(DebuggerCallback *debugger_callback) {
   return S_OK;
 }
 
-HRESULT BreakpointCollection::InitializeBreakpointClientRead() {
-  if (breakpoint_client_read_) {
-    return S_OK;
+HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
+    unique_ptr<BreakpointClient> *client) {
+  if (client == nullptr) {
+    return E_INVALIDARG;
   }
 
   unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient());
@@ -59,74 +61,49 @@ HRESULT BreakpointCollection::InitializeBreakpointClientRead() {
     return E_OUTOFMEMORY;
   }
 
-  breakpoint_client_read_ = unique_ptr<BreakpointClient>(
-    new (std::nothrow) BreakpointClient(std::move(pipe)));
-  if (!breakpoint_client_read_) {
+  unique_ptr<BreakpointClient> result = unique_ptr<BreakpointClient>(
+      new (std::nothrow) BreakpointClient(std::move(pipe)));
+  if (!result) {
     cerr << "Cannot create breakpoint client.";
     return E_OUTOFMEMORY;
   }
 
-  HRESULT hr = breakpoint_client_read_->Initialize();
+  HRESULT hr = result->Initialize();
   if (FAILED(hr)) {
     cerr << "Failed to initialize breakpoint client.";
     return hr;
   }
 
-  hr = breakpoint_client_read_->WaitForConnection();
+  hr = result->WaitForConnection();
   if (FAILED(hr)) {
     cerr << "Failed to connect with client.";
     return hr;
   }
 
-  return S_OK;
-}
-
-HRESULT BreakpointCollection::InitializeBreakpointClientWrite() {
-  if (breakpoint_client_write_) {
-    return S_OK;
-  }
-
-  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient());
-  if (!pipe) {
-    cerr << "Cannot create named pipe client.";
-    return E_OUTOFMEMORY;
-  }
-
-  breakpoint_client_write_ = unique_ptr<BreakpointClient>(
-    new (std::nothrow) BreakpointClient(std::move(pipe)));
-  if (!breakpoint_client_write_) {
-    cerr << "Cannot create breakpoint client.";
-    return E_OUTOFMEMORY;
-  }
-
-  HRESULT hr = breakpoint_client_write_->Initialize();
-  if (FAILED(hr)) {
-    cerr << "Failed to initialize breakpoint client.";
-    return hr;
-  }
-
-  hr = breakpoint_client_write_->WaitForConnection();
-  if (FAILED(hr)) {
-    cerr << "Failed to connect with client.";
-    return hr;
-  }
+  (*client) = std::move(result);
 
   return S_OK;
 }
 
 HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
-  HRESULT hr = InitializeBreakpointClientWrite();
-  if (FAILED(hr)) {
-    return hr;
+  if (!breakpoint_client_write_) {
+    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_write_);
+    if (FAILED(hr)) {
+      cerr << "Failed to initialize breakpoint client for writing breakpoints.";
+      return hr;
+    }
   }
 
   return breakpoint_client_write_->WriteBreakpoint(breakpoint);
 }
 
 HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
-  HRESULT hr = InitializeBreakpointClientRead();
-  if (FAILED(hr)) {
-    return hr;
+  if (!breakpoint_client_read_) {
+    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_read_);
+    if (FAILED(hr)) {
+      cerr << "Failed to initialize breakpoint client for reading breakpoints.";
+      return hr;
+    }
   }
 
   return breakpoint_client_read_->ReadBreakpoint(breakpoint);
@@ -144,7 +121,9 @@ HRESULT BreakpointCollection::ParseBreakpoint(DbgBreakpoint *breakpoint) {
 
   SourceLocation location = breakpoint_read.location();
 
-  breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(), 0);
+  // For now, we don't have a use for column so we just assign it to 0.
+  breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
+                         0);
   breakpoint->SetActivated(breakpoint_read.activated());
 
   return S_OK;
@@ -171,8 +150,10 @@ HRESULT BreakpointCollection::InitializeBreakpoints(
   return S_OK;
 }
 
-HRESULT BreakpointCollection::ActivateBreakpoint(const DbgBreakpoint &breakpoint) {
-  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint, breakpoint.Activated());
+HRESULT BreakpointCollection::ActivateOrDeactivate(
+    const DbgBreakpoint &breakpoint) {
+  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint,
+                                                      breakpoint.Activated());
   if (FAILED(hr)) {
     cerr << "Failed to activate breakpoint.";
     return hr;
@@ -215,15 +196,14 @@ HRESULT BreakpointCollection::ActivateBreakpoint(const DbgBreakpoint &breakpoint
 HRESULT BreakpointCollection::SyncBreakpoints() {
   DbgBreakpoint breakpoint;
   HRESULT hr = S_OK;
-  
-  // TODO(quoct): Need a way to break out of this while loop.
+
   while (true) {
     hr = ParseBreakpoint(&breakpoint);
     if (FAILED(hr)) {
       return hr;
     }
 
-    hr = ActivateBreakpoint(breakpoint);
+    hr = ActivateOrDeactivate(breakpoint);
     if (FAILED(hr)) {
       cerr << "Failed to activate breakpoint.";
     }

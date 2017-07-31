@@ -58,7 +58,7 @@ class VariableManager {
   // Determines how deep to inspect the object.
   int object_depth_;
 
-  // Name of the method the variables in.
+  // Name of the method the variables are in.
   std::string method_name_;
 
   // Name of the file the variables are in.

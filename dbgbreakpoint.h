@@ -99,7 +99,10 @@ class DbgBreakpoint {
   // Gets the ICorDebugBreakpoint that corresponds with this breakpoint.
   HRESULT GetCorDebugBreakpoint(ICorDebugBreakpoint **debug_breakpoint) const;
 
+  // Sets whether this breakpoint is activated or not.
   void SetActivated(bool activated) { activated_ = activated; };
+
+  // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
  private:

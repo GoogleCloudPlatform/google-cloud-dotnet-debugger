@@ -96,7 +96,7 @@ HRESULT EvalCoordinator::PrintLocalVariables(ICorDebugValueEnum *local_enum,
                                              ICorDebugThread *debug_thread,
                                              DbgBreakpoint *breakpoint) {
   if (!breakpoint) {
-    cerr << "PrintLocalVariables fail as breakpoint is null.";
+    cerr << "Breakpoint is null.";
     return E_INVALIDARG;
   }
 
