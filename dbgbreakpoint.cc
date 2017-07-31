@@ -105,11 +105,27 @@ bool DbgBreakpoint::TrySetBreakpoint(
       google_cloud_debugger_portable_pdb::DocumentIndex matched_doc =
           docs[current_doc_index_index];
 
+      // Try to find the best matched method.
+      // This is because the breakpoint can be inside method A but if
+      // method A is defined inside method B then we should use method A
+      // to get the local variables instead of method B. An example is a
+      // delegate function that is defined inside a normal function.
       bool found_breakpoint = false;
+      uint32_t best_matched_method_first_line = 0;
       for (auto &&method : matched_doc.GetMethods()) {
-        if (TrySetBreakpointInMethod(method)) {
-          found_breakpoint = true;
-          break;
+        if (method.first_line > line_ || method.last_line < line_) {
+          continue;
+        }
+
+        // If this method's first line is greater than the previous one,
+        // this means that this method is inside it.
+        if (method.first_line > best_matched_method_first_line) {
+          // If this is false, it means no sequence points in the method
+          // corresponds to this breakpoint.
+          if (TrySetBreakpointInMethod(method)) {
+            best_matched_method_first_line = method.first_line;
+            found_breakpoint = true;
+          }
         }
       }
 
@@ -126,10 +142,6 @@ bool DbgBreakpoint::TrySetBreakpoint(
 
 bool DbgBreakpoint::TrySetBreakpointInMethod(
     const google_cloud_debugger_portable_pdb::MethodInfo &method) {
-  if (method.first_line > line_ || method.last_line < line_) {
-    return false;
-  }
-
   for (auto &&sequence_point : method.sequence_points) {
     if (sequence_point.start_line > line_ || sequence_point.end_line < line_) {
       continue;
@@ -147,10 +159,12 @@ bool DbgBreakpoint::TrySetBreakpointInMethod(
         continue;
       }
 
+      local_variables_.clear();
       local_variables_.insert(local_variables_.end(),
                               local_scope.local_variables.begin(),
                               local_scope.local_variables.end());
 
+      local_constants_.clear();
       local_constants_.insert(local_constants_.end(),
                               local_scope.local_constants.begin(),
                               local_scope.local_constants.end());

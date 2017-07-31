@@ -1,5 +1,16 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "evalcoordinator.h"
 
@@ -7,14 +18,15 @@
 #include <memory>
 #include <thread>
 
+#include "dbgbreakpoint.h"
 #include "variablemanager.h"
 
 namespace google_cloud_debugger {
-using std::unique_ptr;
 using std::cerr;
-using std::mutex;
 using std::lock_guard;
+using std::mutex;
 using std::unique_lock;
+using std::unique_ptr;
 
 HRESULT EvalCoordinator::CreateEval(ICorDebugEval **eval) {
   lock_guard<mutex> lk(mutex_);
@@ -45,8 +57,8 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
         hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
       // Wake up the debugger thread to do the evaluation.
       debuggercallback_can_continue_ = TRUE;
-      condition_variable_.notify_one();
-      condition_variable_.wait(lk);
+      debugger_callback_cv_.notify_one();
+      variable_threads_cv_.wait(lk);
     } else {
       break;
     }
@@ -66,42 +78,47 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 
   debuggercallback_can_continue_ = FALSE;
   active_debug_thread_ = debug_thread;
-  condition_variable_.notify_one();
+  // Wake up all variable threads and so one of them can
+  // use the evaluation result.
+  variable_threads_cv_.notify_all();
 
   // finished_printing_variables_ is set to true if the VariableManager
   // decides to call SignalFinishedPrintingVariable to signal that it has
   // finished printing the variables.
   // debuggercallback_can_continue_ is set to true if the VariableManager
   // makes another evaluation by calling WaitForEval.
-  condition_variable_.wait(lk, [&] {
-    return debuggercallback_can_continue_ || finished_printing_variables_;
+  debugger_callback_cv_.wait(lk, [&] {
+    return debuggercallback_can_continue_;
   });
-
-  if (finished_printing_variables_) {
-    if (variable_thread_.joinable()) {
-      variable_thread_.join();
-    }
-  }
 }
 
 HRESULT EvalCoordinator::PrintLocalVariables(ICorDebugValueEnum *local_enum,
-                                             ICorDebugThread *debug_thread) {
+                                             ICorDebugThread *debug_thread,
+                                             DbgBreakpoint *breakpoint) {
+  if (!breakpoint) {
+    cerr << "Breakpoint is null.";
+    return E_INVALIDARG;
+  }
+
+  if (!local_enum) {
+    cerr << "Local variable enum is null.";
+    return E_INVALIDARG;
+  }
+
   unique_ptr<VariableManager> manager(new (std::nothrow) VariableManager);
   if (!manager) {
     cerr << "Failed to create VariableManager.";
     return E_FAIL;
   }
 
-  HRESULT hr = manager->PopulateLocalVariable(local_enum);
+  HRESULT hr = manager->PopulateLocalVariable(local_enum, breakpoint);
   if (FAILED(hr)) {
     return hr;
   }
 
-  ready_to_print_variables_ = FALSE;
-  debuggercallback_can_continue_ = FALSE;
-  finished_printing_variables_ = FALSE;
+  unique_lock<mutex> lk(mutex_);
 
-  variable_thread_ = std::thread(
+  std::thread local_thread = std::thread(
       [](unique_ptr<VariableManager> variable_manager,
          EvalCoordinator *eval_coordinator) {
         // TODO(quoct): Add logic to let the main thread know about this hr.
@@ -111,31 +128,21 @@ HRESULT EvalCoordinator::PrintLocalVariables(ICorDebugValueEnum *local_enum,
         }
       },
       std::move(manager), this);
-
-  unique_lock<mutex> lk(mutex_);
+  variable_threads_.push_back(std::move(local_thread));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;
   active_debug_thread_ = debug_thread;
 
-  // Notify the VariableManager we are ready.
-  condition_variable_.notify_one();
+  // Notify the VariableManager threads we are ready.
+  variable_threads_cv_.notify_all();
 
   // The VariableManager in active_debug_thread_ will have to set
   // debuggerCallBackCanContinue to TRUE by either calling WaitForEval
   // or SignalFinishPrintingVariable.
-  condition_variable_.wait(lk, [&] {
-    return debuggercallback_can_continue_ || finished_printing_variables_;
+  debugger_callback_cv_.wait(lk, [&] {
+    return debuggercallback_can_continue_;
   });
-
-  // Got our lock back!
-  if (finished_printing_variables_) {
-    // The thread can either be joined here (if no evaluation occurs)
-    // or in SignalFinishedEval if an evaluation occurs.
-    if (variable_thread_.joinable()) {
-      variable_thread_.join();
-    }
-  }
 
   return S_OK;
 }
@@ -150,7 +157,7 @@ void EvalCoordinator::WaitForReadySignal() {
     unique_lock<mutex> lk(mutex_);
 
     // Wait for ready signal from debugger calback.
-    condition_variable_.wait(lk, [&] { return ready_to_print_variables_; });
+    variable_threads_cv_.wait(lk, [&] { return ready_to_print_variables_; });
   }
 }
 
@@ -159,9 +166,22 @@ void EvalCoordinator::SignalFinishedPrintingVariable() {
     lock_guard<mutex> lk(mutex_);
 
     debuggercallback_can_continue_ = TRUE;
-    finished_printing_variables_ = TRUE;
   }
-  condition_variable_.notify_one();
+  debugger_callback_cv_.notify_one();
+}
+
+HRESULT EvalCoordinator::GetActiveDebugThread(ICorDebugThread **debug_thread) {
+  if (!debug_thread) {
+    return E_INVALIDARG;
+  }
+
+  if (active_debug_thread_) {
+    (*debug_thread) = active_debug_thread_;
+    active_debug_thread_->AddRef();
+    return S_OK;
+  }
+
+  return E_FAIL;
 }
 
 }  //  namespace google_cloud_debugger

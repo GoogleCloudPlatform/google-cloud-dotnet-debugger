@@ -191,23 +191,29 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::cloud::diagnostics::debug::SourceLocation* release_location();
   void set_allocated_location(::google::cloud::diagnostics::debug::SourceLocation* location);
 
-  // .google.protobuf.Timestamp create_time = 5;
+  // .google.protobuf.Timestamp create_time = 6;
   bool has_create_time() const;
   void clear_create_time();
-  static const int kCreateTimeFieldNumber = 5;
+  static const int kCreateTimeFieldNumber = 6;
   const ::google::protobuf::Timestamp& create_time() const;
   ::google::protobuf::Timestamp* mutable_create_time();
   ::google::protobuf::Timestamp* release_create_time();
   void set_allocated_create_time(::google::protobuf::Timestamp* create_time);
 
-  // .google.protobuf.Timestamp final_time = 6;
+  // .google.protobuf.Timestamp final_time = 7;
   bool has_final_time() const;
   void clear_final_time();
-  static const int kFinalTimeFieldNumber = 6;
+  static const int kFinalTimeFieldNumber = 7;
   const ::google::protobuf::Timestamp& final_time() const;
   ::google::protobuf::Timestamp* mutable_final_time();
   ::google::protobuf::Timestamp* release_final_time();
   void set_allocated_final_time(::google::protobuf::Timestamp* final_time);
+
+  // bool activated = 5;
+  void clear_activated();
+  static const int kActivatedFieldNumber = 5;
+  bool activated() const;
+  void set_activated(bool value);
 
   // @@protoc_insertion_point(class_scope:google.cloud.diagnostics.debug.Breakpoint)
  private:
@@ -219,6 +225,7 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::cloud::diagnostics::debug::SourceLocation* location_;
   ::google::protobuf::Timestamp* create_time_;
   ::google::protobuf::Timestamp* final_time_;
+  bool activated_;
   mutable int _cached_size_;
   friend struct protobuf_proto_2fbreakpoint_2eproto::TableStruct;
 };
@@ -736,7 +743,21 @@ Breakpoint::variables() const {
   return variables_;
 }
 
-// .google.protobuf.Timestamp create_time = 5;
+// bool activated = 5;
+inline void Breakpoint::clear_activated() {
+  activated_ = false;
+}
+inline bool Breakpoint::activated() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.activated)
+  return activated_;
+}
+inline void Breakpoint::set_activated(bool value) {
+  
+  activated_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.activated)
+}
+
+// .google.protobuf.Timestamp create_time = 6;
 inline bool Breakpoint::has_create_time() const {
   return this != internal_default_instance() && create_time_ != NULL;
 }
@@ -780,7 +801,7 @@ inline void Breakpoint::set_allocated_create_time(::google::protobuf::Timestamp*
   // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.create_time)
 }
 
-// .google.protobuf.Timestamp final_time = 6;
+// .google.protobuf.Timestamp final_time = 7;
 inline bool Breakpoint::has_final_time() const {
   return this != internal_default_instance() && final_time_ != NULL;
 }

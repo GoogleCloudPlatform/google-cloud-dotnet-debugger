@@ -66,6 +66,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, location_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, method_name_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, variables_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, activated_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, create_time_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, final_time_),
   ~0u,  // no _has_bits_
@@ -96,9 +97,9 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
 
 static const ::google::protobuf::internal::MigrationSchema schemas[] = {
   { 0, -1, sizeof(Breakpoint)},
-  { 11, -1, sizeof(SourceLocation)},
-  { 18, -1, sizeof(Variable)},
-  { 28, -1, sizeof(Status)},
+  { 12, -1, sizeof(SourceLocation)},
+  { 19, -1, sizeof(Variable)},
+  { 29, -1, sizeof(Status)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -170,23 +171,24 @@ void AddDescriptorsImpl() {
   static const char descriptor[] = {
       "\n\026proto/breakpoint.proto\022\036google.cloud.d"
       "iagnostics.debug\032\037google/protobuf/timest"
-      "amp.proto\"\215\002\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010"
+      "amp.proto\"\240\002\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010"
       "location\030\002 \001(\0132..google.cloud.diagnostic"
       "s.debug.SourceLocation\022\023\n\013method_name\030\003 "
       "\001(\t\022;\n\tvariables\030\004 \003(\0132(.google.cloud.di"
-      "agnostics.debug.Variable\022/\n\013create_time\030"
-      "\005 \001(\0132\032.google.protobuf.Timestamp\022.\n\nfin"
-      "al_time\030\006 \001(\0132\032.google.protobuf.Timestam"
-      "p\",\n\016SourceLocation\022\014\n\004path\030\001 \001(\t\022\014\n\004lin"
-      "e\030\002 \001(\005\"\250\001\n\010Variable\022\014\n\004name\030\001 \001(\t\022\014\n\004ty"
-      "pe\030\002 \001(\t\022\r\n\005value\030\003 \001(\t\0229\n\007members\030\004 \003(\013"
-      "2(.google.cloud.diagnostics.debug.Variab"
-      "le\0226\n\006status\030\005 \001(\0132&.google.cloud.diagno"
-      "stics.debug.Status\"*\n\006Status\022\017\n\007iserror\030"
-      "\001 \001(\010\022\017\n\007message\030\002 \001(\tb\006proto3"
+      "agnostics.debug.Variable\022\021\n\tactivated\030\005 "
+      "\001(\010\022/\n\013create_time\030\006 \001(\0132\032.google.protob"
+      "uf.Timestamp\022.\n\nfinal_time\030\007 \001(\0132\032.googl"
+      "e.protobuf.Timestamp\",\n\016SourceLocation\022\014"
+      "\n\004path\030\001 \001(\t\022\014\n\004line\030\002 \001(\005\"\250\001\n\010Variable\022"
+      "\014\n\004name\030\001 \001(\t\022\014\n\004type\030\002 \001(\t\022\r\n\005value\030\003 \001"
+      "(\t\0229\n\007members\030\004 \003(\0132(.google.cloud.diagn"
+      "ostics.debug.Variable\0226\n\006status\030\005 \001(\0132&."
+      "google.cloud.diagnostics.debug.Status\"*\n"
+      "\006Status\022\017\n\007iserror\030\001 \001(\010\022\017\n\007message\030\002 \001("
+      "\tb\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 630);
+      descriptor, 649);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "proto/breakpoint.proto", &protobuf_RegisterTypes);
   ::google::protobuf::protobuf_google_2fprotobuf_2ftimestamp_2eproto::AddDescriptors();
@@ -214,6 +216,7 @@ const int Breakpoint::kIdFieldNumber;
 const int Breakpoint::kLocationFieldNumber;
 const int Breakpoint::kMethodNameFieldNumber;
 const int Breakpoint::kVariablesFieldNumber;
+const int Breakpoint::kActivatedFieldNumber;
 const int Breakpoint::kCreateTimeFieldNumber;
 const int Breakpoint::kFinalTimeFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
@@ -255,14 +258,15 @@ Breakpoint::Breakpoint(const Breakpoint& from)
   } else {
     final_time_ = NULL;
   }
+  activated_ = from.activated_;
   // @@protoc_insertion_point(copy_constructor:google.cloud.diagnostics.debug.Breakpoint)
 }
 
 void Breakpoint::SharedCtor() {
   id_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   method_name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&location_, 0, reinterpret_cast<char*>(&final_time_) -
-    reinterpret_cast<char*>(&location_) + sizeof(final_time_));
+  ::memset(&location_, 0, reinterpret_cast<char*>(&activated_) -
+    reinterpret_cast<char*>(&location_) + sizeof(activated_));
   _cached_size_ = 0;
 }
 
@@ -325,6 +329,7 @@ void Breakpoint::Clear() {
     delete final_time_;
   }
   final_time_ = NULL;
+  activated_ = false;
 }
 
 bool Breakpoint::MergePartialFromCodedStream(
@@ -393,10 +398,24 @@ bool Breakpoint::MergePartialFromCodedStream(
         break;
       }
 
-      // .google.protobuf.Timestamp create_time = 5;
+      // bool activated = 5;
       case 5: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(42u)) {
+            static_cast< ::google::protobuf::uint8>(40u)) {
+
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &activated_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      // .google.protobuf.Timestamp create_time = 6;
+      case 6: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(50u)) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                input, mutable_create_time()));
         } else {
@@ -405,10 +424,10 @@ bool Breakpoint::MergePartialFromCodedStream(
         break;
       }
 
-      // .google.protobuf.Timestamp final_time = 6;
-      case 6: {
+      // .google.protobuf.Timestamp final_time = 7;
+      case 7: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(50u)) {
+            static_cast< ::google::protobuf::uint8>(58u)) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
                input, mutable_final_time()));
         } else {
@@ -476,16 +495,21 @@ void Breakpoint::SerializeWithCachedSizes(
       4, this->variables(i), output);
   }
 
-  // .google.protobuf.Timestamp create_time = 5;
-  if (this->has_create_time()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      5, *this->create_time_, output);
+  // bool activated = 5;
+  if (this->activated() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(5, this->activated(), output);
   }
 
-  // .google.protobuf.Timestamp final_time = 6;
+  // .google.protobuf.Timestamp create_time = 6;
+  if (this->has_create_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      6, *this->create_time_, output);
+  }
+
+  // .google.protobuf.Timestamp final_time = 7;
   if (this->has_final_time()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      6, *this->final_time_, output);
+      7, *this->final_time_, output);
   }
 
   // @@protoc_insertion_point(serialize_end:google.cloud.diagnostics.debug.Breakpoint)
@@ -533,18 +557,23 @@ void Breakpoint::SerializeWithCachedSizes(
         4, this->variables(i), deterministic, target);
   }
 
-  // .google.protobuf.Timestamp create_time = 5;
+  // bool activated = 5;
+  if (this->activated() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(5, this->activated(), target);
+  }
+
+  // .google.protobuf.Timestamp create_time = 6;
   if (this->has_create_time()) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        5, *this->create_time_, deterministic, target);
+        6, *this->create_time_, deterministic, target);
   }
 
-  // .google.protobuf.Timestamp final_time = 6;
+  // .google.protobuf.Timestamp final_time = 7;
   if (this->has_final_time()) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        6, *this->final_time_, deterministic, target);
+        7, *this->final_time_, deterministic, target);
   }
 
   // @@protoc_insertion_point(serialize_to_array_end:google.cloud.diagnostics.debug.Breakpoint)
@@ -587,18 +616,23 @@ size_t Breakpoint::ByteSizeLong() const {
         *this->location_);
   }
 
-  // .google.protobuf.Timestamp create_time = 5;
+  // .google.protobuf.Timestamp create_time = 6;
   if (this->has_create_time()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
         *this->create_time_);
   }
 
-  // .google.protobuf.Timestamp final_time = 6;
+  // .google.protobuf.Timestamp final_time = 7;
   if (this->has_final_time()) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
         *this->final_time_);
+  }
+
+  // bool activated = 5;
+  if (this->activated() != 0) {
+    total_size += 1 + 1;
   }
 
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
@@ -648,6 +682,9 @@ void Breakpoint::MergeFrom(const Breakpoint& from) {
   if (from.has_final_time()) {
     mutable_final_time()->::google::protobuf::Timestamp::MergeFrom(from.final_time());
   }
+  if (from.activated() != 0) {
+    set_activated(from.activated());
+  }
 }
 
 void Breakpoint::CopyFrom(const ::google::protobuf::Message& from) {
@@ -679,6 +716,7 @@ void Breakpoint::InternalSwap(Breakpoint* other) {
   std::swap(location_, other->location_);
   std::swap(create_time_, other->create_time_);
   std::swap(final_time_, other->final_time_);
+  std::swap(activated_, other->activated_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
@@ -865,7 +903,21 @@ Breakpoint::variables() const {
   return variables_;
 }
 
-// .google.protobuf.Timestamp create_time = 5;
+// bool activated = 5;
+void Breakpoint::clear_activated() {
+  activated_ = false;
+}
+bool Breakpoint::activated() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.activated)
+  return activated_;
+}
+void Breakpoint::set_activated(bool value) {
+  
+  activated_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.activated)
+}
+
+// .google.protobuf.Timestamp create_time = 6;
 bool Breakpoint::has_create_time() const {
   return this != internal_default_instance() && create_time_ != NULL;
 }
@@ -909,7 +961,7 @@ void Breakpoint::set_allocated_create_time(::google::protobuf::Timestamp* create
   // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.create_time)
 }
 
-// .google.protobuf.Timestamp final_time = 6;
+// .google.protobuf.Timestamp final_time = 7;
 bool Breakpoint::has_final_time() const {
   return this != internal_default_instance() && final_time_ != NULL;
 }

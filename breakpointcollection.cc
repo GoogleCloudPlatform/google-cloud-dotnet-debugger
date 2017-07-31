@@ -21,83 +21,119 @@
 
 #include "debuggercallback.h"
 
-namespace google_cloud_debugger {
+using google::cloud::diagnostics::debug::Breakpoint;
+using google::cloud::diagnostics::debug::SourceLocation;
 using std::cerr;
 using std::cout;
 using std::string;
+using std::unique_ptr;
 using std::vector;
+
+namespace google_cloud_debugger {
 
 const std::string BreakpointCollection::kSplit = ":";
 const std::string BreakpointCollection::kDelimiter = ";";
 
-bool BreakpointCollection::Initialize(string breakpoint_string,
-                                      DebuggerCallback *debugger_callback) {
+std::unique_ptr<BreakpointClient>
+    BreakpointCollection::breakpoint_client_read_ = nullptr;
+std::unique_ptr<BreakpointClient>
+    BreakpointCollection::breakpoint_client_write_ = nullptr;
+
+HRESULT BreakpointCollection::Initialize(DebuggerCallback *debugger_callback) {
   if (!debugger_callback) {
-    return false;
+    return E_INVALIDARG;
   }
 
   debugger_callback_ = debugger_callback;
-  return ParseBreakpoints(breakpoint_string, &breakpoints_);
+
+  return S_OK;
 }
 
-bool BreakpointCollection::ParseBreakpoints(
-    std::string input_string, std::vector<DbgBreakpoint> *breakpoints) {
-  assert(breakpoints != nullptr);
-
-  size_t split_pos = input_string.find(kDelimiter);
-  while (split_pos != string::npos) {
-    std::string breakpoint_string = input_string.substr(0, split_pos);
-    DbgBreakpoint breakpoint;
-    if (!ParseBreakpoint(breakpoint_string, &breakpoint)) {
-      return false;
-    }
-
-    breakpoints->push_back(std::move(breakpoint));
-    input_string.erase(0, split_pos + kDelimiter.size());
-    split_pos = input_string.find(kDelimiter);
+HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
+    unique_ptr<BreakpointClient> *client) {
+  if (client == nullptr) {
+    return E_INVALIDARG;
   }
 
-  DbgBreakpoint breakpoint;
-  if (input_string.size() != 0) {
-    if (!ParseBreakpoint(input_string, &breakpoint)) {
-      return false;
-    }
-
-    breakpoints->push_back(std::move(breakpoint));
+  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient());
+  if (!pipe) {
+    cerr << "Cannot create named pipe client.";
+    return E_OUTOFMEMORY;
   }
 
-  return true;
+  unique_ptr<BreakpointClient> result = unique_ptr<BreakpointClient>(
+      new (std::nothrow) BreakpointClient(std::move(pipe)));
+  if (!result) {
+    cerr << "Cannot create breakpoint client.";
+    return E_OUTOFMEMORY;
+  }
+
+  HRESULT hr = result->Initialize();
+  if (FAILED(hr)) {
+    cerr << "Failed to initialize breakpoint client.";
+    return hr;
+  }
+
+  hr = result->WaitForConnection();
+  if (FAILED(hr)) {
+    cerr << "Failed to connect with client.";
+    return hr;
+  }
+
+  (*client) = std::move(result);
+
+  return S_OK;
 }
 
-bool BreakpointCollection::ParseBreakpoint(const string &input,
-                                           DbgBreakpoint *breakpoint) {
-  size_t split_pos = input.find(BreakpointCollection::kSplit, 0);
-  if (split_pos == string::npos) {
-    return false;
+HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
+  if (!breakpoint_client_write_) {
+    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_write_);
+    if (FAILED(hr)) {
+      cerr << "Failed to initialize breakpoint client for writing breakpoints.";
+      return hr;
+    }
   }
 
-  string file_name = input.substr(0, split_pos + kSplit.size() - 1);
+  return breakpoint_client_write_->WriteBreakpoint(breakpoint);
+}
 
-  size_t next_split_pos = input.find(kSplit, split_pos + 1);
-  string line_number =
-      input.substr(split_pos + kSplit.size(), next_split_pos - split_pos - 1);
-
-  uint32_t line = strtoul(line_number.c_str(), nullptr, 0);
-  if (errno == ERANGE) {
-    return false;
+HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
+  if (!breakpoint_client_read_) {
+    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_read_);
+    if (FAILED(hr)) {
+      cerr << "Failed to initialize breakpoint client for reading breakpoints.";
+      return hr;
+    }
   }
 
-  string id = input.substr(next_split_pos + 1);
+  return breakpoint_client_read_->ReadBreakpoint(breakpoint);
+}
 
-  breakpoint->Initialize(file_name, id, line, 0);
+HRESULT BreakpointCollection::ReadAndParseBreakpoint(DbgBreakpoint *breakpoint) {
+  assert(breakpoint != nullptr);
 
-  return true;
+  Breakpoint breakpoint_read;
+  HRESULT hr = ReadBreakpoint(&breakpoint_read);
+  if (FAILED(hr)) {
+    cerr << "Failed to parse breakpoint.";
+    return hr;
+  }
+
+  SourceLocation location = breakpoint_read.location();
+
+  // For now, we don't have a use for column so we just assign it to 0.
+  breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
+                         0);
+  breakpoint->SetActivated(breakpoint_read.activated());
+
+  return S_OK;
 }
 
 HRESULT BreakpointCollection::InitializeBreakpoints(
     const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb) {
   HRESULT hr;
 
+  std::lock_guard<std::mutex> lock(mutex_);
   for (auto &&breakpoint : breakpoints_) {
     if (!breakpoint.TrySetBreakpoint(portable_pdb)) {
       // This may just means this breakpoint is not in this PDB.
@@ -114,9 +150,10 @@ HRESULT BreakpointCollection::InitializeBreakpoints(
   return S_OK;
 }
 
-HRESULT BreakpointCollection::ActivateBreakpoint(
+HRESULT BreakpointCollection::ActivateOrDeactivate(
     const DbgBreakpoint &breakpoint) {
-  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint, true);
+  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint,
+                                                      breakpoint.Activated());
   if (FAILED(hr)) {
     cerr << "Failed to activate breakpoint.";
     return hr;
@@ -128,6 +165,11 @@ HRESULT BreakpointCollection::ActivateBreakpoint(
 
   // This means the breakpoint is not in the existing breakpoint list.
   if (hr == S_FALSE) {
+    // Nothing to do if the breakpoint is deactivated.
+    if (!breakpoint.Activated()) {
+      return S_OK;
+    }
+
     DbgBreakpoint new_breakpoint = breakpoint;
 
     for (auto &&pdb_file : debugger_callback_->GetPdbFiles()) {
@@ -135,6 +177,7 @@ HRESULT BreakpointCollection::ActivateBreakpoint(
         continue;
       }
 
+      std::lock_guard<std::mutex> lock(mutex_);
       hr = ActivateBreakpointHelper(&new_breakpoint, pdb_file);
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
@@ -150,51 +193,19 @@ HRESULT BreakpointCollection::ActivateBreakpoint(
   return E_FAIL;
 }
 
-HRESULT BreakpointCollection::SyncBreakpoints(
-    const std::string &breakpoints_to_sync_string) {
-  vector<DbgBreakpoint> breakpoints_to_sync;
-  if (!ParseBreakpoints(breakpoints_to_sync_string, &breakpoints_to_sync)) {
-    cerr << "Breakpoints to sync string '" << breakpoints_to_sync_string
-         << "' is invalid.";
-    return E_INVALIDARG;
-  }
+HRESULT BreakpointCollection::SyncBreakpoints() {
+  DbgBreakpoint breakpoint;
+  HRESULT hr = S_OK;
 
-  // Removes all the breakpoints that are no longer in breakpoints_to_sync.
-  const auto &breakpoints_to_be_removed = std::remove_if(
-      breakpoints_.begin(), breakpoints_.end(),
-      [&breakpoints_to_sync](const DbgBreakpoint &existing_breakpoint) {
-        // Try to find the existing breakpoint in the list of breakpoints to
-        // sync.
-        const auto &matched_breakpoint = std::find_if(
-            breakpoints_to_sync.begin(), breakpoints_to_sync.end(),
-            [&existing_breakpoint](const DbgBreakpoint &breakpoint_to_sync) {
-              return EqualsIgnoreCase(existing_breakpoint.GetId(),
-                                      breakpoint_to_sync.GetId());
-            });
-        return matched_breakpoint == breakpoints_to_sync.end();
-      });
-
-  HRESULT hr;
-  if (breakpoints_to_be_removed != breakpoints_.end()) {
-    auto temp_iter = breakpoints_to_be_removed;
-    while (temp_iter != breakpoints_.end()) {
-      hr = ActivateOrDeactivateExistingBreakpoint(*temp_iter, FALSE);
-      if (FAILED(hr)) {
-        cerr << "Failed to deactivate breakpoint " << temp_iter->GetId();
-        return hr;
-      }
-      ++temp_iter;
+  while (true) {
+    hr = ReadAndParseBreakpoint(&breakpoint);
+    if (FAILED(hr)) {
+      return hr;
     }
 
-    breakpoints_.erase(breakpoints_to_be_removed);
-  }
-
-  // Now we activate all breakpoints in breakpoints_to_sync.
-  for (const auto &breakpoint_to_sync : breakpoints_to_sync) {
-    hr = ActivateBreakpoint(breakpoint_to_sync);
+    hr = ActivateOrDeactivate(breakpoint);
     if (FAILED(hr)) {
-      cerr << "Failed to activate breakpoint " << breakpoint_to_sync.GetId();
-      return hr;
+      cerr << "Failed to activate breakpoint.";
     }
   }
 
@@ -355,6 +366,8 @@ HRESULT BreakpointCollection::ActivateOrDeactivateExistingBreakpoint(
     const DbgBreakpoint &breakpoint, BOOL activate) {
   HRESULT hr;
   bool found_breakpoint = false;
+
+  std::lock_guard<std::mutex> lock(mutex_);
 
   // Try to find if the breakpoint is available.
   for (auto &&existing_breakpoint : breakpoints_) {

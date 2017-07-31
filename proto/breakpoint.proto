@@ -11,8 +11,9 @@ message Breakpoint {
   SourceLocation location = 2;
   string method_name = 3;
   repeated Variable variables = 4;
-  google.protobuf.Timestamp create_time = 5;
-  google.protobuf.Timestamp final_time = 6;
+  bool activated = 5;
+  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp final_time = 7;
 }
 
 message SourceLocation {
