@@ -109,7 +109,7 @@ HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   return breakpoint_client_read_->ReadBreakpoint(breakpoint);
 }
 
-HRESULT BreakpointCollection::ParseBreakpoint(DbgBreakpoint *breakpoint) {
+HRESULT BreakpointCollection::ReadAndParseBreakpoint(DbgBreakpoint *breakpoint) {
   assert(breakpoint != nullptr);
 
   Breakpoint breakpoint_read;
@@ -198,7 +198,7 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
   HRESULT hr = S_OK;
 
   while (true) {
-    hr = ParseBreakpoint(&breakpoint);
+    hr = ReadAndParseBreakpoint(&breakpoint);
     if (FAILED(hr)) {
       return hr;
     }

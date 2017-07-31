@@ -83,7 +83,7 @@ class BreakpointCollection {
  private:
   // Reads an incoming breakpoint from the named pipe and populates
   // The DbgBreakpoint object based on that.
-  HRESULT ParseBreakpoint(DbgBreakpoint *breakpoint);
+  HRESULT ReadAndParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
   std::vector<DbgBreakpoint> breakpoints_;
