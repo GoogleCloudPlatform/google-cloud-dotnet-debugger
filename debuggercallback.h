@@ -205,8 +205,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
       ULONG value_to_retrieve = 20;
       ULONG value_retrieved = 0;
 
-      std::vector<ICorDebugSpecifiedType *> temp_values;
-      temp_values.resize(value_to_retrieve);
+      std::vector<ICorDebugSpecifiedType *> temp_values(value_to_retrieve, nullptr);
 
       hr = debug_enum->Next(value_to_retrieve, temp_values.data(),
                             &value_retrieved);

@@ -72,6 +72,9 @@ class Debugger final {
   // RegisterForRuntimeStartup initially.
   // The hr argument will return whether the process can be debugged or not.
   static void CallbackFunction(IUnknown *unknown, void *parameter, HRESULT hr);
+
+  // Helper function to deactivate all breakpoints.
+  void DeactivateBreakpoints();
 };
 
 }  // namespace google_cloud_debugger

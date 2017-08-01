@@ -52,7 +52,7 @@ HRESULT DebuggerCallback::Initialize() {
 
   HRESULT hr = breakpoint_collection_->Initialize(this);
   if (FAILED(hr)) {
-    cerr << "Breakpoint collection fails to initialize.";
+    cerr << "Breakpoint collection failed to initialize.";
     return hr;
   }
 
@@ -197,8 +197,7 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return hr;
   }
 
-  vector<WCHAR> my_name;
-  my_name.resize(name_len);
+  vector<WCHAR> my_name(name_len, 0);
   hr = debug_module->GetName(name_len, &name_len, my_name.data());
   if (FAILED(hr)) {
     cerr << "Failed to get module name with HRESULT" << std::hex << hr;
@@ -206,6 +205,7 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return hr;
   }
 
+  // Removes extra null terminator.
   if (my_name.back() == 0) {
     my_name.pop_back();
   }
@@ -215,6 +215,7 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
   // We are only interested in dll.
   // Is there other possible extensions?
   if (last_dll_extension_pos != module_name.size() - kDllExtension.size()) {
+    cerr << "Only Dlls are supported.";
     appdomain->Continue(FALSE);
     return hr;
   }
@@ -225,6 +226,7 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
   std::ifstream file(module_name);
   // No PDB file for this module.
   if (!file) {
+    cerr << "Cannot find PDB file for module " << module_name;
     appdomain->Continue(FALSE);
     return hr;
   }

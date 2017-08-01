@@ -44,35 +44,7 @@ Debugger::~Debugger() {
   // Stop and detach the debugger.
   if (cordebug_process_) {
     hr = cordebug_process_->Stop(-1);
-    // Here, we enumerate all the domains, retrieve the breakpoints in all
-    // the domains and deactivate the breakpoints.
-    CComPtr<ICorDebugAppDomainEnum> appdomain_enum;
-    hr = cordebug_process_->EnumerateAppDomains(&appdomain_enum);
-    if (SUCCEEDED(hr)) {
-      vector<CComPtr<ICorDebugAppDomain>> appdomains;
-      hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
-          ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum,
-                                                      &appdomains);
-
-      if (SUCCEEDED(hr)) {
-        for (auto &&appdomain : appdomains) {
-          CComPtr<ICorDebugBreakpointEnum> breakpoint_enum;
-          hr = appdomain->EnumerateBreakpoints(&breakpoint_enum);
-          if (SUCCEEDED(hr)) {
-            vector<CComPtr<ICorDebugBreakpoint>> breakpoints;
-            hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
-                ICorDebugBreakpointEnum, ICorDebugBreakpoint>(breakpoint_enum,
-                                                              &breakpoints);
-
-            if (SUCCEEDED(hr)) {
-              for (auto &&breakpoint : breakpoints) {
-                hr = breakpoint->Activate(FALSE);
-              }
-            }
-          }
-        }
-      }
-    }
+    DeactivateBreakpoints();
 
     // TODO(quoct): We may have to drain callback event queue,
     // remove function evaluations.
@@ -87,7 +59,7 @@ Debugger::~Debugger() {
 HRESULT Debugger::SyncBreakpoints() {
   if (!debugger_callback_) {
     cerr << "Debugger callback does not exist.";
-    return E_OUTOFMEMORY;
+    return E_FAIL;
   }
 
   return debugger_callback_->SyncBreakpoints();
@@ -167,6 +139,53 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   }
 
   debugger->debugger_callback_->SetDebugProcess(debugger->cordebug_process_);
+}
+
+void Debugger::DeactivateBreakpoints() {
+  // Here, we enumerate all the domains, retrieve the breakpoints in all
+  // the domains and deactivate the breakpoints.
+  CComPtr<ICorDebugAppDomainEnum> appdomain_enum;
+  HRESULT hr = cordebug_process_->EnumerateAppDomains(&appdomain_enum);
+  if (FAILED(hr)) {
+    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    return;
+  }
+
+  vector<CComPtr<ICorDebugAppDomain>> appdomains;
+  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
+      ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum,
+                                                  &appdomains);
+
+  if (FAILED(hr)) {
+    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    return;
+  }
+
+  for (auto &&appdomain : appdomains) {
+    CComPtr<ICorDebugBreakpointEnum> breakpoint_enum;
+    hr = appdomain->EnumerateBreakpoints(&breakpoint_enum);
+    if (FAILED(hr)) {
+      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      return;
+    }
+
+    vector<CComPtr<ICorDebugBreakpoint>> breakpoints;
+    hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
+        ICorDebugBreakpointEnum, ICorDebugBreakpoint>(breakpoint_enum,
+                                                      &breakpoints);
+
+    if (FAILED(hr)) {
+      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      return;
+    }
+
+    for (auto &&breakpoint : breakpoints) {
+      hr = breakpoint->Activate(FALSE);
+      if (FAILED(hr)) {
+        cerr << "Failed to deactivate breakpoint: " << std::hex << hr;
+      }
+    }
+  }
 }
 
 }  // namespace google_cloud_debugger
