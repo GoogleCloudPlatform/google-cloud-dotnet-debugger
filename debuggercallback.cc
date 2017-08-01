@@ -205,7 +205,8 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return hr;
   }
 
-  // Removes extra null terminator.
+  // Removes extra null terminator. We do this so rfind does not include the
+  // null terminator.
   if (my_name.back() == 0) {
     my_name.pop_back();
   }

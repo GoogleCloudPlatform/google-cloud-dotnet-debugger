@@ -166,7 +166,7 @@ void Debugger::DeactivateBreakpoints() {
     hr = appdomain->EnumerateBreakpoints(&breakpoint_enum);
     if (FAILED(hr)) {
       cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
-      return;
+      continue;
     }
 
     vector<CComPtr<ICorDebugBreakpoint>> breakpoints;
@@ -176,7 +176,7 @@ void Debugger::DeactivateBreakpoints() {
 
     if (FAILED(hr)) {
       cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
-      return;
+      continue;
     }
 
     for (auto &&breakpoint : breakpoints) {
