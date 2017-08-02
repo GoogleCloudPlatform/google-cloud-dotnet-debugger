@@ -28,19 +28,19 @@ namespace google_cloud_debugger {
 
 // A named pipe client for windows.
 class NamedPipeClient : public INamedPipe {
- public:
-  ~NamedPipeClient();
-  HRESULT Initialize() override;
-  HRESULT WaitForConnection() override;
-  HRESULT Read(std::string *message) override;
-  HRESULT Write(const std::string &message) override;
+public:
+	~NamedPipeClient();
+	HRESULT Initialize() override;
+	HRESULT WaitForConnection() override;
+	HRESULT Read(std::string *message) override;
+	HRESULT Write(const std::string &message) override;
 
- private:
-  // The name of the pipe.
-  const std::wstring pipe_name_= std::wstring(L"\\\\.\\pipe\\") + std::wstring(kPipeNameW);
+private:
+	// The name of the pipe.
+	const std::wstring pipe_name_ = std::wstring(L"\\\\.\\pipe\\") + std::wstring(kPipeNameW);
 
-  // A handle to the open pipe.
-  HANDLE pipe_ = INVALID_HANDLE_VALUE;
+	// A handle to the open pipe.
+	HANDLE pipe_ = INVALID_HANDLE_VALUE;
 };
 
 }  // namespace google_cloud_debugger

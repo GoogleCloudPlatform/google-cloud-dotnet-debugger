@@ -55,7 +55,7 @@ class PortablePdbFile {
 
   // Get data from the blob heap.
   bool GetHeapBlobStream(std::uint32_t index,
-		CustomBinaryStream *binary_stream) const;
+                         CustomBinaryStream *binary_stream) const;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
@@ -83,8 +83,8 @@ class PortablePdbFile {
   }
 
   // Returns the method debug info table.
-  const std::vector<MethodDebugInformationRow>
-    &GetMethodDebugInfoTable() const {
+  const std::vector<MethodDebugInformationRow> &GetMethodDebugInfoTable()
+      const {
     return method_debug_info_table_;
   }
 
@@ -165,8 +165,8 @@ class PortablePdbFile {
   // Template function to parse row for a specific metadata table.
   template <typename TableRow>
   bool ParseMetadataTableRow(uint32_t rows_in_table,
-    CustomBinaryStream *binary_stream,
-    std::vector<TableRow> *table) {
+                             CustomBinaryStream *binary_stream,
+                             std::vector<TableRow> *table) {
     if (!binary_stream || !table) {
       return false;
     }

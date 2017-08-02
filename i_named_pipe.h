@@ -21,27 +21,27 @@ namespace google_cloud_debugger {
 
 // Functionality of a named pipe.
 class INamedPipe {
- public:
-  virtual ~INamedPipe() {};
+public:
+	virtual ~INamedPipe() {};
 
-  // Initializes the pipe and returns an HRESULT.
-  virtual HRESULT Initialize() = 0;
+	// Initializes the pipe and returns an HRESULT.
+	virtual HRESULT Initialize() = 0;
 
-  // Waits for the pipe to connect.  This function will
-  // block until a connection is made or until a timeout
-  // occurs.
-  virtual HRESULT WaitForConnection() = 0;
+	// Waits for the pipe to connect.  This function will
+	// block until a connection is made or until a timeout
+	// occurs.
+	virtual HRESULT WaitForConnection() = 0;
 
-  // Reads up to the maximum buffer size from
-  // the pipe and returns an HRESULT.  This function will
-  // block until there is a message to read.
-  // Note: strings are used only as containers.
-  virtual HRESULT Read(std::string *message) = 0;
+	// Reads up to the maximum buffer size from
+	// the pipe and returns an HRESULT.  This function will
+	// block until there is a message to read.
+	// Note: strings are used only as containers.
+	virtual HRESULT Read(std::string *message) = 0;
 
-  // Write a message up to the buffer in chunks of the maximum
-  // buffer size from the pipe and returns an HRESULT.
-  // Note: strings are used only as containers.
-  virtual HRESULT Write(const std::string &message) = 0;
+	// Write a message up to the buffer in chunks of the maximum
+	// buffer size from the pipe and returns an HRESULT.
+	// Note: strings are used only as containers.
+	virtual HRESULT Write(const std::string &message) = 0;
 };
 
 }  // namespace google_cloud_debugger

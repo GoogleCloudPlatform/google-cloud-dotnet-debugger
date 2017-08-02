@@ -19,8 +19,8 @@
 #include "custombinaryreader.h"
 #include "metadataheaders.h"
 
-using std::vector;
 using std::string;
+using std::vector;
 
 namespace google_cloud_debugger_portable_pdb {
 
@@ -86,14 +86,14 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
 
 bool IsDocumentChange(SequencePointRecord record) {
   return record.start_line == record.end_line &&
-    record.end_line == kDocumentChangeSequencePointLine &&
-    record.start_col == record.end_col && record.end_col == 0;
+         record.end_line == kDocumentChangeSequencePointLine &&
+         record.start_col == record.end_col && record.end_col == 0;
 }
 
 bool IsHidden(SequencePointRecord record) {
   return record.start_line == record.end_line &&
-    record.end_line == kHiddenSequencePointLine &&
-    record.start_col == record.end_col && record.end_col == 0;
+         record.end_line == kHiddenSequencePointLine &&
+         record.start_col == record.end_col && record.end_col == 0;
 }
 
 SequencePointRecord NewHiddenSequencePoint(uint32_t il_delta) {
@@ -117,7 +117,7 @@ SequencePointRecord NewDocumentChangeSequencePoint(uint32_t document) {
 }
 
 bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
-    MethodSequencePointInformation *sequence_point_info) {
+               MethodSequencePointInformation *sequence_point_info) {
   assert(binary_reader != nullptr);
   assert(sequence_point_info != nullptr);
 
@@ -139,8 +139,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
       return false;
     }
     sequence_point_info->records.push_back(
-        NewDocumentChangeSequencePoint(
-            initial_doc));
+        NewDocumentChangeSequencePoint(initial_doc));
   }
 
   SequencePointRecord first_record;
@@ -166,7 +165,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
       }
     } else {
       if (!ParseNextRecord(binary_reader, &last_non_hidden_record,
-        &next_record)) {
+                           &next_record)) {
         return false;
       }
     }
@@ -183,7 +182,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
 }
 
 bool ParseFirstRecord(CustomBinaryStream *binary_reader,
-  SequencePointRecord *record) {
+                      SequencePointRecord *record) {
   assert(binary_reader != nullptr);
   assert(record != nullptr);
 
@@ -221,8 +220,8 @@ bool ParseFirstRecord(CustomBinaryStream *binary_reader,
 }
 
 bool ParseNextRecord(CustomBinaryStream *binary_reader,
-    SequencePointRecord *last_non_hidden_record,
-    SequencePointRecord *record) {
+                     SequencePointRecord *last_non_hidden_record,
+                     SequencePointRecord *record) {
   assert(binary_reader != nullptr);
   assert(record != nullptr);
 
@@ -237,8 +236,7 @@ bool ParseNextRecord(CustomBinaryStream *binary_reader,
   // If the first compressed integer is usually the IL Delta, but in the
   // case of 0 it indiciates a document-record.
   if (first_compressed_uint == 0) {
-    *record = NewDocumentChangeSequencePoint(
-        second_compressed_uint);
+    *record = NewDocumentChangeSequencePoint(second_compressed_uint);
     return true;
   }
 

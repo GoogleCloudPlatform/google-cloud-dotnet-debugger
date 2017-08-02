@@ -26,19 +26,19 @@ namespace google_cloud_debugger {
 
 // A named pipe client for unix.
 class NamedPipeClient : public INamedPipe {
- public:
-  ~NamedPipeClient();
-  HRESULT Initialize() override;
-  HRESULT WaitForConnection() override;
-  HRESULT Write(std::string *message) override;
-  HRESULT Write(const std::string &message) override;
+public:
+	~NamedPipeClient();
+	HRESULT Initialize() override;
+	HRESULT WaitForConnection() override;
+	HRESULT Write(std::string *message) override;
+	HRESULT Write(const std::string &message) override;
 
- private:
-  // The name of the pipe.
-  const std::string pipe_name_ = std::string("/tmp/CoreFxPipe_") + std::string(kPipeName);
+private:
+	// The name of the pipe.
+	const std::string pipe_name_ = std::string("/tmp/CoreFxPipe_") + std::string(kPipeName);
 
-  // The socket descriptor for the pipe.
-  int pipe_ = -1;
+	// The socket descriptor for the pipe.
+	int pipe_ = -1;
 };
 
 }  // namespace google_cloud_debugger

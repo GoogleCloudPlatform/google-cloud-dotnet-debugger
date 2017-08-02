@@ -22,8 +22,8 @@
 
 using std::ifstream;
 using std::ios;
-using std::vector;
 using std::string;
+using std::vector;
 
 const int one = 1;
 #define big_endian() ((*(char *)&one) == 0)
@@ -66,7 +66,7 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
 }
 
 bool CustomBinaryStream::ConsumeVector(
-	const std::vector<uint8_t> &byte_vector) {
+    const std::vector<uint8_t> &byte_vector) {
   iterator_ = byte_vector.begin();
   begin_ = byte_vector.begin();
   end_ = byte_vector.end();
@@ -190,7 +190,7 @@ bool CustomBinaryStream::ReadCompressedUInt32(uint32_t *uncompress_int) {
   // Result should be in the range 0x80 - 0x3FFF.
   if ((first_byte & kCompressedIntTwoByteMask) == kCompressedIntOneByteMask) {
     *uncompress_int = ((first_byte << 8) | second_byte) &
-      kCompressedUIntTwoByteUncompressMask;
+                      kCompressedUIntTwoByteUncompressMask;
     return true;
   }
 
@@ -243,10 +243,10 @@ bool CustomBinaryStream::ReadCompressSignedInt32(int32_t *uncompressed_int) {
     if ((first_byte & kCompressedIntOneByteMask) == 0) {
       result |= kCompressedSignedIntOneByteUncompressMask;
     } else if ((first_byte & kCompressedIntTwoByteMask) ==
-      kCompressedIntOneByteMask) {
+               kCompressedIntOneByteMask) {
       result |= kCompressedSignedIntTwoByteUncompressMask;
     } else if ((first_byte & kCompressedIntFourByteMask) ==
-      kCompressedIntTwoByteMask) {
+               kCompressedIntTwoByteMask) {
       result |= kCompressedSignedIntFourByteUncompressMask;
     } else {
       return false;
