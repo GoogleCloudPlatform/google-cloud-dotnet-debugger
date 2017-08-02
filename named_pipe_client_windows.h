@@ -16,10 +16,10 @@
 #ifndef NAMED_PIPE_CLIENT_H_
 #define NAMED_PIPE_CLIENT_H_
 
-#include <iostream>
 #include <cor.h>
-#include <string>
 #include <windef.h>
+#include <iostream>
+#include <string>
 
 #include "constants.h"
 #include "i_named_pipe.h"
@@ -37,7 +37,8 @@ class NamedPipeClient : public INamedPipe {
 
  private:
   // The name of the pipe.
-  const std::wstring pipe_name_= std::wstring(L"\\\\.\\pipe\\") + std::wstring(kPipeNameW);
+  const std::wstring pipe_name_ =
+      std::wstring(L"\\\\.\\pipe\\") + std::wstring(kPipeNameW);
 
   // A handle to the open pipe.
   HANDLE pipe_ = INVALID_HANDLE_VALUE;

@@ -14,10 +14,10 @@
 
 #ifdef PLATFORM_UNIX
 
-#include <iostream>
 #include <errno.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <iostream>
 
 #include "named_pipe_client_unix.h"
 
@@ -55,8 +55,8 @@ HRESULT NamedPipeClient::WaitForConnection() {
   while (timeout > 0) {
     int conn = connect(pipe_, (struct sockaddr *)&addr, sizeof(addr));
     if (conn == 0) {
-        file_found = true;
-        break;
+      file_found = true;
+      break;
     }
 
     if (conn == -1 && errno != ENOENT) {

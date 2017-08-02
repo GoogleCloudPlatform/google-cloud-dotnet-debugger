@@ -14,9 +14,9 @@
 
 #include "portablepdbfile.h"
 
+#include <assert.h>
 #include <algorithm>
 #include <array>
-#include <assert.h>
 #include <iostream>
 
 #include "custombinaryreader.h"
@@ -25,20 +25,20 @@
 
 namespace google_cloud_debugger_portable_pdb {
 
+using google_cloud_debugger::CComPtr;
+using std::array;
 using std::string;
 using std::vector;
-using std::array;
-using google_cloud_debugger::CComPtr;
 
 bool PortablePdbFile::GetStream(const string &name,
-  StreamHeader *stream_header) const {
+                                StreamHeader *stream_header) const {
   assert(stream_header != nullptr);
 
-  const auto& result = std::find_if(stream_headers_.begin(),
-    stream_headers_.end(),
-    [&name](const StreamHeader& stream) {
-    return name.compare(stream.name) == 0;
-  });
+  const auto &result =
+      std::find_if(stream_headers_.begin(), stream_headers_.end(),
+                   [&name](const StreamHeader &stream) {
+                     return name.compare(stream.name) == 0;
+                   });
 
   if (result == stream_headers_.end()) {
     return false;
@@ -58,10 +58,9 @@ bool PortablePdbFile::InitializeStringsHeap() {
   }
 
   string_heap_data_.insert(
-    string_heap_data_.begin(),
-    pdb_file_binary_stream_.begin() + string_heap.offset,
-    pdb_file_binary_stream_.begin() + string_heap.offset +
-    string_heap.size);
+      string_heap_data_.begin(),
+      pdb_file_binary_stream_.begin() + string_heap.offset,
+      pdb_file_binary_stream_.begin() + string_heap.offset + string_heap.size);
 
   heap_strings_.resize(string_heap.size + 1);
 
@@ -76,7 +75,7 @@ const string &PortablePdbFile::GetHeapString(uint32_t index) const {
     }
 
     heap_strings_[index] = string(string_heap_data_.begin() + index,
-      string_heap_data_.begin() + index + str_len);
+                                  string_heap_data_.begin() + index + str_len);
   }
 
   return heap_strings_[index];
@@ -102,7 +101,7 @@ bool PortablePdbFile::InitializeFromFile(const string &file_path) {
   }
 
   if (!InitializeBlobHeap() || !InitializeStringsHeap() ||
-    !InitializeGuidHeap()) {
+      !InitializeGuidHeap()) {
     return false;
   }
 
@@ -133,16 +132,15 @@ bool PortablePdbFile::InitializeBlobHeap() {
   }
 
   blob_heap_data_.insert(
-    blob_heap_data_.begin(),
-    pdb_file_binary_stream_.begin() + blob_heap.offset,
-    pdb_file_binary_stream_.begin() + blob_heap.offset +
-    blob_heap.size);
+      blob_heap_data_.begin(),
+      pdb_file_binary_stream_.begin() + blob_heap.offset,
+      pdb_file_binary_stream_.begin() + blob_heap.offset + blob_heap.size);
 
   return true;
 }
 
-bool PortablePdbFile::GetHeapBlobStream(uint32_t index,
-  CustomBinaryStream *binary_stream) const {
+bool PortablePdbFile::GetHeapBlobStream(
+    uint32_t index, CustomBinaryStream *binary_stream) const {
   assert(binary_stream != nullptr);
 
   binary_stream->ConsumeVector(blob_heap_data_);
@@ -162,8 +160,7 @@ bool PortablePdbFile::GetHeapBlobStream(uint32_t index,
   return true;
 }
 
-bool PortablePdbFile::GetDocumentName(uint32_t index,
-  string *doc_name) const {
+bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   if (index == 0) {
     return false;
   }
@@ -215,7 +212,7 @@ bool PortablePdbFile::InitializeGuidHeap() {
   }
 
   if (!pdb_file_binary_stream_.SeekFromOrigin(guid_stream_header.offset) ||
-    !pdb_file_binary_stream_.SetStreamLength(guid_stream_header.size)) {
+      !pdb_file_binary_stream_.SetStreamLength(guid_stream_header.size)) {
     return false;
   }
 
@@ -223,8 +220,8 @@ bool PortablePdbFile::InitializeGuidHeap() {
     vector<uint8_t> bytes_read(16, 0);
     uint32_t num_bytes_read = 0;
 
-    if (!pdb_file_binary_stream_.ReadBytes(bytes_read.data(),
-      bytes_read.size(), &num_bytes_read)) {
+    if (!pdb_file_binary_stream_.ReadBytes(bytes_read.data(), bytes_read.size(),
+                                           &num_bytes_read)) {
       return false;
     }
 
@@ -241,7 +238,7 @@ bool PortablePdbFile::ParsePortablePdbStream() {
   }
 
   if (!pdb_file_binary_stream_.SeekFromOrigin(pdb_stream_header.offset) ||
-    !pdb_file_binary_stream_.SetStreamLength(pdb_stream_header.size)) {
+      !pdb_file_binary_stream_.SetStreamLength(pdb_stream_header.size)) {
     return false;
   }
 
@@ -260,14 +257,12 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   }
 
   if (!pdb_file_binary_stream_.SeekFromOrigin(
-    compressed_stream_header.offset) ||
-    !pdb_file_binary_stream_.SetStreamLength(
-      compressed_stream_header.size)) {
+          compressed_stream_header.offset) ||
+      !pdb_file_binary_stream_.SetStreamLength(compressed_stream_header.size)) {
     return false;
   }
 
-  if (!ParseFrom(&pdb_file_binary_stream_,
-    &metadata_table_header_)) {
+  if (!ParseFrom(&pdb_file_binary_stream_, &metadata_table_header_)) {
     return false;
   }
 
@@ -275,13 +270,12 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   array<uint32_t, MetadataTable::MaxValue> rows_per_table;
   size_t referenced_table = 0;
   for (size_t table_index = 0; table_index < rows_per_table.size();
-    ++table_index) {
+       ++table_index) {
     if (metadata_table_header_.valid_mask[table_index]) {
       rows_per_table[table_index] =
-        metadata_table_header_.num_rows[referenced_table];
+          metadata_table_header_.num_rows[referenced_table];
       ++referenced_table;
-    }
-    else {
+    } else {
       rows_per_table[table_index] = 0;
     }
   }
@@ -294,32 +288,32 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   }
 
   if (!ParseMetadataTableRow<DocumentRow>(
-    rows_per_table[MetadataTable::Document], &pdb_file_binary_stream_,
-    &document_table_)) {
+          rows_per_table[MetadataTable::Document], &pdb_file_binary_stream_,
+          &document_table_)) {
     return false;
   }
 
   if (!ParseMetadataTableRow<MethodDebugInformationRow>(
-    rows_per_table[MetadataTable::MethodDebugInformation],
-    &pdb_file_binary_stream_, &method_debug_info_table_)) {
+          rows_per_table[MetadataTable::MethodDebugInformation],
+          &pdb_file_binary_stream_, &method_debug_info_table_)) {
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalScopeRow>(
-    rows_per_table[MetadataTable::LocalScope], &pdb_file_binary_stream_,
-    &local_scope_table_)) {
+          rows_per_table[MetadataTable::LocalScope], &pdb_file_binary_stream_,
+          &local_scope_table_)) {
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalVariableRow>(
-    rows_per_table[MetadataTable::LocalVariable],
-    &pdb_file_binary_stream_, &local_variable_table_)) {
+          rows_per_table[MetadataTable::LocalVariable],
+          &pdb_file_binary_stream_, &local_variable_table_)) {
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalConstantRow>(
-    rows_per_table[MetadataTable::LocalConstant],
-    &pdb_file_binary_stream_, &local_constant_table_)) {
+          rows_per_table[MetadataTable::LocalConstant],
+          &pdb_file_binary_stream_, &local_constant_table_)) {
     return false;
   }
 
@@ -338,8 +332,8 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
     return hr;
   }
 
-  hr = temp_import->QueryInterface(IID_IMetaDataImport,
-    reinterpret_cast<void **>(&metadata_import_));
+  hr = temp_import->QueryInterface(
+      IID_IMetaDataImport, reinterpret_cast<void **>(&metadata_import_));
   if (FAILED(hr)) {
     return hr;
   }
@@ -348,8 +342,7 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
   return S_OK;
 }
 
-HRESULT PortablePdbFile::GetDebugModule(
-  ICorDebugModule **debug_module) const {
+HRESULT PortablePdbFile::GetDebugModule(ICorDebugModule **debug_module) const {
   if (!debug_module) {
     return E_INVALIDARG;
   }
@@ -363,7 +356,7 @@ HRESULT PortablePdbFile::GetDebugModule(
 }
 
 HRESULT PortablePdbFile::GetMetaDataImport(
-  IMetaDataImport **metadata_import) const {
+    IMetaDataImport **metadata_import) const {
   if (!metadata_import) {
     return E_INVALIDARG;
   }

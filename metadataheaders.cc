@@ -20,9 +20,9 @@
 
 namespace google_cloud_debugger_portable_pdb {
 
-using std::vector;
-using std::string;
 using std::array;
+using std::string;
+using std::vector;
 
 bool ParseFrom(CustomBinaryStream *binary_reader,
                MetadataRootHeader *root_header) {

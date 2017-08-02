@@ -5,6 +5,8 @@ obj
 bin
 Debug
 Release
+packages
+x64
 *~
 .cr
 *.o

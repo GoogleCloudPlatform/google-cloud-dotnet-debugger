@@ -22,7 +22,7 @@ namespace google_cloud_debugger {
 // Functionality of a named pipe.
 class INamedPipe {
  public:
-  virtual ~INamedPipe() {};
+  virtual ~INamedPipe(){};
 
   // Initializes the pipe and returns an HRESULT.
   virtual HRESULT Initialize() = 0;

@@ -250,8 +250,8 @@ const std::string &GetLanguageName(const std::string &guid);
 const std::string &GetHashAlgorithmName(const std::string &guid);
 
 bool ParseFrom(std::uint32_t starting_document,
-                      CustomBinaryStream *binary_reader,
-                      MethodSequencePointInformation *sequence_point_info);
+               CustomBinaryStream *binary_reader,
+               MethodSequencePointInformation *sequence_point_info);
 
 // Parses the very first entity of a SequencePointBlob. May be a
 // sequence-point-record or a hidden-sequence-point-record.

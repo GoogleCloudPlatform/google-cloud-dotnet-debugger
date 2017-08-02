@@ -137,19 +137,19 @@ class DocumentIndex {
   // debug_info_row. This function assumes that the method only spans
   // 1 document.
   bool ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
-    const MethodDebugInformationRow &debug_info_row,
-    std::uint32_t method_def, std::uint32_t doc_index);
+                   const MethodDebugInformationRow &debug_info_row,
+                   std::uint32_t method_def, std::uint32_t doc_index);
 
   // Returns a Scope object that corresponds with LocalScopeRow
   // local_scope_row. The Scope object will have its variable
   // and constant tables filled up with variables and constants that
   // belong to the scope.
   bool ParseScope(Scope *scope, const PortablePdbFile &pdb,
-    const LocalScopeRow &local_scope_row,
-    const std::vector<LocalScopeRow> &local_scope_table,
-    const std::vector<LocalVariableRow> &local_variable_table,
-    const std::vector<LocalConstantRow> &local_constant_table,
-    std::uint32_t method_def, std::uint32_t scope_index);
+                  const LocalScopeRow &local_scope_row,
+                  const std::vector<LocalScopeRow> &local_scope_table,
+                  const std::vector<LocalVariableRow> &local_variable_table,
+                  const std::vector<LocalConstantRow> &local_constant_table,
+                  std::uint32_t method_def, std::uint32_t scope_index);
 
   // The file path of this document.
   std::string file_path_;

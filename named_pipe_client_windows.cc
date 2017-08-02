@@ -27,7 +27,8 @@ NamedPipeClient::~NamedPipeClient() {
     return;
   }
   if (!CloseHandle(pipe_)) {
-    std::cerr << "CloseHandle error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+    std::cerr << "CloseHandle error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
   }
 }
 
@@ -38,14 +39,16 @@ HRESULT NamedPipeClient::WaitForConnection() {
   bool file_found = false;
 
   while (timeout > 0) {
-    BOOL available = WaitNamedPipeW(pipe_name_.c_str(), kConnectionWaitTimeoutMs);
+    BOOL available =
+        WaitNamedPipeW(pipe_name_.c_str(), kConnectionWaitTimeoutMs);
     if (available) {
       file_found = true;
       break;
     }
 
     if (!available && GetLastError() != ERROR_FILE_NOT_FOUND) {
-      std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+      std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError())
+                << std::endl;
       return HRESULT_FROM_WIN32(GetLastError());
     }
 
@@ -54,16 +57,18 @@ HRESULT NamedPipeClient::WaitForConnection() {
   }
 
   if (!file_found) {
-    std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+    std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
     return HRESULT_FROM_WIN32(GetLastError());
   }
 
   pipe_ = CreateFileW(pipe_name_.c_str(), GENERIC_READ | GENERIC_WRITE,
-                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-                        FILE_ATTRIBUTE_NORMAL, NULL);
+                      FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                      FILE_ATTRIBUTE_NORMAL, NULL);
 
   if (pipe_ == INVALID_HANDLE_VALUE) {
-    std::cerr << "CreateFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+    std::cerr << "CreateFile error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
     return HRESULT_FROM_WIN32(GetLastError());
   }
   return S_OK;
@@ -78,7 +83,8 @@ HRESULT NamedPipeClient::Read(string *message) {
   BOOL success = ReadFile(pipe_, buf, kBufferSize - 1, &read, NULL);
 
   if (!success) {
-    std::cerr << "ReadFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+    std::cerr << "ReadFile error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
     return HRESULT_FROM_WIN32(GetLastError());
   }
 
@@ -96,7 +102,8 @@ HRESULT NamedPipeClient::Write(const string &message) {
 
     BOOL success = WriteFile(pipe_, buf, write, &written, NULL);
     if (!success) {
-      std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
+      std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError())
+                << std::endl;
       return HRESULT_FROM_WIN32(GetLastError());
     }
 
