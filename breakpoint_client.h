@@ -15,11 +15,11 @@
 #ifndef BREAKPOINT_CLIENT_H_
 #define BREAKPOINT_CLIENT_H_
 
-#include <iostream>
 #include <cor.h>
-#include <string>
-#include <mutex>
 #include <windef.h>
+#include <iostream>
+#include <mutex>
+#include <string>
 
 #include "breakpoint.pb.h"
 #include "constants.h"
@@ -28,38 +28,38 @@
 namespace google_cloud_debugger {
 
 class BreakpointClient {
-public:
-	// Creates a breakpoint client and accepts a NamedPipeClient.
-	BreakpointClient(std::unique_ptr<NamedPipeClient> pipe);
+ public:
+  // Creates a breakpoint client and accepts a NamedPipeClient.
+  BreakpointClient(std::unique_ptr<NamedPipeClient> pipe);
 
-	// Initializes the client and returns an HRESULT.
-	HRESULT Initialize();
+  // Initializes the client and returns an HRESULT.
+  HRESULT Initialize();
 
-	// Waits to connect to a server.  This function will
-	// block until a connection is made or until a timeout
-	// occurs.
-	HRESULT WaitForConnection();
+  // Waits to connect to a server.  This function will
+  // block until a connection is made or until a timeout
+  // occurs.
+  HRESULT WaitForConnection();
 
-	// Reads a breakpoint from a breakpoint server and
-	// returns an HRESULT.  This function will
-	// block until there is a breakpoint to read.
-	HRESULT ReadBreakpoint(
+  // Reads a breakpoint from a breakpoint server and
+  // returns an HRESULT.  This function will
+  // block until there is a breakpoint to read.
+  HRESULT ReadBreakpoint(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint);
 
-	// Writes a breakpoint to a breakpoint server
-	// and returns an HRESULT.
-	HRESULT WriteBreakpoint(
+  // Writes a breakpoint to a breakpoint server
+  // and returns an HRESULT.
+  HRESULT WriteBreakpoint(
       const google::cloud::diagnostics::debug::Breakpoint &breakpoint);
 
-private:
-	// The pipe client to send messages.
-	std::unique_ptr<NamedPipeClient> pipe_;
+ private:
+  // The pipe client to send messages.
+  std::unique_ptr<NamedPipeClient> pipe_;
 
-	// A buffer to hold partial breakpoint messages.
-	std::string buffer_;
+  // A buffer to hold partial breakpoint messages.
+  std::string buffer_;
 
-	// Mutex to protect the buffer.
-	std::mutex mutex_;
+  // Mutex to protect the buffer.
+  std::mutex mutex_;
 };
 
 }  // namespace google_cloud_debugger

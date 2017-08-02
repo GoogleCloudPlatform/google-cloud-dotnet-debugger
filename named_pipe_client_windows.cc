@@ -23,87 +23,94 @@ using std::string;
 namespace google_cloud_debugger {
 
 NamedPipeClient::~NamedPipeClient() {
-	if (pipe_ == INVALID_HANDLE_VALUE) {
-		return;
-	}
-	if (!CloseHandle(pipe_)) {
-		std::cerr << "CloseHandle error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-	}
+  if (pipe_ == INVALID_HANDLE_VALUE) {
+    return;
+  }
+  if (!CloseHandle(pipe_)) {
+    std::cerr << "CloseHandle error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+  }
 }
 
 HRESULT NamedPipeClient::Initialize() { return S_OK; }
 
 HRESULT NamedPipeClient::WaitForConnection() {
-	int timeout = kConnectionWaitTimeoutMs;
-	bool file_found = false;
+  int timeout = kConnectionWaitTimeoutMs;
+  bool file_found = false;
 
-	while (timeout > 0) {
-		BOOL available = WaitNamedPipeW(pipe_name_.c_str(), kConnectionWaitTimeoutMs);
-		if (available) {
-			file_found = true;
-			break;
-		}
+  while (timeout > 0) {
+    BOOL available =
+        WaitNamedPipeW(pipe_name_.c_str(), kConnectionWaitTimeoutMs);
+    if (available) {
+      file_found = true;
+      break;
+    }
 
-		if (!available && GetLastError() != ERROR_FILE_NOT_FOUND) {
-			std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-			return HRESULT_FROM_WIN32(GetLastError());
-		}
+    if (!available && GetLastError() != ERROR_FILE_NOT_FOUND) {
+      std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError())
+                << std::endl;
+      return HRESULT_FROM_WIN32(GetLastError());
+    }
 
-		timeout -= kConnectionSleepTimeoutMs;
-		Sleep(kConnectionSleepTimeoutMs);
-	}
+    timeout -= kConnectionSleepTimeoutMs;
+    Sleep(kConnectionSleepTimeoutMs);
+  }
 
-	if (!file_found) {
-		std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-		return HRESULT_FROM_WIN32(GetLastError());
-	}
+  if (!file_found) {
+    std::cerr << "WaitNamedPipe error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
 
-	pipe_ = CreateFileW(pipe_name_.c_str(), GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL, NULL);
+  pipe_ = CreateFileW(pipe_name_.c_str(), GENERIC_READ | GENERIC_WRITE,
+                      FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                      FILE_ATTRIBUTE_NORMAL, NULL);
 
-	if (pipe_ == INVALID_HANDLE_VALUE) {
-		std::cerr << "CreateFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-		return HRESULT_FROM_WIN32(GetLastError());
-	}
-	return S_OK;
+  if (pipe_ == INVALID_HANDLE_VALUE) {
+    std::cerr << "CreateFile error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
+  return S_OK;
 }
 
 HRESULT NamedPipeClient::Read(string *message) {
-	if (message == nullptr) {
-		return E_POINTER;
-	}
-	CHAR buf[kBufferSize];
-	DWORD read = 0;
-	BOOL success = ReadFile(pipe_, buf, kBufferSize - 1, &read, NULL);
+  if (message == nullptr) {
+    return E_POINTER;
+  }
+  CHAR buf[kBufferSize];
+  DWORD read = 0;
+  BOOL success = ReadFile(pipe_, buf, kBufferSize - 1, &read, NULL);
 
-	if (!success) {
-		std::cerr << "ReadFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-		return HRESULT_FROM_WIN32(GetLastError());
-	}
+  if (!success) {
+    std::cerr << "ReadFile error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
 
-	message->assign(buf, buf + read);
-	return S_OK;
+  message->assign(buf, buf + read);
+  return S_OK;
 }
 
 HRESULT NamedPipeClient::Write(const string &message) {
-	const CHAR *buf = message.c_str();
-	DWORD bytes_left = message.size();
+  const CHAR *buf = message.c_str();
+  DWORD bytes_left = message.size();
 
-	while (bytes_left > 0) {
-		DWORD written = 0;
-		int write = bytes_left > kBufferSize ? kBufferSize : bytes_left;
+  while (bytes_left > 0) {
+    DWORD written = 0;
+    int write = bytes_left > kBufferSize ? kBufferSize : bytes_left;
 
-		BOOL success = WriteFile(pipe_, buf, write, &written, NULL);
-		if (!success) {
-			std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError()) << std::endl;
-			return HRESULT_FROM_WIN32(GetLastError());
-		}
+    BOOL success = WriteFile(pipe_, buf, write, &written, NULL);
+    if (!success) {
+      std::cerr << "WriteFile error: " << HRESULT_FROM_WIN32(GetLastError())
+                << std::endl;
+      return HRESULT_FROM_WIN32(GetLastError());
+    }
 
-		bytes_left -= written;
-		buf += written;
-	}
-	return S_OK;
+    bytes_left -= written;
+    buf += written;
+  }
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger
