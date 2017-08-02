@@ -1,9 +1,23 @@
-// Copyright 2015-2016 Google Inc. All Rights Reserved.
-// Licensed under the Apache License Version 2.0.
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "debugger.h"
+
 #include <stdio.h>
 #include <iostream>
+#include <vector>
+
 #include "cor.h"
 #include "cordebug.h"
 #include "dbgshim.h"
@@ -22,25 +36,42 @@ namespace google_cloud_debugger {
 
 using std::cerr;
 using std::cout;
+using std::string;
+using std::vector;
 
 Debugger::~Debugger() {
+  HRESULT hr;
   // Stop and detach the debugger.
-  if (!cordebug_process_) {
+  if (cordebug_process_) {
+    hr = cordebug_process_->Stop(-1);
+    DeactivateBreakpoints();
+
     // TODO(quoct): We may have to drain callback event queue,
-    // remove function evaluations, breakpoints and steppers.
-    cordebug_process_->Stop(-1);
-    cordebug_process_->Detach();
+    // remove function evaluations.
+    hr = cordebug_process_->Detach();
   }
 
-  if (!cordebug_) {
-    cordebug_->Terminate();
+  if (cordebug_) {
+    hr = cordebug_->Terminate();
   }
+}
+
+HRESULT Debugger::SyncBreakpoints() {
+  if (!debugger_callback_) {
+    cerr << "Debugger callback does not exist.";
+    return E_FAIL;
+  }
+
+  return debugger_callback_->SyncBreakpoints();
 }
 
 HRESULT Debugger::StartDebugging(DWORD processId) {
   HRESULT hr;
 
-  debugger_callback_ = new (std::nothrow) DebuggerCallback();
+  if (!debugger_callback_) {
+    debugger_callback_ = new (std::nothrow) DebuggerCallback();
+  }
+
   if (!debugger_callback_) {
     cerr << "Failed to create debugger_callback_";
     return E_FAIL;
@@ -105,6 +136,55 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   if (FAILED(hr)) {
     cerr << "Failed to debug process " << process_id;
     return;
+  }
+
+  debugger->debugger_callback_->SetDebugProcess(debugger->cordebug_process_);
+}
+
+void Debugger::DeactivateBreakpoints() {
+  // Here, we enumerate all the domains, retrieve the breakpoints in all
+  // the domains and deactivate the breakpoints.
+  CComPtr<ICorDebugAppDomainEnum> appdomain_enum;
+  HRESULT hr = cordebug_process_->EnumerateAppDomains(&appdomain_enum);
+  if (FAILED(hr)) {
+    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    return;
+  }
+
+  vector<CComPtr<ICorDebugAppDomain>> appdomains;
+  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
+      ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum,
+                                                  &appdomains);
+
+  if (FAILED(hr)) {
+    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    return;
+  }
+
+  for (auto &&appdomain : appdomains) {
+    CComPtr<ICorDebugBreakpointEnum> breakpoint_enum;
+    hr = appdomain->EnumerateBreakpoints(&breakpoint_enum);
+    if (FAILED(hr)) {
+      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      continue;
+    }
+
+    vector<CComPtr<ICorDebugBreakpoint>> breakpoints;
+    hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
+        ICorDebugBreakpointEnum, ICorDebugBreakpoint>(breakpoint_enum,
+                                                      &breakpoints);
+
+    if (FAILED(hr)) {
+      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      continue;
+    }
+
+    for (auto &&breakpoint : breakpoints) {
+      hr = breakpoint->Activate(FALSE);
+      if (FAILED(hr)) {
+        cerr << "Failed to deactivate breakpoint: " << std::hex << hr;
+      }
+    }
   }
 }
 
