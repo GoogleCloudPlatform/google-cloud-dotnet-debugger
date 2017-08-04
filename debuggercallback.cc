@@ -112,7 +112,9 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   HRESULT hr;
   CComPtr<ICorDebugFrame> frame;
   CComPtr<ICorDebugILFrame> il_frame;
-  CComPtr<ICorDebugValueEnum> value_enum;
+  CComPtr<ICorDebugValueEnum> variable_value_enum;
+  CComPtr<ICorDebugValueEnum> arg_value_enum;
+  CComPtr<IMetaDataImport> metadata_import;
 
   hr = debug_thread->GetActiveFrame(&frame);
   if (FAILED(hr)) {
@@ -132,7 +134,7 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   mdMethodDef function_token;
   ULONG32 il_offset = 0;
   hr = GetFunctionTokenAndILOffset(debug_breakpoint, &function_token,
-                                   &il_offset);
+                                   &il_offset, &metadata_import);
   if (FAILED(hr)) {
     cerr << "Failed to get function token and IL Offset from breakpoint.";
     appdomain->Continue(FALSE);
@@ -142,17 +144,26 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   for (auto &&breakpoint : breakpoint_collection_->GetBreakpoints()) {
     if (breakpoint.GetMethodToken() == function_token &&
         il_offset == breakpoint.GetILOffset()) {
-      hr = il_frame->EnumerateLocalVariables(&value_enum);
+      hr = il_frame->EnumerateLocalVariables(&variable_value_enum);
       if (FAILED(hr)) {
         cerr << "Failed to get local variable.";
         appdomain->Continue(FALSE);
         return hr;
       }
 
-      hr = eval_coordinator_->PrintLocalVariables(value_enum, debug_thread,
-                                                  &breakpoint);
+      hr = il_frame->EnumerateArguments(&arg_value_enum);
+      // TODO(quoct): What if we are not in a method. Have to check this.
       if (FAILED(hr)) {
-        cerr << "Failed to print out local variable.";
+        cerr << "Failed to get method arguments.";
+        appdomain->Continue(FALSE);
+        return hr;
+      }
+
+      hr = eval_coordinator_->PrintVariablesAndArguments(
+          variable_value_enum, arg_value_enum, debug_thread, &breakpoint,
+          metadata_import);
+      if (FAILED(hr)) {
+        cerr << "Failed to print out local variable and method arguments.";
         appdomain->Continue(FALSE);
         return hr;
       }
@@ -278,7 +289,7 @@ HRESULT DebuggerCallback::EnumerateAppDomains(
 
 HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
     ICorDebugBreakpoint *debug_breakpoint, mdMethodDef *function_token,
-    ULONG32 *il_offset) {
+    ULONG32 *il_offset, IMetaDataImport **metadata_import) {
   CComPtr<ICorDebugFunctionBreakpoint> function_breakpoint;
   CComPtr<ICorDebugFunction> debug_function;
 
@@ -305,6 +316,28 @@ HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
   hr = function_breakpoint->GetOffset(il_offset);
   if (FAILED(hr)) {
     cerr << "Failed to get function offset.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugModule> debug_module;
+  CComPtr<IUnknown> temp_import;
+
+  hr = debug_function->GetModule(&debug_module);
+  if (FAILED(hr)) {
+    cerr << "Failed to get debug module from ICorDebugFunction.";
+    return hr;
+  }
+
+  hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
+  if (FAILED(hr)) {
+    cerr << "Failed to get metadata import from ICorDebugModule.";
+    return hr;
+  }
+
+  hr = temp_import->QueryInterface(IID_IMetaDataImport,
+                                   reinterpret_cast<void **>(metadata_import));
+  if (FAILED(hr)) {
+    cerr << "Failed to get IMetaDataImport.";
     return hr;
   }
 

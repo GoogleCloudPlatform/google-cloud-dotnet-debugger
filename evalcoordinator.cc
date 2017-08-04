@@ -92,9 +92,12 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
   });
 }
 
-HRESULT EvalCoordinator::PrintLocalVariables(ICorDebugValueEnum *local_enum,
-                                             ICorDebugThread *debug_thread,
-                                             DbgBreakpoint *breakpoint) {
+HRESULT EvalCoordinator::PrintVariablesAndArguments(
+    ICorDebugValueEnum *local_enum,
+    ICorDebugValueEnum *arg_enum,
+    ICorDebugThread *debug_thread,
+    DbgBreakpoint *breakpoint,
+    IMetaDataImport *metadata_import) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";
     return E_INVALIDARG;
@@ -111,7 +114,8 @@ HRESULT EvalCoordinator::PrintLocalVariables(ICorDebugValueEnum *local_enum,
     return E_FAIL;
   }
 
-  HRESULT hr = manager->PopulateLocalVariable(local_enum, breakpoint);
+  HRESULT hr = manager->Initialize(
+      local_enum, arg_enum, breakpoint, metadata_import);
   if (FAILED(hr)) {
     return hr;
   }

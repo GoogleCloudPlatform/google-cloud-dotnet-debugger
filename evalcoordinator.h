@@ -75,9 +75,11 @@ class EvalCoordinator {
   void HandleException();
 
   // Prints out local variable from the Enumerable local_enum on debug_thread.
-  HRESULT PrintLocalVariables(ICorDebugValueEnum *local_enum,
-                              ICorDebugThread *debug_thread,
-                              DbgBreakpoint *breakpoint);
+  HRESULT PrintVariablesAndArguments(ICorDebugValueEnum *local_enum,
+                                     ICorDebugValueEnum *arg_enum,
+                                     ICorDebugThread *debug_thread,
+                                     DbgBreakpoint *breakpoint,
+                                     IMetaDataImport *metadata_import);
 
   // VariableManager calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
