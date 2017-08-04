@@ -62,7 +62,7 @@ HRESULT BreakpointClient::ReadBreakpoint(Breakpoint *breakpoint) {
   string newStr =
       buffer.substr(found_start + kStartBreakpointMessage.size(),
                     found_end - found_start - kStartBreakpointMessage.size());
-  buffer_.append(buffer, found_end + kEndBreakpointMessage.size());
+  buffer_.append(buffer, found_end + kEndBreakpointMessage.size(), string::npos);
 
   if (!breakpoint->ParseFromString(newStr)) {
     cerr << "failed to serialize from protobuf" << std::endl;

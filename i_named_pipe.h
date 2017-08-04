@@ -17,6 +17,8 @@
 
 #include <string>
 
+#include "cor.h"
+
 namespace google_cloud_debugger {
 
 // Functionality of a named pipe.

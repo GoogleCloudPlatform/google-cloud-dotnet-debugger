@@ -19,8 +19,8 @@
 
 #include <string>
 
-#include "constants.h"
 #include "i_named_pipe.h"
+#include "constants.h"
 
 namespace google_cloud_debugger {
 
@@ -30,7 +30,7 @@ class NamedPipeClient : public INamedPipe {
   ~NamedPipeClient();
   HRESULT Initialize() override;
   HRESULT WaitForConnection() override;
-  HRESULT Write(std::string *message) override;
+  HRESULT Read(std::string *message) override;
   HRESULT Write(const std::string &message) override;
 
  private:

@@ -214,7 +214,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
       continue;
     }
 
-    hr = result_object->PopulateVariableValue(variable, eval_coordinator);
+    hr = result_object->PopulateVariableValue(member, eval_coordinator);
     if (FAILED(hr)) {
       SetErrorStatusMessage(member, GetErrorString());
       ResetErrorStream();
