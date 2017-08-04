@@ -16,6 +16,7 @@
 
 #include <errno.h>
 #include <sys/un.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <iostream>
 
@@ -47,7 +48,7 @@ HRESULT NamedPipeClient::Initialize() {
 HRESULT NamedPipeClient::WaitForConnection() {
   struct sockaddr_un addr;
   addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, pipe_name_, sizeof(addr.sun_path) - 1);
+  strncpy(addr.sun_path, pipe_name_.c_str(), sizeof(addr.sun_path) - 1);
 
   int timeout = kConnectionWaitTimeoutMs;
   bool file_found = false;
@@ -76,7 +77,7 @@ HRESULT NamedPipeClient::WaitForConnection() {
   return S_OK;
 }
 
-HRESULT NamedPipeClient::Write(string *message) {
+HRESULT NamedPipeClient::Read(string *message) {
   if (message == nullptr) {
     return E_POINTER;
   }
@@ -89,7 +90,7 @@ HRESULT NamedPipeClient::Write(string *message) {
     return E_FAIL;
   }
 
-  message->assign(buf, buf + read);
+  message->assign(buff, buff + read);
   return S_OK;
 }
 

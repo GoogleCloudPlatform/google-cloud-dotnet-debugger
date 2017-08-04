@@ -59,15 +59,19 @@ namespace Google.Cloud.Diagnostics.Debug
                 List<byte> previousBuffer = _buffer;
                 _buffer = new List<byte>();
 
+                int bytesWrittenSoFar = 0;
                 // Check if we have a full breakpoint message in the buffer.
                 // If so just use it and do not try and read another breakpoint.
                 int endIndex = IndexOfSequence(previousBuffer.ToArray(), Constants.EndBreakpointMessage);
                 while (endIndex == -1)
                 {
                     byte[] bytes = await _pipe.ReadAsync(cancellationToken);
+                    bytesWrittenSoFar = previousBuffer.Count;
                     previousBuffer.AddRange(bytes);
                     endIndex = IndexOfSequence(bytes, Constants.EndBreakpointMessage);
                 }
+
+                endIndex += bytesWrittenSoFar;
 
                 // Ensure we have a start to the breakpoint message.
                 int startIndex = IndexOfSequence(previousBuffer.ToArray(), Constants.StartBreakpointMessage);

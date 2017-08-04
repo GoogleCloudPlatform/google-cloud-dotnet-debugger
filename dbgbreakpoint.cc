@@ -153,18 +153,18 @@ bool DbgBreakpoint::TrySetBreakpointInMethod(
     // Loop through all scopes of method to retrieve local variables and
     // constants. We are only interested in scopes that encompasses this
     // sequence point.
+    local_variables_.clear();
+    local_constants_.clear();
     for (auto &&local_scope : method.local_scope) {
       if (local_scope.start_offset > il_offset_ ||
           local_scope.start_offset + local_scope.length < il_offset_) {
         continue;
       }
 
-      local_variables_.clear();
       local_variables_.insert(local_variables_.end(),
                               local_scope.local_variables.begin(),
                               local_scope.local_variables.end());
 
-      local_constants_.clear();
       local_constants_.insert(local_constants_.end(),
                               local_scope.local_constants.begin(),
                               local_scope.local_constants.end());
