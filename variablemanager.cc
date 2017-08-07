@@ -123,7 +123,7 @@ HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
 HRESULT VariableManager::PopulateMethodArguments(
     ICorDebugValueEnum *method_arg_enum, DbgBreakpoint *breakpoint,
     IMetaDataImport *metadata_import) {
-  HRESULT hr;
+  HRESULT hr = S_OK;
 
   vector<CComPtr<ICorDebugValue>> method_arg_values;
   hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
@@ -137,7 +137,32 @@ HRESULT VariableManager::PopulateMethodArguments(
   vector<string> method_argument_names;
   HCORENUM cor_enum = nullptr;
   mdMethodDef method_token = breakpoint->GetMethodToken();
-  hr = S_OK;
+
+  // We need to check whether this method is static or not.
+  // If it is not, then we add "this" to the first argument name.
+  mdTypeDef method_class;
+  ULONG method_name_len;
+  DWORD method_flag;
+  PCCOR_SIGNATURE method_signature;
+  ULONG method_signature_blob;
+  ULONG method_rva;
+  DWORD method_flags2;
+
+  hr = metadata_import->GetMethodProps(
+      method_token, &method_class, nullptr, 0, &method_name_len,
+      &method_flag, &method_signature, &method_signature_blob, &method_rva,
+      &method_flags2);
+
+  if (FAILED(hr)) {
+    cerr << "Failed to retrieve method flags.";
+    return hr;
+  }
+
+  // Add "this" if method is not static.
+  if ((method_flag & CorMethodAttr::mdStatic) == 0) {
+    method_argument_names.push_back("this");
+  }
+
   while (hr == S_OK) {
     vector<mdParamDef> method_args(100, 0);
     ULONG method_args_returned = 0;
