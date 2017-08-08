@@ -123,6 +123,7 @@ HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
 HRESULT VariableManager::PopulateMethodArguments(
     ICorDebugValueEnum *method_arg_enum, DbgBreakpoint *breakpoint,
     IMetaDataImport *metadata_import) {
+  static const string kMethodArg = "method_argument";
   HRESULT hr = S_OK;
 
   vector<CComPtr<ICorDebugValue>> method_arg_values;
@@ -163,16 +164,17 @@ HRESULT VariableManager::PopulateMethodArguments(
     method_argument_names.push_back("this");
   }
 
+  vector<mdParamDef> method_args(100, 0);
   while (hr == S_OK) {
-    vector<mdParamDef> method_args(100, 0);
     ULONG method_args_returned = 0;
-    hr =
-        metadata_import->EnumParams(&cor_enum, method_token, method_args.data(),
-                                    method_args.size(), &method_args_returned);
+    hr = metadata_import->EnumParams(&cor_enum, method_token,
+                                     method_args.data(),
+                                     method_args.size(),
+                                     &method_args_returned);
     if (FAILED(hr)) {
       cerr << "Failed to get method arguments for method: " << method_token
            << " with hr: " << std::hex << hr;
-      break;
+      return hr;
     }
 
     // No arguments to evaluate.
@@ -180,7 +182,9 @@ HRESULT VariableManager::PopulateMethodArguments(
       break;
     }
 
-    for (size_t j = 0; j < method_args_returned; ++j) {
+    method_args.resize(method_args_returned);
+
+    for (auto const &method_arg_token : method_args) {
       mdMethodDef method_token;
       ULONG ordinal_position;
       ULONG param_name_size;
@@ -191,22 +195,22 @@ HRESULT VariableManager::PopulateMethodArguments(
       std::vector<WCHAR> param_name;
 
       hr = metadata_import->GetParamProps(
-          method_args[j], &method_token, &ordinal_position, nullptr, 0,
+          method_arg_token, &method_token, &ordinal_position, nullptr, 0,
           &param_name_size, &param_attributes, &value_type_flag,
           &const_string_value, &const_string_value_size);
       if (FAILED(hr) || param_name_size == 0) {
         cerr << "Failed to get length of name of method argument: "
-             << method_args[j] << " with hr: " << std::hex << hr;
+             << method_arg_token << " with hr: " << std::hex << hr;
         continue;
       }
 
       param_name.resize(param_name_size);
       hr = metadata_import->GetParamProps(
-          method_args[j], &method_token, &ordinal_position, param_name.data(),
+          method_arg_token, &method_token, &ordinal_position, param_name.data(),
           param_name.size(), &param_name_size, &param_attributes,
           &value_type_flag, &const_string_value, &const_string_value_size);
       if (FAILED(hr)) {
-        cerr << "Failed to get name of method argument: " << method_args[j]
+        cerr << "Failed to get name of method argument: " << method_arg_token
              << " with hr: " << std::hex << hr;
         continue;
       }
@@ -216,14 +220,22 @@ HRESULT VariableManager::PopulateMethodArguments(
 
   metadata_import->CloseEnum(cor_enum);
 
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   for (size_t i = 0; i < method_arg_values.size(); ++i) {
     unique_ptr<DbgObject> method_arg_value;
     string method_arg_name;
     unique_ptr<ostringstream> err_stream(new (std::nothrow) ostringstream);
+    if (!err_stream) {
+      cerr << "Failed to create an error stream.";
+      return E_OUTOFMEMORY;
+    }
 
     if (i >= method_argument_names.size()) {
       // Default name if we can't get the name.
-      method_arg_name = "method_argument" + std::to_string(i);
+      method_arg_name = kMethodArg + std::to_string(i);
     } else {
       method_arg_name = method_argument_names[i];
     }
