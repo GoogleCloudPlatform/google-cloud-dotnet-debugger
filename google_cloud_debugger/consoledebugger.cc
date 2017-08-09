@@ -7,6 +7,8 @@
 #include <string>
 #include <thread>
 #include "debugger.h"
+#include "winerror.h"
+
 using namespace std;
 using namespace google_cloud_debugger;
 
@@ -39,3 +41,4 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+

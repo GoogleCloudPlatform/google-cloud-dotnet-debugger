@@ -4,9 +4,6 @@
     <ClCompile Include="breakpointcollection.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="consoledebugger.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="custombinaryreader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -118,6 +118,8 @@ HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
                                          std::move(variable_value),
                                          std::move(err_stream)));
   }
+
+  return S_OK;
 }
 
 HRESULT VariableManager::PopulateMethodArguments(

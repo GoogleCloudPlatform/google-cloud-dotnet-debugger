@@ -21,9 +21,9 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>GoogleCloudDebugger</RootNamespace>
+    <RootNamespace>google_cloud_debugger_lib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
-    <ProjectName>GoogleCloudDebugger</ProjectName>
+    <ProjectName>google_cloud_debugger_lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -78,7 +78,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(PROTOBUF_PATH)\include;$(CORECLR_PATH)\src\debug\ildsymlib;$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\debug\inc;$(CORECLR_PATH)\src\dlls\dbgshim;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(PROTOBUF_PATH)\lib;$(ProjectDir)third_party\Windows;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(PROTOBUF_PATH)\lib;$(ProjectDir)\third_party\Windows;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -119,8 +119,11 @@
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\Windows;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>Copy /Y "$(ProjectDir)third_party\Windows\dbgshim.dll" "$(TargetDir)"</Command>
+      <Command>Copy /Y "$(SolutionDir)third_party\Windows\dbgshim.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalDependencies>libprotobufd.lib;libprotobuf-lited.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -199,7 +202,6 @@
     <ClCompile Include="breakpoint.pb.cc" />
     <ClCompile Include="breakpoint_client.cc" />
     <ClCompile Include="breakpointcollection.cc" />
-    <ClCompile Include="consoledebugger.cc" />
     <ClCompile Include="custombinaryreader.cc" />
     <ClCompile Include="dbgarray.cc" />
     <ClCompile Include="dbgbreakpoint.cc" />
