@@ -41,9 +41,25 @@ class VariableManager {
  public:
   VariableManager();
 
-  // Populate variables_ dictionary based on local_enum.
-  HRESULT PopulateLocalVariable(ICorDebugValueEnum *local_enum,
-                                DbgBreakpoint *breakpoint);
+  // Populate method_name_, file_name_, line_number_ and breakpoint_id_.
+  // Also populate local variables and method arguments into variables_
+  // vectors.
+  HRESULT Initialize(ICorDebugValueEnum *local_enum,
+                     ICorDebugValueEnum *method_arg_enum,
+                     DbgBreakpoint *breakpoint,
+                     IMetaDataImport *metadata_import);
+
+  // Extract local variables from local_enum.
+  // DbgBreakpoint object is used to get the variables' names.
+  HRESULT PopulateLocalVariables(ICorDebugValueEnum *local_enum,
+                                 DbgBreakpoint *breakpoint);
+
+  // Extract method arguments from method_arg_enum.
+  // DbgBreakpoint and IMetaDataImport objects are used
+  // to get the variables' names.
+  HRESULT PopulateMethodArguments(ICorDebugValueEnum *method_arg_enum,
+                                  DbgBreakpoint *breakpoint,
+                                  IMetaDataImport *metadata_import);
 
   // Prints out all variable stored in variables_ dictionary.
   HRESULT PrintVariables(EvalCoordinator *eval_coordinator) const;
