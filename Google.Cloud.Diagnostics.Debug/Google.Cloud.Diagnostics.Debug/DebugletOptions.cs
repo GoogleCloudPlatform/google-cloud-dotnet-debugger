@@ -48,6 +48,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             var result = Parser.Default.ParseArguments<DebugletOptions>(args);
             var options = new DebugletOptions();
+            // TODO(talarico): Add better validation, file exists, ect.
             result.WithParsed((o) => options = o);
             return options;
         }
