@@ -43,7 +43,7 @@ namespace Google.Cloud.Diagnostics.Debug
         private Debuggee _debuggee;
         private Process _process;
 
-        private Debuglet(DebugletOptions options, Debugger2Client debugClient = null, Controller2Client controlClient = null)
+        private Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _controlClient = controlClient ?? Controller2Client.Create();
