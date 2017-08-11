@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using CommandLine;
+using Google.Api.Gax;
+using System.IO;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -48,8 +50,20 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             var result = Parser.Default.ParseArguments<DebugletOptions>(args);
             var options = new DebugletOptions();
-            // TODO(talarico): Add better validation, file exists, ect.
-            result.WithParsed((o) => options = o);
+            result.WithParsed((o) => 
+            {
+                GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));
+                GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
+                GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
+                GaxPreconditions.CheckNotNullOrEmpty(o.ProcessId, nameof(o.ProcessId));
+                GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId, nameof(o.ProjectId));
+
+                if (!File.Exists(o.Debugger))
+                {
+                    throw new FileNotFoundException($"Debugger file not found: '{o.Debugger}'");
+                }
+                options = o;
+            });
             return options;
         }
     }
