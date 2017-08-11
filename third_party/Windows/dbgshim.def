@@ -1,0 +1,13 @@
+EXPORTS
+CLRCreateInstance
+CloseCLREnumeration
+CloseResumeHandle
+CreateDebuggingInterfaceFromVersion
+CreateDebuggingInterfaceFromVersionEx
+CreateProcessForLaunch
+CreateVersionStringFromModule
+EnumerateCLRs
+GetStartupNotificationEvent
+RegisterForRuntimeStartup
+ResumeProcess
+UnregisterForRuntimeStartup
