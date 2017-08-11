@@ -76,6 +76,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
+            // TODO(talarico): Be sure to signal the debugger to detach.
             _process?.Dispose();
             _cts.Cancel();
         }
@@ -92,30 +93,31 @@ namespace Google.Cloud.Diagnostics.Debug
             // TODO(talarico): Should we use a timer instead? or sleep?
             new Thread(() =>
             {
-                var writeBreakpointServer = new BreakpointServer(new NamedPipeServer());
-                writeBreakpointServer.WaitForConnectionAsync().Wait();
-                tcs.SetResult(true);
-                while (!cancellationToken.IsCancellationRequested)
+                using (var server = new BreakpointServer(new NamedPipeServer()))
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
-                    var request = new ListBreakpointsRequest
+                    server.WaitForConnectionAsync().Wait();
+                    tcs.SetResult(true);
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        DebuggeeId = _debuggee.Id,
-                        IncludeAllUsers = true,
-                    };
-                    var breakpoints = _debugClient.ListBreakpoints(request).Breakpoints;
+                        Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
+                        var request = new ListBreakpointsRequest
+                        {
+                            DebuggeeId = _debuggee.Id,
+                            IncludeAllUsers = true,
+                        };
+                        var breakpoints = _debugClient.ListBreakpoints(request).Breakpoints;
 
-                    // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
+                        // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
 
-                    var newBreakpoints = breakpoints.Where(b => !_breakpoints.ContainsKey(b.Id));
-                    foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
-                    {
-                        _breakpoints.Add(breakpoint.Id, breakpoint);
-                        Console.WriteLine("add bp:" + breakpoint.Id);
-                        writeBreakpointServer.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                        var newBreakpoints = breakpoints.Where(b => !_breakpoints.ContainsKey(b.Id));
+                        foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
+                        {
+                            _breakpoints.Add(breakpoint.Id, breakpoint);
+                            Console.WriteLine("add bp:" + breakpoint.Id);
+                            server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                        }
                     }
                 }
-                writeBreakpointServer.Dispose();
             }).Start();
             return tcs.Task;
         }
@@ -128,27 +130,27 @@ namespace Google.Cloud.Diagnostics.Debug
         /// named pipe server is connected.</returns>
         private Task StartReadLoopAsync(CancellationToken cancellationToken)
         {
-            // TODO(talarico): Should we use a timer instead? or sleep?
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
             {
-                var server = new BreakpointServer(new NamedPipeServer());
-                server.WaitForConnectionAsync().Wait();
-                tcs.SetResult(true);
-                while (!cancellationToken.IsCancellationRequested)
+                using (var server = new BreakpointServer(new NamedPipeServer()))
                 {
-                    Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
-                    Task<Breakpoint> breakpointFromCpp = server.ReadBreakpointAsync();
-                    breakpointFromCpp.Wait();
+                    server.WaitForConnectionAsync().Wait();
+                    tcs.SetResult(true);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        Task<Breakpoint> breakpointFromCpp = server.ReadBreakpointAsync();
+                        breakpointFromCpp.Wait();
 
-                    var readBreakpoint = breakpointFromCpp.Result;
-                    Console.WriteLine("add bp:" + readBreakpoint.Id);
+                        var readBreakpoint = breakpointFromCpp.Result;
+                        Console.WriteLine("add bp:" + readBreakpoint.Id);
 
-                    var breakpoint = readBreakpoint.Convert();
-                    breakpoint.IsFinalState = true;
-                    _debugClient.SetBreakpoint(_debuggee.Id, breakpoint, _debuggee.AgentVersion);
+                        var breakpoint = readBreakpoint.Convert();
+                        breakpoint.IsFinalState = true;
+                        _debugClient.SetBreakpoint(_debuggee.Id, breakpoint, _debuggee.AgentVersion);
+                    }
+
                 }
-                server.Dispose();
             }).Start();
             return tcs.Task;
         }
