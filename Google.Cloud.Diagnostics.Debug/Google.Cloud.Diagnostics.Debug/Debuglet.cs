@@ -33,7 +33,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// TODO(talarico): These docs need to be significantly expanded (use watchpoint).
     /// TODO(talarico): Add example of how to start this.
     /// </summary>
-    public sealed class Debuglet : IDisposable
+    internal sealed class Debuglet : IDisposable
     {
         private readonly DebugletOptions _options;
         private readonly Controller2Client _controlClient;
@@ -43,7 +43,7 @@ namespace Google.Cloud.Diagnostics.Debug
         private Debuggee _debuggee;
         private Process _process;
 
-        private Debuglet(DebugletOptions options, Controller2Client controlClient = null)
+        public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _controlClient = controlClient ?? Controller2Client.Create();
@@ -54,7 +54,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Starts the <see cref="Debuglet"/>.
         /// </summary>
-        private void Start()
+        public void Start()
         {
             var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
             // TODO(talarico): Check return value here.
@@ -85,7 +85,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         /// <returns>A task representing the asynchronous operation which will be completed when the
         /// named pipe server is connected.</returns>
-        private Task StartWriteLoopAsync(CancellationToken cancellationToken)
+        public Task StartWriteLoopAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
@@ -118,7 +118,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         /// <returns>A task representing the asynchronous operation which will be completed when the
         /// named pipe server is connected.</returns>
-        private Task StartReadLoopAsync(CancellationToken cancellationToken)
+        public Task StartReadLoopAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
