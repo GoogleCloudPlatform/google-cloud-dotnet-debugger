@@ -37,7 +37,7 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         private readonly DebugletOptions _options;
         private readonly Controller2Client _controlClient;
-        private readonly IDictionary<string, StackdriverBreakpoint> _breakpoints;
+        private readonly ISet<string> _activeBreakpointsIds;
         private readonly CancellationTokenSource _cts;
 
         private Debuggee _debuggee;
@@ -47,7 +47,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _controlClient = controlClient ?? Controller2Client.Create();
-            _breakpoints = new Dictionary<string, StackdriverBreakpoint>();
+            _activeBreakpointsIds = new HashSet<string>();
             _cts = new CancellationTokenSource();
         }
 
@@ -98,13 +98,26 @@ namespace Google.Cloud.Diagnostics.Debug
                     {
                         var breakpoints = _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints;
 
-                        // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
-
-                        var newBreakpoints = breakpoints.Where(b => !_breakpoints.ContainsKey(b.Id));
+                        // Send new breakpoints to the debugger.
+                        var newBreakpoints = breakpoints.Where(b => !_activeBreakpointsIds.Contains(b.Id));
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
-                            _breakpoints.Add(breakpoint.Id, breakpoint);
+                            _activeBreakpointsIds.Add(breakpoint.Id);
                             server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                        }
+
+                        // Remove no longer active breakpoints from the debugger.
+                        var currentIds = breakpoints.Select(b => b.Id);
+                        var breakpointsToRemove = _activeBreakpointsIds.Where(b => !currentIds.Contains(b)).ToList();
+                        foreach (string breakpointId in breakpointsToRemove)
+                        {
+                            var breakpoint = new Breakpoint
+                            {
+                                Id = breakpointId,
+                                Activated = false,
+                            };
+                            _activeBreakpointsIds.Remove(breakpointId);
+                            server.WriteBreakpointAsync(breakpoint).Wait();
                         }
                     }
                 }
