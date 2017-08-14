@@ -107,8 +107,9 @@ namespace Google.Cloud.Diagnostics.Debug
                         }
 
                         // Remove no longer active breakpoints from the debugger.
-                        var currentIds = breakpoints.Select(b => b.Id);
-                        var breakpointsToRemove = _activeBreakpointsIds.Where(b => !currentIds.Contains(b)).ToList();
+                        IEnumerable<string> currentIds = breakpoints.Select(b => b.Id);
+                        IEnumerable<string> breakpointsToRemove = _activeBreakpointsIds.Where(
+                            b => !currentIds.Contains(b)).ToList();
                         foreach (string breakpointId in breakpointsToRemove)
                         {
                             var breakpoint = new Breakpoint
