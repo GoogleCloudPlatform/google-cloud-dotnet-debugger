@@ -36,7 +36,6 @@ namespace Google.Cloud.Diagnostics.Debug
     public sealed class Debuglet : IDisposable
     {
         private readonly DebugletOptions _options;
-        private readonly Debugger2Client _debugClient;
         private readonly Controller2Client _controlClient;
         private readonly IDictionary<string, StackdriverBreakpoint> _breakpoints;
         private readonly CancellationTokenSource _cts;
@@ -44,10 +43,9 @@ namespace Google.Cloud.Diagnostics.Debug
         private Debuggee _debuggee;
         private Process _process;
 
-        private Debuglet(DebugletOptions options, Debugger2Client debugClient = null, Controller2Client controlClient = null)
+        private Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _debugClient = debugClient ?? Debugger2Client.Create();
             _controlClient = controlClient ?? Controller2Client.Create();
             _breakpoints = new Dictionary<string, StackdriverBreakpoint>();
             _cts = new CancellationTokenSource();
@@ -90,7 +88,6 @@ namespace Google.Cloud.Diagnostics.Debug
         private Task StartWriteLoopAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
-            // TODO(talarico): Should we use a timer instead? or sleep?
             new Thread(() =>
             {
                 using (var server = new BreakpointServer(new NamedPipeServer()))
@@ -99,13 +96,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
-                        var request = new ListBreakpointsRequest
-                        {
-                            DebuggeeId = _debuggee.Id,
-                            IncludeAllUsers = true,
-                        };
-                        var breakpoints = _debugClient.ListBreakpoints(request).Breakpoints;
+                        var breakpoints = _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints;
 
                         // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
 
@@ -113,7 +104,6 @@ namespace Google.Cloud.Diagnostics.Debug
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
                             _breakpoints.Add(breakpoint.Id, breakpoint);
-                            Console.WriteLine("add bp:" + breakpoint.Id);
                             server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
                         }
                     }
@@ -143,11 +133,10 @@ namespace Google.Cloud.Diagnostics.Debug
                         breakpointFromCpp.Wait();
 
                         var readBreakpoint = breakpointFromCpp.Result;
-                        Console.WriteLine("add bp:" + readBreakpoint.Id);
 
                         var breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
-                        _debugClient.SetBreakpoint(_debuggee.Id, breakpoint, _debuggee.AgentVersion);
+                        _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint);
                     }
 
                 }
