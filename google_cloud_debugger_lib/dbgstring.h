@@ -39,6 +39,10 @@ class DbgString : public DbgObject {
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
 
+  // Extracts out a string from ICorDebugStringValue.
+  HRESULT GetString(ICorDebugStringValue *debug_string,
+                    std::string *returned_string);
+
  private:
   // Handle to the underlying string object.
   CComPtr<ICorDebugHandleValue> string_handle_;
