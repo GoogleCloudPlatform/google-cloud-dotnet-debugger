@@ -1,0 +1,6 @@
+[submodule "coreclr"]
+	path = coreclr
+	url = https://github.com/dotnet/coreclr.git
+[submodule "googletest"]
+	path = googletest
+	url = https://github.com/google/googletest.git
