@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)third_party\Windows;$(SolutionDir)protobuf\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)third_party\Windows;$(SolutionDir)protobuf\cmake\build\solution\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
