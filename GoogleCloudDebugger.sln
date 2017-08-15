@@ -1,11 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_lib", "google_cloud_debugger_lib\google_cloud_debugger_lib.vcxproj", "{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger", "google_cloud_debugger\google_cloud_debugger.vcxproj", "{8D041302-2293-460D-AF78-BF3AD897E213}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1} = {AC725B22-C773-45A3-9DDD-ACB5146BC8B1}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug", "Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug.csproj", "{375C43F1-66AF-4F42-8D9F-16DBE708448D}"
 EndProject
@@ -29,6 +32,16 @@ Global
 		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}.Release|x64.Build.0 = Release|x64
 		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}.Release|x86.ActiveCfg = Release|Win32
 		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}.Release|x86.Build.0 = Release|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x64.ActiveCfg = Debug|x64
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x64.Build.0 = Debug|x64
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x86.ActiveCfg = Debug|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x86.Build.0 = Debug|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|Any CPU.ActiveCfg = Release|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x64.ActiveCfg = Release|x64
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x64.Build.0 = Release|x64
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x86.ActiveCfg = Release|Win32
+		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x86.Build.0 = Release|Win32
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -41,16 +54,6 @@ Global
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Release|x64.Build.0 = Release|Any CPU
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Release|x86.ActiveCfg = Release|Any CPU
 		{375C43F1-66AF-4F42-8D9F-16DBE708448D}.Release|x86.Build.0 = Release|Any CPU
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x64.ActiveCfg = Debug|x64
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x64.Build.0 = Debug|x64
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x86.ActiveCfg = Debug|Win32
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Debug|x86.Build.0 = Debug|Win32
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|Any CPU.ActiveCfg = Release|Win32
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x64.ActiveCfg = Release|x64
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x64.Build.0 = Release|x64
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x86.ActiveCfg = Release|Win32
-		{8D041302-2293-460D-AF78-BF3AD897E213}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
