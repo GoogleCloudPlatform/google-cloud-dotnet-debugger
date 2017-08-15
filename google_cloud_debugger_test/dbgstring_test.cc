@@ -96,7 +96,11 @@ TEST(DbgStringTest, GetString) {
 
   static string test_string_value = "This is a test string";
 
-  WCHAR *wchar_string = L"This is a test string";
+#ifdef PAL_STDCPP_COMPAT
+  WCHAR wchar_string[22] = u"This is a test string";
+#else
+  WCHAR wchar_string[22] = L"This is a test string";
+#endif
 
   uint32_t string_size = test_string_value.size();
   DebugStringValueMock string_value_mock;

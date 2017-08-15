@@ -1,16 +1,17 @@
-DIR1 = /usr/local/google/home/quoct/coreclr/src/pal/prebuilt/inc/
-DIR2 = /usr/local/google/home/quoct/coreclr/bin/Product/Linux.x64.Debug/inc/
-DIR3 = /usr/local/google/home/quoct/coreclr/src/pal/inc/rt/
-DIR4 = /usr/local/google/home/quoct/coreclr/src/pal/inc/
-DIR5 = /usr/local/google/home/quoct/coreclr/src/inc/
-DIR6 = /usr/local/google/home/quoct/Debugging/ConsoleApplication1/third_party/Linux/
-DIR7 = /usr/local/google/home/quoct/coreclr/src/debug/inc/
-LIB = /usr/local/google/home/quoct/coreclr/bin/Product/Linux.x64.Debug/lib/
-INCDIRS = -I${DIR1} -I${DIR2} -I${DIR3} -I${DIR4} -I${DIR5} -I${DIR6} -I${DIR7} `pkg-config --cflags protobuf`
-INCLIBS = -L${LIB} -L${DIR6} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf`
-DBGOBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o
-PDBPARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
-ALLFILES = consoledebugger.o variablemanager.o evalcoordinator.o debuggercallback.o debugger.o dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o namedpiped.o ${DBGOBJECTS} ${PDBPARSERS}
+ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+PREBUILT_PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/prebuilt/inc/
+PAL_RT_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/rt/
+PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/
+CORE_CLR_INC = $(ROOT_DIR)/../coreclr/src/inc/
+DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
+
+INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} `pkg-config --cflags protobuf`
+
+DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o
+PDB_PARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
+BREAKPOINTS = dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o
+ALL_O_FILES = variablemanager.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 namedpiped.o: named_pipe_client_unix.h named_pipe_client_unix.cc
@@ -73,11 +74,8 @@ custombinaryreader.o: custombinaryreader.h custombinaryreader.cc
 portablepdbfile.o: portablepdbfile.h portablepdbfile.cc
 	clang-3.5 portablepdbfile.cc ${INCDIRS} ${CC_FLAGS} -c -o portablepdbfile.o
 
-consoledebugger.o: consoledebugger.cc
-	clang-3.5 consoledebugger.cc ${INCDIRS} ${CC_FLAGS} -c
-
-debugger: ${ALLFILES}
-	clang-3.5 -o Debugger ${ALLFILES} ${INCDIRS} ${CC_FLAGS} ${INCLIBS} -v
+google_cloud_debugger: ${ALL_O_FILES}
+	ar rcs libgoogle_cloud_debugger.a ${ALL_O_FILES}
 
 clean:
-	rm *.o
+	rm -f *.o *.a
