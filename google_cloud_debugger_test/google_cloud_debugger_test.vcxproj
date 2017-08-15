@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{8D041302-2293-460D-AF78-BF3AD897E213}</ProjectGuid>
+    <ProjectGuid>{3009483D-6930-4D0D-8066-4A9CC7510AE6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>google_cloud_debugger</RootNamespace>
+    <RootNamespace>google_cloud_debugger_test</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)google_cloud_debugger_lib;$(SolutionDir)protobuf\src;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\inc;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)third_party\Windows;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(SolutionDir)googletest\googlemock\include;$(SolutionDir)googletest\googletest\include;$(SolutionDir)google_cloud_debugger_lib;$(SolutionDir)protobuf\src;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\inc;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)googletest\googlemock\msvc\2015\$(Platform)\$(Configuration);$(SolutionDir)googletest\googletest\msvc\$(Platform)\$(Configuration);$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\third_party\Windows;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -95,7 +95,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>google_cloud_debugger_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gmock.lib;gtestd.lib;google_cloud_debugger_lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -107,8 +107,6 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libprotobufd.lib;libprotobuf-lited.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>NotSet</SubSystem>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -145,7 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="consoledebugger.cc" />
+    <ClCompile Include="custom_binary_stream_test.cc" />
+    <ClCompile Include="dbgstring_test.cc" />
+    <ClCompile Include="unit_test_main.cc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
