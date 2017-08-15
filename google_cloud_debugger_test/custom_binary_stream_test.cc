@@ -1,21 +1,30 @@
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <custombinaryreader.h>
 #include <gtest/gtest.h>
 
 namespace google_cloud_debugger_test {
 
-TEST(BinaryReader, ReadCompressedInts) {
+TEST(BinaryReader, ReadCompressedUnsignedInts) {
   uint8_t test_data[] = {// Unsigned tests.
                          0x03, 0x7F, 0x80, 0x80, 0xAE, 0x57, 0xBF, 0xFF, 0xC0,
-                         0x00, 0x40, 0x00, 0xDF, 0xFF, 0xFF, 0xFF,
-
-                         // Signed tests.
-                         0x06, 0x7B, 0x80, 0x80, 0x01, 0xC0, 0x00, 0x40, 0x00,
-                         0x80, 0x01, 0xDF, 0xFF, 0xFF, 0xFE, 0xC0, 0x00, 0x00,
-                         0x01};
+                         0x00, 0x40, 0x00, 0xDF, 0xFF, 0xFF, 0xFF};
 
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   uint32_t unsigned_int;
-  // Should fail and don't throw error if no stream is available.
+  // Should fail and not throw error if no stream is available.
   EXPECT_FALSE(binary_stream.ReadCompressedUInt32(&unsigned_int));
 
   std::vector<uint8_t> test_data_vector(
@@ -43,8 +52,21 @@ TEST(BinaryReader, ReadCompressedInts) {
 
   EXPECT_TRUE(binary_stream.ReadCompressedUInt32(&unsigned_int));
   EXPECT_EQ(unsigned_int, 0x1FFFFFFF);
+}
 
+TEST(BinaryReader, ReadCompressedInts) {
+  uint8_t test_data[] = {0x06, 0x7B, 0x80, 0x80, 0x01, 0xC0, 0x00, 0x40, 0x00,
+                         0x80, 0x01, 0xDF, 0xFF, 0xFF, 0xFE, 0xC0, 0x00, 0x00,
+                         0x01};
+
+  google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   int32_t signed_int;
+  // Should fail and not throw error if no stream is available.
+  EXPECT_FALSE(binary_stream.ReadCompressSignedInt32(&signed_int));
+
+  std::vector<uint8_t> test_data_vector(
+      test_data, test_data + sizeof test_data / sizeof test_data[0]);
+  EXPECT_TRUE(binary_stream.ConsumeVector(test_data_vector));
 
   // Checks that we can read compressed signed int.
   EXPECT_TRUE(binary_stream.ReadCompressSignedInt32(&signed_int));
