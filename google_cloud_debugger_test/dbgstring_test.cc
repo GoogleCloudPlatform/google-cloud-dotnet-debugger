@@ -96,6 +96,9 @@ TEST(DbgStringTest, GetString) {
 
   static string test_string_value = "This is a test string";
 
+// On Linux, PAL_STDCPP_COMPAT header is used. We have to use
+// different string types because WCHAR defined on Linux is
+// different than WCHAR defined on Windows.
 #ifdef PAL_STDCPP_COMPAT
   WCHAR wchar_string[22] = u"This is a test string";
 #else

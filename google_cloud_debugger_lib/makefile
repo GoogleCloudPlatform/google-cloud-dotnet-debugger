@@ -1,5 +1,7 @@
+# Directory that contains this makefile.
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+# .NET Core headers.
 PREBUILT_PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/prebuilt/inc/
 PAL_RT_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/rt/
 PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/

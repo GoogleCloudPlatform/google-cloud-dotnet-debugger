@@ -1,5 +1,7 @@
+# Directory that contains this makefile.
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+# .NET Core headers.
 PREBUILT_PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/prebuilt/inc/
 PAL_RT_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/rt/
 PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/
@@ -7,6 +9,7 @@ CORE_CLR_INC = $(ROOT_DIR)/../coreclr/src/inc/
 DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
 GCLOUD_DEBUGGER = $(ROOT_DIR)/../google_cloud_debugger_lib/
 
+# .NET Core libraries.
 CORE_CLR_LIB = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/lib/
 CORE_CLR_LIB2 = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/
 

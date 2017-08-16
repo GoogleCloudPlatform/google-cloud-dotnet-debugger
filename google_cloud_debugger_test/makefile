@@ -1,20 +1,30 @@
+# Directory that contains this makefile.
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+# Directories of Google Test and Google Mock.
 GTEST_DIR = $(ROOT_DIR)/../googletest/googletest/
 GMOCK_DIR = $(ROOT_DIR)/../googletest/googlemock/
 
+# .NET Core headers.
 PREBUILT_PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/prebuilt/inc/
 BUILT_PAL_INC = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/inc/
 PAL_RT_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/rt/
 PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/
 CORE_CLR_INC = $(ROOT_DIR)/../coreclr/src/inc/
 DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
+
+# Google Test and Google Mock headers.
 GMOCK_INC = $(GMOCK_DIR)include/
 GTEST_INC = $(GTEST_DIR)include/
+
+# Google Cloud Debugger Library directory.
 GCLOUD_DEBUGGER = $(ROOT_DIR)/../google_cloud_debugger_lib/
 
+# Google Test and Google Mock libraries.
 GMOCK_LIB = $(GMOCK_DIR)make/
 GTEST_LIB = $(GTEST_DIR)make/
+
+# .NET Core libraries.
 CORE_CLR_LIB = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/lib/
 CORE_CLR_LIB2 = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/
 
