@@ -28,8 +28,6 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     internal class DebuggeeUtils
     {
-        private static Platform _platform = Platform.Instance();
-
         /// <summary>
         /// Creates a <see cref="Debuggee"/>.
         /// </summary>
@@ -38,7 +36,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="version">The version of the application.</param>
         public static Debuggee CreateDebuggee(string projectId, string module, string version)
         {
-            projectId = string.IsNullOrWhiteSpace(projectId) ? _platform.ProjectId : projectId;
             var debuggee = new Debuggee
             {
                 AgentVersion = GetAgentVersion(),
@@ -104,7 +101,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public static string GetAgentVersion()
         {
             var version = GetVersion();
-            var platformType = GetPlatform(_platform);
+            var platformType = GetPlatform(Common.Platform);
             var platformString = platformType != null ? $"-{platformType}" : "";
             return $"google.com/csharp{platformString}/v{version}";
         }

@@ -56,7 +56,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
                 GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
                 GaxPreconditions.CheckNotNullOrEmpty(o.ProcessId, nameof(o.ProcessId));
-                GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId, nameof(o.ProjectId));
+                GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? Common.Platform.ProjectId, nameof(o.ProjectId));
                 GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
 
                 if (!File.Exists(o.Debugger))
