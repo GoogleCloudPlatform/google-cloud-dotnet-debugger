@@ -43,8 +43,6 @@ class DbgBreakpoint {
   // We do this by searching the PortablePdbFile for the file name and
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
-  // Based on that sequence point, we populate the local variables and
-  // local constants fields of the breakpoint.
   bool TrySetBreakpoint(
     const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
 
@@ -63,13 +61,6 @@ class DbgBreakpoint {
     method_token_ = method_token;
   }
 
-  // Returns a vector containing all the local variables that this
-  // breakpoint has access too.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
-      &GetLocalVariables() {
-    return local_variables_;
-  }
-
   // Returns the name of the file this breakpoint is in.
   const std::string &GetFileName() const { return file_name_; }
 
@@ -85,8 +76,7 @@ class DbgBreakpoint {
   uint32_t GetLine() const { return line_; }
 
   // Returns true if this breakpoint is set.
-  // When a breakpoint is set, its list of local variables and local vectors
-  // are filled. This happens after TrySetBreakpoint method is called.
+  // When a breakpoint is set, its il_off_set is set.
   bool IsSet() const { return set_; }
 
   // Returns the unique ID of this breakpoint.
@@ -139,15 +129,6 @@ class DbgBreakpoint {
   std::vector<WCHAR> method_name_;
 
   bool activated_;
-
-  // All local variables that this breakpoint has access to.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
-      local_variables_;
-
-  // All constants that this breakpoint has access to.
-  // TODO(quoct): Currently, we are not doing anything with these constants.
-  std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
-      local_constants_;
 
   // TODO(quoct): Add arguments of the method this breakpoint is in.
 

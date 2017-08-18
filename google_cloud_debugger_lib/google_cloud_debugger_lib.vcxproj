@@ -181,6 +181,7 @@
     <ClInclude Include="dbgclass.h" />
     <ClInclude Include="dbgclassfield.h" />
     <ClInclude Include="dbgclassproperty.h" />
+    <ClInclude Include="dbgstackframe.h" />
     <ClInclude Include="dbgstring.h" />
     <ClInclude Include="debugger.h" />
     <ClInclude Include="debuggercallback.h" />
@@ -192,11 +193,11 @@
     <ClInclude Include="named_pipe_client.h" />
     <ClInclude Include="named_pipe_client_unix.h" />
     <ClInclude Include="named_pipe_client_windows.h" />
+    <ClInclude Include="stackframecollection.h" />
     <ClInclude Include="stringstreamwrapper.h" />
     <ClInclude Include="metadataheaders.h" />
     <ClInclude Include="metadatatables.h" />
     <ClInclude Include="portablepdbfile.h" />
-    <ClInclude Include="variablemanager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="breakpoint.pb.cc" />
@@ -208,6 +209,7 @@
     <ClCompile Include="dbgclass.cc" />
     <ClCompile Include="dbgclassfield.cc" />
     <ClCompile Include="dbgclassproperty.cc" />
+    <ClCompile Include="dbgstackframe.cc" />
     <ClCompile Include="dbgstring.cc" />
     <ClCompile Include="debugger.cc" />
     <ClCompile Include="debuggercallback.cc" />
@@ -219,10 +221,10 @@
     <ClCompile Include="named_pipe_client_unix.cc" />
     <ClCompile Include="named_pipe_client_windows.cc" />
     <ClCompile Include="portablepdbfile.cc" />
-    <ClCompile Include="variablemanager.cc" />
+    <ClCompile Include="stackframecollection.cc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="proto\breakpoint.proto" />
+    <None Include="..\proto\breakpoint.proto" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

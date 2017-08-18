@@ -21,7 +21,7 @@
 #include <string>
 
 #include "ccomptr.h"
-#include "variablemanager.h"
+#include "dbgstackframe.h"
 
 namespace google_cloud_debugger {
 
@@ -108,6 +108,12 @@ ULONG STDMETHODCALLTYPE DebuggerCallback::Release(void) {
 HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
     ICorDebugAppDomain *appdomain, ICorDebugThread *debug_thread,
     ICorDebugBreakpoint *debug_breakpoint) {
+  // If a function evaluation is going on, we don't hit breakpoint.
+  // Otherwise, this can lead to infinite loop situation.
+  if (eval_coordinator_->WaitingForEval()) {
+    return appdomain->Continue(FALSE);
+  }
+
   // We will get the IL frame to enumerate and print out all local variables.
   HRESULT hr;
   CComPtr<ICorDebugFrame> frame;
@@ -115,18 +121,13 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   CComPtr<ICorDebugValueEnum> variable_value_enum;
   CComPtr<ICorDebugValueEnum> arg_value_enum;
   CComPtr<IMetaDataImport> metadata_import;
+  CComPtr<ICorDebugThread3> debug_thread3;
+  CComPtr<ICorDebugStackWalk> debug_stackwalk;
 
-  hr = debug_thread->GetActiveFrame(&frame);
+  hr = debug_thread->QueryInterface(__uuidof(ICorDebugThread3),
+    reinterpret_cast<void **>(&debug_thread3));
   if (FAILED(hr)) {
-    cerr << "Failed to get active frame.";
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
-  hr = frame->QueryInterface(__uuidof(ICorDebugILFrame),
-                             reinterpret_cast<void **>(&il_frame));
-  if (FAILED(hr)) {
-    cerr << "Failed to get ILFrame";
+    cerr << "Failed to cast ICorDebugThread to ICorDebugThread3.";
     appdomain->Continue(FALSE);
     return hr;
   }
@@ -144,28 +145,22 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   for (auto &&breakpoint : breakpoint_collection_->GetBreakpoints()) {
     if (breakpoint.GetMethodToken() == function_token &&
         il_offset == breakpoint.GetILOffset()) {
-      hr = il_frame->EnumerateLocalVariables(&variable_value_enum);
+      hr = debug_thread3->CreateStackWalk(&debug_stackwalk);
       if (FAILED(hr)) {
-        cerr << "Failed to get local variable.";
+        cerr << "Failed to create stack walk.";
         appdomain->Continue(FALSE);
         return hr;
       }
 
-      hr = il_frame->EnumerateArguments(&arg_value_enum);
-      // TODO(quoct): What if we are not in a method. Have to check this.
+      hr = eval_coordinator_->PrintBreakpointStacks(
+          debug_stackwalk, debug_thread, &breakpoint, portable_pdbs_);
       if (FAILED(hr)) {
-        cerr << "Failed to get method arguments.";
+        cerr << "Failed to get stack frame's information.";
         appdomain->Continue(FALSE);
         return hr;
       }
-
-      hr = eval_coordinator_->PrintVariablesAndArguments(
-          variable_value_enum, arg_value_enum, debug_thread, &breakpoint,
-          metadata_import);
-      if (FAILED(hr)) {
-        cerr << "Failed to print out local variable and method arguments.";
-        appdomain->Continue(FALSE);
-        return hr;
+      else {
+        break;
       }
     }
   }

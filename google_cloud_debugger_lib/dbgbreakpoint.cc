@@ -36,8 +36,6 @@ void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
   method_def_ = other.method_def_;
   method_token_ = other.method_token_;
   method_name_ = other.method_name_;
-  local_variables_ = other.local_variables_;
-  local_constants_ = other.local_constants_;
   debug_breakpoint_ = other.debug_breakpoint_;
 }
 
@@ -149,26 +147,6 @@ bool DbgBreakpoint::TrySetBreakpointInMethod(
 
     il_offset_ = sequence_point.il_offset;
     method_def_ = method.method_def;
-
-    // Loop through all scopes of method to retrieve local variables and
-    // constants. We are only interested in scopes that encompasses this
-    // sequence point.
-    local_variables_.clear();
-    local_constants_.clear();
-    for (auto &&local_scope : method.local_scope) {
-      if (local_scope.start_offset > il_offset_ ||
-          local_scope.start_offset + local_scope.length < il_offset_) {
-        continue;
-      }
-
-      local_variables_.insert(local_variables_.end(),
-                              local_scope.local_variables.begin(),
-                              local_scope.local_variables.end());
-
-      local_constants_.insert(local_constants_.end(),
-                              local_scope.local_constants.begin(),
-                              local_scope.local_constants.end());
-    }
 
     return true;
   }
