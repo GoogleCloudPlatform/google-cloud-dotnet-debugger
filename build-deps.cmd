@@ -1,21 +1,18 @@
 :: The script builds the submodule dependencies of this repository if they have not been built yet.
 :: This script is called during the Visual Studio build process and may not work in other places.
 
-:: TODO(talarico): Allow building with multiple Visual Studio versions. 
+:: TODO(talarico): Allow building with debug/release, x86/x64 and multiple Visual Studios. 
 
 :: Check that the user passed in a valid parameter.
 if "%1"=="" (
-  echo "First parameter should be the repos root directory"
   exit
 )
 
 if "%2"=="" (
-  echo "Second parameter should be the configuration. Debug or Release"
   exit
 )
 
 if "%3"=="" (
-  echo "Third parameter should be the platform. x86 or x64"
   exit
 )
 
@@ -50,7 +47,6 @@ if not exist "%ROOT_DIR%protobuf\%PLATFORM%\%CONFIG%\libprotobuf.lib" (
   copy libprotobuf.lib %ROOT_DIR%protobuf\%PLATFORM%\%CONFIG%
 )
 
-:: Build the googlemock repository.
 if not exist "%ROOT_DIR%googletest\googlemock\%PLATFORM%\%CONFIG%\gmock.lib" (
   if not exist "%ROOT_DIR%googletest\googlemock\%PLATFORM%\%CONFIG%" mkdir %ROOT_DIR%googletest\googlemock\%PLATFORM%\%CONFIG%
   cd %ROOT_DIR%googletest\googlemock
@@ -61,7 +57,6 @@ if not exist "%ROOT_DIR%googletest\googlemock\%PLATFORM%\%CONFIG%\gmock.lib" (
   copy gmock.lib %ROOT_DIR%googletest\googlemock\%PLATFORM%\%CONFIG%
 )
 
-:: Build the googletest repository.
 if not exist "%ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%\gtest.lib" (
   if not exist "%ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%" mkdir %ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%
   cd %ROOT_DIR%googletest\googletest
@@ -72,9 +67,11 @@ if not exist "%ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%\gtest.lib" (
   copy gtest.lib %ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%
 )
 
+:: TODO(talarico): I think this is the issue based on failures.
+
+
 :: Build the coreclr repository without tests.
-if not exist "%ROOT_DIR%coreclr\bin\Product\Windows_NT.%PLATFORM%.%CONFIG%" (
-    %ROOT_DIR%coreclr\build.cmd skiptests %PLATFORM% %CONFIG%
-)
+if not exist "%ROOT_DIR%coreclr\bin" %ROOT_DIR%coreclr\build.cmd skiptests
+
 
 cd %ROOT_DIR%
