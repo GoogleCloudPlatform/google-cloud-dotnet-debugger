@@ -49,9 +49,6 @@
     <ClCompile Include="portablepdbfile.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="variablemanager.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="breakpoint_client.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -62,6 +59,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="breakpoint.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbgstackframe.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stackframecollection.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -123,9 +126,6 @@
     <ClInclude Include="stringstreamwrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="variablemanager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="breakpoint_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -147,6 +147,12 @@
     <ClInclude Include="breakpoint.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dbgstackframe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stackframecollection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -163,7 +169,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="proto\breakpoint.proto">
+    <None Include="..\proto\breakpoint.proto">
       <Filter>Protos</Filter>
     </None>
   </ItemGroup>

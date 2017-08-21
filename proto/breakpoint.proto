@@ -4,16 +4,20 @@ import "google/protobuf/timestamp.proto";
 
 package google.cloud.diagnostics.debug;
 
-// NOTE: This is just a temporary proto to use until we have a real one.
-
 message Breakpoint {
   string id = 1;
   SourceLocation location = 2;
-  string method_name = 3;
-  repeated Variable variables = 4;
-  bool activated = 5;
-  google.protobuf.Timestamp create_time = 6;
-  google.protobuf.Timestamp final_time = 7;
+  repeated StackFrame stack_frames = 3;
+  bool activated = 4;
+  google.protobuf.Timestamp create_time = 5;
+  google.protobuf.Timestamp final_time = 6;
+}
+
+message StackFrame {
+  string method_name = 1;
+  SourceLocation location = 2;
+  repeated Variable arguments = 3;
+  repeated Variable locals = 4;
 }
 
 message SourceLocation {

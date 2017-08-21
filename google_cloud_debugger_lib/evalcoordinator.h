@@ -24,18 +24,19 @@
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
+#include "portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
 class DbgBreakpoint;
-class VariableManager;
+class DbgStackFrame;
 
 // TODO(quoct): Add a switch to turn off function evaluation by default.
 // Also, we have to investigate function evaluation for multi-threading case.
 //
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
-// and print out variables. It does so by creating a VariableManager on a new
-// thread and coordinates between the VariableManager and DebuggerCallback.
+// and print out variables. It does so by creating a StackFrame on a new
+// thread and coordinates between the StackFrame and DebuggerCallback.
 //
 // We need an EvalCoordinator for coordination because if we want to print
 // out properties and perform function evaluation, we would have to do it
@@ -61,7 +62,7 @@ class EvalCoordinator {
   // from the active thread.
   HRESULT CreateEval(ICorDebugEval **eval);
 
-  // VariableManager calls this to get evaluation result.
+  // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
                       ICorDebugValue **eval_result);
@@ -74,29 +75,34 @@ class EvalCoordinator {
   // occurred.
   void HandleException();
 
-  // Prints out local variable from the Enumerable local_enum on debug_thread.
-  HRESULT PrintVariablesAndArguments(ICorDebugValueEnum *local_enum,
-                                     ICorDebugValueEnum *arg_enum,
-                                     ICorDebugThread *debug_thread,
-                                     DbgBreakpoint *breakpoint,
-                                     IMetaDataImport *metadata_import);
+  // Prints out the stack frames at DbgBreakpoint breakpoint based on
+  // debug_stack_walk.
+  HRESULT PrintBreakpointStacks(
+      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+      DbgBreakpoint *breakpoint,
+      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+          &pdb_files);
 
-  // VariableManager calls this to signal that it already processed all the
+  // StackFrame calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
   // print them out.
   void WaitForReadySignal();
 
-  // VariableManager calls this to signal to the DebuggerCallback that it
+  // StackFrame calls this to signal to the DebuggerCallback that it
   // finished all the evaluation.
   void SignalFinishedPrintingVariable();
 
+  // Returns the active debug thread.
   HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread);
 
- private:
-  // The threads that we are enumerating and printing the variables from.
-  std::vector<std::thread> variable_threads_;
+  // Returns true if we are waiting for an evaluation result.
+  BOOL WaitingForEval();
 
-  // The ICorDebugThread that the active VariableManager is on.
+ private:
+  // The threads that we are enumerating and printing the stack frames from.
+  std::vector<std::thread> stack_frames_threads_;
+
+  // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
 
   // variable_thread_ and the thread that DebuggerCallback object is on
@@ -110,6 +116,7 @@ class EvalCoordinator {
   BOOL ready_to_print_variables_ = FALSE;
   BOOL debuggercallback_can_continue_ = FALSE;
   BOOL eval_exception_occurred_ = FALSE;
+  BOOL waiting_for_eval_ = FALSE;
 };
 
 }  //  namespace google_cloud_debugger

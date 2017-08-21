@@ -19,7 +19,7 @@
 #include <thread>
 
 #include "dbgbreakpoint.h"
-#include "variablemanager.h"
+#include "stackframecollection.h"
 
 namespace google_cloud_debugger {
 using std::cerr;
@@ -43,6 +43,7 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
   // Let the debugger continue so we can get back the eval result.
   unique_lock<mutex> lk(mutex_);
 
+  waiting_for_eval_ = TRUE;
   debuggercallback_can_continue_ = TRUE;
   eval_exception_occurred_ = FALSE;
   HRESULT hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
@@ -56,7 +57,6 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
     if (hr == CORDBG_E_FUNC_EVAL_NOT_COMPLETE ||
         hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
       // Wake up the debugger thread to do the evaluation.
-      debuggercallback_can_continue_ = TRUE;
       debugger_callback_cv_.notify_one();
       variable_threads_cv_.wait(lk);
     } else {
@@ -68,6 +68,7 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
   // Tells the debugger to chill out until our next eval call or we reach the
   // end.
   debuggercallback_can_continue_ = FALSE;
+  waiting_for_eval_ = FALSE;
 
   *exception_thrown = eval_exception_occurred_;
   return hr;
@@ -82,40 +83,40 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
   // use the evaluation result.
   variable_threads_cv_.notify_all();
 
-  // finished_printing_variables_ is set to true if the VariableManager
+  // finished_printing_variables_ is set to true if the StackFrame
   // decides to call SignalFinishedPrintingVariable to signal that it has
   // finished printing the variables.
-  // debuggercallback_can_continue_ is set to true if the VariableManager
+  // debuggercallback_can_continue_ is set to true if the StackFrame
   // makes another evaluation by calling WaitForEval.
-  debugger_callback_cv_.wait(lk, [&] {
-    return debuggercallback_can_continue_;
-  });
+  debugger_callback_cv_.wait(lk,
+                             [&] { return debuggercallback_can_continue_; });
 }
 
-HRESULT EvalCoordinator::PrintVariablesAndArguments(
-    ICorDebugValueEnum *local_enum,
-    ICorDebugValueEnum *arg_enum,
-    ICorDebugThread *debug_thread,
+HRESULT EvalCoordinator::PrintBreakpointStacks(
+    ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
     DbgBreakpoint *breakpoint,
-    IMetaDataImport *metadata_import) {
+    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+        &pdb_files) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";
     return E_INVALIDARG;
   }
 
-  if (!local_enum) {
-    cerr << "Local variable enum is null.";
+  if (!debug_stack_walk) {
+    cerr << "Debug stack walk is null.";
     return E_INVALIDARG;
   }
 
-  unique_ptr<VariableManager> manager(new (std::nothrow) VariableManager);
-  if (!manager) {
-    cerr << "Failed to create VariableManager.";
+  // Creates and initializes stack frame collection based on the
+  // ICorDebugStackWalk object.
+  unique_ptr<StackFrameCollection> stack_frames(new (std::nothrow)
+                                                    StackFrameCollection);
+  if (!stack_frames) {
+    cerr << "Failed to create DbgStack.";
     return E_FAIL;
   }
 
-  HRESULT hr = manager->Initialize(
-      local_enum, arg_enum, breakpoint, metadata_import);
+  HRESULT hr = stack_frames->Initialize(debug_stack_walk, pdb_files);
   if (FAILED(hr)) {
     return hr;
   }
@@ -123,30 +124,30 @@ HRESULT EvalCoordinator::PrintVariablesAndArguments(
   unique_lock<mutex> lk(mutex_);
 
   std::thread local_thread = std::thread(
-      [](unique_ptr<VariableManager> variable_manager,
-         EvalCoordinator *eval_coordinator) {
+      [](unique_ptr<StackFrameCollection> stack_frames,
+         EvalCoordinator *eval_coordinator, DbgBreakpoint *breakpoint) {
         // TODO(quoct): Add logic to let the main thread know about this hr.
-        HRESULT hr = variable_manager->PrintVariables(eval_coordinator);
+        HRESULT hr =
+            breakpoint->PrintBreakpoint(stack_frames.get(), eval_coordinator);
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << hr;
         }
       },
-      std::move(manager), this);
-  variable_threads_.push_back(std::move(local_thread));
+      std::move(stack_frames), this, breakpoint);
+  stack_frames_threads_.push_back(std::move(local_thread));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;
   active_debug_thread_ = debug_thread;
 
-  // Notify the VariableManager threads we are ready.
+  // Notify the StackFrame threads we are ready.
   variable_threads_cv_.notify_all();
 
-  // The VariableManager in active_debug_thread_ will have to set
+  // The StackFrame in active_debug_thread_ will have to set
   // debuggerCallBackCanContinue to TRUE by either calling WaitForEval
   // or SignalFinishPrintingVariable.
-  debugger_callback_cv_.wait(lk, [&] {
-    return debuggercallback_can_continue_;
-  });
+  debugger_callback_cv_.wait(lk,
+                             [&] { return debuggercallback_can_continue_; });
 
   return S_OK;
 }
@@ -186,6 +187,11 @@ HRESULT EvalCoordinator::GetActiveDebugThread(ICorDebugThread **debug_thread) {
   }
 
   return E_FAIL;
+}
+
+BOOL EvalCoordinator::WaitingForEval() {
+  lock_guard<mutex> lk(mutex_);
+  return waiting_for_eval_;
 }
 
 }  //  namespace google_cloud_debugger

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "variablemanager.h"
+#include "dbgstackframe.h"
 
 #include <iostream>
 #include <vector>
@@ -23,9 +23,10 @@
 #include "debuggercallback.h"
 #include "evalcoordinator.h"
 
-using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
+using google::cloud::diagnostics::debug::StackFrame;
 using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
 using std::ostringstream;
@@ -35,29 +36,38 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-VariableManager::VariableManager() { object_depth_ = 5; }
-
-HRESULT VariableManager::Initialize(ICorDebugValueEnum *local_enum,
-                                    ICorDebugValueEnum *method_arg_enum,
-                                    DbgBreakpoint *breakpoint,
-                                    IMetaDataImport *metadata_import) {
-  if (!local_enum || !breakpoint) {
-    cerr << "Null argument for populating local variable.";
+HRESULT DbgStackFrame::Initialize(
+    ICorDebugILFrame *il_frame, const vector<LocalVariableInfo> &variable_infos,
+    mdMethodDef method_token, IMetaDataImport *metadata_import) {
+  if (!il_frame) {
+    cerr << "Null IL Frame.";
     return E_INVALIDARG;
   }
 
-  method_name_ = ConvertWCharPtrToString(breakpoint->GetMethodName());
-  file_name_ = breakpoint->GetFileName();
-  line_number_ = breakpoint->GetLine();
-  breakpoint_id_ = breakpoint->GetId();
+  HRESULT hr;
+  CComPtr<ICorDebugValueEnum> local_enum;
+  CComPtr<ICorDebugValueEnum> method_arg_enum;
+
+  hr = il_frame->EnumerateLocalVariables(&local_enum);
+  if (FAILED(hr)) {
+    cerr << "Failed to get local variable.";
+    return hr;
+  }
 
   // The populate methods will write errors
-  HRESULT hr = PopulateLocalVariables(local_enum, breakpoint);
+  hr = PopulateLocalVariables(local_enum, variable_infos);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = PopulateMethodArguments(method_arg_enum, breakpoint, metadata_import);
+  // Even if we are not in a method (no arguments), this will return S_OK.
+  hr = il_frame->EnumerateArguments(&method_arg_enum);
+  if (FAILED(hr)) {
+    cerr << "Failed to get method arguments.";
+    return hr;
+  }
+
+  hr = PopulateMethodArguments(method_arg_enum, method_token, metadata_import);
   if (FAILED(hr)) {
     return hr;
   }
@@ -65,8 +75,9 @@ HRESULT VariableManager::Initialize(ICorDebugValueEnum *local_enum,
   return S_OK;
 }
 
-HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
-                                                DbgBreakpoint *breakpoint) {
+HRESULT DbgStackFrame::PopulateLocalVariables(
+    ICorDebugValueEnum *local_enum,
+    const vector<LocalVariableInfo> &variable_infos) {
   HRESULT hr;
 
   vector<CComPtr<ICorDebugValue>> debug_values;
@@ -87,7 +98,7 @@ HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
 
     // Default name if we can't get the name.
     variable_name = "variable_" + std::to_string(i);
-    for (auto &&local_variable : breakpoint->GetLocalVariables()) {
+    for (auto &&local_variable : variable_infos) {
       if (local_variable.slot > i) {
         break;
       }
@@ -122,8 +133,8 @@ HRESULT VariableManager::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
   return S_OK;
 }
 
-HRESULT VariableManager::PopulateMethodArguments(
-    ICorDebugValueEnum *method_arg_enum, DbgBreakpoint *breakpoint,
+HRESULT DbgStackFrame::PopulateMethodArguments(
+    ICorDebugValueEnum *method_arg_enum, mdMethodDef method_token,
     IMetaDataImport *metadata_import) {
   static const string kMethodArg = "method_argument";
   HRESULT hr = S_OK;
@@ -139,7 +150,6 @@ HRESULT VariableManager::PopulateMethodArguments(
 
   vector<string> method_argument_names;
   HCORENUM cor_enum = nullptr;
-  mdMethodDef method_token = breakpoint->GetMethodToken();
 
   // We need to check whether this method is static or not.
   // If it is not, then we add "this" to the first argument name.
@@ -152,9 +162,8 @@ HRESULT VariableManager::PopulateMethodArguments(
   DWORD method_flags2;
 
   hr = metadata_import->GetMethodProps(
-      method_token, &method_class, nullptr, 0, &method_name_len,
-      &method_flag, &method_signature, &method_signature_blob, &method_rva,
-      &method_flags2);
+      method_token, &method_class, nullptr, 0, &method_name_len, &method_flag,
+      &method_signature, &method_signature_blob, &method_rva, &method_flags2);
 
   if (FAILED(hr)) {
     cerr << "Failed to retrieve method flags.";
@@ -169,10 +178,9 @@ HRESULT VariableManager::PopulateMethodArguments(
   vector<mdParamDef> method_args(100, 0);
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
-    hr = metadata_import->EnumParams(&cor_enum, method_token,
-                                     method_args.data(),
-                                     method_args.size(),
-                                     &method_args_returned);
+    hr =
+        metadata_import->EnumParams(&cor_enum, method_token, method_args.data(),
+                                    method_args.size(), &method_args_returned);
     if (FAILED(hr)) {
       cerr << "Failed to get method arguments for method: " << method_token
            << " with hr: " << std::hex << hr;
@@ -249,29 +257,23 @@ HRESULT VariableManager::PopulateMethodArguments(
       method_arg_value = nullptr;
     }
 
-    variables_.push_back(std::make_tuple(std::move(method_arg_name),
-                                         std::move(method_arg_value),
-                                         std::move(err_stream)));
+    method_arguments_.push_back(std::make_tuple(std::move(method_arg_name),
+                                                std::move(method_arg_value),
+                                                std::move(err_stream)));
   }
 
   return S_OK;
 }
 
-HRESULT VariableManager::PrintVariables(
-    EvalCoordinator *eval_coordinator) const {
-  eval_coordinator->WaitForReadySignal();
-
-  if (variables_.empty()) {
-    return S_OK;
+HRESULT DbgStackFrame::PopulateStackFrame(
+    StackFrame *stack_frame, EvalCoordinator *eval_coordinator) const {
+  if (!stack_frame || !eval_coordinator) {
+    return E_INVALIDARG;
   }
-
-  Breakpoint breakpoint;
-  breakpoint.set_id(breakpoint_id_);
-  breakpoint.set_method_name(method_name_);
 
   // We don't have to worry about deleting the pointer as Breakpoint
   // object has ownership of this.
-  SourceLocation *location = breakpoint.mutable_location();
+  SourceLocation *location = stack_frame->mutable_location();
   if (!location) {
     cerr << "Mutable location returns null.";
   }
@@ -279,9 +281,8 @@ HRESULT VariableManager::PrintVariables(
   location->set_line(line_number_);
   location->set_path(file_name_);
 
-  int i = 0;
   for (const auto &variable_tuple : variables_) {
-    Variable *variable = breakpoint.add_variables();
+    Variable *variable = stack_frame->add_locals();
 
     variable->set_name(std::get<0>(variable_tuple));
     const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
@@ -297,12 +298,27 @@ HRESULT VariableManager::PrintVariables(
     variable_value->PopulateVariableValue(variable, eval_coordinator);
   }
 
-  HRESULT hr = BreakpointCollection::WriteBreakpoint(breakpoint);
-  eval_coordinator->SignalFinishedPrintingVariable();
+  for (const auto &variable_tuple : method_arguments_) {
+    Variable *variable = stack_frame->add_arguments();
+
+    variable->set_name(std::get<0>(variable_tuple));
+    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
+    const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
+
+    if (!variable_value) {
+      SetErrorStatusMessage(variable, err_stream->str());
+      continue;
+    }
+
+    // The output will contain status error too so we don't have to
+    // worry about it.
+    variable_value->PopulateVariableValue(variable, eval_coordinator);
+  }
+
   return S_OK;
 }
 
-void VariableManager::SetObjectInspectionDepth(int depth) {
+void DbgStackFrame::SetObjectInspectionDepth(int depth) {
   object_depth_ = depth;
 }
 
