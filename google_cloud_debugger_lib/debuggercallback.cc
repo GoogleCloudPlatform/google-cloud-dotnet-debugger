@@ -109,7 +109,16 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
     ICorDebugAppDomain *appdomain, ICorDebugThread *debug_thread,
     ICorDebugBreakpoint *debug_breakpoint) {
   // If a function evaluation is going on, we don't hit breakpoint.
-  // Otherwise, this can lead to infinite loop situation.
+  // Otherwise, this can lead to infinite loop situation. For example,
+  // if a user sets a breakpoint in a getter method of property X and we
+  // performs function evaluation to get property X, this breakpoint will
+  // be hit. However, since we are filling up stack frames at a breakpoint,
+  // this means that the frame of the caller of the breakpoint will be hit. When
+  // we evaluate the caller frame of the breakpoint, we will then have to
+  // evaluate property X again, leading to a loop.
+  //
+  // Visual Studio also seems to skip a breakpoint if it is hit during function
+  // evaluation.
   if (eval_coordinator_->WaitingForEval()) {
     return appdomain->Continue(FALSE);
   }
@@ -122,10 +131,10 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   CComPtr<ICorDebugValueEnum> arg_value_enum;
   CComPtr<IMetaDataImport> metadata_import;
   CComPtr<ICorDebugThread3> debug_thread3;
-  CComPtr<ICorDebugStackWalk> debug_stackwalk;
+  CComPtr<ICorDebugStackWalk> debug_stack_walk;
 
   hr = debug_thread->QueryInterface(__uuidof(ICorDebugThread3),
-    reinterpret_cast<void **>(&debug_thread3));
+                                    reinterpret_cast<void **>(&debug_thread3));
   if (FAILED(hr)) {
     cerr << "Failed to cast ICorDebugThread to ICorDebugThread3.";
     appdomain->Continue(FALSE);
@@ -145,7 +154,7 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   for (auto &&breakpoint : breakpoint_collection_->GetBreakpoints()) {
     if (breakpoint.GetMethodToken() == function_token &&
         il_offset == breakpoint.GetILOffset()) {
-      hr = debug_thread3->CreateStackWalk(&debug_stackwalk);
+      hr = debug_thread3->CreateStackWalk(&debug_stack_walk);
       if (FAILED(hr)) {
         cerr << "Failed to create stack walk.";
         appdomain->Continue(FALSE);
@@ -153,13 +162,12 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
       }
 
       hr = eval_coordinator_->PrintBreakpointStacks(
-          debug_stackwalk, debug_thread, &breakpoint, portable_pdbs_);
+          debug_stack_walk, debug_thread, &breakpoint, portable_pdbs_);
       if (FAILED(hr)) {
         cerr << "Failed to get stack frame's information.";
         appdomain->Continue(FALSE);
         return hr;
-      }
-      else {
+      } else {
         break;
       }
     }

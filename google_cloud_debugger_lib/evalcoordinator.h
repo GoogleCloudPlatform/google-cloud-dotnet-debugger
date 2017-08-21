@@ -75,11 +75,13 @@ class EvalCoordinator {
   // occurred.
   void HandleException();
 
-  // Prints out local variable from the Enumerable local_enum on debug_thread.
-  HRESULT PrintBreakpointStacks(ICorDebugStackWalk *debug_stack_walk,
-                                     ICorDebugThread *debug_thread,
-                                     DbgBreakpoint *breakpoint,
-                                     const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &pdb_files);
+  // Prints out the stack frames at DbgBreakpoint breakpoint based on
+  // debug_stack_walk.
+  HRESULT PrintBreakpointStacks(
+      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+      DbgBreakpoint *breakpoint,
+      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+          &pdb_files);
 
   // StackFrame calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
@@ -97,8 +99,8 @@ class EvalCoordinator {
   BOOL WaitingForEval();
 
  private:
-  // The threads that we are enumerating and printing the variables from.
-  std::vector<std::thread> variable_threads_;
+  // The threads that we are enumerating and printing the stack frames from.
+  std::vector<std::thread> stack_frames_threads_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;

@@ -17,10 +17,17 @@
 #include <algorithm>
 #include <cctype>
 
+#include "breakpoint.pb.h"
+#include "evalcoordinator.h"
+#include "stackframecollection.h"
+
+using google::cloud::diagnostics::debug::Breakpoint;
+using google::cloud::diagnostics::debug::SourceLocation;
 using google_cloud_debugger_portable_pdb::DocumentIndex;
 using google_cloud_debugger_portable_pdb::LocalConstantRow;
 using google_cloud_debugger_portable_pdb::LocalScopeRow;
 using google_cloud_debugger_portable_pdb::LocalVariableRow;
+using std::cerr;
 using std::string;
 using std::vector;
 
@@ -136,6 +143,31 @@ bool DbgBreakpoint::TrySetBreakpoint(
 
   set_ = best_match_index != -1;
   return set_;
+}
+
+HRESULT DbgBreakpoint::PrintBreakpoint(StackFrameCollection *stack_frames,
+                                       EvalCoordinator *eval_coordinator) {
+  if (!stack_frames) {
+    cerr << "Stack frame collection is null.";
+    return E_INVALIDARG;
+  }
+
+  Breakpoint breakpoint;
+  breakpoint.set_id(id_);
+
+  SourceLocation *location = breakpoint.mutable_location();
+  if (!location) {
+    cerr << "Mutable location returns null.";
+    return E_FAIL;
+  }
+
+  location->set_line(line_);
+  location->set_path(file_name_);
+
+  stack_frames->PrintStackFrames(&breakpoint, eval_coordinator);
+  BreakpointCollection::WriteBreakpoint(breakpoint);
+
+  return S_OK;
 }
 
 bool DbgBreakpoint::TrySetBreakpointInMethod(

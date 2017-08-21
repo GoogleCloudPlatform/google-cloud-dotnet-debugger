@@ -88,34 +88,35 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
   // finished printing the variables.
   // debuggercallback_can_continue_ is set to true if the StackFrame
   // makes another evaluation by calling WaitForEval.
-  debugger_callback_cv_.wait(lk, [&] {
-    return debuggercallback_can_continue_;
-  });
+  debugger_callback_cv_.wait(lk,
+                             [&] { return debuggercallback_can_continue_; });
 }
 
 HRESULT EvalCoordinator::PrintBreakpointStacks(
-    ICorDebugStackWalk *debug_stack_walk,
-    ICorDebugThread *debug_thread,
+    ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
     DbgBreakpoint *breakpoint,
-    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &pdb_files) {
+    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+        &pdb_files) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";
     return E_INVALIDARG;
   }
 
   if (!debug_stack_walk) {
-    cerr << "Debug stackwalk is null.";
+    cerr << "Debug stack walk is null.";
     return E_INVALIDARG;
   }
 
-  unique_ptr<StackFrameCollection> stack_frames(new (std::nothrow) StackFrameCollection);
+  // Creates and initializes stack frame collection based on the
+  // ICorDebugStackWalk object.
+  unique_ptr<StackFrameCollection> stack_frames(new (std::nothrow)
+                                                    StackFrameCollection);
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
     return E_FAIL;
   }
 
-  HRESULT hr = stack_frames->Initialize(
-      breakpoint, debug_stack_walk, pdb_files);
+  HRESULT hr = stack_frames->Initialize(debug_stack_walk, pdb_files);
   if (FAILED(hr)) {
     return hr;
   }
@@ -124,15 +125,16 @@ HRESULT EvalCoordinator::PrintBreakpointStacks(
 
   std::thread local_thread = std::thread(
       [](unique_ptr<StackFrameCollection> stack_frames,
-         EvalCoordinator *eval_coordinator) {
+         EvalCoordinator *eval_coordinator, DbgBreakpoint *breakpoint) {
         // TODO(quoct): Add logic to let the main thread know about this hr.
-        HRESULT hr = stack_frames->PrintStackFrames(eval_coordinator);
+        HRESULT hr =
+            breakpoint->PrintBreakpoint(stack_frames.get(), eval_coordinator);
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << hr;
         }
       },
-      std::move(stack_frames), this);
-  variable_threads_.push_back(std::move(local_thread));
+      std::move(stack_frames), this, breakpoint);
+  stack_frames_threads_.push_back(std::move(local_thread));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;
@@ -144,9 +146,8 @@ HRESULT EvalCoordinator::PrintBreakpointStacks(
   // The StackFrame in active_debug_thread_ will have to set
   // debuggerCallBackCanContinue to TRUE by either calling WaitForEval
   // or SignalFinishPrintingVariable.
-  debugger_callback_cv_.wait(lk, [&] {
-    return debuggercallback_can_continue_;
-  });
+  debugger_callback_cv_.wait(lk,
+                             [&] { return debuggercallback_can_continue_; });
 
   return S_OK;
 }

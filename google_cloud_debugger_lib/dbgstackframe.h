@@ -63,7 +63,7 @@ class DbgStackFrame {
 
   // Populates the StackFrame object with local variables, method arguments,
   // method name, class name, file name and line number.
-  // This method may perform function evaluatoin using eval_coordinator.
+  // This method may perform function evaluation using eval_coordinator.
   HRESULT PopulateStackFrame(google::cloud::diagnostics::debug::StackFrame *stack_frame, EvalCoordinator *eval_coordinator) const;
 
   // Sets how deep an object will be inspected.

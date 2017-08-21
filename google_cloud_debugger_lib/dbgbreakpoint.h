@@ -26,6 +26,9 @@
 
 namespace google_cloud_debugger {
 
+class EvalCoordinator;
+class StackFrameCollection;
+
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
 // file name, the id of the breakpoint, the line and column number.
@@ -44,7 +47,7 @@ class DbgBreakpoint {
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
   bool TrySetBreakpoint(
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
+      const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
 
   // Returns the IL Offset that corresponds to this breakpoint location.
   uint32_t GetILOffset() { return il_offset_; }
@@ -95,11 +98,19 @@ class DbgBreakpoint {
   // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
+  // Creates a Breakpoint proto using this breakpoint information.
+  // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
+  // are used to evaluate and fill up the stack frames of the breakpoint.
+  // This function then outputs the breakpoint to the named pipe of
+  // BreakpointCollection.
+  HRESULT PrintBreakpoint(StackFrameCollection *stack_frames,
+                          EvalCoordinator *eval_coordinator);
+
  private:
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
   bool TrySetBreakpointInMethod(
-    const google_cloud_debugger_portable_pdb::MethodInfo &method);
+      const google_cloud_debugger_portable_pdb::MethodInfo &method);
 
   // True if this breakpoint is set (through TryGetBreakpoint).
   bool set_;
@@ -128,9 +139,8 @@ class DbgBreakpoint {
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
 
+  // True if this breakpoint is activated.
   bool activated_;
-
-  // TODO(quoct): Add arguments of the method this breakpoint is in.
 
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;

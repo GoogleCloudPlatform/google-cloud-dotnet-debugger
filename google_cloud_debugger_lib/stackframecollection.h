@@ -17,50 +17,43 @@
 
 #include <vector>
 
-#include "portablepdbfile.h"
 #include "breakpointcollection.h"
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "dbgstackframe.h"
+#include "portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
 class StackFrameCollection {
-public:
+ public:
   // Using vector of PDB files, we walk through the stack debug_stack_walk at
   // breakpoint breakpoint and try to populate the stack frames vector.
   HRESULT Initialize(
-      DbgBreakpoint *breakpoint,
       ICorDebugStackWalk *debug_stack_walk,
-      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &pdb_files);
+      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+          &pdb_files);
 
-  // Prints out the stack frame to the breakpoint pipeline, using
-  // eval_coordinator to perform eval coordination if needed.
-  HRESULT PrintStackFrames(EvalCoordinator *eval_coordinator);
+  // Populates the stack frames of a breakpoint using stack_frames.
+  // eval_coordinator will be used to perform eval coordination during function
+  // evaluation if needed.
+  HRESULT PrintStackFrames(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+      EvalCoordinator *eval_coordinator);
 
-private:
-  // Given a PDB file, this function tries to find the metadata of the function with
-  // token target_function_token in the PDB file. If found, this function will
-  // populate dbg_stack_frame using the metadata found and the ICorDebugILFrame
-  // il_frame object.
+ private:
+  // Given a PDB file, this function tries to find the metadata of the function
+  // with token target_function_token in the PDB file. If found, this function
+  // will populate dbg_stack_frame using the metadata found and the
+  // ICorDebugILFrame il_frame object.
   HRESULT PopulateLocalVarsAndMethodArgs(
-    mdMethodDef target_function_token,
-    DbgStackFrame *dbg_stack_frame,
-    ICorDebugILFrame *il_frame,
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_files);
+      mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
+      ICorDebugILFrame *il_frame,
+      const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_files);
 
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;
-
-  // Name of the file the variables are in.
-  std::string file_name_;
-
-  // The line number where the variables are in.
-  std::uint32_t line_number_;
-
-  // The ID of the breakpoint for this StackFrame.
-  std::string breakpoint_id_;
 };
 
 }  //  namespace google_cloud_debugger

@@ -23,10 +23,10 @@
 #include "debuggercallback.h"
 #include "evalcoordinator.h"
 
-using google_cloud_debugger_portable_pdb::LocalVariableInfo;
-using google::cloud::diagnostics::debug::StackFrame;
 using google::cloud::diagnostics::debug::SourceLocation;
+using google::cloud::diagnostics::debug::StackFrame;
 using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
 using std::ostringstream;
@@ -36,10 +36,9 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-HRESULT DbgStackFrame::Initialize(ICorDebugILFrame *il_frame,
-                                  const vector<LocalVariableInfo> &variable_infos,
-                                  mdMethodDef method_token,
-                                  IMetaDataImport *metadata_import) {
+HRESULT DbgStackFrame::Initialize(
+    ICorDebugILFrame *il_frame, const vector<LocalVariableInfo> &variable_infos,
+    mdMethodDef method_token, IMetaDataImport *metadata_import) {
   if (!il_frame) {
     cerr << "Null IL Frame.";
     return E_INVALIDARG;
@@ -76,8 +75,9 @@ HRESULT DbgStackFrame::Initialize(ICorDebugILFrame *il_frame,
   return S_OK;
 }
 
-HRESULT DbgStackFrame::PopulateLocalVariables(ICorDebugValueEnum *local_enum,
-                                                const vector<LocalVariableInfo> &variable_infos) {
+HRESULT DbgStackFrame::PopulateLocalVariables(
+    ICorDebugValueEnum *local_enum,
+    const vector<LocalVariableInfo> &variable_infos) {
   HRESULT hr;
 
   vector<CComPtr<ICorDebugValue>> debug_values;
@@ -162,9 +162,8 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
   DWORD method_flags2;
 
   hr = metadata_import->GetMethodProps(
-      method_token, &method_class, nullptr, 0, &method_name_len,
-      &method_flag, &method_signature, &method_signature_blob, &method_rva,
-      &method_flags2);
+      method_token, &method_class, nullptr, 0, &method_name_len, &method_flag,
+      &method_signature, &method_signature_blob, &method_rva, &method_flags2);
 
   if (FAILED(hr)) {
     cerr << "Failed to retrieve method flags.";
@@ -179,10 +178,9 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
   vector<mdParamDef> method_args(100, 0);
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
-    hr = metadata_import->EnumParams(&cor_enum, method_token,
-                                     method_args.data(),
-                                     method_args.size(),
-                                     &method_args_returned);
+    hr =
+        metadata_import->EnumParams(&cor_enum, method_token, method_args.data(),
+                                    method_args.size(), &method_args_returned);
     if (FAILED(hr)) {
       cerr << "Failed to get method arguments for method: " << method_token
            << " with hr: " << std::hex << hr;
@@ -260,16 +258,15 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
     }
 
     method_arguments_.push_back(std::make_tuple(std::move(method_arg_name),
-                                         std::move(method_arg_value),
-                                         std::move(err_stream)));
+                                                std::move(method_arg_value),
+                                                std::move(err_stream)));
   }
 
   return S_OK;
 }
 
 HRESULT DbgStackFrame::PopulateStackFrame(
-    StackFrame *stack_frame,
-    EvalCoordinator *eval_coordinator) const {
+    StackFrame *stack_frame, EvalCoordinator *eval_coordinator) const {
   if (!stack_frame || !eval_coordinator) {
     return E_INVALIDARG;
   }
