@@ -103,6 +103,9 @@ class DbgBreakpoint {
   // are used to evaluate and fill up the stack frames of the breakpoint.
   // This function then outputs the breakpoint to the named pipe of
   // BreakpointCollection.
+  //
+  // This function assumes that the Initialize function of stack_frames
+  // are already called (so stack_frames are already populated with variables).
   HRESULT PrintBreakpoint(StackFrameCollection *stack_frames,
                           EvalCoordinator *eval_coordinator);
 
