@@ -32,7 +32,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
         private Debuggee _debuggee;
 
-        private DebuggerClient(DebugletOptions options, Controller2Client controlClient = null)
+        internal DebuggerClient(DebugletOptions options, Controller2Client controlClient = null)
         {
             _controlClient = controlClient ?? Controller2Client.Create();
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
@@ -44,6 +44,9 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
                 _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
+                if (_debuggee.IsDisabled)
+                {
+                }
             }
         }
 
@@ -61,7 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug
             }
             catch (RpcException e) when (e.Status.StatusCode == StatusCode.NotFound)
             {
-                // The debuggee was not found try to register again
+                // The debuggee was not found try to register again.
                 Register();
                 return func();
             }

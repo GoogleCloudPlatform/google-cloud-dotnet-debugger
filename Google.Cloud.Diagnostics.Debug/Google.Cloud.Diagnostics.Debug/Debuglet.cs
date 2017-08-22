@@ -37,17 +37,16 @@ namespace Google.Cloud.Diagnostics.Debug
     internal sealed class Debuglet : IDisposable
     {
         private readonly DebugletOptions _options;
-        private readonly Controller2Client _controlClient;
+        private readonly DebuggerClient _client;
         private readonly IDictionary<string, StackdriverBreakpoint> _breakpoints;
         private readonly CancellationTokenSource _cts;
 
-        private Debuggee _debuggee;
         private Process _process;
 
         public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _controlClient = controlClient ?? Controller2Client.Create();
+            _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
             _breakpoints = new Dictionary<string, StackdriverBreakpoint>();
             _cts = new CancellationTokenSource();
         }
@@ -57,10 +56,8 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public void Start()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
-            // TODO(talarico): Check return value here.
-            // TODO(talarico): Poll to see if we need to shut this off.
-            _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
+            // Register the debugger.
+            _client.Register();
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.ProcessId, null);
@@ -97,7 +94,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        var breakpoints = _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints;
+                        var breakpoints = _client.ListBreakpoints();
 
                         // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
 
@@ -137,7 +134,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
                         var breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
-                        _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint);
+                        _client.UpdateBreakpoint(breakpoint);
                     }
 
                 }
