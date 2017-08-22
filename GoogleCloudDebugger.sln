@@ -1,15 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.3
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_lib", "google_cloud_debugger_lib\google_cloud_debugger_lib.vcxproj", "{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger", "google_cloud_debugger\google_cloud_debugger.vcxproj", "{8D041302-2293-460D-AF78-BF3AD897E213}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1} = {AC725B22-C773-45A3-9DDD-ACB5146BC8B1}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug", "Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug.csproj", "{375C43F1-66AF-4F42-8D9F-16DBE708448D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_test", "google_cloud_debugger_test\google_cloud_debugger_test.vcxproj", "{3009483D-6930-4D0D-8066-4A9CC7510AE6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1} = {AC725B22-C773-45A3-9DDD-ACB5146BC8B1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
