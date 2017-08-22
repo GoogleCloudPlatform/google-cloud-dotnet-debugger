@@ -32,6 +32,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// report hit breakpoints.
     /// TODO(talarico): These docs need to be significantly expanded (use watchpoint).
     /// TODO(talarico): Add example of how to start this.
+    /// TODO(talarico): Rename to debuglet to agent
     /// </summary>
     internal sealed class Debuglet : IDisposable
     {
