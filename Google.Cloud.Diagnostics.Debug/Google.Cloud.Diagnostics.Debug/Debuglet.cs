@@ -32,34 +32,37 @@ namespace Google.Cloud.Diagnostics.Debug
     /// report hit breakpoints.
     /// TODO(talarico): These docs need to be significantly expanded (use watchpoint).
     /// TODO(talarico): Add example of how to start this.
+    /// TODO(talarico): Rename to debuglet to agent
     /// </summary>
-    public sealed class Debuglet : IDisposable
+    internal sealed class Debuglet : IDisposable
     {
         private readonly DebugletOptions _options;
-        private readonly Controller2Client _controlClient;
+        private readonly DebuggerClient _client;
         private readonly ISet<string> _activeBreakpointsIds;
         private readonly CancellationTokenSource _cts;
+        private readonly TaskCompletionSource<bool> _tcs;
 
-        private Debuggee _debuggee;
         private Process _process;
 
-        private Debuglet(DebugletOptions options, Controller2Client controlClient = null)
+        /// <summary>
+        /// Create a new <see cref="Debuglet"/>.
+        /// </summary>
+        public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _controlClient = controlClient ?? Controller2Client.Create();
+            _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
             _activeBreakpointsIds = new HashSet<string>();
             _cts = new CancellationTokenSource();
+            _tcs = new TaskCompletionSource<bool>();
         }
 
         /// <summary>
         /// Starts the <see cref="Debuglet"/>.
         /// </summary>
-        private void Start()
+        public void StartAndBlock()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
-            // TODO(talarico): Check return value here.
-            // TODO(talarico): Poll to see if we need to shut this off.
-            _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
+            // Register the debuggee.
+            _client.Register();
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.ProcessId, null);
@@ -69,6 +72,9 @@ namespace Google.Cloud.Diagnostics.Debug
             // TODO(talarico): Is this (^^) true? Should we change this logic?
             StartWriteLoopAsync(_cts.Token).Wait();
             StartReadLoopAsync(_cts.Token).Wait();
+
+            // Start blocking.
+            _tcs.Task.Wait();
         }
 
         /// <inheritdoc />
@@ -85,7 +91,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         /// <returns>A task representing the asynchronous operation which will be completed when the
         /// named pipe server is connected.</returns>
-        private Task StartWriteLoopAsync(CancellationToken cancellationToken)
+        public Task StartWriteLoopAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
@@ -96,7 +102,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        var breakpoints = _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints;
+                        var breakpoints = TryAction(() => _client.ListBreakpoints());
 
                         // Send new breakpoints to the debugger.
                         var newBreakpoints = breakpoints.Where(b => !_activeBreakpointsIds.Contains(b.Id));
@@ -132,7 +138,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         /// <returns>A task representing the asynchronous operation which will be completed when the
         /// named pipe server is connected.</returns>
-        private Task StartReadLoopAsync(CancellationToken cancellationToken)
+        public Task StartReadLoopAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
@@ -150,15 +156,30 @@ namespace Google.Cloud.Diagnostics.Debug
 
                         var breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
-                        _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint);
-                    }
 
+                        TryAction(() => _client.UpdateBreakpoint(breakpoint));
+                    }
                 }
             }).Start();
             return tcs.Task;
         }
 
-
+        /// <summary>
+        /// Tries to perform an action. If a <see cref="DebuggeeDisabledException"/> is
+        /// thrown complete the <see cref="_tcs"/> to signal the debugger should be shutdown.
+        /// </summary>
+        private T TryAction<T>(Func<T> func)
+        {
+            try
+            {
+                return func();
+            }
+            catch (DebuggeeDisabledException)
+            {
+                _tcs.SetResult(true);
+                return default(T);
+            }
+        }
 
         // TODO(talarico): Move this out of this class.
         // TODO(talarico): Handle exceptions during startup.
@@ -175,10 +196,7 @@ namespace Google.Cloud.Diagnostics.Debug
             var options = DebugletOptions.Parse(args);
             using (var debuglet = new Debuglet(options))
             {
-                debuglet.Start();
-                // TODO(talarico): What's the best way to do this?
-                TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
-                tcs.Task.Wait();
+                debuglet.StartAndBlock();                
             }
         }
     }

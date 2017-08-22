@@ -60,7 +60,6 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
-                // TODO(talarico): we need more than one stackframe.
                 StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() }
             };
         }
