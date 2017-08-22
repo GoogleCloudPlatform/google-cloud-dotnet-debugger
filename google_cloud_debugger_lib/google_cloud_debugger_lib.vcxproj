@@ -27,13 +27,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -46,7 +46,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -72,21 +72,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\src\dlls\dbgshim;$(CORECLR_PATH)\src\debug\inc;$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\debug\ildsymlib;$(SolutionDir)\protobuf\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)third_party\Windows;$(SolutionDir)\protobuf;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)third_party\Windows;$(SolutionDir)protobuf\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)third_party\Windows;$(SolutionDir)protobuf\cmake\build\solution\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)protobuf\$(Platform)\$(Configuration);$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
+    <CustomBuildBeforeTargets>BscMake</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(PROTOBUF_PATH)\include;$(CORECLR_PATH)\src\debug\ildsymlib;$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\debug\inc;$(CORECLR_PATH)\src\dlls\dbgshim;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(PROTOBUF_PATH)\lib;$(ProjectDir)third_party\Windows;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)protobuf\$(Platform)\$(Configuration);$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -116,14 +117,14 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>libprotobufd.lib;libprotobuf-lited.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)third_party\Windows;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)third_party\Windows\dbgshim.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
     <Lib>
-      <AdditionalDependencies>libprotobufd.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libprotobuf.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)build-deps.cmd $(SolutionDir) $(Configuration) $(Platform)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -153,18 +154,19 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
       <PrecompiledHeaderFile />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libprotobufd.lib;libprotobuf-lited.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libprotobuf.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)third_party\Windows;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
     </Link>
-    <PostBuildEvent>
-      <Command>Copy /Y "$(ProjectDir)third_party\Windows\dbgshim.dll" "$(TargetDir)"</Command>
-    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>$(SolutionDir)build-deps.cmd $(SolutionDir) $(Configuration) $(Platform)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
