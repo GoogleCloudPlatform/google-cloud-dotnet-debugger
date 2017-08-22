@@ -73,8 +73,9 @@ if not exist "%ROOT_DIR%googletest\googletest\%PLATFORM%\%CONFIG%\gtest.lib" (
 )
 
 :: Build the coreclr repository without tests.
-if not exist "%ROOT_DIR%coreclr\bin\Product\Windows_NT.%PLATFORM%.%CONFIG%" (
+if not exist "%ROOT_DIR%coreclr\bin\obj\Windows_NT.%PLATFORM%.%CONFIG%\src\dlls\dbgshim\%CONFIG%" (
     %ROOT_DIR%coreclr\build.cmd skiptests %PLATFORM% %CONFIG%
+    %ROOT_DIR%coreclr\build-packages.cmd -buildType=%CONFIG% -buildArch=%PLATFORM%
 )
 
 cd %ROOT_DIR%
