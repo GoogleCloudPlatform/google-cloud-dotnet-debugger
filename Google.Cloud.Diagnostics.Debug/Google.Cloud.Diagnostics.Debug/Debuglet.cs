@@ -44,19 +44,22 @@ namespace Google.Cloud.Diagnostics.Debug
 
         private Process _process;
 
-        public Debuglet(DebugletOptions options, TaskCompletionSource<bool> tcs, Controller2Client controlClient = null)
+        /// <summary>
+        /// Create a new <see cref="Debuglet"/>.
+        /// </summary>
+        public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _tcs = GaxPreconditions.CheckNotNull(tcs, nameof(tcs));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
             _activeBreakpointsIds = new HashSet<string>();
             _cts = new CancellationTokenSource();
+            _tcs = new TaskCompletionSource<bool>();
         }
 
         /// <summary>
         /// Starts the <see cref="Debuglet"/>.
         /// </summary>
-        public void Start()
+        public void StartAndBlock()
         {
             // Register the debuggee.
             _client.Register();
@@ -69,6 +72,9 @@ namespace Google.Cloud.Diagnostics.Debug
             // TODO(talarico): Is this (^^) true? Should we change this logic?
             StartWriteLoopAsync(_cts.Token).Wait();
             StartReadLoopAsync(_cts.Token).Wait();
+
+            // Start blocking.
+            _tcs.Task.Wait();
         }
 
         /// <inheritdoc />
@@ -160,7 +166,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
         /// <summary>
         /// Tries to perform an action. If a <see cref="DebuggeeDisabledException"/> is
-        /// thrown cancel all tokens as this process should be shutdown.
+        /// thrown complete the <see cref="_tcs"/> to signal the debugger should be shutdown.
         /// </summary>
         private T TryAction<T>(Func<T> func)
         {
@@ -170,7 +176,6 @@ namespace Google.Cloud.Diagnostics.Debug
             }
             catch (DebuggeeDisabledException)
             {
-                _cts.Cancel();
                 _tcs.SetResult(true);
                 return default(T);
             }
@@ -188,12 +193,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </example>
         public static void Main(string[] args)
         {
-            var tcs = new TaskCompletionSource<bool>();
             var options = DebugletOptions.Parse(args);
-            using (var debuglet = new Debuglet(options, tcs))
+            using (var debuglet = new Debuglet(options))
             {
-                debuglet.Start();                
-                tcs.Task.Wait();
+                debuglet.StartAndBlock();                
             }
         }
     }

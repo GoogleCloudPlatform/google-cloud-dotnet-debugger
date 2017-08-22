@@ -65,6 +65,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Update a <see cref="StackdriverBreakpoint"/>.
         /// </summary>
+        /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
         public IMessage UpdateBreakpoint(StackdriverBreakpoint breakpoint) =>
             TryAction(() => _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint));
 
