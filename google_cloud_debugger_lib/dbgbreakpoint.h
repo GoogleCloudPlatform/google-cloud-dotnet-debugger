@@ -26,6 +26,9 @@
 
 namespace google_cloud_debugger {
 
+class EvalCoordinator;
+class StackFrameCollection;
+
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
 // file name, the id of the breakpoint, the line and column number.
@@ -43,10 +46,8 @@ class DbgBreakpoint {
   // We do this by searching the PortablePdbFile for the file name and
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
-  // Based on that sequence point, we populate the local variables and
-  // local constants fields of the breakpoint.
   bool TrySetBreakpoint(
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
+      const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
 
   // Returns the IL Offset that corresponds to this breakpoint location.
   uint32_t GetILOffset() { return il_offset_; }
@@ -61,13 +62,6 @@ class DbgBreakpoint {
   // Sets the method token.
   void SetMethodToken(mdMethodDef method_token) {
     method_token_ = method_token;
-  }
-
-  // Returns a vector containing all the local variables that this
-  // breakpoint has access too.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
-      &GetLocalVariables() {
-    return local_variables_;
   }
 
   // Returns the name of the file this breakpoint is in.
@@ -85,8 +79,7 @@ class DbgBreakpoint {
   uint32_t GetLine() const { return line_; }
 
   // Returns true if this breakpoint is set.
-  // When a breakpoint is set, its list of local variables and local vectors
-  // are filled. This happens after TrySetBreakpoint method is called.
+  // When a breakpoint is set, its il_off_set is set.
   bool IsSet() const { return set_; }
 
   // Returns the unique ID of this breakpoint.
@@ -105,11 +98,22 @@ class DbgBreakpoint {
   // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
+  // Creates a Breakpoint proto using this breakpoint information.
+  // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
+  // are used to evaluate and fill up the stack frames of the breakpoint.
+  // This function then outputs the breakpoint to the named pipe of
+  // BreakpointCollection.
+  //
+  // This function assumes that the Initialize function of stack_frames
+  // are already called (so stack_frames are already populated with variables).
+  HRESULT PrintBreakpoint(StackFrameCollection *stack_frames,
+                          EvalCoordinator *eval_coordinator);
+
  private:
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
   bool TrySetBreakpointInMethod(
-    const google_cloud_debugger_portable_pdb::MethodInfo &method);
+      const google_cloud_debugger_portable_pdb::MethodInfo &method);
 
   // True if this breakpoint is set (through TryGetBreakpoint).
   bool set_;
@@ -138,18 +142,8 @@ class DbgBreakpoint {
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
 
+  // True if this breakpoint is activated.
   bool activated_;
-
-  // All local variables that this breakpoint has access to.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
-      local_variables_;
-
-  // All constants that this breakpoint has access to.
-  // TODO(quoct): Currently, we are not doing anything with these constants.
-  std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
-      local_constants_;
-
-  // TODO(quoct): Add arguments of the method this breakpoint is in.
 
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;

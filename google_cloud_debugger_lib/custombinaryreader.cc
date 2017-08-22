@@ -111,12 +111,11 @@ bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
-  binary_stream_iter begin = file_content_.begin();
-  if (std::distance(begin, end_) < position) {
+  if (std::distance(begin_, end_) < position) {
     return false;
   }
 
-  iterator_ = begin + position;
+  iterator_ = begin_ + position;
   return true;
 }
 

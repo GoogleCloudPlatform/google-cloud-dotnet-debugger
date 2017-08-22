@@ -38,7 +38,7 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         private readonly DebugletOptions _options;
         private readonly DebuggerClient _client;
-        private readonly IDictionary<string, StackdriverBreakpoint> _breakpoints;
+        private readonly ISet<string> _activeBreakpointsIds;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
 
@@ -49,7 +49,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _tcs = GaxPreconditions.CheckNotNull(tcs, nameof(tcs));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
-            _breakpoints = new Dictionary<string, StackdriverBreakpoint>();
+            _activeBreakpointsIds = new HashSet<string>();
             _cts = new CancellationTokenSource();
         }
 
@@ -97,13 +97,28 @@ namespace Google.Cloud.Diagnostics.Debug
                     while (!cancellationToken.IsCancellationRequested)
                     {
                         var breakpoints = TryAction(() => _client.ListBreakpoints());
-                        // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
 
-                        var newBreakpoints = breakpoints.Where(b => !_breakpoints.ContainsKey(b.Id));
+                        // Send new breakpoints to the debugger.
+                        var newBreakpoints = breakpoints.Where(b => !_activeBreakpointsIds.Contains(b.Id));
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
-                            _breakpoints.Add(breakpoint.Id, breakpoint);
+                            _activeBreakpointsIds.Add(breakpoint.Id);
                             server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                        }
+
+                        // Remove no longer active breakpoints from the debugger.
+                        IEnumerable<string> currentIds = breakpoints.Select(b => b.Id);
+                        IEnumerable<string> breakpointsToRemove = _activeBreakpointsIds.Where(
+                            b => !currentIds.Contains(b)).ToList();
+                        foreach (string breakpointId in breakpointsToRemove)
+                        {
+                            var breakpoint = new Breakpoint
+                            {
+                                Id = breakpointId,
+                                Activated = false,
+                            };
+                            _activeBreakpointsIds.Remove(breakpointId);
+                            server.WriteBreakpointAsync(breakpoint).Wait();
                         }
                     }
                 }
@@ -135,7 +150,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
                         var breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
-                       
+
                         TryAction(() => _client.UpdateBreakpoint(breakpoint));
                     }
                 }

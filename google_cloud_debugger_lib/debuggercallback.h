@@ -172,8 +172,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   HRESULT EnumerateAppDomains(std::vector<CComPtr<ICorDebugAppDomain>> *result);
 
   // Returns all the PDB files that are parsed.
-  std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
-  GetPdbFiles() {
+  const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &GetPdbFiles() const {
     return portable_pdbs_;
   }
 
@@ -234,7 +233,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
  private:
   // An EvalCoordinator is used to coordinate between DebuggerCallback object
-  // and a VariableManager object when an evaluation is needed. See the
+  // and a StackFrame object when an evaluation is needed. See the
   // EvalCoordinator class for comments on how to use it.
   // TODO(quoct): Handle multi thread case with eval coordinator?
   // Also, this is just a temporary design and may be changed.

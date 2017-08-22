@@ -19,6 +19,7 @@
 #include "evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
+using std::string;
 
 namespace google_cloud_debugger {
 
@@ -54,9 +55,6 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
   }
 
   HRESULT hr;
-  std::unique_ptr<WCHAR[]> string_value;
-  ULONG32 str_len;
-  ULONG32 str_returned_len;
   CComPtr<ICorDebugValue> debug_value;
   CComPtr<ICorDebugStringValue> debug_string;
 
@@ -75,6 +73,32 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
     return hr;
   }
 
+  std::string value;
+  hr = GetString(debug_string, &value);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  variable->set_value(value);
+  return S_OK;
+}
+
+HRESULT DbgString::PopulateType(Variable *variable) {
+  variable->set_type("System.String");
+  return S_OK;
+}
+
+HRESULT DbgString::GetString(ICorDebugStringValue *debug_string,
+                             std::string *returned_string) {
+  if (!returned_string || !debug_string) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr;
+  std::unique_ptr<WCHAR[]> string_value;
+  ULONG32 str_len;
+  ULONG32 str_returned_len;
+
   hr = debug_string->GetLength(&str_len);
   if (FAILED(hr)) {
     WriteError("Failed to get length of string.");
@@ -84,24 +108,19 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
   // Plus 1 for the NULL at the end of the string.
   str_len += 1;
   string_value =
-      std::unique_ptr<WCHAR[]>(new (std::nothrow) WCHAR[str_len + 1]);
+      std::unique_ptr<WCHAR[]>(new (std::nothrow) WCHAR[str_len]);
   if (!string_value) {
     return E_OUTOFMEMORY;
   }
 
-  hr = debug_string->GetString(str_len + 1, &str_returned_len,
+  hr = debug_string->GetString(str_len, &str_returned_len,
                                string_value.get());
   if (FAILED(hr)) {
     WriteError("Failed to extract the string.");
     return hr;
   }
 
-  variable->set_value(ConvertWCharPtrToString(string_value.get()));
-  return S_OK;
-}
-
-HRESULT DbgString::PopulateType(Variable *variable) {
-  variable->set_type("System.String");
+  *returned_string = ConvertWCharPtrToString(string_value.get());
   return S_OK;
 }
 
