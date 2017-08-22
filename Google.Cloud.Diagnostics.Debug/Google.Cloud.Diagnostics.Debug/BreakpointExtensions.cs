@@ -60,18 +60,9 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
-                // TODO(talarico): we need more than one stackframe.
                 StackFrames = 
                 {
-                    new StackdriverStackFrame {
-                        Function = breakpoint.MethodName,
-                        Locals = { breakpoint.Variables?.Select(x => x.Convert()).ToList() },
-                        Location = new StackdriverSourceLocation
-                        {
-                            Path = breakpoint.Location?.Path,
-                            Line = breakpoint.Location?.Line ?? 0
-                        },
-                    },
+                    breakpoint.StackFrames.Select(x => x.Convert()).ToList()
                 }
             };
         }
