@@ -16,7 +16,15 @@ using System;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
+    /// <summary>
+    /// Exception thrown when a debuggee is disabled.
+    /// </summary>
     internal class DebuggeeDisabledException : Exception
     {
+        public DebuggeeDisabledException() { }
+
+        public DebuggeeDisabledException(string message) : base(message) { }
+
+        public DebuggeeDisabledException(string message, Exception inner) : base(message, inner) { }
     }
 }

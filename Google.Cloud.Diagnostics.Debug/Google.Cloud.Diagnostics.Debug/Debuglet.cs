@@ -40,12 +40,14 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly DebuggerClient _client;
         private readonly IDictionary<string, StackdriverBreakpoint> _breakpoints;
         private readonly CancellationTokenSource _cts;
+        private readonly TaskCompletionSource<bool> _tcs;
 
         private Process _process;
 
-        public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
+        public Debuglet(DebugletOptions options, TaskCompletionSource<bool> tcs, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
+            _tcs = GaxPreconditions.CheckNotNull(tcs, nameof(tcs));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
             _breakpoints = new Dictionary<string, StackdriverBreakpoint>();
             _cts = new CancellationTokenSource();
@@ -56,7 +58,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public void Start()
         {
-            // Register the debugger.
+            // Register the debuggee.
             _client.Register();
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
@@ -94,8 +96,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        var breakpoints = _client.ListBreakpoints();
-
+                        var breakpoints = TryAction(() => _client.ListBreakpoints());
                         // TODO(talarico): Do we need to wipe out old breakpoints that were hit?
 
                         var newBreakpoints = breakpoints.Where(b => !_breakpoints.ContainsKey(b.Id));
@@ -134,15 +135,31 @@ namespace Google.Cloud.Diagnostics.Debug
 
                         var breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
-                        _client.UpdateBreakpoint(breakpoint);
+                       
+                        TryAction(() => _client.UpdateBreakpoint(breakpoint));
                     }
-
                 }
             }).Start();
             return tcs.Task;
         }
 
-
+        /// <summary>
+        /// Tries to perform an action. If a <see cref="DebuggeeDisabledException"/> is
+        /// thrown cancel all tokens as this process should be shutdown.
+        /// </summary>
+        private T TryAction<T>(Func<T> func)
+        {
+            try
+            {
+                return func();
+            }
+            catch (DebuggeeDisabledException)
+            {
+                _cts.Cancel();
+                _tcs.SetResult(true);
+                return default(T);
+            }
+        }
 
         // TODO(talarico): Move this out of this class.
         // TODO(talarico): Handle exceptions during startup.
@@ -156,12 +173,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </example>
         public static void Main(string[] args)
         {
+            var tcs = new TaskCompletionSource<bool>();
             var options = DebugletOptions.Parse(args);
-            using (var debuglet = new Debuglet(options))
+            using (var debuglet = new Debuglet(options, tcs))
             {
-                debuglet.Start();
-                // TODO(talarico): What's the best way to do this?
-                TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
+                debuglet.Start();                
                 tcs.Task.Wait();
             }
         }
