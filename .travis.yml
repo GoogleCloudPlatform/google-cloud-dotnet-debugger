@@ -27,6 +27,8 @@ script:
   - ./google_cloud_debugger_test/google_cloud_debugger_test
   
 cache:
+  # Wait 20 min for cache
+  timeout: 1200
   directories:
   - $TRAVIS_BUILD_DIR/coreclr
   - $TRAVIS_BUILD_DIR/protobuf
