@@ -1,0 +1,24 @@
+language: csharp
+sudo: enabled
+dist: trusty
+
+mono: none
+dotnet: 1.1.2
+
+before_install:
+  - sudo apt-get install g++
+  - sudo apt-get install cmake
+
+# Install the .NET Core 1.0 runtime as that's what we test against
+addons:
+  apt:
+    sources:
+    - sourceline: 'deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod trusty main'
+      key_url: 'https://packages.microsoft.com/keys/microsoft.asc'
+    packages:
+    - dotnet-sharedframework-microsoft.netcore.app-1.0.5
+
+script:
+  - ./build-deps.sh
+  - ./build.sh
+  - ./google_cloud_debugger_test/google_cloud_debugger_test
