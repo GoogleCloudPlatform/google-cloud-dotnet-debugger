@@ -9,8 +9,6 @@ before_install:
   - sudo apt-get install autoconf automake libtool curl make g++ unzip
   # Needed for coreclr
   - sudo apt-get install cmake llvm-3.5 clang-3.5 lldb-3.6 lldb-3.6-dev libunwind8 libunwind8-dev gettext libicu-dev liblttng-ust-dev libcurl4-openssl-dev libssl-dev uuid-dev libkrb5-dev
-  
-
 
 # Install the .NET Core 1.0 runtime as that's what we test against
 addons:
@@ -22,17 +20,22 @@ addons:
     - dotnet-sharedframework-microsoft.netcore.app-1.0.5
 
 script:
+  # Build dependencies
   - ./build-deps.sh
+  # Build all code.
   - ./build.sh
+  # Run the single test.
   - ./google_cloud_debugger_test/google_cloud_debugger_test
   
 cache:
-  # Wait 20 min for cache
+  # Wait 20 min for cache (these direcories are large.
   timeout: 1200
   directories:
   - $TRAVIS_BUILD_DIR/coreclr
   - $TRAVIS_BUILD_DIR/protobuf
   - $TRAVIS_BUILD_DIR/googletest
-  
+
+
+# TODO(talarico): Hack to get build working as the scripts are not setting this properly.
 env:
   - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
