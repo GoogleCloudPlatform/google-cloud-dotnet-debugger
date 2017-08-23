@@ -25,3 +25,9 @@ script:
   - ./build-deps.sh
   - ./build.sh
   - ./google_cloud_debugger_test/google_cloud_debugger_test
+  
+cache:
+  directories:
+  - $TRAVIS_BUILD_DIR/coreclr
+  - $TRAVIS_BUILD_DIR/protobuf
+  - $TRAVIS_BUILD_DIR/googletest
