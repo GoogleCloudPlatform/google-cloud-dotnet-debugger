@@ -10,10 +10,10 @@ DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} `pkg-config --cflags protobuf`
 
-DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o
+DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o dbgstackframe.o
 PDB_PARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
 BREAKPOINTS = dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o
-ALL_O_FILES = variablemanager.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
+ALL_O_FILES = stackframecollection.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 namedpiped.o: named_pipe_client_unix.h named_pipe_client_unix.cc
@@ -42,12 +42,15 @@ dbgclassfield.o: dbgclassfield.h dbgclassfield.cc
 
 dbgclassproperty.o: dbgclassproperty.h dbgclassproperty.cc
 	clang-3.5 dbgclassproperty.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassproperty.o
+	
+dbgstackframe.o: dbgstackframe.h dbgstackframe.cc
+	clang-3.5 dbgstackframe.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstackframe.o
 
 evalcoordinator.o: evalcoordinator.h evalcoordinator.cc
 	clang-3.5 evalcoordinator.cc ${INCDIRS} ${CC_FLAGS} -c -o evalcoordinator.o
 
-variablemanager.o: variablemanager.h variablemanager.cc
-	clang-3.5 variablemanager.cc ${INCDIRS} ${CC_FLAGS} -c -o variablemanager.o
+stackframecollection.o: stackframecollection.h stackframecollection.cc
+	clang-3.5 stackframecollection.cc ${INCDIRS} ${CC_FLAGS} -c -o stackframecollection.o
 
 debuggercallback.o: debuggercallback.h debuggercallback.cc
 	clang-3.5 debuggercallback.cc ${INCDIRS} ${CC_FLAGS} -c -o debuggercallback.o
