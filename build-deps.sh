@@ -14,7 +14,6 @@ make
 sudo make install
 sudo ldconfig
 
-
 cd $ROOT_DIR/coreclr
 ./build.sh skiptests
 
