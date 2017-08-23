@@ -5,7 +5,7 @@ cd $ROOT_DIR/google_cloud_debugger_lib
 make google_cloud_debugger
 
 cd $ROOT_DIR/google_cloud_debugger
-make google_cloud_debugger5
+make google_cloud_debugger
 
 cd $ROOT_DIR/google_cloud_debugger_test
 make google_cloud_debugger_test
