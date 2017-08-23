@@ -31,3 +31,6 @@ cache:
   - $TRAVIS_BUILD_DIR/coreclr
   - $TRAVIS_BUILD_DIR/protobuf
   - $TRAVIS_BUILD_DIR/googletest
+  
+env:
+  - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
