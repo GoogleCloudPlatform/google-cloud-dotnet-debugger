@@ -16,7 +16,7 @@ sudo ldconfig
 
 
 cd $ROOT_DIR/coreclr
-./build.sh
+./build.sh skiptests
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug
 sudo ldconfig
