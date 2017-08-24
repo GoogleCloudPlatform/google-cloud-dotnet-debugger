@@ -25,18 +25,17 @@ using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 namespace Google.Cloud.Diagnostics.Debug
 {
     /// <summary>
-    /// The <see cref="Debuglet"/> is the intermediary between a debugger process using the ICorDebug API and
+    /// The <see cref="Agent"/> is the intermediary between a debugger process using the ICorDebug API and
     /// between the Stackdriver Debugger API.
-    /// The debuglet will start the debugger process and have attach it to the users running process.  It will
+    /// The agent will start the debugger process and have attach it to the users running process.  It will
     /// then register itself with the Stackdriver Debugger API and listen for new breakpoints to watch and
     /// report hit breakpoints.
     /// TODO(talarico): These docs need to be significantly expanded (use watchpoint).
     /// TODO(talarico): Add example of how to start this.
-    /// TODO(talarico): Rename to debuglet to agent
     /// </summary>
-    internal sealed class Debuglet : IDisposable
+    internal sealed class Agent : IDisposable
     {
-        private readonly DebugletOptions _options;
+        private readonly AgentOptions _options;
         private readonly DebuggerClient _client;
         private readonly ISet<string> _activeBreakpointsIds;
         private readonly CancellationTokenSource _cts;
@@ -45,9 +44,9 @@ namespace Google.Cloud.Diagnostics.Debug
         private Process _process;
 
         /// <summary>
-        /// Create a new <see cref="Debuglet"/>.
+        /// Create a new <see cref="Agent"/>.
         /// </summary>
-        public Debuglet(DebugletOptions options, Controller2Client controlClient = null)
+        public Agent(AgentOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
@@ -57,7 +56,7 @@ namespace Google.Cloud.Diagnostics.Debug
         }
 
         /// <summary>
-        /// Starts the <see cref="Debuglet"/>.
+        /// Starts the <see cref="Agent"/>.
         /// </summary>
         public void StartAndBlock()
         {
@@ -184,7 +183,7 @@ namespace Google.Cloud.Diagnostics.Debug
         // TODO(talarico): Move this out of this class.
         // TODO(talarico): Handle exceptions during startup.
         /// <summary>
-        /// Starts a debuglet and blocks the terminal.
+        /// Starts a agent and blocks the terminal.
         /// </summary>
         /// <example>
         /// PS> $app = Start-Process dotnet .\bin\Debug\netcoreapp1.1\ConsoleApp.dll -PassThru
@@ -193,10 +192,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </example>
         public static void Main(string[] args)
         {
-            var options = DebugletOptions.Parse(args);
-            using (var debuglet = new Debuglet(options))
+            var options = AgentOptions.Parse(args);
+            using (var agent = new Agent(options))
             {
-                debuglet.StartAndBlock();                
+                agent.StartAndBlock();                
             }
         }
     }
