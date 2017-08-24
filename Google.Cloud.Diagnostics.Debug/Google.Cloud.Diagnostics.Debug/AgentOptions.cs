@@ -21,7 +21,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// <summary>
     /// Options for starting a <see cref="Debuglet"/>.
     /// </summary>
-    internal class DebugletOptions
+    internal class AgentOptions
     {
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
@@ -44,12 +44,12 @@ namespace Google.Cloud.Diagnostics.Debug
         public int WaitTime { get; set; }
 
         /// <summary>
-        /// Parse a <see cref="DebugletOptions"/> from command line arguments.
+        /// Parse a <see cref="AgentOptions"/> from command line arguments.
         /// </summary>
-        public static DebugletOptions Parse(string[] args)
+        public static AgentOptions Parse(string[] args)
         {
-            var result = Parser.Default.ParseArguments<DebugletOptions>(args);
-            var options = new DebugletOptions();
+            var result = Parser.Default.ParseArguments<AgentOptions>(args);
+            var options = new AgentOptions();
             result.WithParsed((o) => 
             {
                 GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));

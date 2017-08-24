@@ -23,19 +23,19 @@ using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 namespace Google.Cloud.Diagnostics.Debug
 {
     /// <summary>
-    /// A wrapper around a <see cref="Controller2Client"/> that manages the current debuglet and
-    /// re-registering the debuglet if it deactivates due to inactivity.
+    /// A wrapper around a <see cref="Controller2Client"/> that manages the current agent and
+    /// re-registering the agent if it deactivates due to inactivity.
     /// </summary>
     internal class DebuggerClient
     {
-        private readonly DebugletOptions _options;
+        private readonly AgentOptions _options;
         private readonly Controller2Client _controlClient;
         private Debuggee _debuggee;
 
         /// <summary>
         /// Create a new <see cref="DebuggerClient"/>
         /// </summary>
-        internal DebuggerClient(DebugletOptions options, Controller2Client controlClient = null)
+        internal DebuggerClient(AgentOptions options, Controller2Client controlClient = null)
         {
             _controlClient = controlClient ?? Controller2Client.Create();
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
