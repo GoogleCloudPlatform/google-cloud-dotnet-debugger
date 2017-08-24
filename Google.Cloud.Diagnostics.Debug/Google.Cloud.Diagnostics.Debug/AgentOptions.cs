@@ -32,8 +32,8 @@ namespace Google.Cloud.Diagnostics.Debug
         [Option("debugger", Required = true, HelpText = "A path to the debugger to use.")]
         public string Debugger { get; set; }
 
-        [Option("process-id", Required = true, HelpText = "The id of the process to debug.")]
-        public string ProcessId { get; set; }
+        [Option("application", Required = true, HelpText = "A path to the application to be debugged.")]
+        public string Application { get; set; }
 
         [Option("project-id",
             HelpText = "The Google Cloud Console project the debuggee is associated with")]
@@ -55,7 +55,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));
                 GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
                 GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
-                GaxPreconditions.CheckNotNullOrEmpty(o.ProcessId, nameof(o.ProcessId));
+                GaxPreconditions.CheckNotNullOrEmpty(o.Application, nameof(o.Application));
                 GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? Common.Platform.ProjectId, nameof(o.ProjectId));
                 GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
 
@@ -63,6 +63,13 @@ namespace Google.Cloud.Diagnostics.Debug
                 {
                     throw new FileNotFoundException($"Debugger file not found: '{o.Debugger}'");
                 }
+
+                o.Application = Path.GetFullPath(o.Application);
+                if (!File.Exists(o.Application))
+                {
+                    throw new FileNotFoundException($"Application file not found: '{o.Application}'");
+                }
+
                 options = o;
             });
             return options;

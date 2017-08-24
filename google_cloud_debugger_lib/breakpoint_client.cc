@@ -82,4 +82,12 @@ HRESULT BreakpointClient::WriteBreakpoint(const Breakpoint &breakpoint) {
   return pipe_->Write(bp_str);
 }
 
+HRESULT BreakpointClient::ShutDown() {
+  if (pipe_) {
+    return pipe_->ShutDown();
+  }
+
+  return S_OK;
+}
+
 }  // namespace google_cloud_debugger

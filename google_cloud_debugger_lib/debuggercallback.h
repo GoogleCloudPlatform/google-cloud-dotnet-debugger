@@ -188,6 +188,11 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     return breakpoint_collection_->SyncBreakpoints();
   }
 
+  // Cancels syncing breakpoints.
+  HRESULT CancelSyncBreakpoints() {
+    return breakpoint_collection_->CancelSyncBreakpoints();
+  }
+
   // Template function to enumerate different ICorDebug enumerations.
   // All the enumerated items will be stored in vector result.
   template <typename ICorDebugSpecifiedTypeEnum,
@@ -253,7 +258,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // manage breakpoints.
   std::unique_ptr<BreakpointCollection> breakpoint_collection_;
 
-  bool initialized_success = false;
+  bool initialized_success_ = false;
 };
 
 }  //  namespace google_cloud_debugger

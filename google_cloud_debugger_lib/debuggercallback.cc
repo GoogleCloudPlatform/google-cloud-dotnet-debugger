@@ -35,7 +35,7 @@ const string DebuggerCallback::kDllExtension = ".dll";
 const string DebuggerCallback::kPdbExtension = ".pdb";
 
 HRESULT DebuggerCallback::Initialize() {
-  if (initialized_success) {
+  if (initialized_success_) {
     return S_OK;
   }
 
@@ -56,7 +56,7 @@ HRESULT DebuggerCallback::Initialize() {
     return hr;
   }
 
-  initialized_success = true;
+  initialized_success_ = true;
   return S_OK;
 }
 
@@ -151,26 +151,20 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
     return hr;
   }
 
-  for (auto &&breakpoint : breakpoint_collection_->GetBreakpoints()) {
-    if (breakpoint.GetMethodToken() == function_token &&
-        il_offset == breakpoint.GetILOffset()) {
-      hr = debug_thread3->CreateStackWalk(&debug_stack_walk);
-      if (FAILED(hr)) {
-        cerr << "Failed to create stack walk.";
-        appdomain->Continue(FALSE);
-        return hr;
-      }
+  hr = debug_thread3->CreateStackWalk(&debug_stack_walk);
+  if (FAILED(hr)) {
+    cerr << "Failed to create stack walk.";
+    appdomain->Continue(FALSE);
+    return hr;
+  }
 
-      hr = eval_coordinator_->PrintBreakpointStacks(
-          debug_stack_walk, debug_thread, &breakpoint, portable_pdbs_);
-      if (FAILED(hr)) {
-        cerr << "Failed to get stack frame's information.";
-        appdomain->Continue(FALSE);
-        return hr;
-      } else {
-        break;
-      }
-    }
+  hr = breakpoint_collection_->EvaluateAndPrintBreakpoint(
+      function_token, il_offset, eval_coordinator_.get(), debug_thread,
+      debug_stack_walk, portable_pdbs_);
+  if (FAILED(hr)) {
+    cerr << "Failed to get stack frame's information.";
+    appdomain->Continue(FALSE);
+    return hr;
   }
 
   return appdomain->Continue(FALSE);

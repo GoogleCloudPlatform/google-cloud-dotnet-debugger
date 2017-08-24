@@ -34,11 +34,6 @@ namespace google_cloud_debugger {
 const std::string BreakpointCollection::kSplit = ":";
 const std::string BreakpointCollection::kDelimiter = ";";
 
-std::unique_ptr<BreakpointClient>
-    BreakpointCollection::breakpoint_client_read_ = nullptr;
-std::unique_ptr<BreakpointClient>
-    BreakpointCollection::breakpoint_client_write_ = nullptr;
-
 HRESULT BreakpointCollection::Initialize(DebuggerCallback *debugger_callback) {
   if (!debugger_callback) {
     return E_INVALIDARG;
@@ -109,7 +104,31 @@ HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   return breakpoint_client_read_->ReadBreakpoint(breakpoint);
 }
 
-HRESULT BreakpointCollection::ReadAndParseBreakpoint(DbgBreakpoint *breakpoint) {
+HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
+    mdMethodDef function_token, ULONG32 il_offset,
+    EvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
+    ICorDebugStackWalk *debug_stack_walk,
+    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+        &pdb_files) {
+  HRESULT hr = S_FALSE;
+  for (auto &&breakpoint : breakpoints_) {
+    if (breakpoint->GetMethodToken() == function_token &&
+        il_offset == breakpoint->GetILOffset()) {
+      hr = eval_coordinator->PrintBreakpoint(debug_stack_walk, debug_thread,
+                                             this, breakpoint.get(), pdb_files);
+      if (FAILED(hr)) {
+        cerr << "Failed to get stack frame's information.";
+      }
+
+      return hr;
+    }
+  }
+
+  return hr;
+}
+
+HRESULT BreakpointCollection::ReadAndParseBreakpoint(
+    DbgBreakpoint *breakpoint) {
   assert(breakpoint != nullptr);
 
   Breakpoint breakpoint_read;
@@ -135,12 +154,12 @@ HRESULT BreakpointCollection::InitializeBreakpoints(
 
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto &&breakpoint : breakpoints_) {
-    if (!breakpoint.TrySetBreakpoint(portable_pdb)) {
+    if (!breakpoint->TrySetBreakpoint(portable_pdb)) {
       // This may just means this breakpoint is not in this PDB.
       continue;
     }
 
-    hr = ActivateBreakpointHelper(&breakpoint, portable_pdb);
+    hr = ActivateBreakpointHelper(breakpoint.get(), portable_pdb);
     if (FAILED(hr)) {
       cerr << "Failed to update breakpoint.";
       return hr;
@@ -170,15 +189,19 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
       return S_OK;
     }
 
-    DbgBreakpoint new_breakpoint = breakpoint;
+    unique_ptr<DbgBreakpoint> new_breakpoint(new (std::nothrow) DbgBreakpoint);
+    if (!new_breakpoint) {
+      return E_OUTOFMEMORY;
+    }
+    new_breakpoint->Initialize(breakpoint);
 
     for (auto &&pdb_file : debugger_callback_->GetPdbFiles()) {
-      if (!new_breakpoint.TrySetBreakpoint(pdb_file)) {
+      if (!new_breakpoint->TrySetBreakpoint(pdb_file)) {
         continue;
       }
 
       std::lock_guard<std::mutex> lock(mutex_);
-      hr = ActivateBreakpointHelper(&new_breakpoint, pdb_file);
+      hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file);
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
@@ -207,6 +230,14 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
     if (FAILED(hr)) {
       cerr << "Failed to activate breakpoint.";
     }
+  }
+
+  return S_OK;
+}
+
+HRESULT BreakpointCollection::CancelSyncBreakpoints() {
+  if (breakpoint_client_read_) {
+    return breakpoint_client_read_->ShutDown();
   }
 
   return S_OK;
@@ -371,9 +402,12 @@ HRESULT BreakpointCollection::ActivateOrDeactivateExistingBreakpoint(
 
   // Try to find if the breakpoint is available.
   for (auto &&existing_breakpoint : breakpoints_) {
-    if (EqualsIgnoreCase(existing_breakpoint.GetId(), breakpoint.GetId())) {
+    // We use file name and line instead of id in case user reactivates a breakpoint,
+    // then we just need to reactivate it.
+    if (EqualsIgnoreCase(existing_breakpoint->GetFileName(), breakpoint.GetFileName())
+    && existing_breakpoint->GetLine() == breakpoint.GetLine()) {
       CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
-      hr = existing_breakpoint.GetCorDebugBreakpoint(&cor_debug_breakpoint);
+      hr = existing_breakpoint->GetCorDebugBreakpoint(&cor_debug_breakpoint);
       if (FAILED(hr)) {
         cerr << "Failed to get ICorDebugBreakpoint from existing breakpoint.";
         return hr;

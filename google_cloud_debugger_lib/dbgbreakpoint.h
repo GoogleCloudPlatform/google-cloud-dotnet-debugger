@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#include "breakpoint.pb.h"
 #include "cor.h"
 #include "documentindex.h"
 #include "metadatatables.h"
@@ -98,7 +99,7 @@ class DbgBreakpoint {
   // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
-  // Creates a Breakpoint proto using this breakpoint information.
+  // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
   // are used to evaluate and fill up the stack frames of the breakpoint.
   // This function then outputs the breakpoint to the named pipe of
@@ -106,8 +107,9 @@ class DbgBreakpoint {
   //
   // This function assumes that the Initialize function of stack_frames
   // are already called (so stack_frames are already populated with variables).
-  HRESULT PrintBreakpoint(StackFrameCollection *stack_frames,
-                          EvalCoordinator *eval_coordinator);
+  HRESULT PopulateBreakpoint(google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+                             StackFrameCollection *stack_frames,
+                             EvalCoordinator *eval_coordinator);
 
  private:
   // Given a method, try to see whether we can set this breakpoint in

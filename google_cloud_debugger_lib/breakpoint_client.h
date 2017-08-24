@@ -51,6 +51,9 @@ class BreakpointClient {
   HRESULT WriteBreakpoint(
       const google::cloud::diagnostics::debug::Breakpoint &breakpoint);
 
+  // Shuts down the pipe.
+  HRESULT ShutDown();
+
  private:
   // The pipe client to send messages.
   std::unique_ptr<NamedPipeClient> pipe_;

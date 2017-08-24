@@ -148,7 +148,7 @@ HRESULT StackFrameCollection::Initialize(
   return hr;
 }
 
-HRESULT StackFrameCollection::PrintStackFrames(
+HRESULT StackFrameCollection::PopulateStackFrames(
     Breakpoint *breakpoint, EvalCoordinator *eval_coordinator) {
   if (!breakpoint || !eval_coordinator) {
     cerr << "Null breakpoint or eval coordinator.";
@@ -292,7 +292,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
         if (!method.sequence_points[index].is_hidden &&
             method.sequence_points[index].il_offset <= ip_offset) {
           matching_sequence_point_position =
-              std::max(matching_sequence_point_position, index);
+              max(matching_sequence_point_position, index);
         }
       }
 

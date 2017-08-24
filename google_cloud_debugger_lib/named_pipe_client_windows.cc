@@ -113,6 +113,28 @@ HRESULT NamedPipeClient::Write(const string &message) {
   return S_OK;
 }
 
+HRESULT NamedPipeClient::ShutDown() {
+  if (!pipe_) {
+    return S_FALSE;
+  }
+
+  if (!CancelIoEx(pipe_, nullptr)) {
+    std::cerr << "Canceling IO error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
+
+  if (!CloseHandle(pipe_)) {
+    std::cerr << "CloseHandle error: " << HRESULT_FROM_WIN32(GetLastError())
+              << std::endl;
+    return HRESULT_FROM_WIN32(GetLastError());
+  }
+
+  pipe_ = INVALID_HANDLE_VALUE;
+
+  return S_OK;
+}
+
 }  // namespace google_cloud_debugger
 
 #endif  //  _WIN32

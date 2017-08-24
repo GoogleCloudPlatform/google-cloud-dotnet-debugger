@@ -44,6 +44,9 @@ class INamedPipe {
   // buffer size from the pipe and returns an HRESULT.
   // Note: strings are used only as containers.
   virtual HRESULT Write(const std::string &message) = 0;
+
+  // Cancels any pending operations and shuts down the pipe.
+  virtual HRESULT ShutDown() = 0;
 };
 
 }  // namespace google_cloud_debugger

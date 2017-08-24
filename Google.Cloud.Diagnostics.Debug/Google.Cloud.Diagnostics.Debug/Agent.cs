@@ -16,6 +16,7 @@ using Google.Api.Gax;
 using Google.Cloud.Debugger.V2;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -37,7 +38,8 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         private readonly AgentOptions _options;
         private readonly DebuggerClient _client;
-        private readonly ISet<string> _activeBreakpointsIds;
+        // Key is a location identifier (from path and line number) and value is ID of an existing breakpoint.
+        private readonly ConcurrentDictionary<string, string> _breakpointLocationIdentifierToIdDict;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
 
@@ -50,7 +52,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
-            _activeBreakpointsIds = new HashSet<string>();
+            _breakpointLocationIdentifierToIdDict = new ConcurrentDictionary<string, string>();
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
         }
@@ -64,7 +66,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _client.Register();
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
-                _options.Debugger, _options.ProcessId, null);
+                _options.Debugger, _options.Application, null);
             _process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
@@ -101,28 +103,45 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        var breakpoints = TryAction(() => _client.ListBreakpoints());
+                        Thread.Sleep(1000);
+                        var serverBreakpoints = TryAction(() => _client.ListBreakpoints());
 
                         // Send new breakpoints to the debugger.
-                        var newBreakpoints = breakpoints.Where(b => !_activeBreakpointsIds.Contains(b.Id));
+                        IEnumerable<StackdriverBreakpoint> newBreakpoints = serverBreakpoints
+                            .Where(b => !_breakpointLocationIdentifierToIdDict.ContainsKey(b.GetLocationIdentifier()));
+
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
-                            _activeBreakpointsIds.Add(breakpoint.Id);
+                            _breakpointLocationIdentifierToIdDict[breakpoint.GetLocationIdentifier()] = breakpoint.Id;
                             server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
                         }
 
                         // Remove no longer active breakpoints from the debugger.
-                        IEnumerable<string> currentIds = breakpoints.Select(b => b.Id);
-                        IEnumerable<string> breakpointsToRemove = _activeBreakpointsIds.Where(
-                            b => !currentIds.Contains(b)).ToList();
-                        foreach (string breakpointId in breakpointsToRemove)
+                        ISet<string> serverBreakpointIdentifiers =
+                            new HashSet<string>(serverBreakpoints.Select(b => b.GetLocationIdentifier()));
+
+                        // Retrieves all the identifiers from the active dictionary that the server no longer has.
+                        IEnumerable<string> breakpointToBeRemovedIdentifiers = _breakpointLocationIdentifierToIdDict.Keys
+                            .Where(identifier => !serverBreakpointIdentifiers.Contains(identifier));
+                        foreach (string identifierToBeRemoved in breakpointToBeRemovedIdentifiers)
                         {
+                            string[] locationStrings = identifierToBeRemoved.Split(':');
+                            if (locationStrings.Length != 2)
+                            {
+                                throw new ArgumentException("Location must contains file name and line number.");
+                            }
+
+                            var location = new SourceLocation() {
+                                Path = locationStrings[0], Line = Int32.Parse(locationStrings[1])
+                            };
+
                             var breakpoint = new Breakpoint
                             {
-                                Id = breakpointId,
+                                Location = location,
                                 Activated = false,
                             };
-                            _activeBreakpointsIds.Remove(breakpointId);
+                            string outVal;
+                            _breakpointLocationIdentifierToIdDict.TryRemove(identifierToBeRemoved, out outVal);
                             server.WriteBreakpointAsync(breakpoint).Wait();
                         }
                     }
@@ -148,13 +167,22 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        Task<Breakpoint> breakpointFromCpp = server.ReadBreakpointAsync();
-                        breakpointFromCpp.Wait();
+                        Task<Breakpoint> breakpointFromDebugger = server.ReadBreakpointAsync();
+                        breakpointFromDebugger.Wait();
 
-                        var readBreakpoint = breakpointFromCpp.Result;
-
-                        var breakpoint = readBreakpoint.Convert();
+                        Breakpoint readBreakpoint = breakpointFromDebugger.Result;
+                        StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
                         breakpoint.IsFinalState = true;
+
+                        string locationIdentifier = readBreakpoint.GetLocationIdentifier();
+
+                        // Retrieves the appropriate breakpoint id.
+                        if (_breakpointLocationIdentifierToIdDict.ContainsKey(locationIdentifier))
+                        {
+                            breakpoint.Id = _breakpointLocationIdentifierToIdDict[locationIdentifier];
+                        }
+                        // Should not throw if the breakpoint is removed from list of active breakpoints.
+                        // User may have removed it before the debugger has a chance to remove the breakpoint.
 
                         TryAction(() => _client.UpdateBreakpoint(breakpoint));
                     }
@@ -186,9 +214,9 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Starts a agent and blocks the terminal.
         /// </summary>
         /// <example>
-        /// PS> $app = Start-Process dotnet .\bin\Debug\netcoreapp1.1\ConsoleApp.dll -PassThru
         /// PS> dotnet .\Google.Cloud.Diagnostics.Debug.dll --debugger .\GoogleCloudDebugger.exe 
-        ///         --process-id $app.Id --project-id your-pid --module some-app --version current-version
+        ///         --application .\bin\Debug\netcoreapp1.1\ConsoleApp.dll
+        ///         --project-id your-pid --module some-app --version current-version
         /// </example>
         public static void Main(string[] args)
         {

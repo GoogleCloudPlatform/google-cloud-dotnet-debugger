@@ -56,15 +56,14 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
                            ICorDebugHandleValue **handle,
                            std::ostringstream *err_stream);
 
-// Helper function to print out WCHAR string.
-// If wchar_string is null, this function won't print out anything.
-// TODO(quoct): On Linux, WCHAR is defined as char16_t.
-// Is there a better library that can handle printing out char16_t string?
-// Tried using wcout but that does not work on char16_t. We can
-// add a routine that converts from WCHAR to wchar_t.
+int ConvertStringToWCharPtr(const std::string target_string, std::vector<WCHAR> *result);
+
+// Helper function to convert a null-terminated WCHAR array to string.
+// If wchar_string is null, this function returns an empty string.
 std::string ConvertWCharPtrToString(const WCHAR *wchar_string);
 
-// PrintWcharString functions that takes in a vector instead of WCHAR array.
+// ConvertWCharPtrToString functions that takes in a vector
+// instead of WCHAR array.
 std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
 
 // Sets the Status field of variable using error string err_string.

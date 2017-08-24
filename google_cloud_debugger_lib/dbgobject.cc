@@ -377,24 +377,30 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
   return heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG, handle);
 }
 
+int ConvertStringToWCharPtr(const std::string target_string, vector<WCHAR> *result) {
+  if (!result) {
+    return -1;
+  }
+
+  int string_size = MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1, nullptr, 0);
+  
+  result->resize(string_size);
+
+  return MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1, result->data(), result->size());
+}
+
 string ConvertWCharPtrToString(const WCHAR *wchar_string) {
   if (!wchar_string || !(*wchar_string)) {
     return string();
   }
-// PAL_STDCPP_COMPAT is the flag CORECLR uses
-// for non-Windows platform. Since we are compiling
-// using their headers, we need to use this macro.
-#ifdef PAL_STDCPP_COMPAT
-  std::wstring temp_wstring;
-  while (wchar_string && *wchar_string) {
-    WCHAR current_char = *wchar_string;
-    temp_wstring += static_cast<wchar_t>(current_char);
-    ++wchar_string;
-  }
-#else
-  std::wstring temp_wstring(wchar_string);
-#endif
-  return string(temp_wstring.begin(), temp_wstring.end());
+
+  // Gets the size of the wchar_string.
+  int string_size = WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, nullptr, 0, nullptr, nullptr);
+
+  // string_size includes null character so we get rid of that.
+  std::string result(string_size - 1, 0);
+  WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, &result[0], result.size(), nullptr, nullptr);
+  return result;
 }
 
 string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {
