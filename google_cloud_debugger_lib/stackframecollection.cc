@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dbgbreakpoint.h"
-#include "evalcoordinator.h"
 #include "stackframecollection.h"
 
+#include <algorithm>
 #include <iostream>
+
+#include "dbgbreakpoint.h"
+#include "evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -26,6 +28,7 @@ using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
 using std::cerr;
 using std::vector;
+using std::max;
 
 namespace google_cloud_debugger {
 
