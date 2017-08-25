@@ -56,10 +56,14 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
                            ICorDebugHandleValue **handle,
                            std::ostringstream *err_stream);
 
-int ConvertStringToWCharPtr(const std::string target_string, std::vector<WCHAR> *result);
+// Helper function to convert a string to null-terminated WCHAR vector.
+// If target_string is empty or if there are failures,
+// this function returns an empty vector.
+std::vector<WCHAR> ConvertStringToWCharPtr(const std::string target_string);
 
 // Helper function to convert a null-terminated WCHAR array to string.
-// If wchar_string is null, this function returns an empty string.
+// If wchar_string is null or if there are failures,
+// this function returns an empty string.
 std::string ConvertWCharPtrToString(const WCHAR *wchar_string);
 
 // ConvertWCharPtrToString functions that takes in a vector

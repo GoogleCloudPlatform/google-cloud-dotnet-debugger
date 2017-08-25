@@ -36,7 +36,8 @@ class StackFrameCollection;
 // To actually set the breakpoint, the TrySetBreakpoint method must be called.
 class DbgBreakpoint {
  public:
-  // Populate this breakpoint with all the contents of breakpoint other.
+  // Populate this breakpoint with the other breakpoint's file name,
+  // id, line and column.
   void Initialize(const DbgBreakpoint &other);
 
   // Populate this breakpoint's file name, id, line and column.

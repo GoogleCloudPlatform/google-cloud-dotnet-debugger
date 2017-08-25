@@ -39,7 +39,7 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly AgentOptions _options;
         private readonly DebuggerClient _client;
         // Key is a location identifier (from path and line number) and value is ID of an existing breakpoint.
-        private readonly ConcurrentDictionary<string, string> _breakpointLocationIdentifierToIdDict;
+        private readonly ConcurrentDictionary<string, string> _breakpointLocationToId;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
 
@@ -52,7 +52,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
             _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
-            _breakpointLocationIdentifierToIdDict = new ConcurrentDictionary<string, string>();
+            _breakpointLocationToId = new ConcurrentDictionary<string, string>();
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
         }
@@ -103,25 +103,14 @@ namespace Google.Cloud.Diagnostics.Debug
                     tcs.SetResult(true);
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        Thread.Sleep(1000);
                         var serverBreakpoints = TryAction(() => _client.ListBreakpoints());
-
-                        // Send new breakpoints to the debugger.
-                        IEnumerable<StackdriverBreakpoint> newBreakpoints = serverBreakpoints
-                            .Where(b => !_breakpointLocationIdentifierToIdDict.ContainsKey(b.GetLocationIdentifier()));
-
-                        foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
-                        {
-                            _breakpointLocationIdentifierToIdDict[breakpoint.GetLocationIdentifier()] = breakpoint.Id;
-                            server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
-                        }
 
                         // Remove no longer active breakpoints from the debugger.
                         ISet<string> serverBreakpointIdentifiers =
                             new HashSet<string>(serverBreakpoints.Select(b => b.GetLocationIdentifier()));
 
                         // Retrieves all the identifiers from the active dictionary that the server no longer has.
-                        IEnumerable<string> breakpointToBeRemovedIdentifiers = _breakpointLocationIdentifierToIdDict.Keys
+                        IEnumerable<string> breakpointToBeRemovedIdentifiers = _breakpointLocationToId.Keys
                             .Where(identifier => !serverBreakpointIdentifiers.Contains(identifier));
                         foreach (string identifierToBeRemoved in breakpointToBeRemovedIdentifiers)
                         {
@@ -137,13 +126,28 @@ namespace Google.Cloud.Diagnostics.Debug
 
                             var breakpoint = new Breakpoint
                             {
+                                Id = _breakpointLocationToId[identifierToBeRemoved],
                                 Location = location,
                                 Activated = false,
                             };
-                            string outVal;
-                            _breakpointLocationIdentifierToIdDict.TryRemove(identifierToBeRemoved, out outVal);
+                            string _outValue;
+                            // TryRemove only fails if the key is no longer in the dictionary which
+                            // is what we want anyway.
+                            _breakpointLocationToId.TryRemove(identifierToBeRemoved, out _outValue);
                             server.WriteBreakpointAsync(breakpoint).Wait();
                         }
+
+                        // Send new breakpoints to the debugger.
+                        IEnumerable<StackdriverBreakpoint> newBreakpoints = serverBreakpoints
+                            .Where(b => !_breakpointLocationToId.ContainsKey(b.GetLocationIdentifier()));
+
+                        foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
+                        {
+                            _breakpointLocationToId[breakpoint.GetLocationIdentifier()] = breakpoint.Id;
+                            server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                        }
+
+                        Thread.Sleep(_options.WaitTime * 1000);
                     }
                 }
             }).Start();
@@ -177,9 +181,9 @@ namespace Google.Cloud.Diagnostics.Debug
                         string locationIdentifier = readBreakpoint.GetLocationIdentifier();
 
                         // Retrieves the appropriate breakpoint id.
-                        if (_breakpointLocationIdentifierToIdDict.ContainsKey(locationIdentifier))
+                        if (_breakpointLocationToId.ContainsKey(locationIdentifier))
                         {
-                            breakpoint.Id = _breakpointLocationIdentifierToIdDict[locationIdentifier];
+                            breakpoint.Id = _breakpointLocationToId[locationIdentifier];
                         }
                         // Should not throw if the breakpoint is removed from list of active breakpoints.
                         // User may have removed it before the debugger has a chance to remove the breakpoint.

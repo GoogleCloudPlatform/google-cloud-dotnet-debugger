@@ -32,7 +32,8 @@ namespace Google.Cloud.Diagnostics.Debug
         [Option("debugger", Required = true, HelpText = "A path to the debugger to use.")]
         public string Debugger { get; set; }
 
-        [Option("application", Required = true, HelpText = "A path to the application to be debugged.")]
+        [Option("application", Required = true,
+            HelpText = "A path to the .NET CORE application dll to be debugged.")]
         public string Application { get; set; }
 
         [Option("project-id",

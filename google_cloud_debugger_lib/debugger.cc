@@ -110,18 +110,24 @@ HRESULT Debugger::StartDebugging(DWORD process_id) {
 HRESULT Debugger::StartDebugging(vector<WCHAR> command_line) {
   DWORD process_id;
   HANDLE resume_handle;
-  HRESULT hr = CreateProcessForLaunch(command_line.data(), TRUE, nullptr, nullptr, &process_id, &resume_handle);
+  // Creates a process by running the command_line. This process will
+  // be suspended upon creation (so we can debug startup code) and
+  // can be resumed using the resume_handle.
+  HRESULT hr = CreateProcessForLaunch(command_line.data(), TRUE, nullptr,
+                                      nullptr, &process_id, &resume_handle);
   if (FAILED(hr)) {
     cerr << "Failed to start process.";
     return hr;
   }
 
+  // Attaches the debugger.
   hr = StartDebugging(process_id);
   if (FAILED(hr)) {
     cerr << "Failed to attached to process " << process_id;
     return hr;
   }
 
+  // Resumes the process.
   hr = ResumeProcess(resume_handle);
   if (FAILED(hr)) {
     cerr << "Failed to resume process " << process_id;
@@ -198,9 +204,9 @@ void Debugger::DeactivateBreakpoints() {
   }
 
   vector<CComPtr<ICorDebugAppDomain>> appdomains;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
-      ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum,
-                                                  &appdomains);
+  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugAppDomainEnum,
+                                                         ICorDebugAppDomain>(
+      appdomain_enum, &appdomains);
 
   if (FAILED(hr)) {
     cerr << "Failed to enumerate app domains: " << std::hex << hr;

@@ -25,7 +25,7 @@ using google_cloud_debugger::ConvertStringToWCharPtr;
 int main(int argc, char *argv[]) {
   HRESULT hr;
 
-  // First argument to the test app will be the process ID of the
+  // First argument to the test app will be the full path to the
   // process we want to debug.
   Debugger debugger;
 
@@ -33,8 +33,11 @@ int main(int argc, char *argv[]) {
 
   string command_line = "dotnet " + app_path;
 
-  std::vector<WCHAR> result;
-  ConvertStringToWCharPtr(command_line, &result);
+  std::vector<WCHAR> result = ConvertStringToWCharPtr(command_line);
+  if (result.size() == 0) {
+    cerr << "Application's name is not valid.";
+    return -1;
+  }
 
   hr = debugger.StartDebugging(result);
   if (FAILED(hr)) {
@@ -43,22 +46,19 @@ int main(int argc, char *argv[]) {
   }
 
   // This will launch an infinite while loop to wait and read.
-  // TODO(quoct): We may want to do this in a different thread
-  // so that there is a way to quit this test app.
-
+  // That's why we launch it in a different thread so we can
+  // break out of the loop from this thread.
   std::thread sync_breakpoints_thread([](Debugger *debugger) {
     debugger->SyncBreakpoints();
   }, &debugger);
 
   string input_string;
-  string quit = "quit";
-  while (true) {
-    // TODO(quoct): Seems like we have to feed the input in twice
-    // for getline to work. How to fix this?
-    getline(cin, input_string);
-    cin.clear();
-    cin.sync();
 
+  // Quits the debugger if this string is supplied.
+  const string quit = "quit";
+
+  while (true) {
+    cin >> input_string;
     if (quit.compare(input_string) == 0) {
       hr = debugger.CancelSyncBreakpoints();
       if (FAILED(hr)) {
@@ -71,4 +71,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-

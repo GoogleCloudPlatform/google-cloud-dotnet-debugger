@@ -115,7 +115,7 @@ HRESULT NamedPipeClient::Write(const string &message) {
 
 HRESULT NamedPipeClient::ShutDown() {
   if (!pipe_) {
-    return S_FALSE;
+    return S_OK;
   }
 
   if (!CancelIoEx(pipe_, nullptr)) {
