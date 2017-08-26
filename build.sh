@@ -9,7 +9,7 @@ if [ "$1" != "" ]; then
   CONFIG=$1
 fi
 
-if [ "$CONFIG" != "Debug" -o "$CONFIG" != "Release" ]; then
+if [ "$CONFIG" != "Debug" -a "$CONFIG" != "Release" ]; then
   echo "Invlaid configuration '$CONFIG'"
   exit
 fi
