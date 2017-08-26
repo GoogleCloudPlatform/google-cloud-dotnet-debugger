@@ -20,22 +20,12 @@ addons:
     - dotnet-sharedframework-microsoft.netcore.app-1.0.5
 
 script:
-  # Build dependencies
-  - ./build-deps.sh
   # Build all code.
   - ./build.sh
   # Run the single test.
   - ./google_cloud_debugger_test/google_cloud_debugger_test
   
-cache:
-  # Wait 20 min for cache (these direcories are large.
-  timeout: 1200
-  directories:
-  - $TRAVIS_BUILD_DIR/coreclr
-  - $TRAVIS_BUILD_DIR/protobuf
-  - $TRAVIS_BUILD_DIR/googletest
-
 
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
 env:
-  - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
+  - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/thircoreclr/third_party/coreclr/linux/x64/Debug

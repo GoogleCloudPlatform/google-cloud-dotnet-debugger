@@ -7,7 +7,6 @@ GMOCK_DIR = $(ROOT_DIR)/../googletest/googlemock/
 
 # .NET Core headers.
 PREBUILT_PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/prebuilt/inc/
-BUILT_PAL_INC = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/inc/
 PAL_RT_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/rt/
 PAL_INC = $(ROOT_DIR)/../coreclr/src/pal/inc/
 CORE_CLR_INC = $(ROOT_DIR)/../coreclr/src/inc/
@@ -21,16 +20,22 @@ GTEST_INC = $(GTEST_DIR)include/
 GCLOUD_DEBUGGER = $(ROOT_DIR)/../google_cloud_debugger_lib/
 
 # Google Test and Google Mock libraries.
-GMOCK_LIB = $(GMOCK_DIR)make/
-GTEST_LIB = $(GTEST_DIR)make/
+GMOCK_LIB = $(ROOT_DIR)/../third_party/googlemock/linux/x64/$(CONFIG)/
+GTEST_LIB = $(ROOT_DIR)/../third_party/googletest/linux/x64/$(CONFIG)/
 
 # .NET Core libraries.
-CORE_CLR_LIB = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/lib/
-CORE_CLR_LIB2 = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/
+CORE_CLR_LIB = $(ROOT_DIR)/../third_party/coreclr/linux/x64/$(CONFIG)/
 
-INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
-INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger
-CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
+PROTO_LIB = $(ROOT_DIR)/../third_party/protobuf/linux/x64/$(CONFIG)/
+
+CC_CONFIG = -g
+ifeq ($(CONFIG), "Release")
+  CC_CONFIG = -g0
+endif
+
+INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
+INCLIBS = -L${CORE_CLR_LIB} -L${PROTO_LIB} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim -lprotobuf -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger
+CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX ${CC_CONFIG} -Wmacro-redefined
 
 TESTS = unit_test_main.o dbgstring_test.o custom_binary_stream_test.o
 
@@ -48,4 +53,3 @@ google_cloud_debugger_test: ${TESTS}
 
 clean:
 	rm -f *.o *.a google_cloud_debugger_test
-
