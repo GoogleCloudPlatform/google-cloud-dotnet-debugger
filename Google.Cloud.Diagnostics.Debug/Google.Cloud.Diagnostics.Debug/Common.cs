@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using Google.Api.Gax;
+using Google.Cloud.Debugger.V2;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -20,5 +21,22 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         /// <summary>Information about the current platform.</summary>
         internal static Platform Platform = Platform.Instance();
+
+        /// <summary>
+        /// Create a <see cref="StatusMessage"/>.
+        /// </summary>
+        /// <param name="message">The status message.</param>
+        /// <param name="isError">Optional.  True if the message is an error, defaults to false.</param>
+        internal static StatusMessage CreateStatusMessage(string message, bool isError = false)
+        {
+            return new StatusMessage
+            {
+                Description = new FormatMessage
+                {
+                     Format = message
+                },
+                IsError = true,
+            };
+        }
     }
 }

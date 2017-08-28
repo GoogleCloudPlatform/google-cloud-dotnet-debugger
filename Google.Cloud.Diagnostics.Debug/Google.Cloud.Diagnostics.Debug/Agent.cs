@@ -107,8 +107,18 @@ namespace Google.Cloud.Diagnostics.Debug
                         var newBreakpoints = breakpoints.Where(b => !_activeBreakpointsIds.Contains(b.Id));
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
-                            _activeBreakpointsIds.Add(breakpoint.Id);
-                            server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                            if (!string.IsNullOrWhiteSpace(breakpoint.Condition) || breakpoint.Expressions.Count() != 0)
+                            {
+                                breakpoint.Status = Common.CreateStatusMessage(
+                                    Messages.CondExpNotSupported, isError: true);
+                                breakpoint.IsFinalState = true;
+                                TryAction(() => _client.UpdateBreakpoint(breakpoint));
+                            }
+                            else
+                            {
+                                _activeBreakpointsIds.Add(breakpoint.Id);
+                                server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                            }
                         }
 
                         // Remove no longer active breakpoints from the debugger.
