@@ -15,3 +15,6 @@ make google_cloud_debugger_test
 
 dotnet restore $ROOT_DIR/Google.Cloud.Diagnostics.Debug
 dotnet build $ROOT_DIR/Google.Cloud.Diagnostics.Debug
+
+dotnet restore $ROOT_DIR/Google.Cloud.Diagnostics.Debug.Tests
+dotnet build $ROOT_DIR/Google.Cloud.Diagnostics.Debug.Tests

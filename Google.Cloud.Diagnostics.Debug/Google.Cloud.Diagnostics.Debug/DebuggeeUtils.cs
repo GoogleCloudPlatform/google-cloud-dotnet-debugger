@@ -38,7 +38,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             var debuggee = new Debuggee
             {
-                AgentVersion = GetAgentVersion(),
+                AgentVersion = GetAgentVersion(Common.Platform),
                 Description = GetDescription(module, version),
                 Project = projectId,
                 Labels = { { GetLabels(projectId, module, version) } },
@@ -60,7 +60,8 @@ namespace Google.Cloud.Diagnostics.Debug
                 bytesList.AddRange(Encoding.UTF8.GetBytes(debuggee.AgentVersion));
                 bytesList.AddRange(Encoding.UTF8.GetBytes(debuggee.Description));
                 bytesList.AddRange(Encoding.UTF8.GetBytes(debuggee.Project));
-                bytesList.AddRange(Encoding.UTF8.GetBytes(string.Join(",", debuggee.Labels.Select(x => $"{x.Key}:{x.Value}"))));
+                var orderedLabels = debuggee.Labels.Select(x => $"{x.Key}:{x.Value}").OrderBy(x => x);
+                bytesList.AddRange(Encoding.UTF8.GetBytes(string.Join(",", orderedLabels)));
                 bytesList.AddRange(Encoding.UTF8.GetBytes(debuggee.SourceContexts.ToString()));
 
                 byte[] bytes = sha.ComputeHash(bytesList.ToArray());
@@ -71,20 +72,30 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Gets a human readable description of the module and version.
         /// </summary>
-        public static string GetDescription(string module, string version) =>
-            string.IsNullOrWhiteSpace(version) ? module : $"{module} - {version}";
+        public static string GetDescription(string module, string version) {
+            GaxPreconditions.CheckNotNullOrEmpty(module, nameof(module));
+            return string.IsNullOrWhiteSpace(version) ? module : $"{module} - {version}";
+        }
 
         /// <summary>
         /// Gets labels to describe the debuggee.
         /// </summary>
         public static IDictionary<string, string> GetLabels(string projectId, string module, string version)
         {
-            return new Dictionary<string, string>
+            GaxPreconditions.CheckNotNullOrEmpty(projectId, nameof(projectId));
+            GaxPreconditions.CheckNotNullOrEmpty(module, nameof(module));
+
+            var labels =  new Dictionary<string, string>
             {
                 { "projectid", projectId },
                 { "module", module },
-                { "version", version },
             };
+
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                labels["version"] = version;
+            }
+            return labels;
         }
 
         /// <summary>
@@ -98,10 +109,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Gets the full agent version of this application.
         /// </summary>
-        public static string GetAgentVersion()
+        public static string GetAgentVersion(Platform platform)
         {
+            GaxPreconditions.CheckNotNull(platform, nameof(platform));
             var version = GetVersion();
-            var platformType = GetPlatform(Common.Platform);
+            var platformType = GetPlatform(platform);
             var platformString = platformType != null ? $"-{platformType}" : "";
             return $"google.com/csharp{platformString}/v{version}";
         }
@@ -111,6 +123,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public static string GetPlatform(Platform platform)
         {
+            GaxPreconditions.CheckNotNull(platform, nameof(platform));
             switch (platform.Type)
             {
                 case PlatformType.Gae:
