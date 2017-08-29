@@ -26,12 +26,10 @@ int main(int argc, char *argv[]) {
   // First argument to the test app will be the full path to the
   // process we want to debug.
   Debugger debugger;
-
   string app_path(argv[1]);
-
   string command_line = "dotnet " + app_path;
-
   std::vector<WCHAR> result = ConvertStringToWCharPtr(command_line);
+
   if (result.size() == 0) {
     cerr << "Application's name is not valid.";
     return -1;

@@ -143,8 +143,18 @@ namespace Google.Cloud.Diagnostics.Debug
 
                         foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
                         {
-                            _breakpointLocationToId[breakpoint.GetLocationIdentifier()] = breakpoint.Id;
-                            server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                            if (!string.IsNullOrWhiteSpace(breakpoint.Condition) || breakpoint.Expressions.Count() != 0)
+                            {
+                                breakpoint.Status = Common.CreateStatusMessage(
+                                    Messages.CondExpNotSupported, isError: true);
+                                breakpoint.IsFinalState = true;
+                                TryAction(() => _client.UpdateBreakpoint(breakpoint));
+                            }
+                            else
+                            {
+                                _breakpointLocationToId[breakpoint.GetLocationIdentifier()] = breakpoint.Id;
+                                server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
+                            }
                         }
 
                         Thread.Sleep(_options.WaitTime * 1000);
