@@ -31,6 +31,9 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(DebuggeeUtils.GetDescription(_module, _version), debuggee.Description);
             Assert.Equal(_projectId, debuggee.Project);
             Assert.Equal(3, debuggee.Labels.Count);
+            Assert.Equal(_projectId, debuggee.Labels["projectid"]);
+            Assert.Equal(_module, debuggee.Labels["module"]);
+            Assert.Equal(_version, debuggee.Labels["version"]);
             Assert.NotNull(debuggee.SourceContexts);
             Assert.False(string.IsNullOrWhiteSpace(debuggee.Uniquifier));
         }
