@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   // process we want to debug.
   Debugger debugger;
   string app_path(argv[1]);
-  string command_line = "/usr/local/google/home/quoct/.dotnet/dotnet " + app_path;
+  string command_line = "dotnet " + app_path;
   std::vector<WCHAR> result = ConvertStringToWCharPtr(command_line);
 
   if (result.size() == 0) {
