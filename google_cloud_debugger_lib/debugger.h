@@ -40,6 +40,10 @@ class Debugger final {
   // fields of this debugger.
   HRESULT StartDebugging(DWORD process_id);
 
+  // Given a command line, starts a suspended process by running that
+  // command line and attach the debugger to the process before resuming it.
+  // This way, the debugger can have access to startup code. This function
+  // will call the other StartDebugging function.
   HRESULT StartDebugging(std::vector<WCHAR> command_line);
 
   // Reads, parses and activates/deactivates incoming breakpoints from

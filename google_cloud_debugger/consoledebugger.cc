@@ -20,8 +20,6 @@ using std::string;
 using google_cloud_debugger::Debugger;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 
-// This is a simple test app to test out the debugger.
-// This is only for proof of concept.
 int main(int argc, char *argv[]) {
   HRESULT hr;
 

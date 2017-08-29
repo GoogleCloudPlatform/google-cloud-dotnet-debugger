@@ -70,6 +70,8 @@ namespace Google.Cloud.Diagnostics.Debug
         public static string GetLocationIdentifier(this StackdriverBreakpoint breakpoint)
         {
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
+            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
+            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
             string path = breakpoint.Location?.Path;
             int? line = breakpoint.Location?.Line;
             return $"{path}:{line}".ToLower();
@@ -81,6 +83,8 @@ namespace Google.Cloud.Diagnostics.Debug
         public static string GetLocationIdentifier(this Breakpoint breakpoint)
         {
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
+            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
+            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
             string path = breakpoint.Location?.Path;
             int? line = breakpoint.Location?.Line;
             return $"{path}:{line}".ToLower();
