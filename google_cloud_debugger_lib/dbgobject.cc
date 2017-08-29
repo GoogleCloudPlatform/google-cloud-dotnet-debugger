@@ -382,8 +382,8 @@ vector<WCHAR> ConvertStringToWCharPtr(const std::string target_string) {
     return vector<WCHAR>();
   }
 
-  // We feeds MultiByteToWideChar a null terminated CHAR string and it will
-  // tells us the size of the string so we can create a WCHAR string with the
+  // We feed MultiByteToWideChar a null terminated CHAR string and it will
+  // tell us the size of the string so we can create a WCHAR string with the
   // same length.
   int string_size =
       MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1, nullptr, 0);

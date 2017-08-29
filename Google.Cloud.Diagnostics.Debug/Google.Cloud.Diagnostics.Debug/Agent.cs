@@ -130,10 +130,9 @@ namespace Google.Cloud.Diagnostics.Debug
                                 Location = location,
                                 Activated = false,
                             };
-                            string _outValue;
                             // TryRemove only fails if the key is no longer in the dictionary which
                             // is what we want anyway.
-                            _breakpointLocationToId.TryRemove(identifierToBeRemoved, out _outValue);
+                            _breakpointLocationToId.TryRemove(identifierToBeRemoved, out _);
                             server.WriteBreakpointAsync(breakpoint).Wait();
                         }
 
@@ -157,7 +156,7 @@ namespace Google.Cloud.Diagnostics.Debug
                             }
                         }
 
-                        Thread.Sleep(_options.WaitTime * 1000);
+                        Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
                     }
                 }
             }).Start();
