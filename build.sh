@@ -5,7 +5,7 @@ SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
 cd $ROOT_DIR/google_cloud_debugger_lib
-make google_cloud_debugger
+make google_cloud_debugger_lib
 
 cd $ROOT_DIR/google_cloud_debugger
 make google_cloud_debugger
