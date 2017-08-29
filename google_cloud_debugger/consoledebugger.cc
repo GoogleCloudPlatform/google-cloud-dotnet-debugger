@@ -16,15 +16,11 @@ using namespace google_cloud_debugger;
 // This is only for proof of concept.
 int main(int argc, char *argv[]) {
   HRESULT hr;
-  string input_string;
   int procId;
-  string input;
 
-  getline(cin, input);
   // First argument to the test app will be the process ID of the
   // process we want to debug.
   procId = stoi(argv[1]);
-  cout << "input is " << input << " for process ID " << procId;
 
   Debugger debugger;
 
