@@ -14,7 +14,7 @@ CORE_CLR_LIB = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/lib/
 CORE_CLR_LIB2 = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} `pkg-config --cflags protobuf`
-INCLIBS = -L${GCLOUD_DEBUGGER} -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -lgoogle_cloud_debugger
+INCLIBS = -L${GCLOUD_DEBUGGER} -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 consoledebugger.o: consoledebugger.cc

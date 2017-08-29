@@ -377,14 +377,26 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
   return heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG, handle);
 }
 
-vector<WCHAR> ConvertStringToWCharPtr(const std::string target_string) {
+vector<WCHAR> ConvertStringToWCharPtr(const std::string &target_string) {
   if (target_string.size() == 0) {
     return vector<WCHAR>();
   }
 
+#ifdef PAL_STDCPP_COMPAT
+  // TODO(quoct): I cannot link the WideCharToMultiByte library on Linux.
+  // If I add -lcoreclr or -lmscordaccore, then the linking works but
+  // when running, the debugger will run into errors. Needs someone smarter
+  // for this linking.
   // We feed MultiByteToWideChar a null terminated CHAR string and it will
   // tell us the size of the string so we can create a WCHAR string with the
   // same length.
+  int string_size = target_string.size() + 1;
+  vector<WCHAR> result(string_size, 0);
+  for (size_t i = 0; i < target_string.size(); ++i) {
+    result[i] = static_cast<WCHAR>(target_string[i]);
+  }
+  return result;
+#else
   int string_size =
       MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1, nullptr, 0);
   if (string_size <= 0) {
@@ -401,6 +413,7 @@ vector<WCHAR> ConvertStringToWCharPtr(const std::string target_string) {
     return vector<WCHAR>();
   }
   return result;
+#endif
 }
 
 string ConvertWCharPtrToString(const WCHAR *wchar_string) {
@@ -408,6 +421,20 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
     return string();
   }
 
+#ifdef PAL_STDCPP_COMPAT
+  // TODO(quoct): I cannot link the WideCharToMultiByte library on Linux.
+  // If I add -lcoreclr or -lmscordaccore, then the linking works but
+  // when running, the debugger will run into errors. Needs someone smarter
+  // for this linking.
+  std::wstring temp_wstring;
+  while (wchar_string && *wchar_string) {
+    WCHAR current_char = *wchar_string;
+    temp_wstring += static_cast<wchar_t>(current_char);
+    ++wchar_string;
+  }
+
+  return string(temp_wstring.begin(), temp_wstring.end());
+#else
   // We feeds WideCharToMultiByte a null terminated WCHAR string and it will
   // tells us the size of the string so we can create a CHAR string with the
   // same length.
@@ -424,6 +451,7 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
   }
 
   return result;
+#endif
 }
 
 string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {

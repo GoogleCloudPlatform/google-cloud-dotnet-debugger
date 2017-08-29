@@ -16,6 +16,7 @@
 using std::cerr;
 using std::cin;
 using std::endl;
+using std::hex;
 using std::string;
 using google_cloud_debugger::Debugger;
 using google_cloud_debugger::ConvertStringToWCharPtr;
@@ -27,17 +28,17 @@ int main(int argc, char *argv[]) {
   // process we want to debug.
   Debugger debugger;
   string app_path(argv[1]);
-  string command_line = "dotnet " + app_path;
+  string command_line = "/usr/local/google/home/quoct/.dotnet/dotnet " + app_path;
   std::vector<WCHAR> result = ConvertStringToWCharPtr(command_line);
 
   if (result.size() == 0) {
-    cerr << "Application's name is not valid.";
+    cerr << "Application's name is not valid." << endl;
     return -1;
   }
 
   hr = debugger.StartDebugging(result);
   if (FAILED(hr)) {
-    cerr << "HR Failed";
+    cerr << "Debugger fails with HRESULT " << hex << hr << endl;
     return -1;
   }
 
@@ -58,7 +59,8 @@ int main(int argc, char *argv[]) {
     if (quit.compare(input_string) == 0) {
       hr = debugger.CancelSyncBreakpoints();
       if (FAILED(hr)) {
-        cerr << "Failed to break out of sync breakpoints." << endl;
+        cerr << "Failed to break out of sync breakpoints: "
+             << hex << hr << endl;
       }
       sync_breakpoints_thread.join();
       return 0;
