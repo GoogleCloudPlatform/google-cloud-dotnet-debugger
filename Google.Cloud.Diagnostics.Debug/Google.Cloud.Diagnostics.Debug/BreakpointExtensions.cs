@@ -63,5 +63,31 @@ namespace Google.Cloud.Diagnostics.Debug
                 StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() }
             };
         }
+
+        /// <summary>
+        /// Creates a location identifier based on the file name and the line number of the breakpoint.
+        /// </summary>
+        public static string GetLocationIdentifier(this StackdriverBreakpoint breakpoint)
+        {
+            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
+            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
+            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
+            string path = breakpoint.Location?.Path;
+            int? line = breakpoint.Location?.Line;
+            return $"{path}:{line}".ToLower();
+        }
+
+        /// <summary>
+        /// Creates a location identifier based on the file name and the line number of the breakpoint.
+        /// </summary>
+        public static string GetLocationIdentifier(this Breakpoint breakpoint)
+        {
+            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
+            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
+            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
+            string path = breakpoint.Location?.Path;
+            int? line = breakpoint.Location?.Line;
+            return $"{path}:{line}".ToLower();
+        }
     }
 }

@@ -26,6 +26,7 @@
 namespace google_cloud_debugger {
 
 class DebuggerCallback;
+class EvalCoordinator;
 
 // Class for managing a collection of breakpoints.
 class BreakpointCollection {
@@ -69,16 +70,25 @@ class BreakpointCollection {
   // This method will then try to activate or deactivate these breakpoints.
   HRESULT SyncBreakpoints();
 
-  // Returns all the breakpoints in the collection.
-  std::vector<DbgBreakpoint> &GetBreakpoints() { return breakpoints_; }
+  // Cancel SyncBreakpoints operation (should be called from another thread).
+  HRESULT CancelSyncBreakpoints();
 
   // Writes a breakpoint to the named pipe server.
-  static HRESULT WriteBreakpoint(
+  HRESULT WriteBreakpoint(
       const google::cloud::diagnostics::debug::Breakpoint &breakpoint);
 
   // Reads a breakpoint from the named pipe server.
-  static HRESULT ReadBreakpoint(
+  HRESULT ReadBreakpoint(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint);
+
+  // Evaluates and prints out the breakpoint in function with token
+  // function_token at IL offset il_offset.
+  HRESULT EvaluateAndPrintBreakpoint(
+      mdMethodDef function_token, ULONG32 il_offset,
+      EvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
+      ICorDebugStackWalk *debug_stack_walk,
+      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+          &pdb_files);
 
  private:
   // Reads an incoming breakpoint from the named pipe and populates
@@ -86,7 +96,7 @@ class BreakpointCollection {
   HRESULT ReadAndParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
-  std::vector<DbgBreakpoint> breakpoints_;
+  std::vector<std::unique_ptr<DbgBreakpoint>> breakpoints_;
 
   // Activate a breakpoint in a portable pdb file.
   // This function should only be used if breakpoint is already set, i.e.
@@ -115,10 +125,10 @@ class BreakpointCollection {
   CComPtr<DebuggerCallback> debugger_callback_;
 
   // Named pipe server for reading breakpoints.
-  static std::unique_ptr<BreakpointClient> breakpoint_client_read_;
+  std::unique_ptr<BreakpointClient> breakpoint_client_read_;
 
   // Named pipe server for writing breakpoints.
-  static std::unique_ptr<BreakpointClient> breakpoint_client_write_;
+  std::unique_ptr<BreakpointClient> breakpoint_client_write_;
 
   std::mutex mutex_;
 };

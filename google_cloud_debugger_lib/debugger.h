@@ -40,9 +40,18 @@ class Debugger final {
   // fields of this debugger.
   HRESULT StartDebugging(DWORD process_id);
 
+  // Given a command line, starts a suspended process by running that
+  // command line and attach the debugger to the process before resuming it.
+  // This way, the debugger can have access to startup code. This function
+  // will call the other StartDebugging function.
+  HRESULT StartDebugging(std::vector<WCHAR> command_line);
+
   // Reads, parses and activates/deactivates incoming breakpoints from
   // C# debuglet.
   HRESULT SyncBreakpoints();
+
+  // Breaks out of SyncBreakpoints by shutting down the read pipe.
+  HRESULT CancelSyncBreakpoints();
 
  private:
   // The unregister token that is used in the callback function to
@@ -50,7 +59,7 @@ class Debugger final {
   void *unregister_token_;
 
   // The process that we are debugging.
-  DWORD proc_id_;
+  DWORD proc_id_ = 0;
 
   // The ICorDebug object set by CallbackFunction.
   CComPtr<ICorDebug> cordebug_;

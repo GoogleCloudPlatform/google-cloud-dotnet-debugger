@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <cctype>
 
-#include "breakpoint.pb.h"
 #include "evalcoordinator.h"
 #include "stackframecollection.h"
 
@@ -34,16 +33,7 @@ using std::vector;
 namespace google_cloud_debugger {
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
-  set_ = other.set_;
-  line_ = other.line_;
-  column_ = other.column_;
-  file_name_ = other.file_name_;
-  id_ = other.id_;
-  il_offset_ = other.il_offset_;
-  method_def_ = other.method_def_;
-  method_token_ = other.method_token_;
-  method_name_ = other.method_name_;
-  debug_breakpoint_ = other.debug_breakpoint_;
+  Initialize(other.file_name_, other.id_, other.line_, other.column_);
 }
 
 void DbgBreakpoint::Initialize(const string &file_name, const string &id,
@@ -145,17 +135,22 @@ bool DbgBreakpoint::TrySetBreakpoint(
   return set_;
 }
 
-HRESULT DbgBreakpoint::PrintBreakpoint(StackFrameCollection *stack_frames,
-                                       EvalCoordinator *eval_coordinator) {
+HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
+                                          StackFrameCollection *stack_frames,
+                                          EvalCoordinator *eval_coordinator) {
   if (!stack_frames) {
     cerr << "Stack frame collection is null.";
     return E_INVALIDARG;
   }
 
-  Breakpoint breakpoint;
-  breakpoint.set_id(id_);
+  if (!breakpoint) {
+    cerr << "Breakpoint proto is null.";
+    return E_INVALIDARG;
+  }
 
-  SourceLocation *location = breakpoint.mutable_location();
+  breakpoint->set_id(id_);
+
+  SourceLocation *location = breakpoint->mutable_location();
   if (!location) {
     cerr << "Mutable location returns null.";
     return E_FAIL;
@@ -164,8 +159,7 @@ HRESULT DbgBreakpoint::PrintBreakpoint(StackFrameCollection *stack_frames,
   location->set_line(line_);
   location->set_path(file_name_);
 
-  stack_frames->PrintStackFrames(&breakpoint, eval_coordinator);
-  BreakpointCollection::WriteBreakpoint(breakpoint);
+  stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
 
   return S_OK;
 }

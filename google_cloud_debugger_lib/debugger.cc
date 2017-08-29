@@ -54,6 +54,14 @@ Debugger::~Debugger() {
   if (cordebug_) {
     hr = cordebug_->Terminate();
   }
+
+  HANDLE process_handle = OpenProcess(PROCESS_TERMINATE, FALSE, proc_id_);
+
+  if (!TerminateProcess(process_handle, 0)) {
+    DWORD exit_code;
+    GetExitCodeProcess(process_handle, &exit_code);
+    cerr << "Failed to terminate process. Exit code is " << exit_code;
+  }
 }
 
 HRESULT Debugger::SyncBreakpoints() {
@@ -65,7 +73,15 @@ HRESULT Debugger::SyncBreakpoints() {
   return debugger_callback_->SyncBreakpoints();
 }
 
-HRESULT Debugger::StartDebugging(DWORD processId) {
+HRESULT Debugger::CancelSyncBreakpoints() {
+  if (!debugger_callback_) {
+    return S_FALSE;
+  }
+
+  return debugger_callback_->CancelSyncBreakpoints();
+}
+
+HRESULT Debugger::StartDebugging(DWORD process_id) {
   HRESULT hr;
 
   if (!debugger_callback_) {
@@ -86,9 +102,45 @@ HRESULT Debugger::StartDebugging(DWORD processId) {
   // Using the processId, we register for debugging. If the process is ready,
   // it will call the CallbackFunction that we passed to
   // RegisterForRuntimeStartup.
-  proc_id_ = processId;
+  proc_id_ = process_id;
   return RegisterForRuntimeStartup(proc_id_, CallbackFunction, this,
                                    &unregister_token_);
+}
+
+HRESULT Debugger::StartDebugging(vector<WCHAR> command_line) {
+  DWORD process_id;
+  HANDLE resume_handle;
+  // Creates a process by running the command_line. This process will
+  // be suspended upon creation (so we can debug startup code) and
+  // can be resumed using the resume_handle.
+  HRESULT hr = CreateProcessForLaunch(command_line.data(), TRUE, nullptr,
+                                      nullptr, &process_id, &resume_handle);
+  if (FAILED(hr)) {
+    cerr << "Failed to start process.";
+    return hr;
+  }
+
+  // Attaches the debugger.
+  hr = StartDebugging(process_id);
+  if (FAILED(hr)) {
+    cerr << "Failed to attached to process " << process_id;
+    return hr;
+  }
+
+  // Resumes the process.
+  hr = ResumeProcess(resume_handle);
+  if (FAILED(hr)) {
+    cerr << "Failed to resume process " << process_id;
+    return hr;
+  }
+
+  hr = CloseResumeHandle(resume_handle);
+  if (FAILED(hr)) {
+    cerr << "Failed to close resume handle " << process_id;
+    return hr;
+  }
+
+  return hr;
 }
 
 void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
@@ -152,9 +204,9 @@ void Debugger::DeactivateBreakpoints() {
   }
 
   vector<CComPtr<ICorDebugAppDomain>> appdomains;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
-      ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum,
-                                                  &appdomains);
+  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugAppDomainEnum,
+                                                         ICorDebugAppDomain>(
+      appdomain_enum, &appdomains);
 
   if (FAILED(hr)) {
     cerr << "Failed to enumerate app domains: " << std::hex << hr;

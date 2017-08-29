@@ -34,6 +34,7 @@ class NamedPipeClient : public INamedPipe {
   HRESULT WaitForConnection() override;
   HRESULT Read(std::string *message) override;
   HRESULT Write(const std::string &message) override;
+  HRESULT ShutDown() override;
 
  private:
   // The name of the pipe.

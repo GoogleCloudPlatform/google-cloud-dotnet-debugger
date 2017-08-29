@@ -18,15 +18,18 @@
 #include <memory>
 #include <thread>
 
-#include "dbgbreakpoint.h"
+#include "breakpoint.pb.h"
+#include "breakpointcollection.h"
 #include "stackframecollection.h"
 
-namespace google_cloud_debugger {
+using google::cloud::diagnostics::debug::Breakpoint;
 using std::cerr;
 using std::lock_guard;
 using std::mutex;
 using std::unique_lock;
 using std::unique_ptr;
+
+namespace google_cloud_debugger {
 
 HRESULT EvalCoordinator::CreateEval(ICorDebugEval **eval) {
   lock_guard<mutex> lk(mutex_);
@@ -92,9 +95,9 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
                              [&] { return debuggercallback_can_continue_; });
 }
 
-HRESULT EvalCoordinator::PrintBreakpointStacks(
+HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-    DbgBreakpoint *breakpoint,
+    BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
     const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
         &pdb_files) {
   if (!breakpoint) {
@@ -125,15 +128,23 @@ HRESULT EvalCoordinator::PrintBreakpointStacks(
 
   std::thread local_thread = std::thread(
       [](unique_ptr<StackFrameCollection> stack_frames,
-         EvalCoordinator *eval_coordinator, DbgBreakpoint *breakpoint) {
+         EvalCoordinator *eval_coordinator,
+         BreakpointCollection *breakpoint_collection,
+         DbgBreakpoint *breakpoint) {
         // TODO(quoct): Add logic to let the main thread know about this hr.
-        HRESULT hr =
-            breakpoint->PrintBreakpoint(stack_frames.get(), eval_coordinator);
+        Breakpoint proto_breakpoint;
+        HRESULT hr = breakpoint->PopulateBreakpoint(
+            &proto_breakpoint, stack_frames.get(), eval_coordinator);
         if (FAILED(hr)) {
-          cerr << "Failed to print out variables: " << hr;
+          cerr << "Failed to print out variables: " << std::hex << hr;
+        }
+
+        hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
+        if (FAILED(hr)) {
+          cerr << "Failed to write breakpoint: " << std::hex << hr;
         }
       },
-      std::move(stack_frames), this, breakpoint);
+      std::move(stack_frames), this, breakpoint_collection, breakpoint);
   stack_frames_threads_.push_back(std::move(local_thread));
 
   ready_to_print_variables_ = TRUE;

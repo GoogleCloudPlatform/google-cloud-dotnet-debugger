@@ -28,6 +28,7 @@
 
 namespace google_cloud_debugger {
 
+class BreakpointCollection;
 class DbgBreakpoint;
 class DbgStackFrame;
 
@@ -77,8 +78,9 @@ class EvalCoordinator {
 
   // Prints out the stack frames at DbgBreakpoint breakpoint based on
   // debug_stack_walk.
-  HRESULT PrintBreakpointStacks(
+  HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+      BreakpointCollection *breakpoint_collection,
       DbgBreakpoint *breakpoint,
       const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
           &pdb_files);

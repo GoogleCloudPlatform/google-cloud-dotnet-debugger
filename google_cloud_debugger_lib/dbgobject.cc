@@ -13,8 +13,8 @@
 #include "dbgstring.h"
 #include "evalcoordinator.h"
 
-using google::cloud::diagnostics::debug::Variable;
 using google::cloud::diagnostics::debug::Status;
+using google::cloud::diagnostics::debug::Variable;
 using std::ostringstream;
 using std::string;
 using std::unique_ptr;
@@ -30,8 +30,7 @@ DbgObject::DbgObject(ICorDebugType *debug_type, int depth) {
 HRESULT DbgObject::CreateDbgObjectHelper(
     ICorDebugValue *debug_value, ICorDebugType *debug_type,
     CorElementType cor_element_type, BOOL is_null, int depth,
-    std::unique_ptr<DbgObject> *result_object,
-    ostringstream *err_stream) {
+    std::unique_ptr<DbgObject> *result_object, ostringstream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!result_object) {
@@ -145,9 +144,8 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
                                           TRUE, 0, result_object, err_stream);
 }
 
-HRESULT DbgObject::PopulateVariableValue(
-    Variable *variable,
-    EvalCoordinator *eval_coordinator) {
+HRESULT DbgObject::PopulateVariableValue(Variable *variable,
+                                         EvalCoordinator *eval_coordinator) {
   if (!variable || !eval_coordinator) {
     return E_INVALIDARG;
   }
@@ -225,13 +223,13 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
   }
 
   return CreateDbgObjectHelper(dereferenced_and_unboxed_value, debug_type,
-                               cor_element_type, is_null, depth,
-                               result_object, err_stream);
+                               cor_element_type, is_null, depth, result_object,
+                               err_stream);
 }
 
 HRESULT Dereference(ICorDebugValue *debug_value,
-                    ICorDebugValue **dereferenced_value,
-                    BOOL *is_null, ostringstream *err_stream) {
+                    ICorDebugValue **dereferenced_value, BOOL *is_null,
+                    ostringstream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!dereferenced_value) {
@@ -257,7 +255,8 @@ HRESULT Dereference(ICorDebugValue *debug_value,
       *is_null = FALSE;
       break;
     } else if (FAILED(hr)) {
-      *err_stream << "Failed to convert ICorDebugValue to ICorDebugReferenceValue";
+      *err_stream
+          << "Failed to convert ICorDebugValue to ICorDebugReferenceValue";
       return hr;
     }
 
@@ -282,7 +281,8 @@ HRESULT Dereference(ICorDebugValue *debug_value,
   }
 
   if (reference_depth == kReferenceDepth) {
-    *err_stream << "Cannot dereference more than " << kReferenceDepth << " times!";
+    *err_stream << "Cannot dereference more than " << kReferenceDepth
+                << " times!";
     return E_FAIL;
   }
 
@@ -377,24 +377,53 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
   return heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG, handle);
 }
 
+vector<WCHAR> ConvertStringToWCharPtr(const std::string target_string) {
+  if (target_string.size() == 0) {
+    return vector<WCHAR>();
+  }
+
+  // We feed MultiByteToWideChar a null terminated CHAR string and it will
+  // tell us the size of the string so we can create a WCHAR string with the
+  // same length.
+  int string_size =
+      MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1, nullptr, 0);
+  if (string_size <= 0) {
+    return vector<WCHAR>();
+  }
+
+  vector<WCHAR> result(string_size, 0);
+
+  // MultiByteToWideChar should fill up vector result with converted WCHAR
+  // string.
+  string_size = MultiByteToWideChar(CP_UTF8, 0, target_string.c_str(), -1,
+                                    result.data(), result.size());
+  if (string_size <= 0) {
+    return vector<WCHAR>();
+  }
+  return result;
+}
+
 string ConvertWCharPtrToString(const WCHAR *wchar_string) {
   if (!wchar_string || !(*wchar_string)) {
     return string();
   }
-// PAL_STDCPP_COMPAT is the flag CORECLR uses
-// for non-Windows platform. Since we are compiling
-// using their headers, we need to use this macro.
-#ifdef PAL_STDCPP_COMPAT
-  std::wstring temp_wstring;
-  while (wchar_string && *wchar_string) {
-    WCHAR current_char = *wchar_string;
-    temp_wstring += static_cast<wchar_t>(current_char);
-    ++wchar_string;
+
+  // We feeds WideCharToMultiByte a null terminated WCHAR string and it will
+  // tells us the size of the string so we can create a CHAR string with the
+  // same length.
+  int string_size = WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, nullptr,
+                                        0, nullptr, nullptr);
+
+  std::string result(string_size, 0);
+  // This time, WideCharToMultiByte will fill up the result buffer with
+  // converted char.
+  string_size = WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, &result[0],
+                                    result.size(), nullptr, nullptr);
+  if (string_size == 0) {
+    return string();
   }
-#else
-  std::wstring temp_wstring(wchar_string);
-#endif
-  return string(temp_wstring.begin(), temp_wstring.end());
+
+  return result;
 }
 
 string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {

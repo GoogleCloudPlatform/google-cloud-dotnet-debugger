@@ -113,6 +113,19 @@ HRESULT NamedPipeClient::Write(const string &message) {
   return S_OK;
 }
 
+HRESULT NamedPipeClient::ShutDown() {
+  if (pipe_ == -1) {
+    return S_OK;
+  }
+
+  if (shutdown(pipe_, SHUT_RDWR) == -1) {
+    cerr << "shutdown error: " << strerror(errno) << std::endl;
+    return E_FAIL;
+  }
+
+  return S_OK;
+}
+
 }  // namespace google_cloud_debugger
 
 #endif  //  PLATFORM_UNIX

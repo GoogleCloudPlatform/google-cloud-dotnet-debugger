@@ -38,7 +38,7 @@ class StackFrameCollection {
   // Populates the stack frames of a breakpoint using stack_frames.
   // eval_coordinator will be used to perform eval coordination during function
   // evaluation if needed.
-  HRESULT PrintStackFrames(
+  HRESULT PopulateStackFrames(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       EvalCoordinator *eval_coordinator);
 

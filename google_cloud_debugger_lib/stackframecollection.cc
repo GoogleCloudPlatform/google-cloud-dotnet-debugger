@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "dbgbreakpoint.h"
-#include "evalcoordinator.h"
 #include "stackframecollection.h"
 
+#include <algorithm>
 #include <iostream>
+
+#include "dbgbreakpoint.h"
+#include "evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -26,6 +28,7 @@ using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
 using std::cerr;
 using std::vector;
+using std::max;
 
 namespace google_cloud_debugger {
 
@@ -148,7 +151,7 @@ HRESULT StackFrameCollection::Initialize(
   return hr;
 }
 
-HRESULT StackFrameCollection::PrintStackFrames(
+HRESULT StackFrameCollection::PopulateStackFrames(
     Breakpoint *breakpoint, EvalCoordinator *eval_coordinator) {
   if (!breakpoint || !eval_coordinator) {
     cerr << "Null breakpoint or eval coordinator.";
@@ -292,7 +295,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
         if (!method.sequence_points[index].is_hidden &&
             method.sequence_points[index].il_offset <= ip_offset) {
           matching_sequence_point_position =
-              std::max(matching_sequence_point_position, index);
+              max(matching_sequence_point_position, index);
         }
       }
 
