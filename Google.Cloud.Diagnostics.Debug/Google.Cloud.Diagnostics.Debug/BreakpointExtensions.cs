@@ -16,7 +16,6 @@ using Google.Api.Gax;
 using System.Linq;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 using StackdriverSourceLocation = Google.Cloud.Debugger.V2.SourceLocation;
-using StackdriverStackFrame = Google.Cloud.Debugger.V2.StackFrame;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -27,6 +26,7 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         /// <summary>
         /// Converts a <see cref="StackdriverBreakpoint"/> to a <see cref="Breakpoint"/>.
+        /// Converts ID and location and sets "Activated" to true.
         /// </summary>
         public static Breakpoint Convert(this StackdriverBreakpoint breakpoint)
         {
@@ -35,7 +35,7 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 Id = breakpoint.Id,
                 Activated = true,
-                Location = new Google.Cloud.Diagnostics.Debug.SourceLocation
+                Location = new SourceLocation
                 {
                     Line = breakpoint.Location?.Line ?? 0,
                     Path = breakpoint.Location?.Path,
@@ -46,6 +46,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Converts a <see cref="Breakpoint"/> to a <see cref="StackdriverBreakpoint"/>.
         /// </summary>
+        /// Converts CreateTime, FinalTime, ID, Location and StackFrames.
         public static StackdriverBreakpoint Convert(this Breakpoint breakpoint)
         {
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));

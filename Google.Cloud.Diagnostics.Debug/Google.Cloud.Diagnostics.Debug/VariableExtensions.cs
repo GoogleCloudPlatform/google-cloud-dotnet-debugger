@@ -15,7 +15,6 @@
 using Google.Api.Gax;
 using System.Linq;
 using StackdriverVariable = Google.Cloud.Debugger.V2.Variable;
-using StackdriverStatusMessage = Google.Cloud.Debugger.V2.StatusMessage;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -30,32 +29,16 @@ namespace Google.Cloud.Diagnostics.Debug
         public static StackdriverVariable Convert(this Variable variable)
         {
             GaxPreconditions.CheckNotNull(variable, nameof(variable));
-            var newVariable = new StackdriverVariable
+            return new StackdriverVariable
             {
                 Name = variable.Name,
                 Value = variable.Value,
                 Type = variable.Type,
                 // TODO(talarico): Look into making sure we don't have cycles
-                Members = { variable.Members?.Select(x => x.Convert()).ToList() }
+                Members = { variable.Members?.Select(x => x.Convert()).ToList() },
+                Status = variable.Status == null ? null : Common.CreateStatusMessage(
+                    variable.Status.Message, variable.Status.Iserror),
             };
-
-            if (variable.Members != null)
-            {
-                newVariable.Members.AddRange(variable.Members.Select(x => x.Convert()));
-            }
-
-            if (variable.Status != null)
-            {
-                newVariable.Status = new StackdriverStatusMessage
-                {
-                    IsError = newVariable.Status.IsError,
-                    Description =
-                    {
-                        Format = variable.Status.Message
-                    }
-                };
-            }
-            return newVariable;
         }
     }
 }

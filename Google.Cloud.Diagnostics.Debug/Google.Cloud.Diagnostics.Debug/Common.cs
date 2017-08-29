@@ -35,7 +35,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 {
                      Format = message
                 },
-                IsError = true,
+                IsError = isError,
             };
         }
     }
