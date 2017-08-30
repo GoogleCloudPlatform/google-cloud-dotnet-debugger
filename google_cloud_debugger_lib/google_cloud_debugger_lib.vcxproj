@@ -126,7 +126,7 @@
       <Command>$(SolutionDir)build-deps.cmd $(SolutionDir) $(Configuration) $(Platform)</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)third_party\coreclr\windows\$(Platform)\$(Configuration)\dbgshim.dll" "$(TargetDir)"</Command>
+      <Command>Copy /Y "$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration)" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
