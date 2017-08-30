@@ -80,7 +80,12 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                         {
                             Path = "path",
                             Line = 11,
-                        }
+                        },
+                        Arguments =
+                        {
+                            new Variable(),
+                            new Variable(),
+                        },
                     }
                 }
             };
@@ -93,7 +98,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(breakpoint.FinalTime, sdBreakpoint.FinalTime);
             Assert.Equal(2, sdBreakpoint.StackFrames.Count);
             Assert.Single(sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-one")));
-            Assert.Single(sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-two")));
+            var sfTwo = sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-two"));
+            Assert.Equal(2, sfTwo.Single().Arguments.Count);
         }
 
         [Fact]
