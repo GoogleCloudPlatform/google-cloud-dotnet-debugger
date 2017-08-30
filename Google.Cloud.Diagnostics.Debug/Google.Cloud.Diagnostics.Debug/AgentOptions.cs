@@ -23,6 +23,9 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     internal class AgentOptions
     {
+        // If given this option, the debugger will not perform property evaluation.
+        public const string PropertyEvaluationOption = "--property-evaluation";
+
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
 
@@ -48,17 +51,14 @@ namespace Google.Cloud.Diagnostics.Debug
             HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
         public int WaitTime { get; set; }
 
-        // Returns the processed arguments to pass to the debugger.
-        public string DebuggerArgument
+        // Returns the processed arguments to pass to the debugger. The argument will be separated
+        // by white space. The first argument is the application name, the second argument is
+        // whether property will be evaluated.
+        public string DebuggerArguments
         {
             get
             {
-                string appArgument = Application;
-                if (PropertyEvaluation)
-                {
-                    appArgument += " --property-evaluation";
-                }
-                return appArgument;
+                return PropertyEvaluation ? Application + PropertyEvaluationOption : Application;
             }
         }
 

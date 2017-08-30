@@ -21,11 +21,12 @@ using std::string;
 using google_cloud_debugger::Debugger;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 
+// If given this option, the debugger will not perform property evaluation.
 const string kEvaluationOption = "--property-evaluation";
 
 int main(int argc, char *argv[]) {
   if (argc == 1) {
-    cerr << "Debugger needs at least the path to the application." << endl;
+    cerr << "Expects path to the application to be debugged." << endl;
     return E_INVALIDARG;
   }
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Checks for property evaluation.
+  // TODO(quoct): Look into libraries for parsing arguments.
   if (argc == 3) {
     string evaluation(argv[2]);
     if (kEvaluationOption.compare(evaluation) == 0) {
