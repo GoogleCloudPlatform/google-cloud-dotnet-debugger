@@ -16,10 +16,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "breakpoint.pb.h"
-#include "cor.h"
-#include "cordebug.h"
-#include "dbgstring.h"
+#include "cordebugvalue_mocks.h"
 
 namespace google_cloud_debugger_test {
 
@@ -30,39 +27,6 @@ using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::DbgString;
 using std::string;
-
-// Mock class for ICorDebugStringValue.
-class DebugStringValueMock : public ICorDebugStringValue,
-                             public ICorDebugHeapValue2 {
- public:
-  MOCK_METHOD2(QueryInterface, HRESULT(REFIID riid, void **ppvObject));
-
-  MOCK_METHOD0(AddRef, ULONG());
-
-  MOCK_METHOD0(Release, ULONG());
-
-  MOCK_METHOD1(GetType, HRESULT(CorElementType *pType));
-
-  MOCK_METHOD1(GetSize, HRESULT(ULONG32 *pSize));
-
-  MOCK_METHOD1(GetAddress, HRESULT(CORDB_ADDRESS *pAddress));
-
-  MOCK_METHOD1(CreateBreakpoint,
-               HRESULT(ICorDebugValueBreakpoint **ppBreakpoint));
-
-  MOCK_METHOD1(IsValid, HRESULT(BOOL *pbValid));
-
-  MOCK_METHOD1(CreateRelocBreakpoint,
-               HRESULT(ICorDebugValueBreakpoint **pBreakpoint));
-
-  MOCK_METHOD1(GetLength, HRESULT(ULONG32 *pcchString));
-
-  MOCK_METHOD3(GetString, HRESULT(ULONG32 cchString, ULONG32 *pcchString,
-                                  WCHAR szString[]));
-
-  MOCK_METHOD2(CreateHandle, HRESULT(CorDebugHandleType type,
-                                     ICorDebugHandleValue **ppHandle));
-};
 
 // Tests Initialize function of DbgString.
 TEST(DbgStringTest, Initialize) {
