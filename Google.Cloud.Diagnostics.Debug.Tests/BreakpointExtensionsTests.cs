@@ -1,0 +1,133 @@
+﻿// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using Google.Protobuf.WellKnownTypes;
+using System;
+using System.Linq;
+using Xunit;
+using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
+using StackdriverSourceLocation = Google.Cloud.Debugger.V2.SourceLocation;
+
+namespace Google.Cloud.Diagnostics.Debug.Tests
+{
+    public class BreakpointExtensionsTests
+    {
+        private const string _id = "breakpoint-id";
+        private const string _path = "breakpoint-Path";
+        private const int _line = 11;
+
+        [Fact]
+        public void Convert_Breakpoint()
+        {
+            var sdBreakpoint = new StackdriverBreakpoint
+            {
+                Id = _id,
+                Location = new StackdriverSourceLocation
+                {
+                    Path = _path,
+                    Line = _line
+                },
+                CreateTime = Timestamp.FromDateTime(DateTime.UtcNow),
+            };
+
+            var breakpoint = sdBreakpoint.Convert();
+            Assert.Equal(_id, breakpoint.Id);
+            Assert.Equal(_path, breakpoint.Location.Path);
+            Assert.Equal(_line, breakpoint.Location.Line);
+            Assert.True(breakpoint.Activated);
+            Assert.Null(breakpoint.CreateTime);
+        }
+
+        [Fact]
+        public void Convert_StackdriverBreakpoint()
+        {
+            var breakpoint = new Breakpoint
+            {
+                Id = _id,
+                Location = new SourceLocation
+                {
+                    Path = _path,
+                    Line = _line
+                },
+                CreateTime = Timestamp.FromDateTime(DateTime.UtcNow),
+                FinalTime = Timestamp.FromDateTime(DateTime.UtcNow.AddSeconds(10)),
+                StackFrames =
+                {
+                    new StackFrame
+                    {
+                        MethodName = "method-one",
+                        Location = new SourceLocation
+                        {
+                            Path = "path",
+                            Line = 10,
+                        }
+                    },
+                    new StackFrame
+                    {
+                        MethodName = "method-two",
+                        Location = new SourceLocation
+                        {
+                            Path = "path",
+                            Line = 11,
+                        },
+                        Arguments =
+                        {
+                            new Variable(),
+                            new Variable(),
+                        },
+                    }
+                }
+            };
+
+            var sdBreakpoint = breakpoint.Convert();
+            Assert.Equal(_id, sdBreakpoint.Id);
+            Assert.Equal(_path, sdBreakpoint.Location.Path);
+            Assert.Equal(_line, sdBreakpoint.Location.Line);
+            Assert.Equal(breakpoint.CreateTime, sdBreakpoint.CreateTime);
+            Assert.Equal(breakpoint.FinalTime, sdBreakpoint.FinalTime);
+            Assert.Equal(2, sdBreakpoint.StackFrames.Count);
+            Assert.Single(sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-one")));
+            var sfTwo = sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-two"));
+            Assert.Equal(2, sfTwo.Single().Arguments.Count);
+        }
+
+        [Fact]
+        public void GetLocationIdentifier_Breakpoint()
+        {
+            var breakpoint = new Breakpoint
+            {
+                Location = new SourceLocation
+                {
+                    Path = _path,
+                    Line = _line
+                }
+            };
+            Assert.Equal("breakpoint-path:11", breakpoint.GetLocationIdentifier());
+        }
+
+        [Fact]
+        public void GetLocationIdentifier_StackdriverBreakpoint()
+        {
+            var breakpoint = new StackdriverBreakpoint
+            {
+                Location = new StackdriverSourceLocation
+                {
+                    Path = _path,
+                    Line = _line
+                }
+            };
+            Assert.Equal("breakpoint-path:11", breakpoint.GetLocationIdentifier());
+        }
+    }
+}

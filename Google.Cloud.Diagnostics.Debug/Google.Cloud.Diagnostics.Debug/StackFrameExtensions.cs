@@ -14,7 +14,6 @@
 
 using Google.Api.Gax;
 using System.Linq;
-using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 using StackdriverSourceLocation = Google.Cloud.Debugger.V2.SourceLocation;
 using StackdriverStackFrame = Google.Cloud.Debugger.V2.StackFrame;
 
