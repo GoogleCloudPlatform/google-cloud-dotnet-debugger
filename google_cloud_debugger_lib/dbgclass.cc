@@ -549,6 +549,11 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
     }
   }
 
+  // Don't evaluate class properties if we don't need to.
+  if (!eval_coordinator->PropertyEvaluation()) {
+    return S_OK;
+  }
+
   for (auto it = begin(class_properties_); it != end(class_properties_); ++it) {
     if (*it) {
       Variable *property_field_var = variable->add_members();

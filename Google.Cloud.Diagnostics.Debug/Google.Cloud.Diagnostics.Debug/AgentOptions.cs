@@ -23,6 +23,9 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     internal class AgentOptions
     {
+        // If given this option, the debugger will not perform property evaluation.
+        public const string PropertyEvaluationOption = "--property-evaluation";
+
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
 
@@ -37,12 +40,29 @@ namespace Google.Cloud.Diagnostics.Debug
         public string Application { get; set; }
 
         [Option("project-id",
-            HelpText = "The Google Cloud Console project the debuggee is associated with")]
+            HelpText = "The Google Cloud Console project the debuggee is associated with.")]
         public string ProjectId { get; set; }
+
+        [Option("property-evaluation",
+            HelpText = "If set, the debugger will evaluate object's properties.")]
+        public bool PropertyEvaluation { get; set; }
 
         [Option("wait-time", Default = 2, 
             HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
         public int WaitTime { get; set; }
+
+        /// <summary>
+        /// Returns the processed arguments to pass to the debugger. The argument will be separated
+        /// by white space. The first argument is the application name, the second argument, if
+        /// applicable, is whether properties will be evaluated.
+        /// </summary>
+        public string DebuggerArguments
+        {
+            get
+            {
+                return PropertyEvaluation ? Application + PropertyEvaluationOption : Application;
+            }
+        }
 
         /// <summary>
         /// Parse a <see cref="AgentOptions"/> from command line arguments.

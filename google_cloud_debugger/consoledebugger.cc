@@ -21,11 +21,20 @@ using std::string;
 using google_cloud_debugger::Debugger;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 
+// If given this option, the debugger will not perform property evaluation.
+const string kEvaluationOption = "--property-evaluation";
+
 int main(int argc, char *argv[]) {
+  if (argc == 1) {
+    cerr << "Expects path to the application to be debugged." << endl;
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
 
   // First argument to the test app will be the full path to the
   // process we want to debug.
+  // Second argument is set if we need to perform property evaluation.
   Debugger debugger;
   string app_path(argv[1]);
   string command_line = "dotnet " + app_path;
@@ -42,30 +51,21 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // This will launch an infinite while loop to wait and read.
-  // That's why we launch it in a different thread so we can
-  // break out of the loop from this thread.
-  std::thread sync_breakpoints_thread([](Debugger *debugger) {
-    debugger->SyncBreakpoints();
-  }, &debugger);
-
-  string input_string;
-
-  // Quits the debugger if this string is supplied.
-  const string quit = "quit";
-
-  while (true) {
-    cin >> input_string;
-    if (quit.compare(input_string) == 0) {
-      hr = debugger.CancelSyncBreakpoints();
-      if (FAILED(hr)) {
-        cerr << "Failed to break out of sync breakpoints: "
-             << hex << hr << endl;
-      }
-      sync_breakpoints_thread.join();
-      return 0;
+  // Checks for property evaluation.
+  // TODO(quoct): Look into libraries for parsing arguments.
+  if (argc == 3) {
+    string evaluation(argv[2]);
+    if (kEvaluationOption.compare(evaluation) == 0) {
+      // Turns on property evaluation.
+      debugger.SetPropertyEvaluation(TRUE);
     }
   }
+
+  // This will launch an infinite while loop to wait and read.
+  // When the server connection of the named pipe breaks, the loop
+  // will be broken and the application process will be terminated
+  // in the debugger's destructor.
+  debugger.SyncBreakpoints();
 
   return 0;
 }

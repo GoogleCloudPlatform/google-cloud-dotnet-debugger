@@ -53,6 +53,11 @@ class Debugger final {
   // Breaks out of SyncBreakpoints by shutting down the read pipe.
   HRESULT CancelSyncBreakpoints();
 
+  // Sets whether property evaluation should be performed.
+  void SetPropertyEvaluation(BOOL eval) {
+    debugger_callback_->SetPropertyEvaluation(eval);
+  }
+
  private:
   // The unregister token that is used in the callback function to
   // unregister for runtime startup.

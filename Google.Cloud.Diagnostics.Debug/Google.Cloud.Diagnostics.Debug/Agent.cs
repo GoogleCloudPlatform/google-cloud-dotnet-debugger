@@ -66,7 +66,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _client.Register();
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
-                _options.Debugger, _options.Application, null);
+                _options.Debugger, _options.DebuggerArguments, null);
             _process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
