@@ -193,6 +193,11 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     return breakpoint_collection_->CancelSyncBreakpoints();
   }
 
+  // Sets whether property evaluation should be performed.
+  void SetPropertyEvaluation(BOOL eval) {
+    eval_coordinator_->SetPropertyEvaluation(eval);
+  }
+
   // Template function to enumerate different ICorDebug enumerations.
   // All the enumerated items will be stored in vector result.
   template <typename ICorDebugSpecifiedTypeEnum,

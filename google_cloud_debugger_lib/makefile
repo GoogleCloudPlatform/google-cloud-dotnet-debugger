@@ -79,8 +79,8 @@ custombinaryreader.o: custombinaryreader.h custombinaryreader.cc
 portablepdbfile.o: portablepdbfile.h portablepdbfile.cc
 	clang-3.5 portablepdbfile.cc ${INCDIRS} ${CC_FLAGS} -c -o portablepdbfile.o
 
-google_cloud_debugger: ${ALL_O_FILES}
-	ar rcs libgoogle_cloud_debugger.a ${ALL_O_FILES}
+google_cloud_debugger_lib: ${ALL_O_FILES}
+	ar rcs libgoogle_cloud_debugger_lib.a ${ALL_O_FILES}
 
 clean:
 	rm -f *.o *.a

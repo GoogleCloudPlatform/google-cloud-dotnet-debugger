@@ -36,6 +36,8 @@ namespace google_cloud_debugger {
 
 using std::cerr;
 using std::cout;
+using std::endl;
+using std::hex;
 using std::string;
 using std::vector;
 
@@ -55,18 +57,27 @@ Debugger::~Debugger() {
     hr = cordebug_->Terminate();
   }
 
+#ifdef PAL_STDCPP_COMPAT
+  // Use kill on Linux. 0 means success.
+  if (kill(proc_id_, SIGTERM) != 0) {
+    cerr << "Failed to terminate process because "
+         << strerror(errno) << endl;
+  }
+#else
   HANDLE process_handle = OpenProcess(PROCESS_TERMINATE, FALSE, proc_id_);
 
   if (!TerminateProcess(process_handle, 0)) {
     DWORD exit_code;
     GetExitCodeProcess(process_handle, &exit_code);
-    cerr << "Failed to terminate process. Exit code is " << exit_code;
+    cerr << "Failed to terminate process. Exit code is " << exit_code
+         << endl;
   }
+#endif
 }
 
 HRESULT Debugger::SyncBreakpoints() {
   if (!debugger_callback_) {
-    cerr << "Debugger callback does not exist.";
+    cerr << "Debugger callback does not exist." << endl;
     return E_FAIL;
   }
 
@@ -89,13 +100,13 @@ HRESULT Debugger::StartDebugging(DWORD process_id) {
   }
 
   if (!debugger_callback_) {
-    cerr << "Failed to create debugger_callback_";
+    cerr << "Failed to create debugger_callback_." << endl;
     return E_FAIL;
   }
 
   hr = debugger_callback_->Initialize();
   if (FAILED(hr)) {
-    cerr << "Failed to initialize debugger_callback_.";
+    cerr << "Failed to initialize debugger_callback_." << endl;
     return hr;
   }
 
@@ -116,27 +127,30 @@ HRESULT Debugger::StartDebugging(vector<WCHAR> command_line) {
   HRESULT hr = CreateProcessForLaunch(command_line.data(), TRUE, nullptr,
                                       nullptr, &process_id, &resume_handle);
   if (FAILED(hr)) {
-    cerr << "Failed to start process.";
+    cerr << "Failed to start process: " << hex << hr << endl;
     return hr;
   }
 
   // Attaches the debugger.
   hr = StartDebugging(process_id);
   if (FAILED(hr)) {
-    cerr << "Failed to attached to process " << process_id;
+    cerr << "Failed to attached to process " << process_id
+         << " with HRESULT " << hex << hr << endl;
     return hr;
   }
 
   // Resumes the process.
   hr = ResumeProcess(resume_handle);
   if (FAILED(hr)) {
-    cerr << "Failed to resume process " << process_id;
+    cerr << "Failed to resume process " << process_id
+         << " with HRESULT " << hex << hr << endl;
     return hr;
   }
 
   hr = CloseResumeHandle(resume_handle);
   if (FAILED(hr)) {
-    cerr << "Failed to close resume handle " << process_id;
+    cerr << "Failed to close resume handle " << process_id
+         << " with HRESULT " << hex << hr << endl;
     return hr;
   }
 
@@ -149,7 +163,8 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   // will pass in a failure HRESULT which we acknowledge.
   if (FAILED(hr)) {
     // TODO(quoct): Look into using google3's logging library.
-    cout << "Failed to register for runtime startup.";
+    cout << "Failed to register for runtime startup: "
+         << hex << hr << endl;
     return;
   }
 
@@ -162,7 +177,8 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   hr = unknown->QueryInterface(
       __uuidof(ICorDebug), reinterpret_cast<void **>(&(debugger->cordebug_)));
   if (FAILED(hr)) {
-    cerr << "Failed to query ICorDebug interface.";
+    cerr << "Failed to query ICorDebug interface: "
+         << hex << hr << endl;
     return;
   }
 
@@ -170,7 +186,8 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   // Initialize has to be called before we do anything.
   hr = pCorDebug->Initialize();
   if (FAILED(hr)) {
-    cerr << "Failed to initialize the ICorDebug object.";
+    cerr << "Failed to initialize the ICorDebug object: "
+         << hex << hr << endl;
     return;
   }
 
@@ -179,14 +196,16 @@ void Debugger::CallbackFunction(IUnknown *unknown, void *parameter,
   // callback function in DebuggerCallback.
   hr = pCorDebug->SetManagedHandler(debugger->debugger_callback_);
   if (FAILED(hr)) {
-    cerr << "Failed to set managed callback for debugger.";
+    cerr << "Failed to set managed callback for debugger: "
+         << hex << hr << endl;
     return;
   }
 
   hr = pCorDebug->DebugActiveProcess(process_id, false,
                                      &(debugger->cordebug_process_));
   if (FAILED(hr)) {
-    cerr << "Failed to debug process " << process_id;
+    cerr << "Failed to debug process " << process_id
+         << " with HRESULT " << hex << hr << endl;
     return;
   }
 
@@ -199,7 +218,7 @@ void Debugger::DeactivateBreakpoints() {
   CComPtr<ICorDebugAppDomainEnum> appdomain_enum;
   HRESULT hr = cordebug_process_->EnumerateAppDomains(&appdomain_enum);
   if (FAILED(hr)) {
-    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    cerr << "Failed to enumerate app domains: " << hex << hr << endl;
     return;
   }
 
@@ -209,7 +228,7 @@ void Debugger::DeactivateBreakpoints() {
       appdomain_enum, &appdomains);
 
   if (FAILED(hr)) {
-    cerr << "Failed to enumerate app domains: " << std::hex << hr;
+    cerr << "Failed to enumerate app domains: " << hex << hr << endl;
     return;
   }
 
@@ -217,7 +236,7 @@ void Debugger::DeactivateBreakpoints() {
     CComPtr<ICorDebugBreakpointEnum> breakpoint_enum;
     hr = appdomain->EnumerateBreakpoints(&breakpoint_enum);
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      cerr << "Failed to enumerate breakpoints: " << hex << hr << endl;
       continue;
     }
 
@@ -227,14 +246,14 @@ void Debugger::DeactivateBreakpoints() {
                                                       &breakpoints);
 
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate breakpoints: " << std::hex << hr;
+      cerr << "Failed to enumerate breakpoints: " << hex << hr << endl;
       continue;
     }
 
     for (auto &&breakpoint : breakpoints) {
       hr = breakpoint->Activate(FALSE);
       if (FAILED(hr)) {
-        cerr << "Failed to deactivate breakpoint: " << std::hex << hr;
+        cerr << "Failed to deactivate breakpoint: " << hex << hr << endl;
       }
     }
   }

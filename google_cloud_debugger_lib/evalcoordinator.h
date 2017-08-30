@@ -100,7 +100,16 @@ class EvalCoordinator {
   // Returns true if we are waiting for an evaluation result.
   BOOL WaitingForEval();
 
+  // Sets this to stop property evaluation.
+  void SetPropertyEvaluation(BOOL eval) { property_evaluation_ = eval; }
+
+  // Returns whether property evaluation should be performed.
+  BOOL PropertyEvaluation() { return property_evaluation_; }
+
  private:
+  // If sets to true, object evaluation will not be performed.
+  BOOL property_evaluation_ = FALSE;
+
   // The threads that we are enumerating and printing the stack frames from.
   std::vector<std::thread> stack_frames_threads_;
 
