@@ -51,9 +51,11 @@ namespace Google.Cloud.Diagnostics.Debug
             HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
         public int WaitTime { get; set; }
 
-        // Returns the processed arguments to pass to the debugger. The argument will be separated
-        // by white space. The first argument is the application name, the second argument is
-        // whether property will be evaluated.
+        /// <summary>
+        /// Returns the processed arguments to pass to the debugger. The argument will be separated
+        /// by white space. The first argument is the application name, the second argument, if
+        /// applicable, is whether properties will be evaluated.
+        /// </summary>
         public string DebuggerArguments
         {
             get
