@@ -65,8 +65,14 @@ namespace Google.Cloud.Diagnostics.Debug
             // Register the debuggee.
             _client.Register();
 
+            string appArgument = _options.Application;
+            if (_options.PropertyEvaluation)
+            {
+                appArgument += " --property-evaluation";
+            }
+
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
-                _options.Debugger, _options.Application, null);
+                _options.Debugger, _options.DebuggerArgument, null);
             _process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
