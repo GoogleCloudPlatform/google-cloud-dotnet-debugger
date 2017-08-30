@@ -27,7 +27,7 @@ script:
   # Run the single test.
   # TODO(talarico): Write proper test script.
   - ./google_cloud_debugger_test/google_cloud_debugger_test
-  - dotnet test ./Google.Cloud.Diagnostics.Debug.Tests
+  - dotnet test ./Google.Cloud.Diagnostics.Debug.Tests/Google.Cloud.Diagnostics.Debug.Tests.csproj
   
 cache:
   # Wait 20 min for cache (these direcories are large.
