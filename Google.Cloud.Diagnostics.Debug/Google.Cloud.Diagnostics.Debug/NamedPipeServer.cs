@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.IO.Pipes;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,8 +21,9 @@ namespace Google.Cloud.Diagnostics.Debug
     /// <summary>
     /// A named pipe server.
     /// </summary>
-    public class NamedPipeServer : INamedPipe, IDisposable
+    public class NamedPipeServer : INamedPipeServer
     {
+        private readonly INamedPipe _pipe;
         private readonly NamedPipeServerStream _server;
 
         public NamedPipeServer()
@@ -36,38 +35,24 @@ namespace Google.Cloud.Diagnostics.Debug
                maxNumberOfServerInstances: -1,
                transmissionMode: PipeTransmissionMode.Byte,
                options: PipeOptions.Asynchronous);
+            _pipe = new NamedPipe(_server);
         }
 
         /// <inheritdoc />
-        public Task WaitForConnectionAsync(CancellationToken cancellationToken = default(CancellationToken)) =>
-            _server.WaitForConnectionAsync(cancellationToken);
+        public Task WaitForConnectionAsync(CancellationToken cancellationToken = default(CancellationToken))
+            => _server.WaitForConnectionAsync(cancellationToken);
 
         /// <inheritdoc />
-        public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            byte[] bytes = new byte[Constants.BufferSize];
-            int read = await _server.ReadAsync(bytes, 0, Constants.BufferSize, cancellationToken);
-            return bytes.Take(read == 0 ? Constants.BufferSize : read).ToArray();
-        }
+        public Task<byte[]> ReadAsync(CancellationToken cancellationToken = default(CancellationToken))
+            => _pipe.ReadAsync(cancellationToken);
 
         /// <inheritdoc />
-        public async Task WriteAsync(byte[] bytes, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            int offset = 0;
-            int bytesLeft = bytes.Length;
-            while (bytesLeft > 0)
-            {
-                int write = bytesLeft > Constants.BufferSize ? Constants.BufferSize : bytesLeft;
-                await _server.WriteAsync(bytes, offset, write, cancellationToken);
-                bytesLeft -= write;
-                offset += write;
-            }
-            _server.Flush();
-        }
+        public Task WriteAsync(byte[] bytes, CancellationToken cancellationToken = default(CancellationToken))
+            => _pipe.WriteAsync(bytes, cancellationToken);
 
         /// <inheritdoc />
         public void Dispose()
-        {
+        {            
             if (_server.IsConnected)
             {
                 _server.Disconnect();
