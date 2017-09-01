@@ -59,15 +59,28 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Get a list of active breakpoints.
         /// </summary>
         /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
-        public IEnumerable<StackdriverBreakpoint> ListBreakpoints() => 
-            TryAction(() => _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints);
+        public IEnumerable<StackdriverBreakpoint> ListBreakpoints()
+        {
+            if (_debuggee == null)
+            {
+                throw new InvalidOperationException("Debuggee is not has not been registered.");
+            }
+            return TryAction(() => _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints);
+        }
 
         /// <summary>
         /// Update a <see cref="StackdriverBreakpoint"/>.
         /// </summary>
         /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
-        public IMessage UpdateBreakpoint(StackdriverBreakpoint breakpoint) =>
-            TryAction(() => _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint));
+        public IMessage UpdateBreakpoint(StackdriverBreakpoint breakpoint)
+        {
+            if (_debuggee == null)
+            {
+                throw new InvalidOperationException("Debuggee is not has not been registered.");
+            }
+            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
+            return TryAction(() => _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint));
+        }
 
         /// <summary>
         /// Tries a call to the debugger API.  If the debuggee is not found attempt to register it.
