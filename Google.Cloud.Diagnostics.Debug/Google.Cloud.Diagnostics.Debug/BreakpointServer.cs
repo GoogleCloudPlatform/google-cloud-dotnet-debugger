@@ -33,13 +33,13 @@ namespace Google.Cloud.Diagnostics.Debug
         private List<byte> _buffer = new List<byte>();
 
         /// <summary>The pipe to send and receive breakpoint messages with.</summary>
-        private readonly INamedPipe _pipe;
+        private readonly INamedPipeServer _pipe;
 
         /// <summary>
         /// Create a <see cref="BreakpointServer"/>.
         /// </summary>
         /// <param name="pipe">The named pipe to send and receive breakpoint messages with.</param>
-        public BreakpointServer(INamedPipe pipe) =>_pipe = pipe;
+        public BreakpointServer(INamedPipeServer pipe) =>_pipe = pipe;
 
         /// <summary>
         /// Waits for a client to connect.
