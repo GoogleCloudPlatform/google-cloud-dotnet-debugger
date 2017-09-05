@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Linq;
+using Google.Protobuf;
 using Moq;
 using System;
-using System.Threading;
-using Xunit;
-using Google.Protobuf;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Google.Cloud.Diagnostics.Debug.Tests
 {
@@ -89,10 +89,10 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 Id = "some-id-3"
             };
 
-            var breakpointMessages = new List<byte>();
-            breakpointMessages.AddRange(CreateBreakpointMessage(breakpoint1));
-            breakpointMessages.AddRange(CreateBreakpointMessage(breakpoint2));
-            breakpointMessages.AddRange(CreateBreakpointMessage(breakpoint3));
+            var breakpointMessages = new List<byte>()
+                .Concat(CreateBreakpointMessage(breakpoint1))
+                .Concat(CreateBreakpointMessage(breakpoint2))
+                .Concat(CreateBreakpointMessage(breakpoint3));
 
             _pipeMock.Setup(p => p.ReadAsync(_cts.Token))
                 .Returns(Task.FromResult(breakpointMessages.ToArray()));
