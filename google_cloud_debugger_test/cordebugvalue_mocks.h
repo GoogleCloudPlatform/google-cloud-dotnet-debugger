@@ -42,7 +42,7 @@ namespace google_cloud_debugger_test {
                HRESULT(ICorDebugValueBreakpoint **ppBreakpoint));  \
 
 // Mock class for ICorDebugStringValue.
-class DebugStringValueMock : public ICorDebugStringValue,
+class ICorDebugStringValueMock : public ICorDebugStringValue,
                              public ICorDebugHeapValue2 {
  public:
   ICORDEBUG_MOCK
@@ -62,7 +62,7 @@ class DebugStringValueMock : public ICorDebugStringValue,
 };
 
 // Mock class for ICorDebugStringValue.
-class DebugGenericValueMock : public ICorDebugGenericValue {
+class ICorDebugGenericValueMock : public ICorDebugGenericValue {
  public:
   ICORDEBUG_MOCK
 
@@ -71,7 +71,7 @@ class DebugGenericValueMock : public ICorDebugGenericValue {
   MOCK_METHOD1(SetValue, HRESULT(void *pFrom));
 };
 
-class CorDebugTypeMock : public ICorDebugType {
+class ICorDebugTypeMock : public ICorDebugType {
  public:
   IUNKNOWN_MOCK
 

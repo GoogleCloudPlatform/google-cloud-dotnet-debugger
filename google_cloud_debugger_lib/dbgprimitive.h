@@ -58,6 +58,10 @@ class DbgPrimitive : public DbgObject {
   // Tease out the generic value interface from ICorDebugValue object
   // and get the value from it.
   HRESULT SetValue(ICorDebugValue *debug_value) {
+    if (!debug_value) {
+      return E_INVALIDARG;
+    }
+
     HRESULT hr;
     CComPtr<ICorDebugGenericValue> generic_value;
 
