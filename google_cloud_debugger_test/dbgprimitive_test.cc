@@ -20,34 +20,30 @@
 
 namespace google_cloud_debugger_test {
 
+using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
 using ::testing::_;
-using ::testing::DoAll;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::DbgPrimitive;
 using std::string;
 
 // SetArgPointee does not allow casting so we have to write our own action.
-ACTION_P(SetArg0ToInt32Value, value) {
-  *static_cast<uint32_t*>(arg0) = value;
-}
+ACTION_P(SetArg0ToInt32Value, value) { *static_cast<uint32_t*>(arg0) = value; }
 
-ACTION_P(SetArg0ToByteValue, value) {
-  *static_cast<uint8_t*>(arg0) = value;
-}
+ACTION_P(SetArg0ToByteValue, value) { *static_cast<uint8_t*>(arg0) = value; }
 
 // Tests Initialize function of DbgPrimitive.
 TEST(DbgPrimitiveTest, Initialize) {
   ICorDebugTypeMock debug_type;
   DbgPrimitive<uint32_t> dbg_primitive(&debug_type);
 
-  //GetType should be called during initialize.
+  // GetType should be called during initialize.
   // Mocks and sets the type to U4 (UInt32).
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U4), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U4),
+                            Return(S_OK)));
 
   ICorDebugGenericValueMock generic_value_mock;
   EXPECT_CALL(generic_value_mock, QueryInterface(_, _))
@@ -67,8 +63,7 @@ TEST(DbgPrimitiveTest, InitializeError) {
     // GetType should be called during initialize.
     // Mocks and returns an error.
     EXPECT_CALL(debug_type, GetType(_))
-      .WillRepeatedly(
-        Return(CORDBG_E_BAD_REFERENCE_VALUE));
+        .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
     dbg_primitive.Initialize(&generic_value_mock, FALSE);
     EXPECT_EQ(dbg_primitive.GetInitializeHr(), CORDBG_E_BAD_REFERENCE_VALUE);
   }
@@ -77,8 +72,8 @@ TEST(DbgPrimitiveTest, InitializeError) {
     // GetType should be called during initialize.
     // Mocks and sets the type to U4 (UInt32).
     EXPECT_CALL(debug_type, GetType(_))
-      .WillRepeatedly(
-        DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U4), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U4),
+                              Return(S_OK)));
 
     ICorDebugGenericValueMock generic_value_mock;
     {
@@ -97,10 +92,11 @@ TEST(DbgPrimitiveTest, InitializeError) {
               DoAll(SetArgPointee<1>(&generic_value_mock), Return(S_OK)));
       // Mocks and returns error for GetValue.
       EXPECT_CALL(generic_value_mock, GetValue(_))
-        .WillRepeatedly(Return(CORDBG_S_FUNC_EVAL_HAS_NO_RESULT));
+          .WillRepeatedly(Return(CORDBG_S_FUNC_EVAL_HAS_NO_RESULT));
 
       dbg_primitive.Initialize(&generic_value_mock, FALSE);
-      EXPECT_EQ(dbg_primitive.GetInitializeHr(), CORDBG_S_FUNC_EVAL_HAS_NO_RESULT);
+      EXPECT_EQ(dbg_primitive.GetInitializeHr(),
+                CORDBG_S_FUNC_EVAL_HAS_NO_RESULT);
     }
   }
 }
@@ -113,8 +109,8 @@ TEST(DbgPrimitiveTest, PopulateType) {
   // GetType should be called during initialize.
   // Mocks and sets the type to U8 (UInt64).
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U8), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U8),
+                            Return(S_OK)));
 
   ICorDebugGenericValueMock generic_value_mock;
   EXPECT_CALL(generic_value_mock, QueryInterface(_, _))
@@ -144,8 +140,8 @@ TEST(DbgPrimitiveTest, PopulateValue) {
   // Get type should be called during initialize.
   // Mocks and sets the type to I4 (Int32).
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
+                            Return(S_OK)));
 
   ICorDebugGenericValueMock generic_value_mock;
   EXPECT_CALL(generic_value_mock, QueryInterface(_, _))
@@ -154,7 +150,7 @@ TEST(DbgPrimitiveTest, PopulateValue) {
 
   int32_t int32_value = 10;
   EXPECT_CALL(generic_value_mock, GetValue(_))
-    .WillRepeatedly(DoAll(SetArg0ToInt32Value(int32_value), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArg0ToInt32Value(int32_value), Return(S_OK)));
 
   dbg_primitive.Initialize(&generic_value_mock, FALSE);
 
@@ -176,12 +172,12 @@ TEST(DbgPrimitiveTest, PopulateValueError) {
   // GetType should be called during initialize.
   // Mocks and returns an error.
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      Return(CORDBG_E_BAD_REFERENCE_VALUE));
+      .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
   dbg_primitive.Initialize(&generic_value_mock, FALSE);
 
   // GetValue should returns the same error as the one from Initialize.
-  EXPECT_EQ(dbg_primitive.PopulateValue(&variable), CORDBG_E_BAD_REFERENCE_VALUE);
+  EXPECT_EQ(dbg_primitive.PopulateValue(&variable),
+            CORDBG_E_BAD_REFERENCE_VALUE);
 }
 
 // Tests that SetValue function of DbgPrimitive works.
@@ -192,8 +188,8 @@ TEST(DbgPrimitiveTest, SetValue) {
   // Get type should be called during initialize.
   // Mocks and sets the type to Byte (U1).
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U1), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U1),
+                            Return(S_OK)));
 
   dbg_primitive.Initialize(nullptr, FALSE);
 
@@ -205,7 +201,7 @@ TEST(DbgPrimitiveTest, SetValue) {
 
   uint8_t byte_value = 45;
   EXPECT_CALL(generic_value_mock, GetValue(_))
-    .WillRepeatedly(DoAll(SetArg0ToByteValue(byte_value), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArg0ToByteValue(byte_value), Return(S_OK)));
 
   EXPECT_EQ(dbg_primitive.SetValue(&generic_value_mock), S_OK);
 
@@ -228,8 +224,8 @@ TEST(DbgPrimitiveTest, SetValueError) {
   // Get type should be called during initialize.
   // Mocks and sets the type to Byte (U1).
   EXPECT_CALL(debug_type, GetType(_))
-    .WillRepeatedly(
-      DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U1), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_U1),
+                            Return(S_OK)));
 
   dbg_primitive.Initialize(nullptr, FALSE);
 
@@ -253,9 +249,10 @@ TEST(DbgPrimitiveTest, SetValueError) {
             DoAll(SetArgPointee<1>(&generic_value_mock), Return(S_OK)));
 
     EXPECT_CALL(generic_value_mock, GetValue(_))
-      .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
+        .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
 
-    EXPECT_EQ(dbg_primitive.SetValue(&generic_value_mock), CORDBG_E_MODULE_NOT_LOADED);
+    EXPECT_EQ(dbg_primitive.SetValue(&generic_value_mock),
+              CORDBG_E_MODULE_NOT_LOADED);
   }
 }
 

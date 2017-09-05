@@ -99,9 +99,9 @@ TEST(DbgStringTest, GetString) {
 
   EXPECT_CALL(string_value_mock, GetString(string_size + 1, _, _))
       .Times(1)
-      .WillRepeatedly(
-          DoAll(SetArrayArgument<2>(wchar_string, wchar_string + string_size + 1),
-                Return(S_OK)));
+      .WillRepeatedly(DoAll(
+          SetArrayArgument<2>(wchar_string, wchar_string + string_size + 1),
+          Return(S_OK)));
 
   std::string returned_string;
   dbg_string.GetString(&string_value_mock, &returned_string);
@@ -138,7 +138,8 @@ TEST(DbgStringTest, GetStringError) {
     EXPECT_CALL(string_value_mock, GetLength(_))
         .Times(1)
         .WillRepeatedly(Return(E_ACCESSDENIED));
-    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string), E_ACCESSDENIED);
+    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string),
+              E_ACCESSDENIED);
     EXPECT_TRUE(returned_string.empty());
   }
 
@@ -150,7 +151,8 @@ TEST(DbgStringTest, GetStringError) {
     EXPECT_CALL(string_value_mock, GetString(string_size + 1, _, _))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
-    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string), E_ABORT);
+    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string),
+              E_ABORT);
     EXPECT_TRUE(returned_string.empty());
   }
 }
