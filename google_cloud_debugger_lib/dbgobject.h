@@ -150,7 +150,7 @@ class DbgObject : public StringStreamWrapper {
   int GetEvaluationDepth() const { return depth_; }
 
   // Returns the HRESULT when Initialize function is called.
-  HRESULT GetInitializeHr() { return initialize_hr_; }
+  HRESULT GetInitializeHr() const { return initialize_hr_; }
 
  private:
   // Helper function to create a DbgObject.

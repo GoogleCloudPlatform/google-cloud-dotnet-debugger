@@ -20,10 +20,6 @@
 #include "dbgstring.h"
 #include "dbgprimitive.h"
 
-using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::DbgString;
-using std::string;
-
 namespace google_cloud_debugger_test {
 
 // This macro is for mocking IUnknown.

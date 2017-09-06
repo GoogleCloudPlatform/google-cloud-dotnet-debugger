@@ -80,15 +80,15 @@ TEST(DbgStringTest, PopulateTypeError) {
 TEST(DbgStringTest, GetString) {
   DbgString dbg_string(nullptr);
 
-  static string test_string_value = "This is a test string";
+  static const string test_string_value = "This is a test string";
 
 // On Linux, PAL_STDCPP_COMPAT header is used. We have to use
 // different string types because WCHAR defined on Linux is
 // different than WCHAR defined on Windows.
 #ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[22] = u"This is a test string";
+  WCHAR wchar_string[] = u"This is a test string";
 #else
-  WCHAR wchar_string[22] = L"This is a test string";
+  WCHAR wchar_string[] = L"This is a test string";
 #endif
 
   uint32_t string_size = test_string_value.size();
@@ -113,15 +113,15 @@ TEST(DbgStringTest, GetString) {
 TEST(DbgStringTest, GetStringError) {
   DbgString dbg_string(nullptr);
 
-  static string test_string_value = "This is a test string";
+  static const string test_string_value = "This is a test string";
 
 // On Linux, PAL_STDCPP_COMPAT header is used. We have to use
 // different string types because WCHAR defined on Linux is
 // different than WCHAR defined on Windows.
 #ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[22] = u"This is a test string";
+  WCHAR wchar_string[] = u"This is a test string";
 #else
-  WCHAR wchar_string[22] = L"This is a test string";
+  WCHAR wchar_string[] = L"This is a test string";
 #endif
 
   uint32_t string_size = test_string_value.size();
