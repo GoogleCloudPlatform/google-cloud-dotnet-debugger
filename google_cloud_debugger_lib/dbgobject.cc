@@ -450,6 +450,8 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
     return string();
   }
 
+  // Minus one for the null-terminating character.
+  result.pop_back();
   return result;
 #endif
 }

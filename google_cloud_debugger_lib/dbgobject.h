@@ -149,6 +149,9 @@ class DbgObject : public StringStreamWrapper {
   // Returns the current evaluation depth of the object.
   int GetEvaluationDepth() const { return depth_; }
 
+  // Returns the HRESULT when Initialize function is called.
+  HRESULT GetInitializeHr() const { return initialize_hr_; }
+
  private:
   // Helper function to create a DbgObject.
   static HRESULT CreateDbgObjectHelper(

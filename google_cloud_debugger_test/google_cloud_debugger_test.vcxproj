@@ -147,7 +147,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cordebugvalue_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
+    <ClCompile Include="dbgprimitive_test.cc" />
     <ClCompile Include="dbgstring_test.cc" />
     <ClCompile Include="unit_test_main.cc" />
   </ItemGroup>

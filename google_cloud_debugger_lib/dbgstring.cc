@@ -84,6 +84,10 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
 }
 
 HRESULT DbgString::PopulateType(Variable *variable) {
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
   variable->set_type("System.String");
   return S_OK;
 }
