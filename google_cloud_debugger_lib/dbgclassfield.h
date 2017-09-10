@@ -38,7 +38,7 @@ class DbgClassField : public StringStreamWrapper {
   // Sets the value of variable to the value of this field.
   HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
-      EvalCoordinator *eval_coordinator);
+      IEvalCoordinator *eval_coordinator);
 
   std::string GetFieldName() const {
     return ConvertWCharPtrToString(field_name_);

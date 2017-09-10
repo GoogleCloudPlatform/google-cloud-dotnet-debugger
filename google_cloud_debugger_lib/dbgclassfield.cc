@@ -97,7 +97,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::PopulateVariableValue(
-    Variable *variable, EvalCoordinator *eval_coordinator) {
+    Variable *variable, IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }

@@ -194,6 +194,7 @@
     <ClInclude Include="dbgprimitive.h" />
     <ClInclude Include="documentindex.h" />
     <ClInclude Include="evalcoordinator.h" />
+    <ClInclude Include="i_evalcoordinator.h" />
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="named_pipe_client.h" />
     <ClInclude Include="named_pipe_client_unix.h" />

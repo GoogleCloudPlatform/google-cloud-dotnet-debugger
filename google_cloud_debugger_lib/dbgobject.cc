@@ -145,7 +145,7 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
 }
 
 HRESULT DbgObject::PopulateVariableValue(Variable *variable,
-                                         EvalCoordinator *eval_coordinator) {
+                                         IEvalCoordinator *eval_coordinator) {
   if (!variable || !eval_coordinator) {
     return E_INVALIDARG;
   }

@@ -508,7 +508,7 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
 }
 
 HRESULT DbgClass::PopulateMembers(Variable *variable,
-                                  EvalCoordinator *eval_coordinator) {
+                                  IEvalCoordinator *eval_coordinator) {
   if (!variable) {
     return E_INVALIDARG;
   }

@@ -74,7 +74,7 @@ std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
 void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
                            const std::string &err_string);
 
-class EvalCoordinator;
+class IEvalCoordinator;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)
@@ -111,7 +111,7 @@ class DbgObject : public StringStreamWrapper {
   // using eval_coordinator to perform any sort of evaluation if needed.
   virtual HRESULT PopulateMembers(
       google::cloud::diagnostics::debug::Variable *variable,
-      EvalCoordinator *eval_coordinator) {
+      IEvalCoordinator *eval_coordinator) {
     return S_OK;
   }
 
@@ -124,7 +124,7 @@ class DbgObject : public StringStreamWrapper {
   // Populate variable proto with type, member and value from this object.
   virtual HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
-      EvalCoordinator *eval_coordinator);
+      IEvalCoordinator *eval_coordinator);
 
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,

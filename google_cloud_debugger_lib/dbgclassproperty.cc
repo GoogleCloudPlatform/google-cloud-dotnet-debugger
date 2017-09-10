@@ -19,7 +19,7 @@
 #include <mutex>
 
 #include "dbgobject.h"
-#include "evalcoordinator.h"
+#include "i_evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::vector;
@@ -63,7 +63,7 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 
 HRESULT DbgClassProperty::PopulateVariableValue(
     Variable *variable, ICorDebugReferenceValue *reference_value,
-    EvalCoordinator *eval_coordinator,
+    IEvalCoordinator *eval_coordinator,
     vector<CComPtr<ICorDebugType>> *generic_types, int depth) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
@@ -77,6 +77,11 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 
   if (!reference_value) {
     WriteError("Reference value cannot be null.");
+    return E_INVALIDARG;
+  }
+
+  if (!variable) {
+    WriteError("Variable proto cannot be null.");
     return E_INVALIDARG;
   }
 
@@ -151,6 +156,11 @@ HRESULT DbgClassProperty::PopulateVariableValue(
       debug_function, local_generic_types.size(), local_generic_types.data(),
       arg_values.size(), arg_values.data());
 
+  if (FAILED(hr)) {
+    WriteError("Failed to call parameterized function.");
+    return hr;
+  }
+
   CComPtr<ICorDebugValue> eval_result;
 
   hr = eval_coordinator->WaitForEval(&exception_occurred_, debug_eval,
@@ -158,7 +168,7 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 
   if (FAILED(hr)) {
     WriteError("Failed to evaluate the property.");
-    return E_FAIL;
+    return hr;
   }
 
   hr = DbgObject::CreateDbgObject(eval_result, depth - 1, &property_value_,
@@ -175,7 +185,7 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(
-    Variable *variable, EvalCoordinator *eval_coordinator) {
+    Variable *variable, IEvalCoordinator *eval_coordinator) {
   if (!variable) {
     return E_INVALIDARG;
   }

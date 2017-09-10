@@ -22,7 +22,7 @@
 #include "stringstreamwrapper.h"
 
 namespace google_cloud_debugger {
-class EvalCoordinator;
+class IEvalCoordinator;
 
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
@@ -47,18 +47,21 @@ class DbgClassProperty : public StringStreamWrapper {
   HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
       ICorDebugReferenceValue *reference_value,
-      EvalCoordinator *eval_coordinator,
+      IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
 
   std::string GetPropertyName() {
     return ConvertWCharPtrToString(property_name_);
   }
 
+  // Returns the HRESULT when Initialize function is called.
+  HRESULT GetInitializeHr() const { return initialized_hr_; }
+
  private:
   // Helper function to set the value of variable to this property's value.
   HRESULT PopulateVariableValueHelper(
     google::cloud::diagnostics::debug::Variable *variable,
-    EvalCoordinator *eval_coordinator);
+    IEvalCoordinator *eval_coordinator);
 
   // Attribute flags applied to the property.
   DWORD property_attributes_ = 0;
