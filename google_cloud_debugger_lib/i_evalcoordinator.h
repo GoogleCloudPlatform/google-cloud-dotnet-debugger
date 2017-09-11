@@ -58,6 +58,9 @@ class DbgBreakpoint;
 // cannot perform evaluation.
 class IEvalCoordinator {
  public:
+  // Class' destructor.
+  virtual ~IEvalCoordinator() = default;
+
   // This method is used to create an ICorDebugEval object
   // from the active thread.
   virtual HRESULT CreateEval(ICorDebugEval **eval) = 0;
