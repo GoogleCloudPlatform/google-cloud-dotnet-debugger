@@ -39,7 +39,7 @@ class DbgClass : public DbgObject {
   HRESULT PopulateValue(
       google::cloud::diagnostics::debug::Variable *variable) override;
   HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
-                          EvalCoordinator *eval_coordinator) override;
+                          IEvalCoordinator *eval_coordinator) override;
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
 

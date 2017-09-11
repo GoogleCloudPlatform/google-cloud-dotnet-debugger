@@ -118,7 +118,7 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
 }
 
 HRESULT DbgArray::PopulateMembers(Variable *variable,
-    EvalCoordinator *eval_coordinator) {
+    IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }

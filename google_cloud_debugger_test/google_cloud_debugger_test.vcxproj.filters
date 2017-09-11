@@ -27,8 +27,22 @@
     <ClCompile Include="dbgprimitive_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cordebugvalue_mocks.h">
+    <ClCompile Include="dbgclassproperty_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="i_cordebug_mocks.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="i_evalcoordinator_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_metadataimport_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="common_action_mocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

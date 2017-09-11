@@ -16,9 +16,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
-#include "cordebugvalue_mocks.h"
-
-namespace google_cloud_debugger_test {
+#include "i_cordebug_mocks.h"
 
 using ::testing::Return;
 using ::testing::SetArgPointee;
@@ -28,12 +26,15 @@ using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::DbgString;
 using std::string;
 
+namespace google_cloud_debugger_test {
+
 // Tests Initialize function of DbgString.
 TEST(DbgStringTest, Initialize) {
   DbgString dbg_string(nullptr);
 
   ICorDebugStringValueMock string_value_mock;
   EXPECT_CALL(string_value_mock, QueryInterface(_, _))
+      .Times(1)
       .WillRepeatedly(
           DoAll(SetArgPointee<1>(&string_value_mock), Return(S_OK)));
 
@@ -54,6 +55,7 @@ TEST(DbgStringTest, InitializeError) {
 
   ICorDebugStringValueMock string_value_mock;
   EXPECT_CALL(string_value_mock, QueryInterface(_, _))
+      .Times(1)
       .WillRepeatedly(Return(E_NOTIMPL));
 
   dbg_string.Initialize(&string_value_mock, FALSE);

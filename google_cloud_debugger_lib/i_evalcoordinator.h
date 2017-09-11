@@ -12,12 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef EVAL_COORDINATOR_H_
-#define EVAL_COORDINATOR_H_
+#ifndef I_EVAL_COORDINATOR_H_
+#define I_EVAL_COORDINATOR_H_
 
-#include "i_evalcoordinator.h"
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
+
+#include "ccomptr.h"
+#include "cor.h"
+#include "cordebug.h"
+#include "portablepdbfile.h"
 
 namespace google_cloud_debugger {
+
+class BreakpointCollection;
+class DbgBreakpoint;
 
 // TODO(quoct): Add a switch to turn off function evaluation by default.
 // Also, we have to investigate function evaluation for multi-threading case.
@@ -44,77 +56,58 @@ namespace google_cloud_debugger {
 // inspection on a different thread than the thread that the DebuggerCallback
 // is on. Otherwise, the DebuggerCallback thread will be blocked and
 // cannot perform evaluation.
-class EvalCoordinator : public IEvalCoordinator {
+class IEvalCoordinator {
  public:
+  // Class' destructor.
+  virtual ~IEvalCoordinator() = default;
+
   // This method is used to create an ICorDebugEval object
   // from the active thread.
-  HRESULT CreateEval(ICorDebugEval **eval);
+  virtual HRESULT CreateEval(ICorDebugEval **eval) = 0;
 
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
-  HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
-                      ICorDebugValue **eval_result);
+  virtual HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
+                      ICorDebugValue **eval_result) = 0;
 
   // DebuggerCallback calls this function to signal that an evaluation is
   // finished.
-  void SignalFinishedEval(ICorDebugThread *debug_thread);
+  virtual void SignalFinishedEval(ICorDebugThread *debug_thread) = 0;
 
   // DebuggerCallback calls this function to signal that an exception has
   // occurred.
-  void HandleException();
+  virtual void HandleException() = 0;
 
   // Prints out the stack frames at DbgBreakpoint breakpoint based on
   // debug_stack_walk.
-  HRESULT PrintBreakpoint(
+  virtual HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
       BreakpointCollection *breakpoint_collection,
       DbgBreakpoint *breakpoint,
       const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
-          &pdb_files);
+          &pdb_files) = 0;
 
   // StackFrame calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
   // print them out.
-  void WaitForReadySignal();
+  virtual void WaitForReadySignal() = 0;
 
   // StackFrame calls this to signal to the DebuggerCallback that it
   // finished all the evaluation.
-  void SignalFinishedPrintingVariable();
+  virtual void SignalFinishedPrintingVariable() = 0;
 
   // Returns the active debug thread.
-  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread);
+  virtual HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) = 0;
 
   // Returns true if we are waiting for an evaluation result.
-  BOOL WaitingForEval();
+  virtual BOOL WaitingForEval() = 0;
 
   // Sets this to stop property evaluation.
-  void SetPropertyEvaluation(BOOL eval) { property_evaluation_ = eval; }
+  virtual void SetPropertyEvaluation(BOOL eval) = 0;
 
   // Returns whether property evaluation should be performed.
-  BOOL PropertyEvaluation() { return property_evaluation_; }
+  virtual BOOL PropertyEvaluation() = 0;
 
- private:
-  // If sets to true, object evaluation will not be performed.
-  BOOL property_evaluation_ = FALSE;
-
-  // The threads that we are enumerating and printing the stack frames from.
-  std::vector<std::thread> stack_frames_threads_;
-
-  // The ICorDebugThread that the active StackFrame is on.
-  CComPtr<ICorDebugThread> active_debug_thread_;
-
-  // variable_thread_ and the thread that DebuggerCallback object is on
-  // will use this condition_variable_ and mutex_ to communicate.
-  std::condition_variable variable_threads_cv_;
-
-  std::condition_variable debugger_callback_cv_;
-
-  std::mutex mutex_;
-
-  BOOL ready_to_print_variables_ = FALSE;
-  BOOL debuggercallback_can_continue_ = FALSE;
-  BOOL eval_exception_occurred_ = FALSE;
-  BOOL waiting_for_eval_ = FALSE;
 };
 
 }  //  namespace google_cloud_debugger
