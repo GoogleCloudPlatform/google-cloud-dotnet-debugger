@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <string>
 
-#include "ccomptr.h";
+#include "ccomptr.h"
 #include "common_action_mocks.h"
 #include "dbgclassproperty.h"
 #include "i_cordebug_mocks.h"

@@ -158,7 +158,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h" />
-    <ClInclude Include="common_test_functions.h" />
     <ClInclude Include="i_evalcoordinator_mock.h" />
     <ClInclude Include="i_metadataimport_mock.h" />
   </ItemGroup>

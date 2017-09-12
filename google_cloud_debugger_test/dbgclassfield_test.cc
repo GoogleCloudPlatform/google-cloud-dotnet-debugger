@@ -17,9 +17,8 @@
 #include <cstdint>
 #include <string>
 
-#include "ccomptr.h";
+#include "ccomptr.h"
 #include "common_action_mocks.h"
-#include "common_test_functions.h"
 #include "dbgclassfield.h"
 #include "i_cordebug_mocks.h"
 #include "i_evalcoordinator_mock.h"

@@ -47,8 +47,5 @@
     <ClInclude Include="common_action_mocks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="common_test_functions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
