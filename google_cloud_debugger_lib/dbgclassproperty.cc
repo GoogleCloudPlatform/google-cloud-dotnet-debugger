@@ -28,6 +28,12 @@ namespace google_cloud_debugger {
 
 void DbgClassProperty::Initialize(mdProperty property_def,
                                   IMetaDataImport *metadata_import) {
+  if (metadata_import == nullptr) {
+    WriteError("MetaDataImport is null.");
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+
   ULONG property_name_length;
   ULONG other_methods_length;
 

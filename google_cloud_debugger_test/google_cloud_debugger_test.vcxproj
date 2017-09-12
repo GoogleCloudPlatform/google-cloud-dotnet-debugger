@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dbgclassfield_test.cc" />
     <ClCompile Include="i_cordebug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
     <ClCompile Include="dbgclassproperty_test.cc" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h" />
+    <ClInclude Include="common_test_functions.h" />
     <ClInclude Include="i_evalcoordinator_mock.h" />
     <ClInclude Include="i_metadataimport_mock.h" />
   </ItemGroup>

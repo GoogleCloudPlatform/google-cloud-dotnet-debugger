@@ -44,6 +44,9 @@ class DbgClassField : public StringStreamWrapper {
     return ConvertWCharPtrToString(field_name_);
   }
 
+  // Returns the HRESULT when Initialize function is called.
+  HRESULT GetInitializeHr() const { return initialized_hr_; }
+
  private:
   // Token for the class that the field belongs to.
   mdTypeDef class_token_ = 0;
