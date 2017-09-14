@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="dbgclassfield_test.cc" />
     <ClCompile Include="i_cordebug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
     <ClCompile Include="dbgclassproperty_test.cc" />

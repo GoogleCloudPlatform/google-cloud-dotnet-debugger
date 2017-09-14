@@ -27,6 +27,24 @@ void DbgClassField::Initialize(mdFieldDef field_def,
                                ICorDebugObjectValue *debug_obj_value,
                                ICorDebugClass *debug_class,
                                ICorDebugType *class_type, int depth) {
+  if (metadata_import == nullptr) {
+    WriteError("MetaDataImport is null.");
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+
+  if (debug_obj_value == nullptr) {
+    WriteError("ICorDebugObjectValue is null.");
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+
+  if (debug_class == nullptr) {
+    WriteError("ICorDebugClass is null.");
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+
   CComPtr<ICorDebugValue> field_value;
   ULONG len_field_name;
 
@@ -70,7 +88,8 @@ void DbgClassField::Initialize(mdFieldDef field_def,
   }
 
   if (initialized_hr_ == CORDBG_E_VARIABLE_IS_ACTUALLY_LITERAL) {
-    WriteError("Field is a literal. It is optimized away and is not available.");
+    WriteError(
+        "Field is a literal. It is optimized away and is not available.");
     return;
   }
 
@@ -118,7 +137,7 @@ HRESULT DbgClassField::PopulateVariableValue(
     hr = eval_coordinator->GetActiveDebugThread(&active_thread);
     if (FAILED(hr)) {
       WriteError("Failed to get active debug thread.");
-      return E_FAIL;
+      return hr;
     }
 
     CComPtr<ICorDebugFrame> debug_frame;
@@ -129,8 +148,8 @@ HRESULT DbgClassField::PopulateVariableValue(
     }
 
     CComPtr<ICorDebugValue> debug_value;
-    hr = class_type_->GetStaticFieldValue(field_def_, debug_frame,
-                                          &debug_value);
+    hr =
+        class_type_->GetStaticFieldValue(field_def_, debug_frame, &debug_value);
     if (hr == CORDBG_E_STATIC_VAR_NOT_AVAILABLE) {
       WriteError("Static variable is not yet available.");
       return hr;

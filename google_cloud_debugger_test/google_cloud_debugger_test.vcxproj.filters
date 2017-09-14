@@ -33,6 +33,9 @@
     <ClCompile Include="i_cordebug_mocks.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbgclassfield_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="i_evalcoordinator_mock.h">
