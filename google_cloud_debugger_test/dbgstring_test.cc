@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
+#include "common_action_mocks.h"
 #include "i_cordebug_mocks.h"
 
 using ::testing::Return;
@@ -84,14 +85,7 @@ TEST(DbgStringTest, GetString) {
 
   static const string test_string_value = "This is a test string";
 
-// On Linux, PAL_STDCPP_COMPAT header is used. We have to use
-// different string types because WCHAR defined on Linux is
-// different than WCHAR defined on Windows.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"This is a test string";
-#else
-  WCHAR wchar_string[] = L"This is a test string";
-#endif
+  WCHAR wchar_string[] = WCHAR_STRING(This is a test string);
 
   uint32_t string_size = test_string_value.size();
   ICorDebugStringValueMock string_value_mock;
@@ -117,14 +111,7 @@ TEST(DbgStringTest, GetStringError) {
 
   static const string test_string_value = "This is a test string";
 
-// On Linux, PAL_STDCPP_COMPAT header is used. We have to use
-// different string types because WCHAR defined on Linux is
-// different than WCHAR defined on Windows.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"This is a test string";
-#else
-  WCHAR wchar_string[] = L"This is a test string";
-#endif
+  WCHAR wchar_string[] = WCHAR_STRING(This is a test string);
 
   uint32_t string_size = test_string_value.size();
   ICorDebugStringValueMock string_value_mock;

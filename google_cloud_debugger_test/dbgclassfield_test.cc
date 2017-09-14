@@ -173,14 +173,7 @@ TEST(DbgClassFieldTest, TestGetFieldName) {
   static const string class_field_name = "FieldName";
   uint32_t class_field_name_len = class_field_name.size();
 
-// On Linux, PAL_STDCPP_COMPAT header is used. We have to use
-// different string types because WCHAR defined on Linux is
-// different than WCHAR defined on Windows.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"FieldName";
-#else
-  WCHAR wchar_string[] = L"FieldName";
-#endif
+  WCHAR wchar_string[] = WCHAR_STRING(FieldName);
 
   // GetFieldProps should be called twice.
   IMetaDataImportMock metadataimport_mock;
