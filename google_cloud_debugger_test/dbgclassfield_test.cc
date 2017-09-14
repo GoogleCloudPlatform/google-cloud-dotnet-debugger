@@ -41,9 +41,10 @@ namespace google_cloud_debugger_test {
 // This subroutine will call initializes all the neccessary mock calls and calls
 // class_field.Initialize (this function does not set the class' name).
 // If non_static_field is true, field_value will be used to populate the field.
-void InitializeDbgClassField(DbgClassField *class_field,
-                             ICorDebugTypeMock *type_mock,
-                             BOOL non_static_field, int32_t field_value = 20) {
+void InitializeDbgClassFieldTest(DbgClassField *class_field,
+                                 ICorDebugTypeMock *type_mock,
+                                 bool non_static_field,
+                                 int32_t field_value = 20) {
   IMetaDataImportMock metadataimport_mock;
   mdFieldDef field_def = 10;
   ICorDebugObjectValueMock object_value;
@@ -91,21 +92,23 @@ void InitializeDbgClassField(DbgClassField *class_field,
   class_field->Initialize(field_def, &metadataimport_mock, &object_value,
                           &debug_class, type_mock, 1);
 
-  EXPECT_EQ(class_field->GetInitializeHr(), S_OK);
+  HRESULT hr = class_field->GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
 // Tests the Initialize function of DbgClassField.
 TEST(DbgClassFieldTest, TestInitialize) {
   DbgClassField class_field;
-
   {
-    // Non-static field.
-    InitializeDbgClassField(&class_field, nullptr, TRUE, 20);
+    InitializeDbgClassFieldTest(&class_field, nullptr,
+      TRUE,     // Non-static field
+      20);
   }
 
   {
-    // Static field.
-    InitializeDbgClassField(&class_field, nullptr, FALSE, 20);
+    InitializeDbgClassFieldTest(&class_field, nullptr,
+      FALSE, // Static field.
+      20);
   }
 }
 
@@ -207,7 +210,9 @@ TEST(DbgClassFieldTest, TestGetFieldName) {
 
   class_field.Initialize(field_def, &metadataimport_mock, &object_value,
                          &debug_class, &type_mock, 1);
-  EXPECT_EQ(class_field.GetInitializeHr(), S_OK);
+
+  HRESULT hr = class_field.GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   EXPECT_EQ(class_field.GetFieldName(), class_field_name);
 }
 
@@ -218,7 +223,7 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueNonStatic) {
   int32_t field_value = 20;
 
   // Non-static field case.
-  InitializeDbgClassField(&class_field, nullptr, TRUE, field_value);
+  InitializeDbgClassFieldTest(&class_field, nullptr, TRUE, field_value);
 
   Variable variable;
   IEvalCoordinatorMock eval_coordinator;
@@ -235,7 +240,7 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueStatic) {
   DbgClassField class_field;
 
   // Static field initializing.
-  InitializeDbgClassField(&class_field, &type_mock, FALSE);
+  InitializeDbgClassFieldTest(&class_field, &type_mock, FALSE);
 
   // Generic value to be created.
   // return int32_value.
@@ -321,7 +326,7 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
     ICorDebugTypeMock type_mock;
     int32_t field_value = 20;
 
-    InitializeDbgClassField(&class_field, S_OK, field_value, 10);
+    InitializeDbgClassFieldTest(&class_field, S_OK, field_value, 10);
 
     Variable variable;
     IEvalCoordinatorMock eval_coordinator;
@@ -340,7 +345,7 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
   int32_t field_value = 40;
 
   // Static field initializing.
-  InitializeDbgClassField(&class_field, &type_mock, FALSE);
+  InitializeDbgClassFieldTest(&class_field, &type_mock, FALSE);
 
   Variable variable;
   IEvalCoordinatorMock eval_coordinator;

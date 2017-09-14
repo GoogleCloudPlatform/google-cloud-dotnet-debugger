@@ -24,7 +24,7 @@ namespace google_cloud_debugger_test {
 
 // SetArgPointee does not allow casting so we have to write our own action.
 ACTION_P2(SetArg2ToWcharArray, wchar_array, len) {
-  memcpy((LPWSTR)arg2, wchar_array, len * sizeof(WCHAR));
+  memcpy(const_cast<LPWSTR>(arg2), wchar_array, len * sizeof(WCHAR));
 }
 
 // SetArgPointee does not allow casting so we have to write our own action.

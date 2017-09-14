@@ -37,7 +37,7 @@ using std::vector;
 
 namespace google_cloud_debugger_test {
 
-void InitializeDbgClassProperty(DbgClassProperty *class_property) {
+void InitializeDbgClassPropertyTest(DbgClassProperty *class_property) {
   IMetaDataImportMock metadataimport_mock;
 
   mdProperty property_def = 10;
@@ -58,13 +58,14 @@ void InitializeDbgClassProperty(DbgClassProperty *class_property) {
 
   class_property->Initialize(property_def, &metadataimport_mock);
 
-  EXPECT_EQ(class_property->GetInitializeHr(), S_OK);
+  HRESULT hr = class_property->GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
 // Tests the Initialize function of DbgClassProperty.
 TEST(DbgClassPropertyTest, TestInitialize) {
   DbgClassProperty class_property;
-  InitializeDbgClassProperty(&class_property);
+  InitializeDbgClassPropertyTest(&class_property);
 }
 
 // Tests error cases for the Initialize function of DbgClassProperty.
@@ -127,13 +128,15 @@ TEST(DbgClassPropertyTest, TestGetPropertyName) {
                 Return(S_OK)));
 
   class_property.Initialize(property_def, &metadataimport_mock);
+  HRESULT hr = class_property.GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   EXPECT_EQ(class_property.GetPropertyName(), class_property_name);
 }
 
 // Tests the PopulateVariableValue function of DbgClassProperty.
 TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
   DbgClassProperty class_property;
-  InitializeDbgClassProperty(&class_property);
+  InitializeDbgClassPropertyTest(&class_property);
 
   // Sets various expectation for PopulateVariableValue call.
   ICorDebugObjectValueMock object_value;
@@ -243,7 +246,7 @@ TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
 // Tests the PopulateVariableValue function of DbgClassProperty.
 TEST(DbgClassPropertyTest, TestPopulateVariableValueError) {
   DbgClassProperty class_property;
-  InitializeDbgClassProperty(&class_property);
+  InitializeDbgClassPropertyTest(&class_property);
 
   // Sets various expectation for PopulateVariableValue call.
   ICorDebugObjectValueMock object_value;

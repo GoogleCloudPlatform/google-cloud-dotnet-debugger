@@ -45,13 +45,6 @@ void DbgClassField::Initialize(mdFieldDef field_def,
     return;
   }
 
-  /*
-  if (class_type == nullptr) {
-    WriteError("ICorDebugType is null.");
-    initialized_hr_ = E_INVALIDARG;
-    return;
-  }*/
-
   CComPtr<ICorDebugValue> field_value;
   ULONG len_field_name;
 
