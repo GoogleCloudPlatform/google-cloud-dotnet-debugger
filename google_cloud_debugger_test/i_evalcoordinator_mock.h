@@ -26,22 +26,24 @@ namespace google_cloud_debugger_test {
 // mock cannot mock them.
 class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
  public:
-  MOCK_METHOD1(CreateEval,
-      HRESULT(ICorDebugEval **eval));
+  MOCK_METHOD1(CreateEval, HRESULT(ICorDebugEval **eval));
 
-  MOCK_METHOD3(WaitForEval,
-      HRESULT(BOOL *exception_thrown, ICorDebugEval *eval, ICorDebugValue **eval_result));
+  MOCK_METHOD3(WaitForEval, HRESULT(BOOL *exception_thrown, ICorDebugEval *eval,
+                                    ICorDebugValue **eval_result));
 
-  MOCK_METHOD1(SignalFinishedEval,
-      void(ICorDebugThread *debug_thread));
+  MOCK_METHOD1(SignalFinishedEval, void(ICorDebugThread *debug_thread));
 
   MOCK_METHOD0(HandleException, void());
 
-  MOCK_METHOD5(PrintBreakpoint,
-      HRESULT(ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-        google_cloud_debugger::BreakpointCollection *breakpoint_collection,
-        google_cloud_debugger::DbgBreakpoint *breakpoint,
-        const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &pdb_files));
+  MOCK_METHOD5(
+      PrintBreakpoint,
+      HRESULT(
+          ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+          google_cloud_debugger::BreakpointCollection *breakpoint_collection,
+          google_cloud_debugger::DbgBreakpoint *breakpoint,
+          const std::vector<std::unique_ptr<
+              google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+              &pdb_files));
 
   MOCK_METHOD0(WaitForReadySignal, void());
 

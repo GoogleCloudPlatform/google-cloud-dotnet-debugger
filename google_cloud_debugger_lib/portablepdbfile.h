@@ -19,13 +19,7 @@
 #include <string>
 #include <vector>
 
-#include "ccomptr.h"
-#include "cor.h"
-#include "cordebug.h"
-#include "custombinaryreader.h"
-#include "documentindex.h"
-#include "metadataheaders.h"
-#include "metadatatables.h"
+#include "i_portablepdbfile.h"
 
 namespace google_cloud_debugger_portable_pdb {
 
@@ -40,7 +34,7 @@ namespace google_cloud_debugger_portable_pdb {
 //
 // To use this class, create a PortablePdbFile object and calls
 // InitializeFromFile with the path to the pdb file.
-class PortablePdbFile {
+class PortablePdbFile : public IPortablePdbFile {
  public:
   // Parse the pdb file. This method initializes the class.
   bool InitializeFromFile(const std::string &file_path);
@@ -94,7 +88,8 @@ class PortablePdbFile {
   }
 
   // Returns the document index table.
-  const std::vector<DocumentIndex> &GetDocumentIndexTable() const {
+  const std::vector<std::unique_ptr<IDocumentIndex>> &GetDocumentIndexTable()
+      const {
     return document_indices_;
   }
 
@@ -154,7 +149,7 @@ class PortablePdbFile {
   mutable std::vector<std::string> heap_strings_;
 
   // Vector of all document indices inside this pdb.
-  std::vector<DocumentIndex> document_indices_;
+  std::vector<std::unique_ptr<IDocumentIndex>> document_indices_;
 
   // The ICorDebugModule of the module of this PDB.
   google_cloud_debugger::CComPtr<ICorDebugModule> debug_module_;

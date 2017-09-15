@@ -172,7 +172,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   HRESULT EnumerateAppDomains(std::vector<CComPtr<ICorDebugAppDomain>> *result);
 
   // Returns all the PDB files that are parsed.
-  const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile> &GetPdbFiles() const {
+  const std::vector<
+      std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+      &GetPdbFiles() const {
     return portable_pdbs_;
   }
 
@@ -253,7 +255,8 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   std::atomic<ULONG> ref_count_;
 
   // Vector containing all the portable PDB files that are parsed.
-  std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+  std::vector<
+      std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       portable_pdbs_;
 
   // The ICorDebugProcess of the debugged process.

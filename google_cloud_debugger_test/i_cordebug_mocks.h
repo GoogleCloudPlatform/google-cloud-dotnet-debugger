@@ -254,6 +254,15 @@ class ICorDebugEval2Mock : public ICorDebugEval2 {
   MOCK_METHOD0(RudeAbort, HRESULT(void));
 };
 
+class ICorDebugBreakpointMock : public ICorDebugBreakpoint {
+ public:
+  MOCK_METHOD2(QueryInterface, HRESULT(REFIID riid, void **ppvObject));
+  MOCK_METHOD0(AddRef, ULONG(void));
+  MOCK_METHOD0(Release, ULONG(void));
+  MOCK_METHOD1(Activate, HRESULT(BOOL bActive));
+  MOCK_METHOD1(IsActive, HRESULT(BOOL *pbActive));
+};
+
 // Mock class for ICorDebugType.
 class ICorDebugTypeMock : public ICorDebugType {
  public:

@@ -22,14 +22,16 @@
 
 #include "ccomptr.h"
 #include "dbgstackframe.h"
+#include "portablepdbfile.h"
 
-namespace google_cloud_debugger {
-
+using google_cloud_debugger_portable_pdb::IPortablePdbFile;
 using google_cloud_debugger_portable_pdb::PortablePdbFile;
 using std::cerr;
 using std::cout;
 using std::string;
 using std::vector;
+
+namespace google_cloud_debugger {
 
 const string DebuggerCallback::kDllExtension = ".dll";
 const string DebuggerCallback::kPdbExtension = ".pdb";
@@ -240,21 +242,28 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return hr;
   }
 
-  PortablePdbFile portable_pdb;
-  if (!portable_pdb.InitializeFromFile(module_name)) {
+  std::unique_ptr<IPortablePdbFile> portable_pdb(new (std::nothrow)
+                                                     PortablePdbFile());
+  if (!portable_pdb) {
+    cerr << "Cannot create PortablePdbFile object.";
+    appdomain->Continue(FALSE);
+    return E_OUTOFMEMORY;
+  }
+
+  if (!portable_pdb->InitializeFromFile(module_name)) {
     cerr << "Failed to parse pdb file for module " << module_name;
     appdomain->Continue(FALSE);
     return hr;
   }
 
-  hr = portable_pdb.SetDebugModule(debug_module);
+  hr = portable_pdb->SetDebugModule(debug_module);
   if (FAILED(hr)) {
     cerr << "Failed set debug module for PortablePdbFile.";
     return appdomain->Continue(FALSE);
   }
 
   // Initialize possible breakpoints with this pdb.
-  hr = breakpoint_collection_->InitializeBreakpoints(portable_pdb);
+  hr = breakpoint_collection_->InitializeBreakpoints(*portable_pdb);
   if (FAILED(hr)) {
     cerr << "Failed to update breakpoint.";
     return appdomain->Continue(FALSE);

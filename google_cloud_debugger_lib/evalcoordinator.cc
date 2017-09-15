@@ -98,7 +98,8 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
     BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
-    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+    const std::vector<
+        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";

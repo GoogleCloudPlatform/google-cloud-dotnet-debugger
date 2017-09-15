@@ -22,7 +22,7 @@
 #include "cor.h"
 #include "cordebug.h"
 #include "dbgstackframe.h"
-#include "portablepdbfile.h"
+#include "i_portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
@@ -32,7 +32,8 @@ class StackFrameCollection {
   // breakpoint breakpoint and try to populate the stack frames vector.
   HRESULT Initialize(
       ICorDebugStackWalk *debug_stack_walk,
-      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+      const std::vector<
+          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files);
 
   // Populates the stack frames of a breakpoint using stack_frames.
@@ -50,7 +51,7 @@ class StackFrameCollection {
   HRESULT PopulateLocalVarsAndMethodArgs(
       mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
       ICorDebugILFrame *il_frame,
-      const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_files);
+      const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_files);
 
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;

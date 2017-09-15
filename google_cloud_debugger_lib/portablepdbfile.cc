@@ -18,17 +18,19 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <memory>
 
 #include "custombinaryreader.h"
 #include "metadataheaders.h"
 #include "metadatatables.h"
 
-namespace google_cloud_debugger_portable_pdb {
-
 using google_cloud_debugger::CComPtr;
 using std::array;
 using std::string;
+using std::unique_ptr;
 using std::vector;
+
+namespace google_cloud_debugger_portable_pdb {
 
 bool PortablePdbFile::GetStream(const string &name,
                                 StreamHeader *stream_header) const {
@@ -112,8 +114,9 @@ bool PortablePdbFile::InitializeFromFile(const string &file_path) {
   if (document_table_.size() > 1) {
     document_indices_.reserve(document_table_.size() - 1);
     for (size_t i = 1; i < document_table_.size(); ++i) {
-      DocumentIndex document_index;
-      if (!document_index.Initialize(*this, i)) {
+      unique_ptr<DocumentIndex> document_index(new (std::nothrow)
+                                                   DocumentIndex());
+      if (!document_index || !document_index->Initialize(*this, i)) {
         return false;
       }
       document_indices_.push_back(std::move(document_index));

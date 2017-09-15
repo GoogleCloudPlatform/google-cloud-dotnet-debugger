@@ -54,7 +54,7 @@ class BreakpointCollection {
   // Subsequent update for breakpoints should be done with SyncBreakpoints
   // functions.
   HRESULT InitializeBreakpoints(
-      const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb);
+      const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb);
 
   // Given a breakpoint, try to activate it or deactivate it (based on
   // the Activated() method of the breakpoint). We first do this by
@@ -87,7 +87,8 @@ class BreakpointCollection {
       mdMethodDef function_token, ULONG32 il_offset,
       EvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
       ICorDebugStackWalk *debug_stack_walk,
-      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+      const std::vector<
+          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files);
 
  private:
@@ -103,7 +104,7 @@ class BreakpointCollection {
   // the TryGetBreakpoint method is called on the breakpoint.
   HRESULT ActivateBreakpointHelper(
       DbgBreakpoint *breakpoint,
-      const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb);
+      const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb);
 
   // Helper function to activate or deactivate an existing breakpoint.
   HRESULT ActivateOrDeactivateExistingBreakpoint(

@@ -22,7 +22,7 @@
 #include "metadatatables.h"
 
 namespace google_cloud_debugger_portable_pdb {
-class PortablePdbFile;
+class IPortablePdbFile;
 
 // Struct that represents a sequence point in a method.
 // Unlike SequencePointRecord struct, this struct has
@@ -120,11 +120,28 @@ struct MethodInfo {
 // user-friendly copy of all the data encoded in the PDB's metadata table.
 //
 // A document index is initialized by calling the Initialize method.
-class DocumentIndex {
+class IDocumentIndex {
+ public:
+  // Destructor.
+  virtual ~IDocumentIndex() = default;
+
+  // Initialize this document index to the document at index doc_index
+  // in the DocumentTable of the Portable PDB file pdb.
+  virtual bool Initialize(const IPortablePdbFile &pdb, int doc_index) = 0;
+
+  // Returns the file path of this document.
+  virtual const std::string &GetFilePath() const = 0;
+
+  // Returns all the methods in this document.
+  virtual const std::vector<MethodInfo> &GetMethods() const = 0;
+};
+
+// Implementation of IDocumentIndex interface.
+class DocumentIndex : public IDocumentIndex {
  public:
   // Initialize this document index to the document at index doc_index
   // in the DocumentTable of the Portable PDB file pdb.
-  bool Initialize(const PortablePdbFile &pdb, int doc_index);
+  bool Initialize(const IPortablePdbFile &pdb, int doc_index);
 
   // Returns the file path of this document.
   const std::string &GetFilePath() const { return file_path_; }
@@ -136,7 +153,7 @@ class DocumentIndex {
   // Populate a method object that corresponds to MethodDebugInformationRow
   // debug_info_row. This function assumes that the method only spans
   // 1 document.
-  bool ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
+  bool ParseMethod(MethodInfo *method, const IPortablePdbFile &pdb,
                    const MethodDebugInformationRow &debug_info_row,
                    std::uint32_t method_def, std::uint32_t doc_index);
 
@@ -144,7 +161,7 @@ class DocumentIndex {
   // local_scope_row. The Scope object will have its variable
   // and constant tables filled up with variables and constants that
   // belong to the scope.
-  bool ParseScope(Scope *scope, const PortablePdbFile &pdb,
+  bool ParseScope(Scope *scope, const IPortablePdbFile &pdb,
                   const LocalScopeRow &local_scope_row,
                   const std::vector<LocalScopeRow> &local_scope_table,
                   const std::vector<LocalVariableRow> &local_variable_table,

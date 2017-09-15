@@ -24,7 +24,7 @@
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
-#include "portablepdbfile.h"
+#include "i_portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
@@ -68,7 +68,7 @@ class IEvalCoordinator {
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   virtual HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
-                      ICorDebugValue **eval_result) = 0;
+                              ICorDebugValue **eval_result) = 0;
 
   // DebuggerCallback calls this function to signal that an evaluation is
   // finished.
@@ -82,9 +82,9 @@ class IEvalCoordinator {
   // debug_stack_walk.
   virtual HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      BreakpointCollection *breakpoint_collection,
-      DbgBreakpoint *breakpoint,
-      const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+      BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+      const std::vector<
+          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;
 
   // StackFrame calls this to signal that it already processed all the
@@ -107,7 +107,6 @@ class IEvalCoordinator {
 
   // Returns whether property evaluation should be performed.
   virtual BOOL PropertyEvaluation() = 0;
-
 };
 
 }  //  namespace google_cloud_debugger
