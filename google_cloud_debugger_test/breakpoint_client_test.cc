@@ -39,9 +39,10 @@ namespace google_cloud_debugger_test {
 // TestFunction is the name of the BreakpointClient's function we are testing.
 // TestFunctionReturnValue is what the underlying NamedPipe's function will
 // return.
+// TODO(quoct): Look into creating a template instead of using macro.
 #define BREAKPOINT_CLIENT_SIMPLE_TEST(TestFunction, TestFunctionReturnValue)  \
   unique_ptr<INamedPipeMock> named_pipe(new (std::nothrow) INamedPipeMock()); \
-  EXPECT_CALL(*named_pipe.get(), TestFunction())                              \
+  EXPECT_CALL(*named_pipe, TestFunction())                              \
       .Times(1)                                                               \
       .WillRepeatedly(Return(TestFunctionReturnValue));                       \
   BreakpointClient client(std::move(named_pipe));                             \
@@ -112,24 +113,26 @@ string SetBreakpointAndSerialize(Breakpoint *breakpoint, bool activated,
 // Tests ReadBreakpoint function of BreakpointClient.
 TEST(BreakpointClientTest, ReadBreakpoint) {
   Breakpoint breakpoint;
+  uint32_t breakpoint_line = 35;
   string breakpoint_string =
-      SetBreakpointAndSerialize(&breakpoint, true, 35, "My Path");
+      SetBreakpointAndSerialize(&breakpoint, true, breakpoint_line, "My Path");
 
   // Breaks up the breakpoint_string into chunks.
   vector<string> breakpoint_string_chunks;
   int32_t chunk_size = 5;
-  for (size_t i = 0; i < breakpoint_string.length(); i += chunk_size) {
+  for (string::size_type i = 0; i < breakpoint_string.length(); i += chunk_size) {
     breakpoint_string_chunks.push_back(breakpoint_string.substr(i, chunk_size));
   }
 
-  std::reverse(breakpoint_string_chunks.begin(),
-               breakpoint_string_chunks.end());
+  std::reverse(begin(breakpoint_string_chunks),
+               end(breakpoint_string_chunks));
 
   unique_ptr<INamedPipeMock> named_pipe(new (std::nothrow) INamedPipeMock());
+  assert(named_pipe != nullptr);
 
   // Makes the Read function of named pipe returns chunks from
   // breakpoint_string_chunks.
-  EXPECT_CALL(*named_pipe.get(), Read(_))
+  EXPECT_CALL(*named_pipe, Read(_))
       .WillRepeatedly(DoAll(
           ReadFromStringVectorToArg0(&breakpoint_string_chunks), Return(S_OK)));
   BreakpointClient client(std::move(named_pipe));
@@ -145,8 +148,9 @@ TEST(BreakpointClientTest, ReadBreakpoint) {
 // Tests error case of ReadBreakpoint function of BreakpointClient.
 TEST(BreakpointClientTest, ReadBreakpointError) {
   unique_ptr<INamedPipeMock> named_pipe(new (std::nothrow) INamedPipeMock());
+  assert(named_pipe != nullptr);
 
-  EXPECT_CALL(*named_pipe.get(), Read(_))
+  EXPECT_CALL(*named_pipe, Read(_))
       .Times(1)
       .WillRepeatedly(Return(E_APPLICATION_EXITING));
   BreakpointClient client(std::move(named_pipe));
@@ -164,7 +168,7 @@ TEST(BreakpointClientTest, WriteBreakpoint) {
   unique_ptr<INamedPipeMock> named_pipe(new (std::nothrow) INamedPipeMock());
 
   string breakpoint_to_write;
-  EXPECT_CALL(*named_pipe.get(), Write(_))
+  EXPECT_CALL(*named_pipe, Write(_))
       .WillRepeatedly(DoAll(SaveArg<0>(&breakpoint_to_write), Return(S_OK)));
   BreakpointClient client(std::move(named_pipe));
 
@@ -180,7 +184,7 @@ TEST(BreakpointClientTest, WriteBreakpointError) {
 
   unique_ptr<INamedPipeMock> named_pipe(new (std::nothrow) INamedPipeMock());
 
-  EXPECT_CALL(*named_pipe.get(), Write(_)).WillRepeatedly(Return(E_ABORT));
+  EXPECT_CALL(*named_pipe, Write(_)).WillRepeatedly(Return(E_ABORT));
   BreakpointClient client(std::move(named_pipe));
 
   EXPECT_EQ(client.WriteBreakpoint(breakpoint), E_ABORT);
