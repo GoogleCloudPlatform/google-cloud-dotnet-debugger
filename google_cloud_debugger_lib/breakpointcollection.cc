@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include "named_pipe_client.h"
 #include "debuggercallback.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;

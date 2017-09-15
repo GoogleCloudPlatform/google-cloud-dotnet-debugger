@@ -100,14 +100,7 @@ TEST(DbgClassPropertyTest, TestGetPropertyName) {
   static const string class_property_name = "PropertyName";
   uint32_t class_property_name_len = class_property_name.size();
 
-// On Linux, PAL_STDCPP_COMPAT header is used. We have to use
-// different string types because WCHAR defined on Linux is
-// different than WCHAR defined on Windows.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"PropertyName";
-#else
-  WCHAR wchar_string[] = L"PropertyName";
-#endif
+  WCHAR wchar_string[] = WCHAR_STRING(PropertyName);
 
   // GetPropertyProps should be called twice.
   EXPECT_CALL(metadataimport_mock,

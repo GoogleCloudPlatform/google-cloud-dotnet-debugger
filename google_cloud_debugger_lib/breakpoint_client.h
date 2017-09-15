@@ -23,14 +23,14 @@
 
 #include "breakpoint.pb.h"
 #include "constants.h"
-#include "named_pipe_client.h"
+#include "i_named_pipe.h"
 
 namespace google_cloud_debugger {
 
 class BreakpointClient {
  public:
   // Creates a breakpoint client and accepts a NamedPipeClient.
-  BreakpointClient(std::unique_ptr<NamedPipeClient> pipe);
+  BreakpointClient(std::unique_ptr<INamedPipe> pipe);
 
   // Initializes the client and returns an HRESULT.
   HRESULT Initialize();
@@ -56,7 +56,7 @@ class BreakpointClient {
 
  private:
   // The pipe client to send messages.
-  std::unique_ptr<NamedPipeClient> pipe_;
+  std::unique_ptr<INamedPipe> pipe_;
 
   // A buffer to hold partial breakpoint messages.
   std::string buffer_;

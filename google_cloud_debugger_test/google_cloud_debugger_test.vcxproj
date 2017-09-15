@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="breakpoint_client_test.cc" />
     <ClCompile Include="dbgclassfield_test.cc" />
     <ClCompile Include="i_cordebug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
@@ -160,6 +161,7 @@
     <ClInclude Include="common_action_mocks.h" />
     <ClInclude Include="i_evalcoordinator_mock.h" />
     <ClInclude Include="i_metadataimport_mock.h" />
+    <ClInclude Include="i_named_pipe_mock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

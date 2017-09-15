@@ -24,7 +24,7 @@ using namespace google::cloud::diagnostics::debug;
 
 namespace google_cloud_debugger {
 
-BreakpointClient::BreakpointClient(std::unique_ptr<NamedPipeClient> pipe)
+BreakpointClient::BreakpointClient(std::unique_ptr<INamedPipe> pipe)
     : pipe_(std::move(pipe)) {}
 
 HRESULT BreakpointClient::Initialize() { return pipe_->Initialize(); }
