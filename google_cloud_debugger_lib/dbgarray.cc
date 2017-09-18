@@ -29,13 +29,27 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   ULONG32 array_rank;
   debug_type = GetDebugType();
 
-  if (!is_null) {
-    initialize_hr_ =
-        CreateStrongHandle(debug_value, &array_handle_, GetErrorStream());
-    if (FAILED(initialize_hr_)) {
-      WriteError("Failed to create a handle for the array.");
-      return;
+  if (!debug_type) {
+    WriteError("ICorDebugType for array is null.");
+    initialize_hr_ = E_INVALIDARG;
+    return;
+  }
+
+  initialize_hr_ = debug_type->GetFirstTypeParameter(&array_type_);
+  if (FAILED(initialize_hr_)) {
+    WriteError("Failed to get the array type.");
+    return;
+  }
+
+  // Create an empty object for the type.
+  initialize_hr_ =
+      DbgObject::CreateDbgObject(array_type_, &empty_object_, GetErrorStream());
+  if (FAILED(initialize_hr_)) {
+    WriteError("Failed to create an empty object for the array type.");
+    if (empty_object_) {
+      WriteError(empty_object_->GetErrorString());
     }
+    return;
   }
 
   initialize_hr_ = debug_type->GetRank(&array_rank);
@@ -45,6 +59,23 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   }
 
   dimensions_.resize(array_rank);
+
+  if (is_null) {
+    return;
+  }
+
+  if (!debug_value) {
+    WriteError("ICorDebugValue is null for non-null array.");
+    initialize_hr_ = E_INVALIDARG;
+    return;
+  }
+
+  initialize_hr_ =
+      CreateStrongHandle(debug_value, &array_handle_, GetErrorStream());
+  if (FAILED(initialize_hr_)) {
+    WriteError("Failed to create a handle for the array.");
+    return;
+  }
 
   CComPtr<ICorDebugArrayValue> debug_array_value;
 
@@ -67,22 +98,6 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     if (FAILED(initialize_hr_)) {
       WriteError("Failed to get dimensions of the array.");
       return;
-    }
-  }
-
-  initialize_hr_ = debug_type->GetFirstTypeParameter(&array_type_);
-  if (FAILED(initialize_hr_)) {
-    WriteError("Failed to get the array type.");
-    return;
-  }
-
-  // Create an empty object for the type.
-  initialize_hr_ =
-      DbgObject::CreateDbgObject(array_type_, &empty_object_, GetErrorStream());
-  if (FAILED(initialize_hr_)) {
-    WriteError("Failed to create an empty object for the array type.");
-    if (empty_object_) {
-      WriteError(empty_object_->GetErrorString());
     }
   }
 }
