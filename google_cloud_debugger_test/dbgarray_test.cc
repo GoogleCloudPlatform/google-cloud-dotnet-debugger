@@ -44,8 +44,6 @@ TEST(DbgArrayTest, Initialize) {
   EXPECT_CALL(array_element_type, GetType(_))
     .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4), Return(S_OK)));
 
-  DbgArray dbgarray(&array_type, 0);
-
   ICorDebugArrayValueMock array_value;
 
   // By default, sets array_value to the second argument
@@ -61,6 +59,13 @@ TEST(DbgArrayTest, Initialize) {
   ON_CALL(array_value, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
     .WillByDefault(DoAll(SetArgPointee<1>(&heap_value), Return(S_OK)));
 
+  // Makes heap_value returns handle_value if CreateHandle is called.
+  ICorDebugHandleValueMock handle_value;
+  EXPECT_CALL(heap_value, CreateHandle(_, _))
+      .Times(1)
+      .WillRepeatedly(
+          DoAll(SetArgPointee<1>(&handle_value), Return(S_OK)));
+
   // Initialize function should issue call to get dimensions
   // and ranks of the array.
   EXPECT_CALL(array_value, GetDimensions(_, _))
@@ -71,9 +76,15 @@ TEST(DbgArrayTest, Initialize) {
     .Times(1)
     .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(S_OK)));
 
-  dbgarray.Initialize(&array_value, FALSE);
-  HRESULT hr = dbgarray.GetInitializeHr();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  // Have to make sure that the mock value survives after
+  // the destructor of DbgArray is called, otherwise, DbgArray
+  // may try to delete value that is obselete.
+  {
+    DbgArray dbgarray(&array_type, 0);
+    dbgarray.Initialize(&array_value, FALSE);
+    HRESULT hr = dbgarray.GetInitializeHr();
+    EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  }
 }
 
 // Tests error cases for Initialize function of DbgArray.
@@ -92,10 +103,9 @@ TEST(DbgArrayTest, InitializeError) {
   ICorDebugTypeMock array_type;
   ICorDebugTypeMock array_element_type;
 
-  DbgArray dbgarray(&array_type, 0);
-
   // Makes GetFirstTypeParameter returns error.
   {
+    DbgArray dbgarray(&array_type, 0);
     EXPECT_CALL(array_type, GetFirstTypeParameter(_))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_CONTEXT_UNVAILABLE));
@@ -108,6 +118,7 @@ TEST(DbgArrayTest, InitializeError) {
 
   // Returns failure when querying the element type of the array.
   {
+    DbgArray dbgarray(&array_type, 0);
     EXPECT_CALL(array_element_type, GetType(_))
       .WillRepeatedly(Return(E_ACCESSDENIED));
     dbgarray.Initialize(&array_value, FALSE);
@@ -119,6 +130,7 @@ TEST(DbgArrayTest, InitializeError) {
 
   // Makes GetRank returns error.
   {
+    DbgArray dbgarray(&array_type, 0);
     EXPECT_CALL(array_type, GetRank(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(COR_E_SAFEARRAYRANKMISMATCH)));
     dbgarray.Initialize(&array_value, FALSE);
@@ -136,6 +148,7 @@ TEST(DbgArrayTest, InitializeError) {
 
   // Returns error when trying to create a handle for the array.
   {
+    DbgArray dbgarray(&array_type, 0);
     ON_CALL(array_value, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
       .WillByDefault(Return(E_NOINTERFACE));
     dbgarray.Initialize(&array_value, FALSE);
@@ -146,17 +159,31 @@ TEST(DbgArrayTest, InitializeError) {
   ON_CALL(array_value, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
     .WillByDefault(DoAll(SetArgPointee<1>(&heap_value), Return(S_OK)));
 
+  // Returns error when trying to create a handle for the array.
+  {
+    DbgArray dbgarray(&array_type, 0);
+    EXPECT_CALL(heap_value, CreateHandle(_, _))
+        .Times(1)
+        .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
+    dbgarray.Initialize(&array_value, FALSE);
+    EXPECT_EQ(dbgarray.GetInitializeHr(), CORDBG_E_BAD_REFERENCE_VALUE);
+  }
+
+  // Makes heap_value returns handle_value if CreateHandle is called.
+  ICorDebugHandleValueMock handle_value;
+  EXPECT_CALL(heap_value, CreateHandle(_, _))
+      .WillRepeatedly(
+          DoAll(SetArgPointee<1>(&handle_value), Return(S_OK)));
+
   // Makes GetDimensions returns incorrect value.
   {
     EXPECT_CALL(array_value, GetDimensions(_, _))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_S_BAD_START_SEQUENCE_POINT));
+    DbgArray dbgarray(&array_type, 0);
     dbgarray.Initialize(&array_value, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), CORDBG_S_BAD_START_SEQUENCE_POINT);
   }
-
-  EXPECT_CALL(array_value, GetDimensions(_, _))
-    .WillRepeatedly(Return(S_OK));
 }
 
 }  // namespace google_cloud_debugger_test

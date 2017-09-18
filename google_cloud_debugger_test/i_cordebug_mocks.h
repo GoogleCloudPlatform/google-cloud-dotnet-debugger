@@ -123,15 +123,9 @@ class ICorDebugClassMock : public ICorDebugClass {
                        ICorDebugValue **ppValue));
 };
 
-class ICorDebugHeapValue2Mock : public ICorDebugHeapValue,
-  public ICorDebugHeapValue2 {
+class ICorDebugHeapValue2Mock : public ICorDebugHeapValue2 {
 public:
-  ICORDEBUG_MOCK
-
-  MOCK_METHOD1(IsValid, HRESULT(BOOL *pbValid));
-
-  MOCK_METHOD1(CreateRelocBreakpoint,
-               HRESULT(ICorDebugValueBreakpoint **pBreakpoint));
+  IUNKNOWN_MOCK
 
   MOCK_METHOD2(CreateHandle, HRESULT(CorDebugHandleType type,
                                      ICorDebugHandleValue **ppHandle));
