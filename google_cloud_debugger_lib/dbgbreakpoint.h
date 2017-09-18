@@ -27,8 +27,8 @@
 
 namespace google_cloud_debugger {
 
-class EvalCoordinator;
-class StackFrameCollection;
+class IEvalCoordinator;
+class IStackFrameCollection;
 
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
@@ -113,7 +113,7 @@ class DbgBreakpoint {
   // are already called (so stack_frames are already populated with variables).
   HRESULT PopulateBreakpoint(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
-      StackFrameCollection *stack_frames, EvalCoordinator *eval_coordinator);
+      IStackFrameCollection *stack_frames, IEvalCoordinator *eval_coordinator);
 
  private:
   // Given a method, try to see whether we can set this breakpoint in

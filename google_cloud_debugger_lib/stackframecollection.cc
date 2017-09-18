@@ -18,7 +18,7 @@
 #include <iostream>
 
 #include "dbgbreakpoint.h"
-#include "evalcoordinator.h"
+#include "i_evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -153,7 +153,7 @@ HRESULT StackFrameCollection::Initialize(
 }
 
 HRESULT StackFrameCollection::PopulateStackFrames(
-    Breakpoint *breakpoint, EvalCoordinator *eval_coordinator) {
+    Breakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
   if (!breakpoint || !eval_coordinator) {
     cerr << "Null breakpoint or eval coordinator.";
     return E_INVALIDARG;

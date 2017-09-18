@@ -18,7 +18,7 @@
 #include <cctype>
 
 #include "evalcoordinator.h"
-#include "stackframecollection.h"
+#include "i_stackframecollection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -131,8 +131,8 @@ bool DbgBreakpoint::TrySetBreakpoint(
 }
 
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
-                                          StackFrameCollection *stack_frames,
-                                          EvalCoordinator *eval_coordinator) {
+                                          IStackFrameCollection *stack_frames,
+                                          IEvalCoordinator *eval_coordinator) {
   if (!stack_frames) {
     cerr << "Stack frame collection is null.";
     return E_INVALIDARG;
@@ -140,6 +140,11 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
   if (!breakpoint) {
     cerr << "Breakpoint proto is null.";
+    return E_INVALIDARG;
+  }
+
+  if (!eval_coordinator) {
+    cerr << "EvailCoordinator is null.";
     return E_INVALIDARG;
   }
 

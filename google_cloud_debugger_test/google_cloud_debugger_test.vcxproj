@@ -164,6 +164,7 @@
     <ClInclude Include="i_metadataimport_mock.h" />
     <ClInclude Include="i_named_pipe_mock.h" />
     <ClInclude Include="i_portablepdb_mocks.h" />
+    <ClInclude Include="i_stackframecollection_mock.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

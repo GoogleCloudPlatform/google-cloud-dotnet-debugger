@@ -32,27 +32,30 @@ typedef std::tuple<std::string, std::unique_ptr<DbgObject>,
     VariableTuple;
 
 class DebuggerCallback;
-class EvalCoordinator;
+class IEvalCoordinator;
 class DbgBreakpoint;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
 // at a stack frame. It also stores useful debugging information like
-// method name, class name, file name and line number. 
+// method name, class name, file name and line number.
 class DbgStackFrame {
  public:
   // Populate method_name_, file_name_, line_number_ and breakpoint_id_.
   // Also populate local variables and method arguments into variables_
   // vectors.
-  HRESULT Initialize(ICorDebugILFrame *il_frame,
-                     const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo> &variable_infos,
-                     mdMethodDef method_token,
-                     IMetaDataImport *metadata_import);
+  HRESULT Initialize(
+      ICorDebugILFrame *il_frame,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
+          &variable_infos,
+      mdMethodDef method_token, IMetaDataImport *metadata_import);
 
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
-  HRESULT PopulateLocalVariables(ICorDebugValueEnum *local_enum,
-                                 const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo> &variable_infos);
+  HRESULT PopulateLocalVariables(
+      ICorDebugValueEnum *local_enum,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
+          &variable_infos);
 
   // Extract method arguments from method_arg_enum.
   // DbgBreakpoint and IMetaDataImport objects are used
@@ -64,7 +67,9 @@ class DbgStackFrame {
   // Populates the StackFrame object with local variables, method arguments,
   // method name, class name, file name and line number.
   // This method may perform function evaluation using eval_coordinator.
-  HRESULT PopulateStackFrame(google::cloud::diagnostics::debug::StackFrame *stack_frame, EvalCoordinator *eval_coordinator) const;
+  HRESULT PopulateStackFrame(
+      google::cloud::diagnostics::debug::StackFrame *stack_frame,
+      IEvalCoordinator *eval_coordinator) const;
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);

@@ -197,6 +197,7 @@
     <ClInclude Include="i_evalcoordinator.h" />
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="i_portablepdbfile.h" />
+    <ClInclude Include="i_stackframecollection.h" />
     <ClInclude Include="named_pipe_client.h" />
     <ClInclude Include="named_pipe_client_unix.h" />
     <ClInclude Include="named_pipe_client_windows.h" />

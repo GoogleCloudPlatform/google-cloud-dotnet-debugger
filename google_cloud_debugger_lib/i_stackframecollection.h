@@ -12,47 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STACK_FRAME_COLLECTION_H_
-#define STACK_FRAME_COLLECTION_H_
+#ifndef I_STACK_FRAME_COLLECTION_H_
+#define I_STACK_FRAME_COLLECTION_H_
 
 #include <vector>
 
-#include "dbgstackframe.h"
-#include "i_stackframecollection.h"
+#include "breakpoint.pb.h"
+#include "cor.h"
+#include "cordebug.h"
+#include "i_evalcoordinator.h"
+#include "i_portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
-class StackFrameCollection : public IStackFrameCollection {
+class IStackFrameCollection {
  public:
+  virtual ~IStackFrameCollection() = default;
+
   // Using vector of PDB files, we walk through the stack debug_stack_walk at
   // breakpoint breakpoint and try to populate the stack frames vector.
-  HRESULT Initialize(
+  virtual HRESULT Initialize(
       ICorDebugStackWalk *debug_stack_walk,
       const std::vector<
           std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files);
+          &pdb_files) = 0;
 
   // Populates the stack frames of a breakpoint using stack_frames.
   // eval_coordinator will be used to perform eval coordination during function
   // evaluation if needed.
-  HRESULT PopulateStackFrames(
+  virtual HRESULT PopulateStackFrames(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
-      IEvalCoordinator *eval_coordinator);
-
- private:
-  // Given a PDB file, this function tries to find the metadata of the function
-  // with token target_function_token in the PDB file. If found, this function
-  // will populate dbg_stack_frame using the metadata found and the
-  // ICorDebugILFrame il_frame object.
-  HRESULT PopulateLocalVarsAndMethodArgs(
-      mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
-      ICorDebugILFrame *il_frame,
-      const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_files);
-
-  // Vectors of stack frames that this collection owns.
-  std::vector<DbgStackFrame> stack_frames_;
+      IEvalCoordinator *eval_coordinator) = 0;
 };
 
 }  //  namespace google_cloud_debugger
 
-#endif  // STACK_FRAME_COLLECTION_H_
+#endif  // I_STACK_FRAME_COLLECTION_H_
