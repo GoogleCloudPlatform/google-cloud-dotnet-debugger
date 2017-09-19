@@ -123,6 +123,61 @@ class ICorDebugClassMock : public ICorDebugClass {
                        ICorDebugValue **ppValue));
 };
 
+class ICorDebugHeapValue2Mock : public ICorDebugHeapValue2 {
+public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD2(CreateHandle, HRESULT(CorDebugHandleType type,
+                                     ICorDebugHandleValue **ppHandle));
+};
+
+// Mock class for ICorDebugClass.
+class ICorDebugArrayValueMock : public ICorDebugArrayValue {
+ public:
+  ICORDEBUG_MOCK
+
+  MOCK_METHOD1(IsValid,
+      HRESULT(BOOL * pbValid));
+  MOCK_METHOD1(CreateRelocBreakpoint,
+      HRESULT(ICorDebugValueBreakpoint ** ppBreakpoint));
+  MOCK_METHOD1(GetElementType,
+      HRESULT(CorElementType * pType));
+  MOCK_METHOD1(GetRank,
+      HRESULT(ULONG32 * pnRank));
+  MOCK_METHOD1(GetCount,
+      HRESULT(ULONG32 * pnCount));
+  MOCK_METHOD2(GetDimensions,
+      HRESULT(ULONG32 cdim, ULONG32 dims[]));
+  MOCK_METHOD1(HasBaseIndicies,
+      HRESULT(BOOL * pbHasBaseIndicies));
+  MOCK_METHOD2(GetBaseIndicies,
+      HRESULT(ULONG32 cdim, ULONG32 indicies[]));
+  MOCK_METHOD3(GetElement,
+      HRESULT(ULONG32 cdim, ULONG32 indices[], ICorDebugValue ** ppValue));
+  MOCK_METHOD2(GetElementAtPosition,
+      HRESULT(ULONG32 nPosition, ICorDebugValue ** ppValue));
+};
+
+class ICorDebugHandleValueMock : public ICorDebugHandleValue {
+ public:
+  ICORDEBUG_MOCK
+
+  MOCK_METHOD1(IsNull,
+      HRESULT(BOOL * pbNull));
+  MOCK_METHOD1(GetValue,
+      HRESULT(CORDB_ADDRESS * pValue));
+  MOCK_METHOD1(SetValue,
+      HRESULT(CORDB_ADDRESS value));
+  MOCK_METHOD1(Dereference,
+      HRESULT(ICorDebugValue ** ppValue));
+  MOCK_METHOD1(DereferenceStrong,
+      HRESULT(ICorDebugValue ** ppValue));
+  MOCK_METHOD1(GetHandleType,
+      HRESULT(CorDebugHandleType * pType));
+  MOCK_METHOD0(Dispose,
+      HRESULT(void));
+};
+
 class ICorDebugThreadMock : public ICorDebugThread {
  public:
   IUNKNOWN_MOCK

@@ -42,6 +42,9 @@
     <ClCompile Include="dbgbreakpoint_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbgarray_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="i_evalcoordinator_mock.h">

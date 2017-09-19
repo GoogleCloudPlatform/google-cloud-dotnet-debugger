@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="breakpoint_client_test.cc" />
     <ClCompile Include="dbgbreakpoint_test.cc" />
+    <ClCompile Include="dbgarray_test.cc" />
     <ClCompile Include="dbgclassfield_test.cc" />
     <ClCompile Include="i_cordebug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
