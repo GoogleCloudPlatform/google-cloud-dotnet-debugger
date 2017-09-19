@@ -26,12 +26,12 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     public class BreakpointServerTests
     {
         private readonly BreakpointServer _server;
-        private readonly Mock<INamedPipe> _pipeMock;
+        private readonly Mock<INamedPipeServer> _pipeMock;
         private readonly CancellationTokenSource _cts;
 
         public BreakpointServerTests()
         {
-            _pipeMock = new Mock<INamedPipe>();
+            _pipeMock = new Mock<INamedPipeServer>();
             _server = new BreakpointServer(_pipeMock.Object);
             _cts = new CancellationTokenSource();
         }
