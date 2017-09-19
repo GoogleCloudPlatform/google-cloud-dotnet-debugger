@@ -46,10 +46,10 @@ dbgclassproperty.o: dbgclassproperty.h dbgclassproperty.cc
 dbgstackframe.o: dbgstackframe.h dbgstackframe.cc
 	clang-3.5 dbgstackframe.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstackframe.o
 
-evalcoordinator.o: evalcoordinator.h evalcoordinator.cc
+evalcoordinator.o: i_evalcoordinator.h evalcoordinator.h evalcoordinator.cc
 	clang-3.5 evalcoordinator.cc ${INCDIRS} ${CC_FLAGS} -c -o evalcoordinator.o
 
-stackframecollection.o: stackframecollection.h stackframecollection.cc
+stackframecollection.o: i_stackframecollection.h stackframecollection.h stackframecollection.cc
 	clang-3.5 stackframecollection.cc ${INCDIRS} ${CC_FLAGS} -c -o stackframecollection.o
 
 debuggercallback.o: debuggercallback.h debuggercallback.cc
@@ -76,7 +76,7 @@ documentindex.o: documentindex.h documentindex.cc
 custombinaryreader.o: custombinaryreader.h custombinaryreader.cc
 	clang-3.5 custombinaryreader.cc ${INCDIRS} ${CC_FLAGS} -c -o custombinaryreader.o
 
-portablepdbfile.o: portablepdbfile.h portablepdbfile.cc
+portablepdbfile.o: i_portablepdbfile.h portablepdbfile.h portablepdbfile.cc
 	clang-3.5 portablepdbfile.cc ${INCDIRS} ${CC_FLAGS} -c -o portablepdbfile.o
 
 google_cloud_debugger_lib: ${ALL_O_FILES}

@@ -100,8 +100,13 @@ TEST(DbgClassPropertyTest, TestGetPropertyName) {
   static const string class_property_name = "PropertyName";
   uint32_t class_property_name_len = class_property_name.size();
 
-  WCHAR wchar_string[] = WCHAR_STRING(PropertyName);
-
+// TODO(quoct): The WCHAR_STRING macro is supposed to expand
+// the string literal but was not able to compile on Linux.
+#ifdef PAL_STDCPP_COMPAT
+  WCHAR wchar_string[] = u"PropertyName";
+#else
+  WCHAR wchar_string[] = L"PropertyName";
+#endif
   // GetPropertyProps should be called twice.
   EXPECT_CALL(metadataimport_mock,
               GetPropertyPropsFirst(property_def, _, _, _, _, _, _, _, _))

@@ -173,7 +173,13 @@ TEST(DbgClassFieldTest, TestGetFieldName) {
   static const string class_field_name = "FieldName";
   uint32_t class_field_name_len = class_field_name.size();
 
-  WCHAR wchar_string[] = WCHAR_STRING(FieldName);
+// TODO(quoct): The WCHAR_STRING macro is supposed to expand
+// the string literal but was not able to compile on Linux.
+#ifdef PAL_STDCPP_COMPAT
+  WCHAR wchar_string[] = u"FieldName";
+#else
+  WCHAR wchar_string[] = L"FieldName";
+#endif
 
   // GetFieldProps should be called twice.
   IMetaDataImportMock metadataimport_mock;
@@ -313,13 +319,14 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
               META_E_BADMETADATA);
   }
 
-  // Tests null cases.
+  // Tests null cases. Makes sure ICorDebugTypeMock did not get
+  // destructed before DbgClassField is.
+  ICorDebugTypeMock type_mock;
   {
     DbgClassField class_field;
-    ICorDebugTypeMock type_mock;
     int32_t field_value = 20;
 
-    InitializeDbgClassFieldTest(&class_field, S_OK, field_value, 10);
+    InitializeDbgClassFieldTest(&class_field, &type_mock, field_value, 10);
 
     Variable variable;
     IEvalCoordinatorMock eval_coordinator;

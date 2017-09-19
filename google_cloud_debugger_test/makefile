@@ -32,7 +32,25 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} 
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
 
-TESTS = unit_test_main.o dbgstring_test.o custom_binary_stream_test.o
+TESTS = unit_test_main.o breakpoint_client_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgarray_test.o custom_binary_stream_test.o
+
+breakpoint_client_test.o: breakpoint_client_test.cc
+	clang-3.5 breakpoint_client_test.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_client_test.o
+
+dbgbreakpoint_test.o: dbgbreakpoint_test.cc
+	clang-3.5 dbgbreakpoint_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgbreakpoint_test.o
+
+dbgstring_test.o: dbgstring_test.cc
+	clang-3.5 dbgstring_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstring_test.o
+
+dbgclassfield_test.o: dbgclassfield_test.cc
+	clang-3.5 dbgclassfield_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassfield_test.o
+
+dbgclassproperty_test.o: dbgclassproperty_test.cc
+	clang-3.5 dbgclassproperty_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassproperty_test.o
+
+dbgarray_test.o: dbgarray_test.cc
+	clang-3.5 dbgarray_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgarray_test.o
 
 dbgstring_test.o: dbgstring_test.cc
 	clang-3.5 dbgstring_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstring_test.o
