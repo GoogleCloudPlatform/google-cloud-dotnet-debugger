@@ -18,7 +18,7 @@
 #include <iostream>
 
 #include "dbgbreakpoint.h"
-#include "evalcoordinator.h"
+#include "i_evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -27,14 +27,15 @@ using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
 using std::cerr;
-using std::vector;
 using std::max;
+using std::vector;
 
 namespace google_cloud_debugger {
 
 HRESULT StackFrameCollection::Initialize(
     ICorDebugStackWalk *debug_stack_walk,
-    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+    const std::vector<
+        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   if (!debug_stack_walk) {
     cerr << "Debug stack walk is null.";
@@ -105,7 +106,7 @@ HRESULT StackFrameCollection::Initialize(
       CComPtr<ICorDebugModule> pdb_debug_module;
       // TODO(quoct): Possible performance improvement by caching the pdb_file
       // based on token.
-      hr = pdb_file.GetDebugModule(&pdb_debug_module);
+      hr = pdb_file->GetDebugModule(&pdb_debug_module);
       if (FAILED(hr)) {
         cerr << "Failed to extract debug module from pdb file.";
         return hr;
@@ -124,7 +125,7 @@ HRESULT StackFrameCollection::Initialize(
 
       // Tries to populate local variables and method arguments of this frame.
       hr = PopulateLocalVarsAndMethodArgs(target_function_token, &stack_frame,
-                                          il_frame, pdb_file);
+                                          il_frame, *pdb_file);
 
       // S_FALSE is if the method is not found.
       if (hr == S_FALSE) {
@@ -152,7 +153,7 @@ HRESULT StackFrameCollection::Initialize(
 }
 
 HRESULT StackFrameCollection::PopulateStackFrames(
-    Breakpoint *breakpoint, EvalCoordinator *eval_coordinator) {
+    Breakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
   if (!breakpoint || !eval_coordinator) {
     cerr << "Null breakpoint or eval coordinator.";
     return E_INVALIDARG;
@@ -187,7 +188,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
     mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
     ICorDebugILFrame *il_frame,
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file) {
+    const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file) {
   if (!dbg_stack_frame || !il_frame) {
     return E_INVALIDARG;
   }
@@ -227,7 +228,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
   // Loops through all methods in all the documents of the pdb file to find
   // a MethodInfo object that corresponds with the method at this breakpoint.
   for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
-    for (auto &&method : document_index.GetMethods()) {
+    for (auto &&method : document_index->GetMethods()) {
       PCCOR_SIGNATURE current_method_signature = 0;
 
       // TODO(quoct): Cache the method signature in MethodInfo method so we
@@ -267,7 +268,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
         return hr;
       }
 
-      dbg_stack_frame->SetFile(document_index.GetFilePath());
+      dbg_stack_frame->SetFile(document_index->GetFilePath());
       dbg_stack_frame->SetMethod(method_name);
       dbg_stack_frame->SetClass(class_name);
 

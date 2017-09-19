@@ -22,13 +22,13 @@
 #include "breakpoint.pb.h"
 #include "cor.h"
 #include "documentindex.h"
+#include "i_portablepdbfile.h"
 #include "metadatatables.h"
-#include "portablepdbfile.h"
 
 namespace google_cloud_debugger {
 
-class EvalCoordinator;
-class StackFrameCollection;
+class IEvalCoordinator;
+class IStackFrameCollection;
 
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
@@ -49,7 +49,7 @@ class DbgBreakpoint {
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
   bool TrySetBreakpoint(
-      const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file);
+      const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file);
 
   // Returns the IL Offset that corresponds to this breakpoint location.
   uint32_t GetILOffset() { return il_offset_; }
@@ -80,6 +80,9 @@ class DbgBreakpoint {
   // Gets the line number of this breakpoint.
   uint32_t GetLine() const { return line_; }
 
+  // Gets the column number of this breakpoint.
+  uint32_t GetColumn() const { return column_; }
+
   // Returns true if this breakpoint is set.
   // When a breakpoint is set, its il_off_set is set.
   bool IsSet() const { return set_; }
@@ -108,9 +111,9 @@ class DbgBreakpoint {
   //
   // This function assumes that the Initialize function of stack_frames
   // are already called (so stack_frames are already populated with variables).
-  HRESULT PopulateBreakpoint(google::cloud::diagnostics::debug::Breakpoint *breakpoint,
-                             StackFrameCollection *stack_frames,
-                             EvalCoordinator *eval_coordinator);
+  HRESULT PopulateBreakpoint(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+      IStackFrameCollection *stack_frames, IEvalCoordinator *eval_coordinator);
 
  private:
   // Given a method, try to see whether we can set this breakpoint in

@@ -19,7 +19,7 @@
 #include <iostream>
 
 #include "custombinaryreader.h"
-#include "portablepdbfile.h"
+#include "i_portablepdbfile.h"
 
 using std::cerr;
 using std::max;
@@ -28,7 +28,7 @@ using std::vector;
 
 namespace google_cloud_debugger_portable_pdb {
 
-bool DocumentIndex::Initialize(const PortablePdbFile &pdb, int doc_index) {
+bool DocumentIndex::Initialize(const IPortablePdbFile &pdb, int doc_index) {
   if (doc_index == 0) {
     cerr << "Document index has to be larger than 0.";
     return false;
@@ -94,7 +94,7 @@ bool DocumentIndex::Initialize(const PortablePdbFile &pdb, int doc_index) {
   return true;
 }
 
-bool DocumentIndex::ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
+bool DocumentIndex::ParseMethod(MethodInfo *method, const IPortablePdbFile &pdb,
                                 const MethodDebugInformationRow &debug_info_row,
                                 uint32_t method_def, uint32_t doc_index) {
   assert(method != nullptr);
@@ -170,7 +170,7 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, const PortablePdbFile &pdb,
 }
 
 bool DocumentIndex::ParseScope(
-    Scope *local_scope, const PortablePdbFile &pdb,
+    Scope *local_scope, const IPortablePdbFile &pdb,
     const LocalScopeRow &local_scope_row,
     const std::vector<LocalScopeRow> &local_scope_table,
     const std::vector<LocalVariableRow> &local_variable_table,

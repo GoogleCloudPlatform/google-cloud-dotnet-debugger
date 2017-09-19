@@ -266,7 +266,7 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
 }
 
 HRESULT DbgStackFrame::PopulateStackFrame(
-    StackFrame *stack_frame, EvalCoordinator *eval_coordinator) const {
+    StackFrame *stack_frame, IEvalCoordinator *eval_coordinator) const {
   if (!stack_frame || !eval_coordinator) {
     return E_INVALIDARG;
   }

@@ -109,7 +109,8 @@ HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
     mdMethodDef function_token, ULONG32 il_offset,
     EvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
     ICorDebugStackWalk *debug_stack_walk,
-    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+    const std::vector<
+        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   HRESULT hr = S_FALSE;
   for (auto &&breakpoint : breakpoints_) {
@@ -150,7 +151,7 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
 }
 
 HRESULT BreakpointCollection::InitializeBreakpoints(
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb) {
+    const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) {
   HRESULT hr;
 
   std::lock_guard<std::mutex> lock(mutex_);
@@ -197,12 +198,12 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
     new_breakpoint->Initialize(breakpoint);
 
     for (auto &&pdb_file : debugger_callback_->GetPdbFiles()) {
-      if (!new_breakpoint->TrySetBreakpoint(pdb_file)) {
+      if (!new_breakpoint->TrySetBreakpoint(*pdb_file)) {
         continue;
       }
 
       std::lock_guard<std::mutex> lock(mutex_);
-      hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file);
+      hr = ActivateBreakpointHelper(new_breakpoint.get(), *pdb_file);
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
@@ -246,7 +247,7 @@ HRESULT BreakpointCollection::CancelSyncBreakpoints() {
 
 HRESULT BreakpointCollection::ActivateBreakpointHelper(
     DbgBreakpoint *breakpoint,
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &portable_pdb) {
+    const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) {
   if (!breakpoint) {
     cerr << "Null breakpoint argument for ActivateBreakpoint.";
     return E_INVALIDARG;
@@ -403,10 +404,11 @@ HRESULT BreakpointCollection::ActivateOrDeactivateExistingBreakpoint(
 
   // Try to find if the breakpoint is available.
   for (auto &&existing_breakpoint : breakpoints_) {
-    // We use file name and line instead of id in case user reactivates a breakpoint,
-    // then we just need to reactivate it.
-    if (EqualsIgnoreCase(existing_breakpoint->GetFileName(), breakpoint.GetFileName())
-    && existing_breakpoint->GetLine() == breakpoint.GetLine()) {
+    // We use file name and line instead of id in case user reactivates a
+    // breakpoint, then we just need to reactivate it.
+    if (EqualsIgnoreCase(existing_breakpoint->GetFileName(),
+                         breakpoint.GetFileName()) &&
+        existing_breakpoint->GetLine() == breakpoint.GetLine()) {
       CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
       hr = existing_breakpoint->GetCorDebugBreakpoint(&cor_debug_breakpoint);
       if (FAILED(hr)) {

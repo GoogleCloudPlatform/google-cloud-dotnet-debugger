@@ -39,6 +39,9 @@
     <ClCompile Include="breakpoint_client_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbgbreakpoint_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="dbgarray_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,6 +57,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_named_pipe_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_portablepdb_mocks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_stackframecollection_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,7 +18,7 @@
 #include <cctype>
 
 #include "evalcoordinator.h"
-#include "stackframecollection.h"
+#include "i_stackframecollection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -29,6 +29,7 @@ using google_cloud_debugger_portable_pdb::LocalVariableRow;
 using std::cerr;
 using std::string;
 using std::vector;
+using std::unique_ptr;
 
 namespace google_cloud_debugger {
 
@@ -63,18 +64,16 @@ HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
 }
 
 bool DbgBreakpoint::TrySetBreakpoint(
-    const google_cloud_debugger_portable_pdb::PortablePdbFile &pdb_file) {
+    const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file) {
   uint32_t current_doc_index_index = -1;
   uint32_t best_match_index = current_doc_index_index;
   size_t best_file_name_location_matched = UINT32_MAX;
-  vector<google_cloud_debugger_portable_pdb::DocumentIndex> docs =
-      pdb_file.GetDocumentIndexTable();
 
   // Loop through all the documents and try to find the one that
   // best matches the breakpoint's file name.
   for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
     ++current_doc_index_index;
-    string document_name = document_index.GetFilePath();
+    string document_name = document_index->GetFilePath();
     // Normalize path separators. The PDB may use either Unix or Windows-style
     // paths, but the Cloud Debugger only uses Unix.
     std::replace(document_name.begin(), document_name.end(), '\\', '/');
@@ -96,10 +95,6 @@ bool DbgBreakpoint::TrySetBreakpoint(
     // Best match here means the file with the longest path that matches
     // the file name so file_name_location should be as small as possible.
     if (file_name_location < best_file_name_location_matched) {
-      // Checks that the line number indeed matches up.
-      google_cloud_debugger_portable_pdb::DocumentIndex matched_doc =
-          docs[current_doc_index_index];
-
       // Try to find the best matched method.
       // This is because the breakpoint can be inside method A but if
       // method A is defined inside method B then we should use method A
@@ -107,7 +102,7 @@ bool DbgBreakpoint::TrySetBreakpoint(
       // delegate function that is defined inside a normal function.
       bool found_breakpoint = false;
       uint32_t best_matched_method_first_line = 0;
-      for (auto &&method : matched_doc.GetMethods()) {
+      for (auto &&method : document_index->GetMethods()) {
         if (method.first_line > line_ || method.last_line < line_) {
           continue;
         }
@@ -136,8 +131,8 @@ bool DbgBreakpoint::TrySetBreakpoint(
 }
 
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
-                                          StackFrameCollection *stack_frames,
-                                          EvalCoordinator *eval_coordinator) {
+                                          IStackFrameCollection *stack_frames,
+                                          IEvalCoordinator *eval_coordinator) {
   if (!stack_frames) {
     cerr << "Stack frame collection is null.";
     return E_INVALIDARG;
@@ -145,6 +140,11 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
   if (!breakpoint) {
     cerr << "Breakpoint proto is null.";
+    return E_INVALIDARG;
+  }
+
+  if (!eval_coordinator) {
+    cerr << "EvailCoordinator is null.";
     return E_INVALIDARG;
   }
 
@@ -159,9 +159,7 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   location->set_line(line_);
   location->set_path(file_name_);
 
-  stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
-
-  return S_OK;
+  return stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
 }
 
 bool DbgBreakpoint::TrySetBreakpointInMethod(

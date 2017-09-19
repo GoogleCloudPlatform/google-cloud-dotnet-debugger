@@ -98,7 +98,8 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
     BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
-    const std::vector<google_cloud_debugger_portable_pdb::PortablePdbFile>
+    const std::vector<
+        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";
@@ -112,7 +113,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
 
   // Creates and initializes stack frame collection based on the
   // ICorDebugStackWalk object.
-  unique_ptr<StackFrameCollection> stack_frames(new (std::nothrow)
+  unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
                                                     StackFrameCollection);
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
@@ -127,7 +128,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
   unique_lock<mutex> lk(mutex_);
 
   std::thread local_thread = std::thread(
-      [](unique_ptr<StackFrameCollection> stack_frames,
+      [](unique_ptr<IStackFrameCollection> stack_frames,
          EvalCoordinator *eval_coordinator,
          BreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {

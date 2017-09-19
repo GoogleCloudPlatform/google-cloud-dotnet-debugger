@@ -156,6 +156,12 @@
     <ClInclude Include="i_evalcoordinator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="i_portablepdbfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_stackframecollection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
