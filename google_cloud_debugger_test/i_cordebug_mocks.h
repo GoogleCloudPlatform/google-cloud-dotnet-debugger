@@ -198,7 +198,7 @@ class ICorDebugThreadMock : public ICorDebugThread {
   MOCK_METHOD1(GetActiveFrame, HRESULT(ICorDebugFrame **ppFrame));
   MOCK_METHOD1(GetRegisterSet, HRESULT(ICorDebugRegisterSet **ppRegisters));
   MOCK_METHOD1(CreateEval, HRESULT(ICorDebugEval **ppEval));
-  MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
+  MOCK_METHOD1(GetObject, HRESULT(ICorDebugValue **ppObject));
 };
 
 class ICorDebugModuleMock : public ICorDebugModule {

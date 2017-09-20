@@ -55,7 +55,7 @@ TEST(BreakpointClientTest, Initialize) {
 
 // Tests error case for Initialize function of BreakpointClient.
 TEST(BreakpointClientTest, InitializeError) {
-  BREAKPOINT_CLIENT_SIMPLE_TEST(Initialize, E_APPLICATION_EXITING);
+  BREAKPOINT_CLIENT_SIMPLE_TEST(Initialize, E_ACCESSDENIED);
 }
 
 // Tests WaitForConnection function of BreakpointClient.
@@ -75,7 +75,7 @@ TEST(BreakpointClientTest, ShutDown) {
 
 // Tests error case for ShutDown function of BreakpointClient.
 TEST(BreakpointClientTest, ShutDownError) {
-  BREAKPOINT_CLIENT_SIMPLE_TEST(ShutDown, E_APPLICATION_EXITING);
+  BREAKPOINT_CLIENT_SIMPLE_TEST(ShutDown, E_ACCESSDENIED);
 }
 
 // This action will pop the last string in string_vector
@@ -152,11 +152,11 @@ TEST(BreakpointClientTest, ReadBreakpointError) {
 
   EXPECT_CALL(*named_pipe, Read(_))
       .Times(1)
-      .WillRepeatedly(Return(E_APPLICATION_EXITING));
+      .WillRepeatedly(Return(E_ACCESSDENIED));
   BreakpointClient client(std::move(named_pipe));
 
   Breakpoint read_breakpoint;
-  EXPECT_EQ(client.ReadBreakpoint(&read_breakpoint), E_APPLICATION_EXITING);
+  EXPECT_EQ(client.ReadBreakpoint(&read_breakpoint), E_ACCESSDENIED);
 }
 
 // Tests WriteBreakpoint function of BreakpointClient.

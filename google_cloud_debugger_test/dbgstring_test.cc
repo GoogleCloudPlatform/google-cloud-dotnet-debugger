@@ -85,7 +85,13 @@ TEST(DbgStringTest, GetString) {
 
   static const string test_string_value = "This is a test string";
 
-  WCHAR wchar_string[] = WCHAR_STRING(This is a test string);
+// TODO(quoct): The WCHAR_STRING macro is supposed to expand
+// the string literal but was not able to compile on Linux.
+#ifdef PAL_STDCPP_COMPAT
+  WCHAR wchar_string[] = u"This is a test string";
+#else
+  WCHAR wchar_string[] = L"This is a test string";
+#endif
 
   uint32_t string_size = test_string_value.size();
   ICorDebugStringValueMock string_value_mock;
@@ -111,7 +117,13 @@ TEST(DbgStringTest, GetStringError) {
 
   static const string test_string_value = "This is a test string";
 
-  WCHAR wchar_string[] = WCHAR_STRING(This is a test string);
+// TODO(quoct): The WCHAR_STRING macro is supposed to expand
+// the string literal but was not able to compile on Linux.
+#ifdef PAL_STDCPP_COMPAT
+  WCHAR wchar_string[] = u"This is a test string";
+#else
+  WCHAR wchar_string[] = L"This is a test string";
+#endif
 
   uint32_t string_size = test_string_value.size();
   ICorDebugStringValueMock string_value_mock;
