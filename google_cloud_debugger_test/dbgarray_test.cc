@@ -219,6 +219,7 @@ TEST_F(DbgArrayTest, TestGetArrayItem) {
     .Times(1)
     .WillRepeatedly(Return(S_OK));
   hr = dbgarray.GetArrayItem(position, &array_item);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
 // Tests error cases for GetArrayItem function of DbgArray.
