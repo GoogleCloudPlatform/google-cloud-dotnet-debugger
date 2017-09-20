@@ -34,6 +34,8 @@ using std::string;
 
 namespace google_cloud_debugger_test {
 
+// Test Fixture for DbgArray.
+// Contains various ICorDebug mock objects needed.
 class DbgArrayTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
@@ -44,6 +46,8 @@ class DbgArrayTest : public ::testing::Test {
             DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
   }
 
+  // Sets up various mock objects so when we use them with
+  // a DbgArray class, we will get an array with 2 elements.
   void SetUpArray() {
     EXPECT_CALL(array_type_, GetFirstTypeParameter(_))
       .WillRepeatedly(DoAll(SetArgPointee<0>(&array_element_type_), Return(S_OK)));
