@@ -182,27 +182,13 @@ TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
 
   // IEvalCoordinator returns a generic value.
   ICorDebugGenericValueMock generic_value;
+  // When GetValue is called from generic value, returns 20 as the value.
+  int32_t int32_value = 20;
+  SetUpMockGenericValue(&generic_value, int32_value);
+
   EXPECT_CALL(eval_coordinator_mock, WaitForEval(_, _, _))
       .Times(2)
       .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value), Return(S_OK)));
-
-  // The generic value is used to create a DbgObject so GetType is called.
-  EXPECT_CALL(generic_value, GetType(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
-                            Return(S_OK)));
-
-  ON_CALL(generic_value, QueryInterface(_, _))
-      .WillByDefault(Return(E_NOINTERFACE));
-
-  ON_CALL(generic_value, QueryInterface(__uuidof(ICorDebugGenericValue), _))
-      .WillByDefault(DoAll(SetArgPointee<1>(&generic_value), Return(S_OK)));
-
-  // When GetValue is called from generic value, returns 20 as the value.
-  int32_t int32_value = 20;
-  EXPECT_CALL(generic_value, GetValue(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArg0ToInt32Value(int32_value), Return(S_OK)));
 
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;

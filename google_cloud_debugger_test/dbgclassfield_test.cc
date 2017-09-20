@@ -63,20 +63,7 @@ void InitializeDbgClassFieldTest(DbgClassField *class_field,
 
   // Only returns field value for GetFieldValue for non-static field.
   if (non_static_field) {
-    // The generic value is used to create a DbgObject so GetType is called.
-    ON_CALL(generic_value, QueryInterface(_, _))
-        .WillByDefault(Return(E_NOINTERFACE));
-
-    ON_CALL(generic_value, QueryInterface(__uuidof(ICorDebugGenericValue), _))
-        .WillByDefault(DoAll(SetArgPointee<1>(&generic_value), Return(S_OK)));
-
-    // When GetValue is called from generic value, returns val as the value.
-    EXPECT_CALL(generic_value, GetType(_))
-        .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
-                              Return(S_OK)));
-
-    EXPECT_CALL(generic_value, GetValue(_))
-        .WillRepeatedly(DoAll(SetArg0ToInt32Value(field_value), Return(S_OK)));
+    SetUpMockGenericValue(&generic_value, field_value);
 
     // GetFieldValue should sets its ICorDebugValue pointer to generic_value
     // above.
@@ -246,20 +233,7 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueStatic) {
   ICorDebugGenericValueMock generic_value;
   int32_t static_value = 40;
 
-  // The generic value is used to create a DbgObject so GetType is called.
-  ON_CALL(generic_value, QueryInterface(_, _))
-      .WillByDefault(Return(E_NOINTERFACE));
-
-  ON_CALL(generic_value, QueryInterface(__uuidof(ICorDebugGenericValue), _))
-      .WillByDefault(DoAll(SetArgPointee<1>(&generic_value), Return(S_OK)));
-
-  // When GetValue is called from generic value, returns val as the value.
-  EXPECT_CALL(generic_value, GetType(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
-                            Return(S_OK)));
-
-  EXPECT_CALL(generic_value, GetValue(_))
-      .WillRepeatedly(DoAll(SetArg0ToInt32Value(static_value), Return(S_OK)));
+  SetUpMockGenericValue(&generic_value, static_value);
 
   Variable variable;
   IEvalCoordinatorMock eval_coordinator;

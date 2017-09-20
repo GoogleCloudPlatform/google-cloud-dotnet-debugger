@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 
+#include "i_cordebug_mocks.h"
+
 // This headers contains common actions that tests can use.
 namespace google_cloud_debugger_test {
 
@@ -40,6 +42,8 @@ ACTION_P2(SetArg2ToWcharArray, wchar_array, len) {
 ACTION_P(SetArg0ToInt32Value, value) { *static_cast<uint32_t*>(arg0) = value; }
 
 ACTION_P(SetArg0ToByteValue, value) { *static_cast<uint8_t*>(arg0) = value; }
+
+void SetUpMockGenericValue(ICorDebugGenericValueMock *generic_value, std::int32_t value);
 
 }  // namespace google_cloud_debugger_test
 

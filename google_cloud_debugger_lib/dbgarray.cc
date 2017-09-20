@@ -142,6 +142,10 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
     return E_INVALIDARG;
   }
 
+  if (!eval_coordinator) {
+    return E_INVALIDARG;
+  }
+
   if (GetIsNull()) {
     variable->clear_members();
     return S_OK;
@@ -243,6 +247,10 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
 HRESULT DbgArray::PopulateType(Variable *variable) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
+  }
+
+  if (!variable) {
+    return E_INVALIDARG;
   }
 
   if (!empty_object_) {
