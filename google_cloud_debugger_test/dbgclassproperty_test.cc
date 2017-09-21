@@ -37,158 +37,160 @@ using std::vector;
 
 namespace google_cloud_debugger_test {
 
-void InitializeDbgClassPropertyTest(DbgClassProperty *class_property) {
-  IMetaDataImportMock metadataimport_mock;
+// Test Fixture for DbgClassField.
+class DbgClassPropertyTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {}
 
-  mdProperty property_def = 10;
+  virtual void SetUpProperty() {
+    uint32_t class_property_name_len = class_property_name_.size();
 
-  // GetPropertyProps should be called twice.
-  EXPECT_CALL(metadataimport_mock,
-              GetPropertyPropsFirst(property_def, _, _, _, _, _, _, _, _))
-      .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<4>(1),
-                Return(S_OK)));
+    // GetPropertyProps should be called twice.
+    EXPECT_CALL(metadataimport_mock_,
+                GetPropertyPropsFirst(property_def_, _, _, _, _, _, _, _, _))
+        .Times(2)
+        .WillOnce(DoAll(
+            SetArgPointee<4>(class_property_name_len + 1),
+            Return(S_OK)))  // Sets the length of the class the first time.
+        .WillOnce(DoAll(
+            SetArg2ToWcharArray(&wchar_string_[0], class_property_name_len),
+            SetArgPointee<4>(class_property_name_len),
+            Return(S_OK)));  // Sets the class' name the second time.
 
-  EXPECT_CALL(metadataimport_mock, GetPropertyPropsSecond(_, _, _, _, _, _, _))
-      .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<6>(1),
-                Return(S_OK)));
+    EXPECT_CALL(metadataimport_mock_,
+                GetPropertyPropsSecond(_, _, _, _, _, _, _))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<6>(1), Return(S_OK)));
 
-  class_property->Initialize(property_def, &metadataimport_mock);
+    class_property_.Initialize(property_def_, &metadataimport_mock_);
 
-  HRESULT hr = class_property->GetInitializeHr();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-}
+    HRESULT hr = class_property_.GetInitializeHr();
+    EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  }
 
-// Tests the Initialize function of DbgClassProperty.
-TEST(DbgClassPropertyTest, TestInitialize) {
-  DbgClassProperty class_property;
-  InitializeDbgClassPropertyTest(&class_property);
-}
+  // ICorDebugType for this field.
+  ICorDebugTypeMock type_mock_;
 
-// Tests error cases for the Initialize function of DbgClassProperty.
-TEST(DbgClassPropertyTest, TestInitializeError) {
-  IMetaDataImportMock metadataimport_mock;
+  // Property Def for this field.
+  mdProperty property_def_ = 10;
 
-  DbgClassProperty class_property;
-  mdProperty property_def = 10;
+  // Class that this property belongs too.
+  ICorDebugClassMock debug_class_;
 
-  class_property.Initialize(property_def, nullptr);
-  EXPECT_EQ(class_property.GetInitializeHr(), E_INVALIDARG);
+  // MetaDataImport for this class.
+  IMetaDataImportMock metadataimport_mock_;
 
-  EXPECT_CALL(metadataimport_mock,
-              GetPropertyPropsFirst(property_def, _, _, _, _, _, _, _, _))
-      .Times(1)
-      .WillRepeatedly(Return(E_ACCESSDENIED));
+  // ICorDebugModule extracted from ICorDebugClass.
+  ICorDebugModuleMock debug_module_;
 
-  EXPECT_CALL(metadataimport_mock, GetPropertyPropsSecond(_, _, _, _, _, _, _))
-      .Times(1)
-      .WillRepeatedly(Return(E_ACCESSDENIED));
+  // ICorDebugFunction extracted from Module.
+  ICorDebugFunctionMock debug_function_;
 
-  class_property.Initialize(property_def, &metadataimport_mock);
-  EXPECT_EQ(class_property.GetInitializeHr(), E_ACCESSDENIED);
-}
+  // Object that represents the class of this property.
+  ICorDebugObjectValueMock object_value_;
 
-TEST(DbgClassPropertyTest, TestGetPropertyName) {
-  IMetaDataImportMock metadataimport_mock;
+  // Reference to the object_value_.
+  ICorDebugReferenceValueMock reference_value_;
 
-  DbgClassProperty class_property;
-  mdProperty property_def = 10;
+  // Object represents the value of this property.
+  ICorDebugGenericValueMock generic_value_;
 
-  static const string class_property_name = "PropertyName";
-  uint32_t class_property_name_len = class_property_name.size();
+  // ICorDebugEvals created when trying to evaluate the property.
+  ICorDebugEvalMock debug_eval_;
+  ICorDebugEval2Mock debug_eval2_;
 
+  // EvalCoordinator used to evaluate the property.
+  IEvalCoordinatorMock eval_coordinator_mock_;
+
+  // DbgClassProperty for the test.
+  // Note that this has to be the first to be destroyed (that is
+  // why it is placed near the end) among the mock objects.
+  // This is because if the other mock objects are destroyed first,
+  // this class will try to destroy the mock objects it stored again,
+  // causing error.
+  DbgClassProperty class_property_;
+
+  string class_property_name_ = "PropertyName";
 // TODO(quoct): The WCHAR_STRING macro is supposed to expand
 // the string literal but was not able to compile on Linux.
 #ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"PropertyName";
+  WCHAR wchar_string_[13] = u"PropertyName";
 #else
-  WCHAR wchar_string[] = L"PropertyName";
+  WCHAR wchar_string_[13] = L"PropertyName";
 #endif
-  // GetPropertyProps should be called twice.
-  EXPECT_CALL(metadataimport_mock,
-              GetPropertyPropsFirst(property_def, _, _, _, _, _, _, _, _))
-      .Times(2)
-      .WillOnce(
-          DoAll(SetArgPointee<4>(class_property_name_len + 1),
-                Return(S_OK)))  // Sets the length of the class the first time.
-      .WillOnce(
-          DoAll(SetArg2ToWcharArray(&wchar_string[0], class_property_name_len),
-                SetArgPointee<4>(class_property_name_len),
-                Return(S_OK)));  // Sets the class' name the second time.
+};
 
-  EXPECT_CALL(metadataimport_mock, GetPropertyPropsSecond(_, _, _, _, _, _, _))
-      .Times(2)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<6>(1),
-                Return(S_OK)));
+// Tests the Initialize function of DbgClassProperty.
+TEST_F(DbgClassPropertyTest, TestInitialize) {
+  SetUpProperty();
+  EXPECT_EQ(class_property_.GetPropertyName(), class_property_name_);
+}
 
-  class_property.Initialize(property_def, &metadataimport_mock);
-  HRESULT hr = class_property.GetInitializeHr();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-  EXPECT_EQ(class_property.GetPropertyName(), class_property_name);
+// Tests error cases for the Initialize function of DbgClassProperty.
+TEST_F(DbgClassPropertyTest, TestInitializeError) {
+  class_property_.Initialize(property_def_, nullptr);
+  EXPECT_EQ(class_property_.GetInitializeHr(), E_INVALIDARG);
+
+  EXPECT_CALL(metadataimport_mock_,
+              GetPropertyPropsFirst(property_def_, _, _, _, _, _, _, _, _))
+      .Times(1)
+      .WillRepeatedly(Return(E_ACCESSDENIED));
+
+  EXPECT_CALL(metadataimport_mock_, GetPropertyPropsSecond(_, _, _, _, _, _, _))
+      .Times(1)
+      .WillRepeatedly(Return(E_ACCESSDENIED));
+
+  class_property_.Initialize(property_def_, &metadataimport_mock_);
+  EXPECT_EQ(class_property_.GetInitializeHr(), E_ACCESSDENIED);
 }
 
 // Tests the PopulateVariableValue function of DbgClassProperty.
-TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
-  DbgClassProperty class_property;
-  InitializeDbgClassPropertyTest(&class_property);
+TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
+  SetUpProperty();
 
   // Sets various expectation for PopulateVariableValue call.
-  ICorDebugObjectValueMock object_value;
-  ICorDebugReferenceValueMock reference_value;
-
-  // reference_value should be dereferenced to object_value.
-  EXPECT_CALL(reference_value, Dereference(_))
+  EXPECT_CALL(reference_value_, Dereference(_))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
 
-  EXPECT_CALL(object_value, QueryInterface(_, _))
+  // ICorDebugReferenceValue should dereference to object value.
+  EXPECT_CALL(object_value_, QueryInterface(_, _))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
 
   // From object_value, ICorDebugClass should be extracted.
-  ICorDebugClassMock debug_class;
-  EXPECT_CALL(object_value, GetClass(_))
+  EXPECT_CALL(object_value_, GetClass(_))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
 
   // ICorDebugModule extracted from ICorDebugClass.
-  ICorDebugModuleMock debug_module;
-  EXPECT_CALL(debug_class, GetModule(_))
+  EXPECT_CALL(debug_class_, GetModule(_))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
 
   // ICorDebugFunction extracted from Module.
-  ICorDebugFunctionMock debug_function;
-  EXPECT_CALL(debug_module, GetFunctionFromToken(_, _))
+  EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
 
   // ICorDebugEval created from eval_coordinator_mock.
-  ICorDebugEvalMock debug_eval;
-  IEvalCoordinatorMock eval_coordinator_mock;
-  EXPECT_CALL(eval_coordinator_mock, CreateEval(_))
+  EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
 
   // ICorDebugEval2 extracted from ICorDebugEval.
-  ICorDebugEval2Mock debug_eval2;
-  EXPECT_CALL(debug_eval, QueryInterface(_, _))
+  EXPECT_CALL(debug_eval_, QueryInterface(_, _))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
 
   // IEvalCoordinator returns a generic value.
-  ICorDebugGenericValueMock generic_value;
   // When GetValue is called from generic value, returns 20 as the value.
   int32_t int32_value = 20;
-  SetUpMockGenericValue(&generic_value, int32_value);
+  SetUpMockGenericValue(&generic_value_, int32_value);
 
-  EXPECT_CALL(eval_coordinator_mock, WaitForEval(_, _, _))
+  EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, _, _))
       .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value_), Return(S_OK)));
 
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;
@@ -196,13 +198,13 @@ TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
   {
     // CallParameterizedFunction of ICorDebugEval2 is called
     // with 0 arguments (since size of generic types passing in is 0).
-    EXPECT_CALL(debug_eval2, CallParameterizedFunction(_, 0, _, 1, _))
+    EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, 0, _, 1, _))
         .Times(1)
         .WillRepeatedly(Return(S_OK));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               S_OK);
 
     EXPECT_EQ(variable.type(), "System.Int32");
@@ -213,13 +215,13 @@ TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
     generic_types.resize(2);
     // CallParameterizedFunction of ICorDebugEval2 is called
     // with 2 arguments (since size of generic types passing in is 0).
-    EXPECT_CALL(debug_eval2, CallParameterizedFunction(_, 2, _, 1, _))
+    EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, 2, _, 1, _))
         .Times(1)
         .WillRepeatedly(Return(S_OK));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               S_OK);
 
     EXPECT_EQ(variable.type(), "System.Int32");
@@ -228,172 +230,162 @@ TEST(DbgClassPropertyTest, TestPopulateVariableValue) {
 }
 
 // Tests the PopulateVariableValue function of DbgClassProperty.
-TEST(DbgClassPropertyTest, TestPopulateVariableValueError) {
-  DbgClassProperty class_property;
-  InitializeDbgClassPropertyTest(&class_property);
+TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
+  SetUpProperty();
 
-  // Sets various expectation for PopulateVariableValue call.
-  ICorDebugObjectValueMock object_value;
-  ICorDebugReferenceValueMock reference_value;
-  IEvalCoordinatorMock eval_coordinator_mock;
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;
 
   // Checks null argument error.
-  EXPECT_EQ(
-      class_property.PopulateVariableValue(
-          nullptr, &reference_value, &eval_coordinator_mock, &generic_types, 1),
-      E_INVALIDARG);
-  EXPECT_EQ(class_property.PopulateVariableValue(
-                &variable, nullptr, &eval_coordinator_mock, &generic_types, 1),
+  EXPECT_EQ(class_property_.PopulateVariableValue(nullptr, &reference_value_,
+                                                  &eval_coordinator_mock_,
+                                                  &generic_types, 1),
             E_INVALIDARG);
-  EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                 nullptr, &generic_types, 1),
+  EXPECT_EQ(class_property_.PopulateVariableValue(
+                &variable, nullptr, &eval_coordinator_mock_, &generic_types, 1),
+            E_INVALIDARG);
+  EXPECT_EQ(class_property_.PopulateVariableValue(&variable, &reference_value_,
+                                                  nullptr, &generic_types, 1),
             E_INVALIDARG);
   EXPECT_EQ(
-      class_property.PopulateVariableValue(&variable, &reference_value,
-                                           &eval_coordinator_mock, nullptr, 1),
+      class_property_.PopulateVariableValue(
+          &variable, &reference_value_, &eval_coordinator_mock_, nullptr, 1),
       E_INVALIDARG);
 
   {
     // Errors out if dereference fails.
-    EXPECT_CALL(reference_value, Dereference(_))
+    EXPECT_CALL(reference_value_, Dereference(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               CORDBG_E_BAD_REFERENCE_VALUE);
   }
 
   // reference_value should be dereferenced to object_value.
-  EXPECT_CALL(reference_value, Dereference(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value), Return(S_OK)));
+  EXPECT_CALL(reference_value_, Dereference(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
 
   {
     // Errors out if we cannot extract ICorDebugObjectValue.
-    EXPECT_CALL(object_value, QueryInterface(_, _))
+    EXPECT_CALL(object_value_, QueryInterface(_, _))
         .Times(1)
         .WillRepeatedly(Return(E_NOINTERFACE));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               E_NOINTERFACE);
   }
 
-  EXPECT_CALL(object_value, QueryInterface(_, _))
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value), Return(S_OK)));
+  EXPECT_CALL(object_value_, QueryInterface(_, _))
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugClass extraction fails.
-    EXPECT_CALL(object_value, GetClass(_))
+    EXPECT_CALL(object_value_, GetClass(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               CORDBG_E_PROCESS_TERMINATED);
   }
 
   // From object_value, ICorDebugClass should be extracted.
-  ICorDebugClassMock debug_class;
-  EXPECT_CALL(object_value, GetClass(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class), Return(S_OK)));
+  EXPECT_CALL(object_value_, GetClass(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugModule extraction fails.
-    EXPECT_CALL(debug_class, GetModule(_))
+    EXPECT_CALL(debug_class_, GetModule(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               CORDBG_E_MODULE_NOT_LOADED);
   }
 
   // ICorDebugModule extracted from ICorDebugClass.
-  ICorDebugModuleMock debug_module;
-  EXPECT_CALL(debug_class, GetModule(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module), Return(S_OK)));
+  EXPECT_CALL(debug_class_, GetModule(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugFunction extraction fails.
-    EXPECT_CALL(debug_module, GetFunctionFromToken(_, _))
+    EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
         .Times(1)
         .WillRepeatedly(Return(CORPROF_E_FUNCTION_NOT_COMPILED));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               CORPROF_E_FUNCTION_NOT_COMPILED);
   }
 
   // ICorDebugFunction extracted from Module.
-  ICorDebugFunctionMock debug_function;
-  EXPECT_CALL(debug_module, GetFunctionFromToken(_, _))
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function), Return(S_OK)));
+  EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugEval not created.
-    EXPECT_CALL(eval_coordinator_mock, CreateEval(_))
+    EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_BAD_START_POINT));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               CORDBG_E_FUNC_EVAL_BAD_START_POINT);
   }
 
   // ICorDebugEval created from eval_coordinator_mock.
-  ICorDebugEvalMock debug_eval;
-  EXPECT_CALL(eval_coordinator_mock, CreateEval(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval), Return(S_OK)));
+  EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugEval2 extraction fails.
-    EXPECT_CALL(debug_eval, QueryInterface(_, _))
+    EXPECT_CALL(debug_eval_, QueryInterface(_, _))
         .Times(1)
         .WillRepeatedly(Return(E_NOINTERFACE));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               E_NOINTERFACE);
   }
 
   // ICorDebugEval2 extracted from ICorDebugEval.
-  ICorDebugEval2Mock debug_eval2;
-  EXPECT_CALL(debug_eval, QueryInterface(_, _))
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2), Return(S_OK)));
+  EXPECT_CALL(debug_eval_, QueryInterface(_, _))
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
 
   {
     // Errors out if CallParameterizedFunction fails.
-    EXPECT_CALL(debug_eval2, CallParameterizedFunction(_, _, _, _, _))
+    EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, _, _, _, _))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
 
-    EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                   &eval_coordinator_mock,
-                                                   &generic_types, 1),
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
               E_ABORT);
   }
 
-  EXPECT_CALL(debug_eval2, CallParameterizedFunction(_, _, _, _, _))
+  EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, _, _, _, _))
       .WillRepeatedly(Return(S_OK));
 
   // Errors out if WaitForEval fails.
-  EXPECT_CALL(eval_coordinator_mock, WaitForEval(_, _, _))
+  EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, _, _))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_NOT_COMPLETE));
 
-  EXPECT_EQ(class_property.PopulateVariableValue(&variable, &reference_value,
-                                                 &eval_coordinator_mock,
-                                                 &generic_types, 1),
+  EXPECT_EQ(class_property_.PopulateVariableValue(&variable, &reference_value_,
+                                                  &eval_coordinator_mock_,
+                                                  &generic_types, 1),
             CORDBG_E_FUNC_EVAL_NOT_COMPLETE);
 }
 
