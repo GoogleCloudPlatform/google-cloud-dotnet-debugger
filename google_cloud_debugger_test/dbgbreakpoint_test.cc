@@ -62,10 +62,10 @@ class DbgBreakpointTest : public ::testing::Test {
     // Makes the Document Index Mock returns method_ when GetMethod is called.
     ON_CALL(*index_mock, GetMethods()).WillByDefault(ReturnRef(methods_));
 
-    // Document Index should have same file path as breakpoint.
+    // Document Index should have the same file path as breakpoint.
     ON_CALL(*index_mock, GetFilePath()).WillByDefault(ReturnRef(file_name_));
 
-    // The portable PDB file will return list of Document Indices.
+    // The portable PDB file will return a list of Document Indices.
     ON_CALL(file_mock_, GetDocumentIndexTable())
         .WillByDefault(ReturnRef(document_indices_));
   }

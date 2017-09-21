@@ -81,9 +81,9 @@ class DbgClassFieldTest : public ::testing::Test {
                                     int32_t field_value = 20) {
     SetUpMockGenericValue(&generic_value_, field_value);
 
-    // Only returns field value for GetFieldValue for non-static field.
+    // Only returns the field value for GetFieldValue for non-static field.
     if (non_static_field) {
-      // GetFieldValue should sets its ICorDebugValue pointer to generic_value
+      // GetFieldValue should set its ICorDebugValue pointer to generic_value
       // above.
       ON_CALL(object_value_, GetFieldValue(&debug_class_, field_def_, _))
           .WillByDefault(
@@ -94,7 +94,7 @@ class DbgClassFieldTest : public ::testing::Test {
       ON_CALL(eval_coordinator_, GetActiveDebugThread(_))
           .WillByDefault(DoAll(SetArgPointee<0>(&debug_thread_), Return(S_OK)));
 
-      // Then the active frame from the thread.
+      // Then the frame from the thread.
       ON_CALL(debug_thread_, GetActiveFrame(_))
           .WillByDefault(DoAll(SetArgPointee<0>(&debug_frame_), Return(S_OK)));
 

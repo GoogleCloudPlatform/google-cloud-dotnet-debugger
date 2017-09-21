@@ -28,7 +28,7 @@ namespace google_cloud_debugger_test {
 // different string types because WCHAR defined on Linux is
 // different than WCHAR defined on Windows.
 #ifdef PAL_STDCPP_COMPAT
-#define WCHAR_STRING(string) u #string;
+#define WCHAR_STRING(string) u#string;
 #else
 #define WCHAR_STRING(string) L#string;
 #endif
