@@ -60,7 +60,8 @@ HRESULT NamedPipeClient::WaitForConnection() {
       break;
     }
 
-    if (conn == -1 && errno != ENOENT) {
+    // If the connection is refused or times out we should retry.
+    if (conn == -1 && !(errno == ENOENT || errno == ECONNREFUSED || errno == ETIMEDOUT)) {
       cerr << "connect error: " << strerror(errno) << std::endl;
       return E_FAIL;
     }
