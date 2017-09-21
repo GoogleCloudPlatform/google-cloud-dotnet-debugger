@@ -40,76 +40,112 @@ using std::vector;
 
 namespace google_cloud_debugger_test {
 
-// Tests that the Initialize function sets up the correct fields.
-TEST(DbgBreakpointTest, Initialize) {
-  DbgBreakpoint breakpoint;
-  string file_name = "My file";
-  string lower_case_file_name = "my file";
-  string id = "My ID";
-  uint32_t line = 32;
-  uint32_t column = 64;
-  breakpoint.Initialize(file_name, id, line, column);
+// Test Fixture for DbgBreakpoint
+// Sets up a default DbgBreakpoint for the test.
+class DbgBreakpointTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+    breakpoint_.Initialize(file_name_, id_, line_, column_);
+    SetUpIPortablePDBFile();
+  }
 
+  virtual void SetUpIPortablePDBFile() {
+    // Makes a vector with a Document Index mock
+    unique_ptr<IDocumentIndex> doc_index(new (std::nothrow)
+                                             IDocumentIndexMock());
+
+    // Gets the raw pointer so we can set the mock calls.
+    IDocumentIndexMock *index_mock =
+        reinterpret_cast<IDocumentIndexMock *>(doc_index.get());
+    document_indices_.push_back(std::move(doc_index));
+
+    // Makes the Document Index Mock returns method_ when GetMethod is called.
+    ON_CALL(*index_mock, GetMethods()).WillByDefault(ReturnRef(methods_));
+
+    // Document Index should have the same file path as breakpoint.
+    ON_CALL(*index_mock, GetFilePath()).WillByDefault(ReturnRef(file_name_));
+
+    // The portable PDB file will return a list of Document Indices.
+    ON_CALL(file_mock_, GetDocumentIndexTable())
+        .WillByDefault(ReturnRef(document_indices_));
+  }
+
+  // ICorDebugBreakpoint associated with this breakpoint.
+  ICorDebugBreakpointMock cordebug_breakpoint_;
+
+  // Mock object for PDB file associated with the breakpoint.
+  IPortablePdbFileMock file_mock_;
+
+  // Breakpoint.
+  DbgBreakpoint breakpoint_;
+
+  // File name of the breakpoint.
+  string file_name_ = "My file";
+
+  // Lower case of the file name of the breakpoint.
+  string lower_case_file_name_ = "my file";
+
+  // Id of the breakpoint.
+  string id_ = "My ID";
+
+  // Line number of breakpoint.
+  uint32_t line_ = 32;
+
+  // Column of the breakpoint.
+  uint32_t column_ = 64;
+
+  // Method in the document index for this breakpoint.
+  vector<MethodInfo> methods_;
+
+  // Document Indices that the file_mock_ contains.
+  // Only contains 1 document index that has the same file
+  // path as this breakpoint.
+  vector<unique_ptr<IDocumentIndex>> document_indices_;
+};
+
+// Tests that the Initialize function sets up the correct fields.
+TEST_F(DbgBreakpointTest, Initialize) {
   // The names stored should be lower case.
-  EXPECT_EQ(breakpoint.GetFileName(), lower_case_file_name);
-  EXPECT_EQ(breakpoint.GetId(), id);
-  EXPECT_EQ(breakpoint.GetLine(), line);
-  EXPECT_EQ(breakpoint.GetColumn(), column);
+  EXPECT_EQ(breakpoint_.GetFileName(), lower_case_file_name_);
+  EXPECT_EQ(breakpoint_.GetId(), id_);
+  EXPECT_EQ(breakpoint_.GetLine(), line_);
+  EXPECT_EQ(breakpoint_.GetColumn(), column_);
 
   // Now we use the other Initialize function,
   // file name, ID, line and column should be copied over.
   DbgBreakpoint breakpoint2;
-  breakpoint2.Initialize(breakpoint);
+  breakpoint2.Initialize(breakpoint_);
 
-  EXPECT_EQ(breakpoint2.GetFileName(), breakpoint.GetFileName());
-  EXPECT_EQ(breakpoint2.GetId(), breakpoint.GetId());
-  EXPECT_EQ(breakpoint2.GetLine(), breakpoint.GetLine());
-  EXPECT_EQ(breakpoint2.GetColumn(), breakpoint.GetColumn());
+  EXPECT_EQ(breakpoint2.GetFileName(), breakpoint_.GetFileName());
+  EXPECT_EQ(breakpoint2.GetId(), breakpoint_.GetId());
+  EXPECT_EQ(breakpoint2.GetLine(), breakpoint_.GetLine());
+  EXPECT_EQ(breakpoint2.GetColumn(), breakpoint_.GetColumn());
 }
 
 // Tests that the Set/GetMethodToken function sets up the correct fields.
-TEST(DbgBreakpointTest, SetGetMethodToken) {
-  DbgBreakpoint breakpoint;
+TEST_F(DbgBreakpointTest, SetGetMethodToken) {
   mdMethodDef method_token = 10;
-  breakpoint.SetMethodToken(method_token);
-  EXPECT_EQ(breakpoint.GetMethodToken(), method_token);
+  breakpoint_.SetMethodToken(method_token);
+  EXPECT_EQ(breakpoint_.GetMethodToken(), method_token);
 }
 
 // Tests that Set/GetICorDebugBreakpoint function works.
-TEST(DbgBreakpointTest, SetGetICorDebugBreakpoint) {
-  // We don't want the ICorDebugBreakpointMock to be destroyed
-  // before DbgBreakpoint called Release on its ICorDebugBreakpoint
-  // pointer.
-  ICorDebugBreakpointMock cordebug_breakpoint;
+TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpoint) {
+  breakpoint_.SetCorDebugBreakpoint(&cordebug_breakpoint_);
 
-  {
-    DbgBreakpoint breakpoint;
-
-    breakpoint.SetCorDebugBreakpoint(&cordebug_breakpoint);
-
-    CComPtr<ICorDebugBreakpoint> cordebug_breakpoint2;
-    HRESULT hr = breakpoint.GetCorDebugBreakpoint(&cordebug_breakpoint2);
-    EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-  }
+  CComPtr<ICorDebugBreakpoint> cordebug_breakpoint2;
+  HRESULT hr = breakpoint_.GetCorDebugBreakpoint(&cordebug_breakpoint2);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
 // Tests the error cases of Set/GetICorDebugBreakpoint function.
-TEST(DbgBreakpointTest, SetGetICorDebugBreakpointError) {
-  // We don't want the ICorDebugBreakpointMock to be destroyed
-  // before DbgBreakpoint called Release on its ICorDebugBreakpoint
-  // pointer.
-  ICorDebugBreakpointMock cordebug_breakpoint;
+TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpointError) {
+  // Null argument.
+  EXPECT_EQ(breakpoint_.GetCorDebugBreakpoint(nullptr), E_INVALIDARG);
 
-  {
-    DbgBreakpoint breakpoint;
-
-    // Null argument.
-    EXPECT_EQ(breakpoint.GetCorDebugBreakpoint(nullptr), E_INVALIDARG);
-
-    // Calls without setting the breakpoint.
-    CComPtr<ICorDebugBreakpoint> cordebug_breakpoint2;
-    EXPECT_EQ(breakpoint.GetCorDebugBreakpoint(&cordebug_breakpoint2), E_FAIL);
-  }
+  // Calls without setting the breakpoint.
+  CComPtr<ICorDebugBreakpoint> cordebug_breakpoint2;
+  EXPECT_EQ(breakpoint_.GetCorDebugBreakpoint(&cordebug_breakpoint2), E_FAIL);
 }
 
 // Returns a method that contains a sequence point
@@ -161,208 +197,100 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint.
-TEST(DbgBreakpointTest, TrySetBreakpoint) {
-  DbgBreakpoint breakpoint;
-  string file_name = "my file";
-  string id = "my id";
-  uint32_t breakpoint_line = 32;
-  uint32_t column = 64;
-
-  breakpoint.Initialize(file_name, id, breakpoint_line, column);
-  IPortablePdbFileMock file_mock;
-
-  // Makes a vector with a Document Index mock.
-  unique_ptr<IDocumentIndex> doc_index(new (std::nothrow) IDocumentIndexMock());
-  vector<unique_ptr<IDocumentIndex>> document_indices;
-  // Gets the raw pointer so we can set the mock calls.
-  IDocumentIndexMock *index_mock =
-      reinterpret_cast<IDocumentIndexMock *>(doc_index.get());
-  document_indices.push_back(std::move(doc_index));
-
-  // Makes this document has the same name as the one on the breakpoint
-  // so it will be selected.
-  EXPECT_CALL(*index_mock, GetFilePath())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(file_name));
-
-  // Makes this Document Index returns a vector that contains the method
-  // we created above so the breakpoint will be set using that method.
-  vector<MethodInfo> methods;
-
+TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
   // Gets a method that matches the breakpoint.
-  uint32_t method_first_line = rand() % breakpoint_line;
+  uint32_t method_first_line = rand() % line_;
   uint32_t method_def = 100;
   uint32_t il_offset = 99;
-  MethodInfo method = MakeMatchingMethod(breakpoint_line, method_first_line,
-                                         method_def, il_offset);
+  MethodInfo method =
+      MakeMatchingMethod(line_, method_first_line, method_def, il_offset);
 
   // Gets another method that does not match the breakpoint.
-  MethodInfo method2 =
-      MakeMatchingMethod(breakpoint_line * 2, method_first_line * 2,
-                         method_def * 2, il_offset * 2);
+  MethodInfo method2 = MakeMatchingMethod(line_ * 2, method_first_line * 2,
+                                          method_def * 2, il_offset * 2);
 
-  methods.push_back(method);
-  methods.push_back(method2);
+  // Push the methods into the method vector that
+  // the document index matching this Breakpoint will return.
+  methods_.push_back(method);
+  methods_.push_back(method2);
 
-  EXPECT_CALL(*index_mock, GetMethods())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(methods));
-
-  EXPECT_CALL(file_mock, GetDocumentIndexTable())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(document_indices));
-
-  EXPECT_TRUE(breakpoint.TrySetBreakpoint(file_mock));
-  EXPECT_EQ(breakpoint.GetILOffset(), il_offset);
-  EXPECT_EQ(breakpoint.GetMethodDef(), method_def);
-  EXPECT_TRUE(breakpoint.IsSet());
+  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
+  EXPECT_EQ(breakpoint_.GetILOffset(), il_offset);
+  EXPECT_EQ(breakpoint_.GetMethodDef(), method_def);
+  EXPECT_TRUE(breakpoint_.IsSet());
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint
 // when there are multiple methods in the Document Index.
-TEST(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
-  DbgBreakpoint breakpoint;
-  string file_name = "my file";
-  string id = "my id";
-  uint32_t breakpoint_line = 32;
-  uint32_t column = 64;
-
-  breakpoint.Initialize(file_name, id, breakpoint_line, column);
-  IPortablePdbFileMock file_mock;
-
-  // Makes a vector with a Document Index mock.
-  unique_ptr<IDocumentIndex> doc_index(new (std::nothrow) IDocumentIndexMock());
-  vector<unique_ptr<IDocumentIndex>> document_indices;
-  // Gets the raw pointer so we can set the mock calls.
-  IDocumentIndexMock *index_mock =
-      reinterpret_cast<IDocumentIndexMock *>(doc_index.get());
-  document_indices.push_back(std::move(doc_index));
-
-  // Makes this document has the same name as the one on the breakpoint
-  // so it will be selected.
-  EXPECT_CALL(*index_mock, GetFilePath())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(file_name));
-
-  // Makes this Document Index returns a vector that contains the method
-  // we created above so the breakpoint will be set using that method.
-  vector<MethodInfo> methods;
-
+TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
   // Gets a method that matches the breakpoint.
-  uint32_t method_first_line = breakpoint_line - 10;
+  uint32_t method_first_line = line_ - 10;
   uint32_t method_def = 100;
   uint32_t il_offset = 99;
-  MethodInfo method = MakeMatchingMethod(breakpoint_line, method_first_line,
-                                         method_def, il_offset);
+  MethodInfo method =
+      MakeMatchingMethod(line_, method_first_line, method_def, il_offset);
 
   // Gets another method that does not match the breakpoint.
-  uint32_t method2_first_line = breakpoint_line + 100;
+  uint32_t method2_first_line = line_ + 100;
   uint32_t method2_def = method_def * 2;
   uint32_t il_offset_2 = il_offset * 2;
-  MethodInfo method2 = MakeMatchingMethod(
-      breakpoint_line + 120, method2_first_line, method2_def, il_offset_2);
+  MethodInfo method2 = MakeMatchingMethod(line_ + 120, method2_first_line,
+                                          method2_def, il_offset_2);
 
   // Makes another the method that match the breakpoint
   // but has start line greater than the first method (so
   // this method should be selected since it is a better match).
-  uint32_t method3_first_line = breakpoint_line - 5;
+  uint32_t method3_first_line = line_ - 5;
   uint32_t method3_def = method_def * 3;
   uint32_t il_offset_3 = 130;
-  MethodInfo method3 = MakeMatchingMethod(breakpoint_line, method3_first_line,
-                                          method3_def, il_offset_3);
+  MethodInfo method3 =
+      MakeMatchingMethod(line_, method3_first_line, method3_def, il_offset_3);
 
-  methods.push_back(method);
-  methods.push_back(method2);
-  methods.push_back(method3);
+  // Push the methods into the method vector that
+  // the document index matching this Breakpoint will return.
+  methods_.push_back(method);
+  methods_.push_back(method2);
+  methods_.push_back(method3);
 
-  EXPECT_CALL(*index_mock, GetMethods())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(methods));
-
-  EXPECT_CALL(file_mock, GetDocumentIndexTable())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(document_indices));
-
-  EXPECT_TRUE(breakpoint.TrySetBreakpoint(file_mock));
-  EXPECT_EQ(breakpoint.GetILOffset(), il_offset_3);
-  EXPECT_EQ(breakpoint.GetMethodDef(), method3_def);
-  EXPECT_TRUE(breakpoint.IsSet());
+  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
+  EXPECT_EQ(breakpoint_.GetILOffset(), il_offset_3);
+  EXPECT_EQ(breakpoint_.GetMethodDef(), method3_def);
+  EXPECT_TRUE(breakpoint_.IsSet());
 }
 
 // Tests the case where no matching methods are found.
-TEST(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
-  DbgBreakpoint breakpoint;
-  string file_name = "my file";
-  string id = "my id";
-  uint32_t breakpoint_line = 32;
-  uint32_t column = 64;
-
-  breakpoint.Initialize(file_name, id, breakpoint_line, column);
-  IPortablePdbFileMock file_mock;
-
-  // Makes a vector with a Document Index mock.
-  unique_ptr<IDocumentIndex> doc_index(new (std::nothrow) IDocumentIndexMock());
-  vector<unique_ptr<IDocumentIndex>> document_indices;
-  // Gets the raw pointer so we can set the mock calls.
-  IDocumentIndexMock *index_mock =
-      reinterpret_cast<IDocumentIndexMock *>(doc_index.get());
-  document_indices.push_back(std::move(doc_index));
-
-  // Makes this document has the same name as the one on the breakpoint
-  // so it will be selected.
-  EXPECT_CALL(*index_mock, GetFilePath())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(file_name));
-
-  // Makes this Document Index returns a vector that contains the method
-  // we created above so the breakpoint will be set using that method.
-  vector<MethodInfo> methods;
-
+TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
   // Gets a method that does not match the breakpoint.
-  uint32_t method_first_line = breakpoint_line + 5;
+  uint32_t method_first_line = line_ + 5;
   uint32_t method_def = 100;
   uint32_t il_offset = 99;
-  MethodInfo method = MakeMatchingMethod(
-      breakpoint_line + 10, method_first_line, method_def, il_offset);
+  MethodInfo method =
+      MakeMatchingMethod(line_ + 10, method_first_line, method_def, il_offset);
 
   // The method now contains sequence points that does not match
   // the breakpoint. We now change the method_first_line
   // so it will be less than the breakpoint_line.
   // Note that this still mean that this method does not
   // match the breakpoint since its sequence points do not.
-  method.first_line = breakpoint_line - 10;
+  method.first_line = line_ - 10;
 
   // Gets another method that does not match the breakpoint.
-  uint32_t method2_first_line = breakpoint_line + 100;
+  uint32_t method2_first_line = line_ + 100;
   uint32_t method2_def = method_def * 2;
   uint32_t il_offset_2 = il_offset * 2;
-  MethodInfo method2 = MakeMatchingMethod(
-      breakpoint_line + 120, method2_first_line, method2_def, il_offset_2);
+  MethodInfo method2 = MakeMatchingMethod(line_ + 120, method2_first_line,
+                                          method2_def, il_offset_2);
 
-  methods.push_back(method);
-  methods.push_back(method2);
+  // Push the methods into the method vector that
+  // the document index matching this Breakpoint will return.
+  methods_.push_back(method);
+  methods_.push_back(method2);
 
-  EXPECT_CALL(*index_mock, GetMethods())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(methods));
-
-  EXPECT_CALL(file_mock, GetDocumentIndexTable())
-      .Times(1)
-      .WillRepeatedly(ReturnRef(document_indices));
-
-  EXPECT_FALSE(breakpoint.TrySetBreakpoint(file_mock));
+  EXPECT_FALSE(breakpoint_.TrySetBreakpoint(file_mock_));
 }
 
 // Tests the PopulateBreakpoint function of DbgBreakpoint.
-TEST(DbgBreakpointTest, PopulateBreakpoint) {
-  DbgBreakpoint breakpoint;
-  string file_name = "my file";
-  string id = "my id";
-  uint32_t breakpoint_line = 32;
-  uint32_t column = 64;
-
-  breakpoint.Initialize(file_name, id, breakpoint_line, column);
-
+TEST_F(DbgBreakpointTest, PopulateBreakpoint) {
   Breakpoint proto_breakpoint;
   IStackFrameCollectionMock stackframe_collection_mock;
   IEvalCoordinatorMock eval_coordinator_mock;
@@ -372,39 +300,31 @@ TEST(DbgBreakpointTest, PopulateBreakpoint) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  HRESULT hr = breakpoint.PopulateBreakpoint(
+  HRESULT hr = breakpoint_.PopulateBreakpoint(
       &proto_breakpoint, &stackframe_collection_mock, &eval_coordinator_mock);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the proto breakpoint's properties are set.
-  EXPECT_EQ(proto_breakpoint.location().line(), breakpoint_line);
-  EXPECT_EQ(proto_breakpoint.location().path(), file_name);
-  EXPECT_EQ(proto_breakpoint.id(), id);
+  EXPECT_EQ(proto_breakpoint.location().line(), line_);
+  EXPECT_EQ(proto_breakpoint.location().path(), lower_case_file_name_);
+  EXPECT_EQ(proto_breakpoint.id(), id_);
 }
 
 // Tests the error cases of PopulateBreakpoint function of DbgBreakpoint.
-TEST(DbgBreakpointTest, PopulateBreakpointError) {
-  DbgBreakpoint breakpoint;
-  string file_name = "my file";
-  string id = "my id";
-  uint32_t breakpoint_line = 32;
-  uint32_t column = 64;
-
-  breakpoint.Initialize(file_name, id, breakpoint_line, column);
-
+TEST_F(DbgBreakpointTest, PopulateBreakpointError) {
   Breakpoint proto_breakpoint;
   IStackFrameCollectionMock stackframe_collection_mock;
   IEvalCoordinatorMock eval_coordinator_mock;
 
   // Checks for null error.
-  EXPECT_EQ(breakpoint.PopulateBreakpoint(nullptr, &stackframe_collection_mock,
-                                          &eval_coordinator_mock),
+  EXPECT_EQ(breakpoint_.PopulateBreakpoint(nullptr, &stackframe_collection_mock,
+                                           &eval_coordinator_mock),
             E_INVALIDARG);
-  EXPECT_EQ(breakpoint.PopulateBreakpoint(&proto_breakpoint, nullptr,
-                                          &eval_coordinator_mock),
+  EXPECT_EQ(breakpoint_.PopulateBreakpoint(&proto_breakpoint, nullptr,
+                                           &eval_coordinator_mock),
             E_INVALIDARG);
-  EXPECT_EQ(breakpoint.PopulateBreakpoint(&proto_breakpoint,
-                                          &stackframe_collection_mock, nullptr),
+  EXPECT_EQ(breakpoint_.PopulateBreakpoint(
+                &proto_breakpoint, &stackframe_collection_mock, nullptr),
             E_INVALIDARG);
 
   // Makes PopulateStackFrames returns error.
@@ -413,9 +333,9 @@ TEST(DbgBreakpointTest, PopulateBreakpointError) {
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
 
-  EXPECT_EQ(breakpoint.PopulateBreakpoint(&proto_breakpoint,
-                                          &stackframe_collection_mock,
-                                          &eval_coordinator_mock),
+  EXPECT_EQ(breakpoint_.PopulateBreakpoint(&proto_breakpoint,
+                                           &stackframe_collection_mock,
+                                           &eval_coordinator_mock),
             CORDBG_E_BAD_REFERENCE_VALUE);
 }
 

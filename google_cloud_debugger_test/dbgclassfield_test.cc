@@ -37,183 +37,188 @@ using std::vector;
 
 namespace google_cloud_debugger_test {
 
-// Helper test subroutine.
-// This subroutine will call initializes all the neccessary mock calls and calls
-// class_field.Initialize (this function does not set the class' name).
-// If non_static_field is true, field_value will be used to populate the field.
-void InitializeDbgClassFieldTest(DbgClassField *class_field,
-                                 ICorDebugTypeMock *type_mock,
-                                 bool non_static_field,
-                                 int32_t field_value = 20) {
-  IMetaDataImportMock metadataimport_mock;
-  mdFieldDef field_def = 10;
-  ICorDebugObjectValueMock object_value;
-  ICorDebugClassMock debug_class;
+// Test Fixture for DbgClassField.
+class DbgClassFieldTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {}
+
+  virtual void SetUpField(bool non_static_field, int32_t field_value = 20,
+                          bool initialize_field_value = true) {
+    uint32_t class_field_name_len = class_field_name_.size();
+
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsFirst(field_def_, _, _, _, _, _))
+        .Times(2)
+        .WillOnce(DoAll(
+            SetArgPointee<4>(class_field_name_len + 1),
+            Return(S_OK)))  // Sets the length of the class the first time.
+        .WillOnce(
+            DoAll(SetArg2ToWcharArray(&wchar_string_[0], class_field_name_len),
+                  SetArgPointee<4>(class_field_name_len),
+                  Return(S_OK)));  // Sets the class' name the second time.
+
+    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+        .Times(2)
+        .WillRepeatedly(Return(S_OK));
+
+    if (initialize_field_value) {
+      InitializeFieldValue(non_static_field, field_value);
+    }
+
+    if (!non_static_field) {
+      ON_CALL(object_value_, GetFieldValue(&debug_class_, field_def_, _))
+          .WillByDefault(Return(CORDBG_E_FIELD_NOT_INSTANCE));
+    }
+
+    class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
+                            &debug_class_, &type_mock_, 1);
+
+    HRESULT hr = class_field_.GetInitializeHr();
+    EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  }
+
+  virtual void InitializeFieldValue(bool non_static_field,
+                                    int32_t field_value = 20) {
+    SetUpMockGenericValue(&generic_value_, field_value);
+
+    // Only returns the field value for GetFieldValue for non-static field.
+    if (non_static_field) {
+      // GetFieldValue should set its ICorDebugValue pointer to generic_value
+      // above.
+      ON_CALL(object_value_, GetFieldValue(&debug_class_, field_def_, _))
+          .WillByDefault(
+              DoAll(SetArgPointee<2>(&generic_value_), Return(S_OK)));
+    } else {
+      // Now we have to mock function calls for getting static field's value.
+      // First, the active debug thread will be retrieved.
+      ON_CALL(eval_coordinator_, GetActiveDebugThread(_))
+          .WillByDefault(DoAll(SetArgPointee<0>(&debug_thread_), Return(S_OK)));
+
+      // Then the frame from the thread.
+      ON_CALL(debug_thread_, GetActiveFrame(_))
+          .WillByDefault(DoAll(SetArgPointee<0>(&debug_frame_), Return(S_OK)));
+
+      // Then GetStaticFieldValue method will be called.
+      ON_CALL(type_mock_, GetStaticFieldValue(_, &debug_frame_, _))
+          .WillByDefault(
+              DoAll(SetArgPointee<2>(&generic_value_), Return(S_OK)));
+    }
+  }
+
+  // ICorDebugType for this field.
+  ICorDebugTypeMock type_mock_;
+
+  // Field Def for this field.
+  mdFieldDef field_def_ = 10;
+
+  // Class that this field belongs too.
+  ICorDebugClassMock debug_class_;
+
+  // MetaDataImport for this class.
+  IMetaDataImportMock metadataimport_mock_;
+
+  // The ICorDebug that represents the value of this field.
+  ICorDebugObjectValueMock object_value_;
+
   // Generic value that will return int32_t (for static field case only).
-  ICorDebugGenericValueMock generic_value;
+  ICorDebugGenericValueMock generic_value_;
 
-  // GetFieldProps should be called twice.
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsFirst(field_def, _, _, _, _, _))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<4>(1), Return(S_OK)));
+  // EvalCoordinator used for evaluating field.
+  IEvalCoordinatorMock eval_coordinator_;
 
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsSecond(_, _, _, _, _))
-      .Times(2)
-      .WillRepeatedly(Return(S_OK));
+  // Active debug thread mock returned by EvalCoordinator.
+  ICorDebugThreadMock debug_thread_;
 
-  // Only returns field value for GetFieldValue for non-static field.
-  if (non_static_field) {
-    SetUpMockGenericValue(&generic_value, field_value);
+  // The debug frame that the static variable will be retrieved from..
+  ICorDebugFrameMock debug_frame_;
 
-    // GetFieldValue should sets its ICorDebugValue pointer to generic_value
-    // above.
-    EXPECT_CALL(object_value, GetFieldValue(&debug_class, field_def, _))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value), Return(S_OK)));
-  } else {
-    EXPECT_CALL(object_value, GetFieldValue(&debug_class, field_def, _))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_INSTANCE));
-  }
+  // DbgClassField for the test.
+  // Note that this has to be the first to be destroyed (that is
+  // why it is placed near the end) among the mock objects.
+  // This is because if the other mock objects are destroyed first,
+  // this class will try to destroy the mock objects it stored again,
+  // causing error.
+  DbgClassField class_field_;
 
-  class_field->Initialize(field_def, &metadataimport_mock, &object_value,
-                          &debug_class, type_mock, 1);
-
-  HRESULT hr = class_field->GetInitializeHr();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-}
-
-// Tests the Initialize function of DbgClassField.
-TEST(DbgClassFieldTest, TestInitialize) {
-  DbgClassField class_field;
-  {
-    InitializeDbgClassFieldTest(&class_field, nullptr,
-      TRUE,     // Non-static field
-      20);
-  }
-
-  {
-    InitializeDbgClassFieldTest(&class_field, nullptr,
-      FALSE, // Static field.
-      20);
-  }
-}
-
-// Tests error cases for the Initialize function of DbgClassField.
-TEST(DbgClassFieldTest, TestInitializeError) {
-  IMetaDataImportMock metadataimport_mock;
-  DbgClassField class_field;
-  ICorDebugObjectValueMock object_value;
-  ICorDebugClassMock debug_class;
-  ICorDebugTypeMock type_mock;
-  mdFieldDef field_def = 10;
-
-  // Various null check.
-  class_field.Initialize(field_def, nullptr, &object_value, &debug_class,
-                         &type_mock, 1);
-  EXPECT_EQ(class_field.GetInitializeHr(), E_INVALIDARG);
-
-  class_field.Initialize(field_def, &metadataimport_mock, nullptr, &debug_class,
-                         &type_mock, 1);
-  EXPECT_EQ(class_field.GetInitializeHr(), E_INVALIDARG);
-
-  class_field.Initialize(field_def, &metadataimport_mock, &object_value,
-                         nullptr, &type_mock, 1);
-  EXPECT_EQ(class_field.GetInitializeHr(), E_INVALIDARG);
-
-  // MetaDataImport returns error.
-  {
-    EXPECT_CALL(metadataimport_mock,
-                GetFieldPropsFirst(field_def, _, _, _, _, _))
-        .Times(1)
-        .WillRepeatedly(Return(META_E_BADMETADATA));
-
-    EXPECT_CALL(metadataimport_mock, GetFieldPropsSecond(_, _, _, _, _))
-        .Times(1)
-        .WillRepeatedly(Return(META_E_BADMETADATA));
-
-    class_field.Initialize(field_def, &metadataimport_mock, &object_value,
-                           &debug_class, nullptr, 1);
-    EXPECT_EQ(class_field.GetInitializeHr(), META_E_BADMETADATA);
-  }
-
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsFirst(field_def, _, _, _, _, _))
-      .WillRepeatedly(DoAll(SetArgPointee<4>(1), Return(S_OK)));
-
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsSecond(_, _, _, _, _))
-      .WillRepeatedly(Return(S_OK));
-
-  // GetFieldValue returns error.
-  EXPECT_CALL(object_value, GetFieldValue(&debug_class, field_def, _))
-      .Times(1)
-      .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_AVAILABLE));
-
-  class_field.Initialize(field_def, &metadataimport_mock, &object_value,
-                         &debug_class, nullptr, 1);
-
-  EXPECT_EQ(class_field.GetInitializeHr(), CORDBG_E_FIELD_NOT_AVAILABLE);
-}
-
-// Tests the GetFieldname function of DbgClassField.
-TEST(DbgClassFieldTest, TestGetFieldName) {
-  mdFieldDef field_def = 10;
-  static const string class_field_name = "FieldName";
-  uint32_t class_field_name_len = class_field_name.size();
-
+  string class_field_name_ = "FieldName";
 // TODO(quoct): The WCHAR_STRING macro is supposed to expand
 // the string literal but was not able to compile on Linux.
 #ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"FieldName";
+  WCHAR wchar_string_[10] = u"FieldName";
 #else
-  WCHAR wchar_string[] = L"FieldName";
+  WCHAR wchar_string_[10] = L"FieldName";
 #endif
+};
 
-  // GetFieldProps should be called twice.
-  IMetaDataImportMock metadataimport_mock;
+// Tests the Initialize function of DbgClassField for non-static field.
+TEST_F(DbgClassFieldTest, TestInitializeNonStatic) {
+  SetUpField(TRUE, 20);
+  EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+}
 
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsFirst(field_def, _, _, _, _, _))
-      .Times(2)
-      .WillOnce(
-          DoAll(SetArgPointee<4>(class_field_name_len + 1),
-                Return(S_OK)))  // Sets the length of the class the first time.
-      .WillOnce(
-          DoAll(SetArg2ToWcharArray(&wchar_string[0], class_field_name_len),
-                SetArgPointee<4>(class_field_name_len),
-                Return(S_OK)));  // Sets the class' name the second time.
+// Tests the Initialize function of DbgClassField for static field.
+TEST_F(DbgClassFieldTest, TestInitializeStatic) {
+  SetUpField(FALSE, 20);
+  EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+}
 
-  EXPECT_CALL(metadataimport_mock, GetFieldPropsSecond(_, _, _, _, _))
-      .Times(2)
+// Tests error cases for the Initialize function of DbgClassField.
+TEST_F(DbgClassFieldTest, TestInitializeError) {
+  // Various null check.
+  class_field_.Initialize(field_def_, nullptr, &object_value_, &debug_class_,
+                          &type_mock_, 1);
+  EXPECT_EQ(class_field_.GetInitializeHr(), E_INVALIDARG);
+
+  class_field_.Initialize(field_def_, &metadataimport_mock_, nullptr,
+                          &debug_class_, &type_mock_, 1);
+  EXPECT_EQ(class_field_.GetInitializeHr(), E_INVALIDARG);
+
+  class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
+                          nullptr, &type_mock_, 1);
+  EXPECT_EQ(class_field_.GetInitializeHr(), E_INVALIDARG);
+
+  // MetaDataImport returns error.
+  {
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsFirst(field_def_, _, _, _, _, _))
+        .Times(1)
+        .WillRepeatedly(Return(META_E_BADMETADATA));
+
+    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+        .Times(1)
+        .WillRepeatedly(Return(META_E_BADMETADATA));
+
+    class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
+                            &debug_class_, nullptr, 1);
+    EXPECT_EQ(class_field_.GetInitializeHr(), META_E_BADMETADATA);
+  }
+
+  EXPECT_CALL(metadataimport_mock_,
+              GetFieldPropsFirst(field_def_, _, _, _, _, _))
+      .WillRepeatedly(DoAll(SetArgPointee<4>(1), Return(S_OK)));
+
+  EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
       .WillRepeatedly(Return(S_OK));
 
-  ICorDebugObjectValueMock object_value;
-  ICorDebugClassMock debug_class;
-  ICorDebugTypeMock type_mock;
-  DbgClassField class_field;
-
-  EXPECT_CALL(object_value, GetFieldValue(&debug_class, field_def, _))
+  // GetFieldValue returns error.
+  EXPECT_CALL(object_value_, GetFieldValue(&debug_class_, field_def_, _))
       .Times(1)
-      .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_INSTANCE));
+      .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_AVAILABLE));
 
-  class_field.Initialize(field_def, &metadataimport_mock, &object_value,
-                         &debug_class, &type_mock, 1);
+  class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
+                          &debug_class_, nullptr, 1);
 
-  HRESULT hr = class_field.GetInitializeHr();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-  EXPECT_EQ(class_field.GetFieldName(), class_field_name);
+  EXPECT_EQ(class_field_.GetInitializeHr(), CORDBG_E_FIELD_NOT_AVAILABLE);
 }
 
 // Tests the PopulateVariableValue function of DbgClassProperty for nonstatic
 // field.
-TEST(DbgClassFieldTest, TestPopulateVariableValueNonStatic) {
-  DbgClassField class_field;
+TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStatic) {
   int32_t field_value = 20;
-
-  // Non-static field case.
-  InitializeDbgClassFieldTest(&class_field, nullptr, TRUE, field_value);
+  SetUpField(TRUE, 20);
 
   Variable variable;
-  IEvalCoordinatorMock eval_coordinator;
-  EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
             S_OK);
 
   EXPECT_EQ(variable.value(), std::to_string(field_value));
@@ -221,42 +226,13 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueNonStatic) {
 
 // Tests the PopulateVariableValue function of DbgClassProperty for static
 // field.
-TEST(DbgClassFieldTest, TestPopulateVariableValueStatic) {
-  ICorDebugTypeMock type_mock;
-  DbgClassField class_field;
-
-  // Static field initializing.
-  InitializeDbgClassFieldTest(&class_field, &type_mock, FALSE);
-
-  // Generic value to be created.
-  // return int32_value.
-  ICorDebugGenericValueMock generic_value;
+TEST_F(DbgClassFieldTest, TestPopulateVariableValueStatic) {
   int32_t static_value = 40;
-
-  SetUpMockGenericValue(&generic_value, static_value);
+  SetUpField(FALSE, static_value);
 
   Variable variable;
-  IEvalCoordinatorMock eval_coordinator;
 
-  // Now we have to mock function calls for getting static field's value.
-  // First, the active debug thread will be retrieved.
-  ICorDebugThreadMock debug_thread;
-  EXPECT_CALL(eval_coordinator, GetActiveDebugThread(_))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_thread), Return(S_OK)));
-
-  // Then the debug frame will be retrieved from the debug thread.
-  ICorDebugFrameMock debug_frame;
-  EXPECT_CALL(debug_thread, GetActiveFrame(_))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_frame), Return(S_OK)));
-
-  // Then GetStaticFieldValue method will be called.
-  EXPECT_CALL(type_mock, GetStaticFieldValue(_, &debug_frame, _))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value), Return(S_OK)));
-
-  EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
             S_OK);
 
   EXPECT_EQ(variable.value(), std::to_string(static_value));
@@ -264,101 +240,84 @@ TEST(DbgClassFieldTest, TestPopulateVariableValueStatic) {
 
 // Tests the error cases for PopulateVariableValue function of DbgClassProperty
 // when the field is non-static.
-TEST(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
+TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
   // Tests that if Initialize fails, then PopulateVariableValue will fail
   // with the same error.
   {
-    DbgClassField class_field;
-    mdFieldDef field_def = 10;
-    IMetaDataImportMock metadataimport_mock;
-    ICorDebugObjectValueMock object_value;
-    ICorDebugClassMock debug_class;
-    IEvalCoordinatorMock eval_coordinator;
     Variable variable;
 
-    EXPECT_CALL(metadataimport_mock,
-                GetFieldPropsFirst(field_def, _, _, _, _, _))
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsFirst(field_def_, _, _, _, _, _))
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    EXPECT_CALL(metadataimport_mock, GetFieldPropsSecond(_, _, _, _, _))
+    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    class_field.Initialize(field_def, &metadataimport_mock, &object_value,
-                           &debug_class, nullptr, 1);
-    EXPECT_EQ(class_field.GetInitializeHr(), META_E_BADMETADATA);
+    class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
+                            &debug_class_, nullptr, 1);
+    EXPECT_EQ(class_field_.GetInitializeHr(), META_E_BADMETADATA);
 
-    EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
               META_E_BADMETADATA);
   }
 
   // Tests null cases. Makes sure ICorDebugTypeMock did not get
   // destructed before DbgClassField is.
-  ICorDebugTypeMock type_mock;
-  {
-    DbgClassField class_field;
-    int32_t field_value = 20;
+  int32_t field_value = 20;
+  SetUpField(TRUE, field_value);
 
-    InitializeDbgClassFieldTest(&class_field, &type_mock, field_value, 10);
-
-    Variable variable;
-    IEvalCoordinatorMock eval_coordinator;
-    EXPECT_EQ(class_field.PopulateVariableValue(&variable, nullptr),
-              E_INVALIDARG);
-    EXPECT_EQ(class_field.PopulateVariableValue(nullptr, &eval_coordinator),
-              E_INVALIDARG);
-  }
+  Variable variable;
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, nullptr),
+            E_INVALIDARG);
+  EXPECT_EQ(class_field_.PopulateVariableValue(nullptr, &eval_coordinator_),
+            E_INVALIDARG);
 }
 
 // Tests the error cases for the PopulateVariableValue function of
 // DbgClassProperty for static field.
-TEST(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
-  ICorDebugTypeMock type_mock;
-  DbgClassField class_field;
-  int32_t field_value = 40;
-
+TEST_F(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
   // Static field initializing.
-  InitializeDbgClassFieldTest(&class_field, &type_mock, FALSE);
+  int32_t field_value = 40;
+  SetUpField(
+      FALSE, field_value,
+      false  // This means we only initialize and don't set up the field value.
+  );
 
   Variable variable;
-  IEvalCoordinatorMock eval_coordinator;
 
   // Now we have to mock function calls for getting static field's value.
   // First, the active debug thread will be retrieved.
   {
-    ICorDebugThreadMock debug_thread;
-    EXPECT_CALL(eval_coordinator, GetActiveDebugThread(_))
+    EXPECT_CALL(eval_coordinator_, GetActiveDebugThread(_))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
-    EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
               E_ABORT);
   }
 
-  ICorDebugThreadMock debug_thread;
-  EXPECT_CALL(eval_coordinator, GetActiveDebugThread(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_thread), Return(S_OK)));
+  EXPECT_CALL(eval_coordinator_, GetActiveDebugThread(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_thread_), Return(S_OK)));
 
   // Then the debug frame will be retrieved from the debug thread.
   {
-    ICorDebugFrameMock debug_frame;
-    EXPECT_CALL(debug_thread, GetActiveFrame(_))
+    EXPECT_CALL(debug_thread_, GetActiveFrame(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_NON_NATIVE_FRAME));
-    EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
               CORDBG_E_NON_NATIVE_FRAME);
   }
 
-  ICorDebugFrameMock debug_frame;
-  EXPECT_CALL(debug_thread, GetActiveFrame(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_frame), Return(S_OK)));
+  EXPECT_CALL(debug_thread_, GetActiveFrame(_))
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_frame_), Return(S_OK)));
 
   // Then GetStaticFieldValue method will be called.
-  EXPECT_CALL(type_mock, GetStaticFieldValue(_, &debug_frame, _))
+  EXPECT_CALL(type_mock_, GetStaticFieldValue(_, &debug_frame_, _))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_AVAILABLE));
 
-  EXPECT_EQ(class_field.PopulateVariableValue(&variable, &eval_coordinator),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
             CORDBG_E_FIELD_NOT_AVAILABLE);
 }
 

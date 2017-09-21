@@ -19,6 +19,7 @@
 #include <string>
 
 #include "breakpoint_client.h"
+#include "common_action_mocks.h"
 #include "i_named_pipe_mock.h"
 
 using ::testing::DoAll;
@@ -76,21 +77,6 @@ TEST(BreakpointClientTest, ShutDown) {
 // Tests error case for ShutDown function of BreakpointClient.
 TEST(BreakpointClientTest, ShutDownError) {
   BREAKPOINT_CLIENT_SIMPLE_TEST(ShutDown, E_ACCESSDENIED);
-}
-
-// This action will pop the last string in string_vector
-// and make arg0 points to that string.
-ACTION_P(ReadFromStringVectorToArg0, string_vector) {
-  // HAVE TO MAKE SURE TO REMOVE THE CHUNK READ.
-  // MAY HAVE TO CAST.
-  // vector<string> breakpoint_string_chunks = *reinterpret_cast<vector<string>
-  // *>
-  vector<string> *string_vector_ptr =
-      static_cast<vector<string> *>(string_vector);
-  if (!string_vector_ptr->empty()) {
-    *static_cast<string *>(arg0) = string_vector_ptr->back();
-    string_vector_ptr->pop_back();
-  }
 }
 
 // Sets properties activated, line and path of Breakpoint breakpoint

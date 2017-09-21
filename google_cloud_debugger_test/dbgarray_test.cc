@@ -18,9 +18,9 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "dbgarray.h"
 #include "i_cordebug_mocks.h"
 #include "i_evalcoordinator_mock.h"
-#include "dbgarray.h"
 
 using ::testing::DoAll;
 using ::testing::Return;
@@ -42,46 +42,46 @@ class DbgArrayTest : public ::testing::Test {
     // By default, sets array_value_ to the second argument
     // whenever QueryInterface is called.
     ON_CALL(array_value_, QueryInterface(_, _))
-        .WillByDefault(
-            DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
   }
 
   // Sets up various mock objects so when we use them with
   // a DbgArray class, we will get an array with 2 elements.
   void SetUpArray() {
     EXPECT_CALL(array_type_, GetFirstTypeParameter(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&array_element_type_), Return(S_OK)));
+        .WillRepeatedly(
+            DoAll(SetArgPointee<0>(&array_element_type_), Return(S_OK)));
 
     EXPECT_CALL(array_element_type_, GetType(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
+                              Return(S_OK)));
 
     // If queried for ICorDebugHeapValue2, returns heap_value.
     // This happens when the Initialize function tries to create a strong
     // handle of the array.
     ON_CALL(array_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
-      .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
 
     // Makes heap_value returns handle_value if CreateHandle is called.
     EXPECT_CALL(heap_value_, CreateHandle(_, _))
-        .WillRepeatedly(
-            DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
 
     // The handle should dereference to the array value.
     ON_CALL(handle_value_, Dereference(_))
-      .WillByDefault(
-            DoAll(SetArgPointee<0>(&array_value_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&array_value_), Return(S_OK)));
 
     // Initialize function should issue call to get dimensions
     // and ranks of the array.
     EXPECT_CALL(array_value_, GetDimensions(_, _))
-      .WillRepeatedly(DoAll(SetArrayArgument<1>(dimensions_, dimensions_ + 1), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArrayArgument<1>(dimensions_, dimensions_ + 1),
+                              Return(S_OK)));
 
     EXPECT_CALL(array_type_, GetRank(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(S_OK)));
   }
 
   // An array with 2 elements.
-  ULONG32 dimensions_[1] = { 2 };
+  ULONG32 dimensions_[1] = {2};
 
   // Types of the array.
   ICorDebugTypeMock array_type_;
@@ -114,7 +114,7 @@ TEST_F(DbgArrayTest, Initialize) {
 }
 
 // Tests error cases for Initialize function of DbgArray.
-TEST_F(DbgArrayTest, InitializeError) {  
+TEST_F(DbgArrayTest, InitializeError) {
   // Null type.
   {
     DbgArray dbgarray(nullptr, 1);
@@ -126,56 +126,58 @@ TEST_F(DbgArrayTest, InitializeError) {
   {
     DbgArray dbgarray(&array_type_, 1);
     EXPECT_CALL(array_type_, GetFirstTypeParameter(_))
-      .Times(1)
-      .WillRepeatedly(Return(CORDBG_E_CONTEXT_UNVAILABLE));
+        .Times(1)
+        .WillRepeatedly(Return(CORDBG_E_CONTEXT_UNVAILABLE));
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), CORDBG_E_CONTEXT_UNVAILABLE);
   }
 
   EXPECT_CALL(array_type_, GetFirstTypeParameter(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(&array_element_type_), Return(S_OK)));
+      .WillRepeatedly(
+          DoAll(SetArgPointee<0>(&array_element_type_), Return(S_OK)));
 
   // Returns failure when querying the element type of the array.
   {
     DbgArray dbgarray(&array_type_, 1);
     EXPECT_CALL(array_element_type_, GetType(_))
-      .WillRepeatedly(Return(E_ACCESSDENIED));
+        .WillRepeatedly(Return(E_ACCESSDENIED));
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), E_ACCESSDENIED);
   }
 
   EXPECT_CALL(array_element_type_, GetType(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(CorElementType::ELEMENT_TYPE_I4),
+                            Return(S_OK)));
 
   // Makes GetRank returns error.
   {
     DbgArray dbgarray(&array_type_, 1);
     EXPECT_CALL(array_type_, GetRank(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(COR_E_SAFEARRAYRANKMISMATCH)));
+        .WillRepeatedly(
+            DoAll(SetArgPointee<0>(1), Return(COR_E_SAFEARRAYRANKMISMATCH)));
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), COR_E_SAFEARRAYRANKMISMATCH);
   }
 
   EXPECT_CALL(array_type_, GetRank(_))
-    .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(1), Return(S_OK)));
 
   // By default, sets array_value_ to the second argument
   // whenever QueryInterface is called.
   ON_CALL(array_value_, QueryInterface(_, _))
-      .WillByDefault(
-          DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
+      .WillByDefault(DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
 
   // Returns error when trying to create a handle for the array.
   {
     DbgArray dbgarray(&array_type_, 1);
     ON_CALL(array_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
-      .WillByDefault(Return(E_NOINTERFACE));
+        .WillByDefault(Return(E_NOINTERFACE));
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), E_NOINTERFACE);
   }
 
   ON_CALL(array_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
-    .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
+      .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
 
   // Returns error when trying to create a handle for the array.
   {
@@ -189,14 +191,13 @@ TEST_F(DbgArrayTest, InitializeError) {
 
   // Makes heap_value returns handle_value if CreateHandle is called.
   EXPECT_CALL(heap_value_, CreateHandle(_, _))
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
 
   // Makes GetDimensions returns incorrect value.
   {
     EXPECT_CALL(array_value_, GetDimensions(_, _))
-      .Times(1)
-      .WillRepeatedly(Return(CORDBG_S_BAD_START_SEQUENCE_POINT));
+        .Times(1)
+        .WillRepeatedly(Return(CORDBG_S_BAD_START_SEQUENCE_POINT));
     DbgArray dbgarray(&array_type_, 1);
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), CORDBG_S_BAD_START_SEQUENCE_POINT);
@@ -216,8 +217,8 @@ TEST_F(DbgArrayTest, TestGetArrayItem) {
   CComPtr<ICorDebugValue> array_item;
 
   EXPECT_CALL(array_value_, GetElementAtPosition(position, _))
-    .Times(1)
-    .WillRepeatedly(Return(S_OK));
+      .Times(1)
+      .WillRepeatedly(Return(S_OK));
   hr = dbgarray.GetArrayItem(position, &array_item);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
@@ -231,15 +232,13 @@ TEST_F(DbgArrayTest, TestGetArrayItemError) {
   CComPtr<ICorDebugValue> array_item;
 
   // If array is not initialized, error should be thrown.
-  {
-    EXPECT_EQ(dbgarray.GetArrayItem(position, &array_item), E_FAIL);
-  }
+  { EXPECT_EQ(dbgarray.GetArrayItem(position, &array_item), E_FAIL); }
 
   dbgarray.Initialize(&array_value_, FALSE);
 
   EXPECT_CALL(array_value_, GetElementAtPosition(position, _))
-    .Times(1)
-    .WillRepeatedly(Return(E_ACCESSDENIED));
+      .Times(1)
+      .WillRepeatedly(Return(E_ACCESSDENIED));
   EXPECT_EQ(dbgarray.GetArrayItem(position, &array_item), E_ACCESSDENIED);
 }
 
@@ -307,8 +306,8 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
 
   // Returns ICorDebugValue that represents 20.
   EXPECT_CALL(array_value_, GetElementAtPosition(0, _))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<1>(&item0), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&item0), Return(S_OK)));
 
   ICorDebugGenericValueMock item1;
   int32_t value1 = 40;
@@ -316,8 +315,8 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
 
   // Returns ICorDebugValue that represents 40.
   EXPECT_CALL(array_value_, GetElementAtPosition(1, _))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<1>(&item1), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&item1), Return(S_OK)));
 
   HRESULT hr = dbgarray.PopulateMembers(&variable, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -341,14 +340,16 @@ TEST_F(DbgArrayTest, TestPopulateMembersError) {
     // function fails.
     EXPECT_EQ(dbgarray.GetInitializeHr(), E_INVALIDARG);
     Variable variable;
-    EXPECT_EQ(dbgarray.GetInitializeHr(), dbgarray.PopulateMembers(&variable, &eval_coordinator_));
+    EXPECT_EQ(dbgarray.GetInitializeHr(),
+              dbgarray.PopulateMembers(&variable, &eval_coordinator_));
   }
 
   DbgArray dbgarray(&array_type_, 1);
   dbgarray.Initialize(&array_value_, FALSE);
 
   // Should throws error for null variable.
-  EXPECT_EQ(dbgarray.PopulateMembers(nullptr, &eval_coordinator_), E_INVALIDARG);
+  EXPECT_EQ(dbgarray.PopulateMembers(nullptr, &eval_coordinator_),
+            E_INVALIDARG);
 
   Variable variable;
   // Should throws error for null EvalCoordinator.
