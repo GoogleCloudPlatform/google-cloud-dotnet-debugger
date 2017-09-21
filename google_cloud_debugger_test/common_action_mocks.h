@@ -46,14 +46,10 @@ ACTION_P(SetArg0ToByteValue, value) { *static_cast<uint8_t *>(arg0) = value; }
 // This action will pop the last string in string_vector
 // and make arg0 points to that string.
 ACTION_P(ReadFromStringVectorToArg0, string_vector) {
-  // HAVE TO MAKE SURE TO REMOVE THE CHUNK READ.
-  // MAY HAVE TO CAST.
-  // vector<string> breakpoint_string_chunks = *reinterpret_cast<vector<string>
-  // *>
-  vector<string> *string_vector_ptr =
-      static_cast<vector<string> *>(string_vector);
+  std::vector<std::string> *string_vector_ptr =
+      static_cast<std::vector<std::string> *>(string_vector);
   if (!string_vector_ptr->empty()) {
-    *static_cast<string *>(arg0) = string_vector_ptr->back();
+    *static_cast<std::string *>(arg0) = string_vector_ptr->back();
     string_vector_ptr->pop_back();
   }
 }
