@@ -23,6 +23,8 @@ using ::testing::_;
 
 namespace google_cloud_debugger_test {
 
+// This function sets up mock calls so that generic_value
+// will represent an int object with value value.
 void google_cloud_debugger_test::SetUpMockGenericValue(
     ICorDebugGenericValueMock *generic_value, int32_t value) {
   // The generic value is used to create a DbgObject so GetType is called.
