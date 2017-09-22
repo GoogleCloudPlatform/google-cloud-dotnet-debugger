@@ -25,7 +25,9 @@ using ::testing::SetArrayArgument;
 using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::DbgString;
+using google_cloud_debugger::ConvertStringToWCharPtr;
 using std::string;
+using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -85,24 +87,18 @@ TEST(DbgStringTest, GetString) {
 
   static const string test_string_value = "This is a test string";
 
-// TODO(quoct): The WCHAR_STRING macro is supposed to expand
-// the string literal but was not able to compile on Linux.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"This is a test string";
-#else
-  WCHAR wchar_string[] = L"This is a test string";
-#endif
+  vector<WCHAR> wchar_string = ConvertStringToWCharPtr(test_string_value);
 
-  uint32_t string_size = test_string_value.size();
+  uint32_t string_size = wchar_string.size();
   ICorDebugStringValueMock string_value_mock;
   EXPECT_CALL(string_value_mock, GetLength(_))
       .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(string_size), Return(S_OK)));
+      .WillRepeatedly(DoAll(SetArgPointee<0>(string_size - 1), Return(S_OK)));
 
-  EXPECT_CALL(string_value_mock, GetString(string_size + 1, _, _))
+  EXPECT_CALL(string_value_mock, GetString(string_size, _, _))
       .Times(1)
       .WillRepeatedly(DoAll(
-          SetArrayArgument<2>(wchar_string, wchar_string + string_size + 1),
+          SetArrayArgument<2>(wchar_string.data(), wchar_string.data() + string_size),
           Return(S_OK)));
 
   std::string returned_string;
@@ -116,14 +112,6 @@ TEST(DbgStringTest, GetStringError) {
   DbgString dbg_string(nullptr);
 
   static const string test_string_value = "This is a test string";
-
-// TODO(quoct): The WCHAR_STRING macro is supposed to expand
-// the string literal but was not able to compile on Linux.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string[] = u"This is a test string";
-#else
-  WCHAR wchar_string[] = L"This is a test string";
-#endif
 
   uint32_t string_size = test_string_value.size();
   ICorDebugStringValueMock string_value_mock;

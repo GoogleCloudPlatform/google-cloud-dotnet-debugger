@@ -30,6 +30,7 @@ using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
 using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::DbgClassField;
 using std::string;
@@ -44,16 +45,16 @@ class DbgClassFieldTest : public ::testing::Test {
 
   virtual void SetUpField(bool non_static_field, int32_t field_value = 20,
                           bool initialize_field_value = true) {
-    uint32_t class_field_name_len = class_field_name_.size();
+    uint32_t class_field_name_len = wchar_string_.size();
 
     EXPECT_CALL(metadataimport_mock_,
                 GetFieldPropsFirst(field_def_, _, _, _, _, _))
         .Times(2)
         .WillOnce(DoAll(
-            SetArgPointee<4>(class_field_name_len + 1),
+            SetArgPointee<4>(class_field_name_len),
             Return(S_OK)))  // Sets the length of the class the first time.
         .WillOnce(
-            DoAll(SetArg2ToWcharArray(&wchar_string_[0], class_field_name_len),
+            DoAll(SetArg2ToWcharArray(wchar_string_.data(), class_field_name_len),
                   SetArgPointee<4>(class_field_name_len),
                   Return(S_OK)));  // Sets the class' name the second time.
 
@@ -141,13 +142,8 @@ class DbgClassFieldTest : public ::testing::Test {
   DbgClassField class_field_;
 
   string class_field_name_ = "FieldName";
-// TODO(quoct): The WCHAR_STRING macro is supposed to expand
-// the string literal but was not able to compile on Linux.
-#ifdef PAL_STDCPP_COMPAT
-  WCHAR wchar_string_[10] = u"FieldName";
-#else
-  WCHAR wchar_string_[10] = L"FieldName";
-#endif
+
+  vector<WCHAR> wchar_string_ = ConvertStringToWCharPtr(class_field_name_);
 };
 
 // Tests the Initialize function of DbgClassField for non-static field.

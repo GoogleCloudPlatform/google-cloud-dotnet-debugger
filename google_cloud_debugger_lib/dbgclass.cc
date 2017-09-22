@@ -72,8 +72,20 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
     return hr;
   }
 
-  PopulateClassName(metadata_import);
-  PopulateParameterizedType();
+  hr = PopulateClassName(metadata_import);
+  if (FAILED(hr)) {
+    WriteError("Failed to get class name.");
+    return hr;
+  }
+
+  if (debug_type) {
+    hr = PopulateParameterizedType();
+    if (FAILED(hr)) {
+      WriteError("Fail to populate parameterized type.");
+      return hr;
+    }
+  }
+
   if (!GetIsNull()) {
     CComPtr<ICorDebugObjectValue> debug_obj_value;
 
@@ -181,6 +193,9 @@ HRESULT DbgClass::PopulateParameterizedType() {
   CComPtr<ICorDebugTypeEnum> type_enum;
   CComPtr<ICorDebugType> debug_type;
   debug_type = GetDebugType();
+  if (!debug_type) {
+    return E_INVALIDARG;
+  }
 
   hr = debug_type->EnumerateTypeParameters(&type_enum);
   if (FAILED(hr)) {
@@ -490,12 +505,12 @@ BOOL DbgClass::HasMembers() { return !is_primitive_type_; }
 BOOL DbgClass::HasValue() { return is_primitive_type_; }
 
 HRESULT DbgClass::PopulateValue(Variable *variable) {
-  if (FAILED(initialize_hr_)) {
-    return initialize_hr_;
-  }
-
   if (!variable) {
     return E_INVALIDARG;
+  }
+
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
   }
 
   HRESULT hr = primitive_type_value_->PopulateValue(variable);
@@ -544,6 +559,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       if (FAILED(hr)) {
         class_field_var->clear_type();
         class_field_var->clear_members();
+        class_field_var->clear_value();
         SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
       }
     }
@@ -562,6 +578,9 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       hr = (*it)->PopulateVariableValue(property_field_var, class_handle_,
           eval_coordinator, &generic_types_, new_depth);
       if (FAILED(hr)) {
+        property_field_var->clear_type();
+        property_field_var->clear_members();
+        property_field_var->clear_value();
         SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
       }
     }
@@ -571,12 +590,12 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
 }
 
 HRESULT DbgClass::PopulateType(Variable *variable) {
-  if (FAILED(initialize_hr_)) {
-    return initialize_hr_;
-  }
-
   if (!variable) {
     return E_INVALIDARG;
+  }
+
+  if (FAILED(initialize_hr_)) {
+    return initialize_hr_;
   }
 
   if (class_name_.empty()) {
@@ -587,6 +606,7 @@ HRESULT DbgClass::PopulateType(Variable *variable) {
   std::string class_name = (ConvertWCharPtrToString(class_name_));
 
   if (empty_generic_objects_.size() == 0) {
+    variable->set_type(class_name);
     return S_OK;
   }
 
