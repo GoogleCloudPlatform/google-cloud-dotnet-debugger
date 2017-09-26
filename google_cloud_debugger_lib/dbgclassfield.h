@@ -32,8 +32,8 @@ class DbgClassField : public StringStreamWrapper {
   // HRESULT will be stored in initialized_hr_.
   void Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
                   ICorDebugObjectValue *debug_obj_value,
-                  ICorDebugClass *debug_class,
-                  ICorDebugType *class_type, int depth);
+                  ICorDebugClass *debug_class, ICorDebugType *class_type,
+                  int depth);
 
   // Sets the value of variable to the value of this field.
   HRESULT PopulateVariableValue(
@@ -46,6 +46,12 @@ class DbgClassField : public StringStreamWrapper {
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
+
+  BOOL IsStatic() const { return is_static_field_; }
+
+  PCCOR_SIGNATURE GetSignature() const { return signature_metadata_; }
+
+  UVCP_CONSTANT GetDefaultValue() const { return default_value_; }
 
  private:
   // Token for the class that the field belongs to.
