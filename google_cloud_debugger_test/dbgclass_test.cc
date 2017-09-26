@@ -91,6 +91,24 @@ class DbgClassTest : public ::testing::Test {
       .WillByDefault(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
   }
 
+  void SetUpBaseClass() {
+    // ICorDebugType returns base type if GetBase is called.
+    ON_CALL(debug_type_, GetBase(_))
+        .WillByDefault(DoAll(SetArgPointee<0>(&base_debug_type_), Return(S_OK)));
+
+    // Extracts ICorDebugClass from base_debug_type_.
+    ON_CALL(base_debug_type_, GetClass(_))
+      .WillByDefault(DoAll(SetArgPointee<0>(&base_debug_class_), Return(S_OK)));
+
+    // ICorDebugModule extracted from debug_class_.
+    ON_CALL(base_debug_class_, GetModule(_))
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
+
+    // Base class token extracted from debug_class_.
+    ON_CALL(base_debug_class_, GetToken(_))
+        .WillByDefault(DoAll(SetArgPointee<0>(base_class_token_), Return(S_OK)));
+  }
+
   void SetUpMetaDataImport() {
     // MetaDataImport extracted from debug_module_.
     ON_CALL(debug_module_, GetMetaDataInterface(IID_IMetaDataImport, _))
@@ -113,6 +131,16 @@ class DbgClassTest : public ::testing::Test {
         .WillOnce(
             DoAll(SetArg1ToWcharArray(wchar_class_name_.data(), class_name_len),
                   SetArgPointee<3>(class_name_len), Return(S_OK)));
+
+    uint32_t base_class_name_len = wchar_base_class_name_.size();
+
+    // Sets up the same thing for the base class.
+    EXPECT_CALL(metadata_import_, GetTypeDefProps(base_class_token_, _, _, _, _, _))
+        .Times(2)
+        .WillOnce(DoAll(SetArgPointee<3>(base_class_name_len), Return(S_OK)))
+        .WillOnce(
+            DoAll(SetArg1ToWcharArray(wchar_base_class_name_.data(), base_class_name_len),
+                  SetArgPointee<3>(base_class_name_len), Return(S_OK)));
   }
 
   void SetUpClassField() {
@@ -248,6 +276,20 @@ class DbgClassTest : public ::testing::Test {
 
   vector<WCHAR> wchar_class_name_ = ConvertStringToWCharPtr(class_name_);
 
+  // Type of the base class.
+  ICorDebugTypeMock base_debug_type_;
+
+  // The ICorDebugClass represents the base class.
+  ICorDebugClassMock base_debug_class_;
+
+  // Token of the base class.
+  mdTypeDef base_class_token_ = 15;
+
+  // Name of the base class.
+  string base_class_name_ = "BaseClassName";
+
+  vector<WCHAR> wchar_base_class_name_ = ConvertStringToWCharPtr(base_class_name_);
+
   // Name of this class's first field.
   string class_first_field_ = "Field1";
 
@@ -296,6 +338,7 @@ class DbgClassTest : public ::testing::Test {
 // This test does not initialize any fields or properties in the class.
 TEST_F(DbgClassTest, TestInitializeNull) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
 
   // Sets depth to 0 so no fields or properties are created.
@@ -311,6 +354,7 @@ TEST_F(DbgClassTest, TestInitializeNull) {
 // This test does not initialize any fields or properties in the class.
 TEST_F(DbgClassTest, TestInitializeNonNull) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   // Sets depth to -1 so no fields or properties are created.
   DbgClass dbg_class(&debug_type_, -1);
@@ -325,6 +369,7 @@ TEST_F(DbgClassTest, TestInitializeNonNull) {
 // are also initialized.
 TEST_F(DbgClassTest, TestInitializeWithFieldAndProperty) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   SetUpClassField();
   SetUpClassProperty();
@@ -356,6 +401,7 @@ TEST_F(DbgClassTest, TestInitializeTypeError) {
 // when we cannot get MetaData.
 TEST_F(DbgClassTest, TestInitializeMetaDataError) {
   SetUpDbgClass();
+  SetUpBaseClass();
   // Makes debug_module_ returns error when querying for MetaDataImport.
   EXPECT_CALL(debug_module_, GetMetaDataInterface(IID_IMetaDataImport, _))
     .Times(1)
@@ -371,6 +417,7 @@ TEST_F(DbgClassTest, TestInitializeMetaDataError) {
 // when we cannot get fields.
 TEST_F(DbgClassTest, TestInitializeFieldError) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
 
   // Makes EnumFields returns error when trying to get the fields.
@@ -388,6 +435,7 @@ TEST_F(DbgClassTest, TestInitializeFieldError) {
 // when we cannot get properties.
 TEST_F(DbgClassTest, TestInitializePropertyError) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   SetUpClassField();
 
@@ -404,6 +452,7 @@ TEST_F(DbgClassTest, TestInitializePropertyError) {
 // Test PopulateType function.
 TEST_F(DbgClassTest, TestPopulateType) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   SetUpClassField();
   SetUpClassProperty();
@@ -442,6 +491,7 @@ TEST_F(DbgClassTest, TestPopulateTypeError) {
 // Test PopulateMembers function.
 TEST_F(DbgClassTest, TestPopulateMembers) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   SetUpClassField();
   SetUpClassProperty();
@@ -493,6 +543,7 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
 // Test error cases for PopulateMembers function.
 TEST_F(DbgClassTest, TestPopulateMembersError) {
   SetUpDbgClass();
+  SetUpBaseClass();
   SetUpMetaDataImport();
   SetUpClassField();
   SetUpClassProperty();
