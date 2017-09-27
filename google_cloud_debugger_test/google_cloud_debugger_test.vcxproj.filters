@@ -48,6 +48,9 @@
     <ClCompile Include="common_action_mocks.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbgclass_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="i_evalcoordinator_mock.h">

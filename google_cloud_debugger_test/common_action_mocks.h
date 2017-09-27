@@ -39,6 +39,11 @@ ACTION_P2(SetArg2ToWcharArray, wchar_array, len) {
 }
 
 // SetArgPointee does not allow casting so we have to write our own action.
+ACTION_P2(SetArg1ToWcharArray, wchar_array, len) {
+  memcpy(const_cast<LPWSTR>(arg1), wchar_array, len * sizeof(WCHAR));
+}
+
+// SetArgPointee does not allow casting so we have to write our own action.
 ACTION_P(SetArg0ToInt32Value, value) { *static_cast<uint32_t *>(arg0) = value; }
 
 ACTION_P(SetArg0ToByteValue, value) { *static_cast<uint8_t *>(arg0) = value; }

@@ -341,6 +341,22 @@ class ICorDebugTypeMock : public ICorDebugType {
   MOCK_METHOD1(GetRank, HRESULT(ULONG32 *pnRank));
 };
 
+class ICorDebugTypeEnumMock : public ICorDebugTypeEnum {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(Skip,
+      HRESULT(ULONG celt));
+  MOCK_METHOD0(Reset,
+      HRESULT(void));
+  MOCK_METHOD1(Clone,
+      HRESULT(ICorDebugEnum ** ppEnum));
+  MOCK_METHOD1(GetCount,
+      HRESULT(ULONG * pcelt));
+  MOCK_METHOD3(Next,
+      HRESULT(ULONG celt, ICorDebugType * values[], ULONG * pceltFetched));
+};
+
 }  // namespace google_cloud_debugger_test
 
 #endif  //  I_COR_DEBUG_MOCKS_H_
