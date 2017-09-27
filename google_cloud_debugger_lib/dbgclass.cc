@@ -628,6 +628,13 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
     return E_FAIL;
   }
 
+<<<<<<< HEAD
+=======
+  if (!HasValue()) {
+    return E_FAIL;
+  }
+
+>>>>>>> 99295115b0d7ddb1be1096962c29e287462ca26d
   if (is_primitive_type_) {
     HRESULT hr = primitive_type_value_->PopulateValue(variable);
     if (FAILED(hr)) {
