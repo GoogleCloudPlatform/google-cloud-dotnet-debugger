@@ -237,8 +237,10 @@ class DbgClassTest : public ::testing::Test {
   // Token of this class.
   mdTypeDef class_token_ = 0;
 
+  // Tokens that represents the 2 fields of this class.
   mdFieldDef field_defs_[2] = {10, 20};
 
+  // Token that represents the proprety of this class.
   mdProperty property_def_[1] = {30};
 
   // Name of this class.
@@ -506,7 +508,7 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   EXPECT_EQ(dbg_class.PopulateMembers(&variable, nullptr), E_INVALIDARG);
   EXPECT_EQ(dbg_class.PopulateMembers(nullptr, &eval_coordinator_), E_INVALIDARG);
 
-  // Debug module should returns the correct property getter function.
+  // Debug module should return the correct property getter function.
   EXPECT_CALL(debug_module_, GetFunctionFromToken(property_getter_def_, _))
     .Times(1)
     .WillRepeatedly(DoAll(SetArgPointee<1>(&property_getter_), Return(S_OK)));
@@ -523,6 +525,8 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   EXPECT_EQ(variable.members(0).type(), "System.Int32");
   EXPECT_EQ(variable.members(1).type(), "System.Int32");
   EXPECT_EQ(variable.members(2).type(), "");
+  EXPECT_EQ(variable.members(2).status().iserror(), true);
+  EXPECT_EQ(variable.members(2).status().message(), "Failed to create ICorDebugEval.");
 
   EXPECT_EQ(variable.members(0).value(), std::to_string(first_field_value_));
   EXPECT_EQ(variable.members(1).value(), std::to_string(second_field_value_));
