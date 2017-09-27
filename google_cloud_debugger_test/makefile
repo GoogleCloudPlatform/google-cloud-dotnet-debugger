@@ -52,6 +52,9 @@ dbgclassfield_test.o: dbgclassfield_test.cc
 dbgclassproperty_test.o: dbgclassproperty_test.cc
 	clang-3.5 dbgclassproperty_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassproperty_test.o
 
+dbgclass_test.o: dbgclass_test.cc
+	clang-3.5 dbgclass_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclass_test.o
+
 dbgarray_test.o: dbgarray_test.cc
 	clang-3.5 dbgarray_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgarray_test.o
 
