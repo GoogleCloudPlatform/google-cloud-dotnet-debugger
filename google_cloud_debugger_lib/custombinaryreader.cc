@@ -14,7 +14,6 @@
 
 #include "custombinaryreader.h"
 
-#include <iostream>
 #include <iterator>
 #include <vector>
 
@@ -24,6 +23,8 @@ using std::ifstream;
 using std::ios;
 using std::string;
 using std::vector;
+using std::unique_ptr;
+using std::streampos;
 
 const int one = 1;
 #define big_endian() ((*(char *)&one) == 0)
@@ -42,89 +43,102 @@ const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
 const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
 
 bool CustomBinaryStream::ConsumeFile(const string &file) {
-  ifstream file_stream(file, ios::in | ios::binary | ios::ate);
-  if (file_stream.is_open()) {
+  file_stream_ =  unique_ptr<ifstream>(new (std::nothrow)ifstream(file, ios::in | ios::binary | ios::ate));
+  if (!file_stream_) {
+    return false;
+  }
+
+  if (file_stream_->is_open()) {
     std::streampos file_size;
 
-    file_stream.unsetf(std::ios::skipws);
+    file_stream_->unsetf(std::ios::skipws);
 
-    file_size = file_stream.tellg();
-    file_content_.reserve(file_size);
-    file_stream.seekg(0, file_stream.beg);
+    //file_size = file_stream_.tellg();
+    //file_content_.reserve(file_size);
+    end_ = file_stream_->end;
+    file_stream_->seekg(0, file_stream_->beg);
 
-    file_content_.insert(file_content_.begin(),
-                         std::istream_iterator<uint8_t>(file_stream),
-                         std::istream_iterator<uint8_t>());
+    //file_content_.insert(file_content_.begin(),
+    //                     std::istream_iterator<uint8_t>(file_stream_),
+    //                     std::istream_iterator<uint8_t>());
 
-    iterator_ = file_content_.begin();
-    begin_ = file_content_.begin();
-    end_ = file_content_.end();
     return true;
   }
 
   return false;
 }
 
-bool CustomBinaryStream::ConsumeVector(
-    const std::vector<uint8_t> &byte_vector) {
-  iterator_ = byte_vector.begin();
-  begin_ = byte_vector.begin();
-  end_ = byte_vector.end();
-  return true;
-}
-
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
-  *bytes_read = 0;
-  while (*bytes_read != bytes_to_read) {
-    if (iterator_ == end_) {
-      return false;
-    }
-
-    *result = *iterator_;
-    result++;
-    iterator_++;
-    ++(*bytes_read);
+  if (end_ - static_cast<streampos>(file_stream_->cur) < bytes_to_read) {
+    return false;
   }
-  return true;
+
+  file_stream_->read(reinterpret_cast<char *>(result), bytes_to_read);
+  return file_stream_->gcount();
 }
 
-bool CustomBinaryStream::HasNext() const { return iterator_ < end_; }
+bool CustomBinaryStream::HasNext() const { return file_stream_->cur < end_; }
 
 bool CustomBinaryStream::Peek(uint8_t *result) const {
-  if (iterator_ == end_) {
+  if (!HasNext()) {
     return false;
   }
 
-  *result = *iterator_;
-
+  *result = file_stream_->peek();
   return true;
 }
 
-bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
-  if (std::distance(iterator_, end_) < index) {
+bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
+  if (end_ - static_cast<streampos>(file_stream_->cur) < index) {
     return false;
   }
 
-  iterator_ += index;
+  file_stream_->seekg(index, file_stream_->cur);
   return true;
 }
 
-bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
-  if (std::distance(begin_, end_) < position) {
+bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
+  if (end_ - static_cast<streampos>(file_stream_->cur) < position) {
     return false;
   }
 
-  iterator_ = begin_ + position;
+  file_stream_->seekg(position, file_stream_->beg);
   return true;
 }
 
-bool CustomBinaryStream::SetStreamLength(uint64_t length) {
-  if (std::distance(iterator_, end_) < length) {
+bool CustomBinaryStream::SetStreamLength(uint32_t length) {
+  if (end_ - static_cast<streampos>(file_stream_->cur) < length) {
     return false;
   }
 
-  end_ = iterator_ + length;
+  end_ = file_stream_->cur + length;
+  return true;
+}
+
+bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
+  result->clear();
+  streampos previous_pos = file_stream_->tellg();
+  file_stream_->seekg(offset, file_stream_->cur);
+  if (file_stream_->fail()) {
+    file_stream_->clear();
+    file_stream_->seekg(previous_pos);
+    return false;
+  }
+
+  size_t char_read = 0;
+  while (file_stream_->cur != end_) {
+    char read_char;
+    file_stream_->read(&read_char, 1);
+    if (read_char != 0) {
+      *result += read_char;
+    }
+    else {
+      break;
+    }
+  }
+
+  file_stream_->seekg(previous_pos);
   return true;
 }
 

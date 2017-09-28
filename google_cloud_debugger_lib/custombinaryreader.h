@@ -20,10 +20,11 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "metadatatables.h"
 
-typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
+//typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
 
 namespace google_cloud_debugger_portable_pdb {
 struct CompressedMetadataTableHeader;
@@ -42,11 +43,6 @@ class CustomBinaryStream {
   // Consumes a file and exposes the file content as a binary stream.
   bool ConsumeFile(const std::string &file);
 
-  // Consumes a uint8_t vector and exposes it as a binary stream.
-  // The caller must ensure that the vector remains valid while
-  // using this stream.
-  bool ConsumeVector(const std::vector<uint8_t> &byte_vector);
-
   // Returns true if there is a next byte in the stream.
   bool HasNext() const;
 
@@ -54,17 +50,21 @@ class CustomBinaryStream {
   bool Peek(std::uint8_t *result) const;
 
   // Sets the stream position to position from the current position.
-  bool SeekFromCurrent(std::uint64_t position);
+  bool SeekFromCurrent(std::uint32_t position);
 
   // Sets the stream position to position from the original position.
-  bool SeekFromOrigin(std::uint64_t position);
+  bool SeekFromOrigin(std::uint32_t position);
 
   // Sets where the stream will end. This should be less than the current end_.
-  bool SetStreamLength(std::uint64_t length);
+  bool SetStreamLength(std::uint32_t length);
+
+  bool ResetStreamLength() { end_ = file_stream_->end; }
+
+  bool GetString(std::string *result, std::uint32_t offset);
 
   // Returns the number of bytes remaining in the stream.
-  std::size_t GetRemainingStreamLength() const {
-    return std::distance(iterator_, end_);
+  std::streamoff GetRemainingStreamLength() const {
+    return end_ - static_cast<std::streampos>(file_stream_->cur);
   }
 
   // Reads the next byte in the stream. Returns false if the byte
@@ -111,26 +111,25 @@ class CustomBinaryStream {
                       std::uint32_t *table_index);
 
   // Returns the current stream position.
-  binary_stream_iter Current() { return iterator_; }
+  std::streampos current() { return file_stream_->cur; }
 
   // Returns the end position of the stream.
-  binary_stream_iter End() { return end_; }
+  std::streampos end() { return end_; }
 
   // Returns the beginning position of the stream.
-  binary_stream_iter begin() { return begin_; }
+  std::streampos begin() { return begin_; }
 
  private:
-  // The binary content of the file (if this stream s from a file).
-  std::vector<std::uint8_t> file_content_;
+   std::unique_ptr<std::ifstream> file_stream_;
 
   // The current stream position.
-  binary_stream_iter iterator_;
+  //std::streampos iterator_;
 
   // The end position of the stream.
-  binary_stream_iter end_;
+  std::streampos end_;
 
   // The start position of the stream.
-  binary_stream_iter begin_;
+  std::streampos begin_;
 };
 
 }  // namespace google_cloud_debugger_portable_pdb

@@ -25,6 +25,7 @@ using std::cerr;
 using std::max;
 using std::min;
 using std::vector;
+using std::string;
 
 namespace google_cloud_debugger_portable_pdb {
 
@@ -48,22 +49,27 @@ bool DocumentIndex::Initialize(const IPortablePdbFile &pdb, int doc_index) {
     return false;
   }
 
-  source_language_ = GetLanguageName(pdb.GetHeapGuid(doc_row.language));
-  hash_algorithm_ =
-      GetHashAlgorithmName(pdb.GetHeapGuid(doc_row.hash_algorithm));
-
-  CustomBinaryStream binary_stream;
-
-  if (!pdb.GetHeapBlobStream(doc_row.hash, &binary_stream)) {
-    cerr << "Failed to get heap blob stream.";
+  string language_guid;
+  if (!pdb.GetHeapGuid(doc_row.language, &language_guid)) {
+    cerr << "Failed to get language GUID.";
     return false;
   }
 
-  size_t stream_len = binary_stream.GetRemainingStreamLength();
-  hash_.resize(stream_len);
-  uint32_t bytes_read = 0;
-  if (!binary_stream.ReadBytes(hash_.data(), hash_.size(), &bytes_read)) {
-    cerr << "Failed to read the hash from the heap blob stream.";
+  source_language_ = GetLanguageName(language_guid);
+
+  string hash_guid;
+  if (!pdb.GetHeapGuid(doc_row.hash_algorithm, &hash_guid)) {
+    cerr << "Failed to get hash GUID.";
+    return false;
+  }
+ 
+  hash_algorithm_ =
+      GetHashAlgorithmName(hash_guid);
+
+  CustomBinaryStream binary_stream;
+
+  if (!pdb.GetHash(doc_row.hash, &hash_)) {
+    cerr << "Failed to get heap blob stream.";
     return false;
   }
 
@@ -103,17 +109,10 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, const IPortablePdbFile &pdb,
   method->first_line = UINT32_MAX;
   method->last_line = 0;
 
-  CustomBinaryStream sequence_point_blob_stream;
-  if (!pdb.GetHeapBlobStream(debug_info_row.sequence_points,
-                             &sequence_point_blob_stream)) {
-    cerr << "Failed to get heap blob stream for MethodDebugInfo row.";
-    return false;
-  }
-
   MethodSequencePointInformation sequence_point_info;
-  if (!ParseFrom(doc_index, &sequence_point_blob_stream,
-                 &sequence_point_info)) {
-    cerr << "Failed to parse MethodSequencePointInformation.";
+  if (!pdb.GetMethodSeqInfo(doc_index, debug_info_row.sequence_points,
+                             &sequence_point_info)) {
+    cerr << "Failed to get Sequnece Point Info from MethodDebugInfo row.";
     return false;
   }
 
@@ -217,7 +216,9 @@ bool DocumentIndex::ParseScope(
     new_variable.debugger_hidden =
         (local_variable_row.attributes == kDebuggerHidden);
     new_variable.slot = local_variable_row.index;
-    new_variable.name = pdb.GetHeapString(local_variable_row.name);
+    if (!pdb.GetHeapString(local_variable_row.name, &new_variable.name)) {
+      return false;
+    }
 
     local_scope->local_variables.push_back(std::move(new_variable));
   }
@@ -235,7 +236,9 @@ bool DocumentIndex::ParseScope(
     const LocalConstantRow &local_constant_row =
         local_constant_table[const_idx];
     LocalConstantInfo new_const;
-    new_const.name = pdb.GetHeapString(local_constant_row.name);
+    if (!pdb.GetHeapString(local_constant_row.name, &new_const.name)) {
+      return false;
+    }
 
     local_scope->local_constants.push_back(std::move(new_const));
   }

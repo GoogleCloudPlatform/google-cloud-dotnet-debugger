@@ -45,11 +45,7 @@ class PortablePdbFile : public IPortablePdbFile {
   bool GetStream(const std::string &name, StreamHeader *stream_header) const;
 
   // Get string from the heap at index index.
-  const std::string &GetHeapString(std::uint32_t index) const;
-
-  // Get data from the blob heap.
-  bool GetHeapBlobStream(std::uint32_t index,
-                         CustomBinaryStream *binary_stream) const;
+  bool GetHeapString(std::uint32_t index, std::string *result) const;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
@@ -57,9 +53,13 @@ class PortablePdbFile : public IPortablePdbFile {
   bool GetDocumentName(std::uint32_t index, std::string *doc_name) const;
 
   // Gets GUID based on index;
-  const std::string &GetHeapGuid(std::uint32_t index) const {
-    return guids_heap_data_[index];
-  }
+  bool GetHeapGuid(std::uint32_t index, std::string *guid) const;
+
+  // Gets the hash based on index.
+  bool GetHash(std::uint32_t index, std::vector<std::uint8_t> *hash) const;
+
+  // Gets the method sequence information based on index.
+  bool GetMethodSeqInfo(std::uint32_t doc_index, std::uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const;
 
   // Returns the document table.
   const std::vector<DocumentRow> &GetDocumentTable() const {
@@ -115,26 +115,23 @@ class PortablePdbFile : public IPortablePdbFile {
   std::string module_name_;
 
   // Binary Stream contents of the PE file.
-  CustomBinaryStream pdb_file_binary_stream_;
+  mutable CustomBinaryStream pdb_file_binary_stream_;
 
   // Not all PDB-specific metadata tables implemented/exposed.
   MetadataRootHeader root_header_;
   std::vector<StreamHeader> stream_headers_;
+
+  StreamHeader string_heap_header_;
+
+  StreamHeader blob_heap_header_;
+
+  StreamHeader guid_heap_header_;
 
   // Header for the PDB metadata section.
   PortablePdbMetadataSectionHeader pdb_metadata_header_;
 
   // Header for the compressed metadata table stream.
   CompressedMetadataTableHeader metadata_table_header_;
-
-  // Byte array of the Strings heap.
-  std::vector<uint8_t> string_heap_data_;
-
-  // Byte array of the Blob heap.
-  std::vector<uint8_t> blob_heap_data_;
-
-  // Byte array of the GUID heap.
-  std::vector<std::string> guids_heap_data_;
 
   // PDB-specific metadata tables. All are 1-indexed, and contain a zeroed out
   // entry at index 0.

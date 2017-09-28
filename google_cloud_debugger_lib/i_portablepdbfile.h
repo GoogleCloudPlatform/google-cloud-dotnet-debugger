@@ -56,20 +56,21 @@ class IPortablePdbFile {
                          StreamHeader *stream_header) const = 0;
 
   // Get string from the heap at index index.
-  virtual const std::string &GetHeapString(std::uint32_t index) const = 0;
-
-  // Get data from the blob heap.
-  virtual bool GetHeapBlobStream(std::uint32_t index,
-                                 CustomBinaryStream *binary_stream) const = 0;
+  virtual bool GetHeapString(std::uint32_t index, std::string *result) const = 0;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
   // spec. Returns true if succeeds.
-  virtual bool GetDocumentName(std::uint32_t index,
-                               std::string *doc_name) const = 0;
+  virtual bool GetDocumentName(std::uint32_t index, std::string *doc_name) const = 0;
 
-  // Gets GUID based on index;
-  virtual const std::string &GetHeapGuid(std::uint32_t index) const = 0;
+  // Gets GUID based on index.
+  virtual bool GetHeapGuid(std::uint32_t index, std::string *guid) const = 0;
+
+  // Gets the hash based on index.
+  virtual bool GetHash(std::uint32_t index, std::vector<std::uint8_t> *hash) const = 0;
+
+  // Gets the method sequence information based on index.
+  virtual bool GetMethodSeqInfo(std::uint32_t doc_index, std::uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const = 0;
 
   // Returns the document table.
   virtual const std::vector<DocumentRow> &GetDocumentTable() const = 0;
