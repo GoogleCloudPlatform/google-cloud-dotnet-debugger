@@ -559,6 +559,7 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
       // Do nothing if this is not an enum.
       if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
           0) {
+        initialize_hr_ = S_OK;
         return;
       }
 
@@ -638,6 +639,7 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
   }
 
   CorElementType enum_type;
+  bool enum_type_found = false;
   // We have enum type.
   // First, gets the underlying type. This is from the non-static field __value.
   for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
@@ -652,8 +654,14 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
 
       PCCOR_SIGNATURE field_signature = (*it)->GetSignature();
       enum_type = CorSigUncompressElementType(field_signature);
+      enum_type_found = true;
       break;
     }
+  }
+
+  if (!enum_type_found) {
+    WriteError("Cannot find the type of the enum.");
+    return E_FAIL;
   }
 
   string enum_string;

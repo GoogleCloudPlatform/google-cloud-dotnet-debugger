@@ -47,10 +47,13 @@ class DbgClassField : public StringStreamWrapper {
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
 
+  // Returns true if this is a static field.
   BOOL IsStatic() const { return is_static_field_; }
 
+  // Returns the signature of the field.
   PCCOR_SIGNATURE GetSignature() const { return signature_metadata_; }
 
+  // Returns the default value of the field (useful if the field is an enum).
   UVCP_CONSTANT GetDefaultValue() const { return default_value_; }
 
  private:
