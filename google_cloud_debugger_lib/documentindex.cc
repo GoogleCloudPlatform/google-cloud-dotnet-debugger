@@ -112,7 +112,7 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, const IPortablePdbFile &pdb,
   MethodSequencePointInformation sequence_point_info;
   if (!pdb.GetMethodSeqInfo(doc_index, debug_info_row.sequence_points,
                              &sequence_point_info)) {
-    cerr << "Failed to get Sequnece Point Info from MethodDebugInfo row.";
+    cerr << "Failed to get Sequence Point Info from MethodDebugInfo row.";
     return false;
   }
 

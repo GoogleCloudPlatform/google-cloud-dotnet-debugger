@@ -58,7 +58,7 @@ bool PortablePdbFile::InitializeStringsHeap() {
 }
 
 bool PortablePdbFile::GetHeapString(uint32_t index, string *heap_string) const {
-  return pdb_file_binary_stream_.GetString(heap_string, string_heap_header_.offset);
+  return pdb_file_binary_stream_.GetString(heap_string, string_heap_header_.offset + index);
 }
 
 bool PortablePdbFile::InitializeFromFile(const string &file_path) {
@@ -114,42 +114,59 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
     return false;
   }
   
-  streampos current_pos = pdb_file_binary_stream_.current();
   pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + index);
-  uint32_t data_length;
-  if (!pdb_file_binary_stream_.ReadCompressedUInt32(&data_length)) {
+  uint32_t index_stream_length;
+  if (!pdb_file_binary_stream_.ReadCompressedUInt32(&index_stream_length)) {
     return false;
   }
 
-  pdb_file_binary_stream_.SetStreamLength(data_length);
+  pdb_file_binary_stream_.SetStreamLength(index_stream_length);
 
   uint8_t separator;
   if (!pdb_file_binary_stream_.ReadByte(&separator)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   string result;
+  // We essentially have 2 streams, 1 for reading the index of the
+  // components of the document name and 1 for getting the components itself.
+  // This variable is used to keep track of the position in the former stream.
+  streampos index_stream_pos;
   while (pdb_file_binary_stream_.HasNext()) {
     uint32_t part_index;
     if (!pdb_file_binary_stream_.ReadCompressedUInt32(&part_index)) {
+      pdb_file_binary_stream_.ResetStreamLength();
       return false;
     }
 
+    index_stream_pos = pdb_file_binary_stream_.Current();
+
     // 0 means empty string.
     if (part_index != 0) {
-      pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + part_index);
-      uint32_t part_data_length;
-      if (!pdb_file_binary_stream_.ReadCompressedUInt32(&part_data_length)) {
+      if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + part_index)) {
+        pdb_file_binary_stream_.ResetStreamLength();
+        return false;
+      }
+      uint32_t component_string_length;
+      if (!pdb_file_binary_stream_.ReadCompressedUInt32(&component_string_length)) {
+        pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
       uint32_t bytes_read;
-      vector<uint8_t> part_string(part_data_length, 0);
-      if (!pdb_file_binary_stream_.ReadBytes(part_string.data(), part_data_length, &bytes_read)) {
+      vector<uint8_t> component_string(component_string_length, 0);
+      if (!pdb_file_binary_stream_.ReadBytes(component_string.data(), component_string_length, &bytes_read)) {
+        pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
-      result.append(part_string.begin(), part_string.end());
+      result.append(component_string.begin(), component_string.end());
+
+      // Resets the stream that is used to read index of the components of the document name.
+      if (!pdb_file_binary_stream_.SeekFromOrigin(index_stream_pos) || pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
+        return false;
+      }
     }
 
     result += separator;
@@ -158,6 +175,7 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   result.pop_back();
   *doc_name = result;
 
+  pdb_file_binary_stream_.ResetStreamLength();
   return true;
 }
 
@@ -170,12 +188,17 @@ bool PortablePdbFile::GetHeapGuid(uint32_t index, string *guid) const {
   }
 
   guid->clear();
-  guid->resize(16);
   vector<uint8_t> bytes_read(16, 0);
   uint32_t num_bytes_read;
 
-  return !pdb_file_binary_stream_.ReadBytes(bytes_read.data(), bytes_read.size(),
-    &num_bytes_read);
+  if (!pdb_file_binary_stream_.ReadBytes(bytes_read.data(), bytes_read.size(),
+    &num_bytes_read)) {
+    std::cerr << "Failed to read from GUID heap.";
+    return false;
+  }
+
+  guid->append(bytes_read.begin(), bytes_read.end());
+  return true;
 }
 
 bool PortablePdbFile::GetHash(uint32_t index, vector<uint8_t> *hash) const {
@@ -199,16 +222,26 @@ bool PortablePdbFile::GetHash(uint32_t index, vector<uint8_t> *hash) const {
 }
 
 bool PortablePdbFile::GetMethodSeqInfo(uint32_t doc_index, uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const {
-  if (!pdb_file_binary_stream_.SeekFromOrigin(guid_heap_header_.offset + sequence_index)) {
+  if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + sequence_index)) {
     return false;
   }
 
-  return ParseFrom(doc_index, &pdb_file_binary_stream_, sequence_point_info);
+  uint32_t data_length;
+  if (!pdb_file_binary_stream_.ReadCompressedUInt32(&data_length)) {
+    return false;
+  }
+
+  if (!pdb_file_binary_stream_.SetStreamLength(data_length)) {
+    return false;
+  }
+
+  bool result = ParseFrom(doc_index, &pdb_file_binary_stream_, sequence_point_info);
+  pdb_file_binary_stream_.ResetStreamLength();
+  return result;
 }
 
 bool PortablePdbFile::InitializeGuidHeap() {
   static const string kGuidHeapName = "#GUID";
-
   return GetStream(kGuidHeapName, &guid_heap_header_);
 }
 
@@ -220,10 +253,17 @@ bool PortablePdbFile::ParsePortablePdbStream() {
 
   if (!pdb_file_binary_stream_.SeekFromOrigin(pdb_stream_header.offset) ||
       !pdb_file_binary_stream_.SetStreamLength(pdb_stream_header.size)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
-  return ParseFrom(&pdb_file_binary_stream_, &pdb_metadata_header_);
+  if (!ParseFrom(&pdb_file_binary_stream_, &pdb_metadata_header_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
+    return false;
+  }
+
+  pdb_file_binary_stream_.ResetStreamLength();
+  return true;
 }
 
 bool PortablePdbFile::ParseCompressedMetadataTableStream() {
@@ -240,10 +280,12 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   if (!pdb_file_binary_stream_.SeekFromOrigin(
           compressed_stream_header.offset) ||
       !pdb_file_binary_stream_.SetStreamLength(compressed_stream_header.size)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   if (!ParseFrom(&pdb_file_binary_stream_, &metadata_table_header_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
@@ -264,6 +306,7 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   // Confirm the PDB only contains PDB-related metadata tables.
   for (size_t i = 0; i < rows_per_table[MetadataTable::Document]; i++) {
     if (rows_per_table[i] != 0) {
+      pdb_file_binary_stream_.ResetStreamLength();
       return false;
     }
   }
@@ -271,33 +314,39 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   if (!ParseMetadataTableRow<DocumentRow>(
           rows_per_table[MetadataTable::Document], &pdb_file_binary_stream_,
           &document_table_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   if (!ParseMetadataTableRow<MethodDebugInformationRow>(
           rows_per_table[MetadataTable::MethodDebugInformation],
           &pdb_file_binary_stream_, &method_debug_info_table_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalScopeRow>(
           rows_per_table[MetadataTable::LocalScope], &pdb_file_binary_stream_,
           &local_scope_table_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalVariableRow>(
           rows_per_table[MetadataTable::LocalVariable],
           &pdb_file_binary_stream_, &local_variable_table_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
   if (!ParseMetadataTableRow<LocalConstantRow>(
           rows_per_table[MetadataTable::LocalConstant],
           &pdb_file_binary_stream_, &local_constant_table_)) {
+    pdb_file_binary_stream_.ResetStreamLength();
     return false;
   }
 
+  pdb_file_binary_stream_.ResetStreamLength();
   return true;
 }
 

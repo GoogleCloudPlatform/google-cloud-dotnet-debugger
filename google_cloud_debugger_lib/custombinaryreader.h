@@ -58,8 +58,10 @@ class CustomBinaryStream {
   // Sets where the stream will end. This should be less than the current end_.
   bool SetStreamLength(std::uint32_t length);
 
-  bool ResetStreamLength() { end_ = file_stream_->end; }
+  // Resets the stream length to the original length of the file.
+  void ResetStreamLength();
 
+  // Extracts out a null-terminated string at offset in the stream.
   bool GetString(std::string *result, std::uint32_t offset);
 
   // Returns the number of bytes remaining in the stream.
@@ -110,14 +112,8 @@ class CustomBinaryStream {
                       const CompressedMetadataTableHeader &metadata_header,
                       std::uint32_t *table_index);
 
-  // Returns the current stream position.
-  std::streampos current() { return file_stream_->cur; }
-
-  // Returns the end position of the stream.
-  std::streampos end() { return end_; }
-
-  // Returns the beginning position of the stream.
-  std::streampos begin() { return begin_; }
+  // Returns the current position of the stream.
+  std::streampos Current() { return file_stream_->tellg(); }
 
  private:
    std::unique_ptr<std::ifstream> file_stream_;

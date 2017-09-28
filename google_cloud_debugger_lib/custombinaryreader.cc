@@ -49,14 +49,16 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
   }
 
   if (file_stream_->is_open()) {
-    std::streampos file_size;
+    std::streampos file_size = file_stream_->tellg();
 
     file_stream_->unsetf(std::ios::skipws);
 
     //file_size = file_stream_.tellg();
     //file_content_.reserve(file_size);
-    end_ = file_stream_->end;
+    file_stream_->seekg(0, file_stream_->end);
+    end_ = file_stream_->tellg();
     file_stream_->seekg(0, file_stream_->beg);
+    begin_ = file_stream_->tellg();
 
     //file_content_.insert(file_content_.begin(),
     //                     std::istream_iterator<uint8_t>(file_stream_),
@@ -70,15 +72,16 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
 
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
-  if (end_ - static_cast<streampos>(file_stream_->cur) < bytes_to_read) {
+  if (end_ - file_stream_->tellg() < bytes_to_read) {
     return false;
   }
 
   file_stream_->read(reinterpret_cast<char *>(result), bytes_to_read);
-  return file_stream_->gcount();
+  *bytes_read = file_stream_->gcount();
+  return *bytes_read == bytes_to_read;
 }
 
-bool CustomBinaryStream::HasNext() const { return file_stream_->cur < end_; }
+bool CustomBinaryStream::HasNext() const { return file_stream_->tellg() < end_; }
 
 bool CustomBinaryStream::Peek(uint8_t *result) const {
   if (!HasNext()) {
@@ -90,36 +93,50 @@ bool CustomBinaryStream::Peek(uint8_t *result) const {
 }
 
 bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
-  if (end_ - static_cast<streampos>(file_stream_->cur) < index) {
+  // Have to take into account the end_ based on the stream
+  // length that we set.
+  if (end_ - file_stream_->tellg() < index) {
     return false;
   }
 
   file_stream_->seekg(index, file_stream_->cur);
+  if (file_stream_->fail()) {
+    file_stream_->clear();
+    return false;
+  }
+
   return true;
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
-  if (end_ - static_cast<streampos>(file_stream_->cur) < position) {
+  file_stream_->seekg(position, file_stream_->beg);
+  if (file_stream_->fail()) {
+    file_stream_->clear();
     return false;
   }
-
-  file_stream_->seekg(position, file_stream_->beg);
   return true;
 }
 
 bool CustomBinaryStream::SetStreamLength(uint32_t length) {
-  if (end_ - static_cast<streampos>(file_stream_->cur) < length) {
+  if (end_ - file_stream_->tellg() < length) {
     return false;
   }
 
-  end_ = file_stream_->cur + length;
+  end_ = file_stream_->tellg() + static_cast<std::streamoff>(length);
   return true;
+}
+
+void CustomBinaryStream::ResetStreamLength() {
+  streampos cur_pos = file_stream_->tellg();
+  file_stream_->seekg(0, file_stream_->end);
+  end_ = file_stream_->tellg();
+  file_stream_->seekg(cur_pos, file_stream_->beg);
 }
 
 bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   result->clear();
   streampos previous_pos = file_stream_->tellg();
-  file_stream_->seekg(offset, file_stream_->cur);
+  file_stream_->seekg(offset, file_stream_->beg);
   if (file_stream_->fail()) {
     file_stream_->clear();
     file_stream_->seekg(previous_pos);
@@ -127,9 +144,15 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   }
 
   size_t char_read = 0;
-  while (file_stream_->cur != end_) {
+  while (file_stream_->tellg() != end_) {
     char read_char;
     file_stream_->read(&read_char, 1);
+    if (file_stream_->fail()) {
+      file_stream_->clear();
+      file_stream_->seekg(previous_pos);
+      return false;
+    }
+
     if (read_char != 0) {
       *result += read_char;
     }
