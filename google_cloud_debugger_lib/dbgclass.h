@@ -63,6 +63,9 @@ class DbgClass : public DbgObject {
   // Populates the class name and stores the result in class_name_.
   HRESULT PopulateClassName(IMetaDataImport *metadata_import);
 
+  // Populates the base class' name and stores the result in base_class_name_.
+  HRESULT PopulateBaseClassName(ICorDebugType *debug_type);
+
   // Populates the generic parameters of the class.
   HRESULT PopulateParameterizedType();
 
@@ -104,11 +107,18 @@ class DbgClass : public DbgObject {
     return S_OK;
   }
 
+  // Given a void pointer and type of the enum, extract out the enum
+  // value.
+  ULONG64 ExtractEnumValue(CorElementType enum_type, void *enum_value);
+
   // A strong handle to the class object.
   CComPtr<ICorDebugHandleValue> class_handle_;
 
   // String that represents the name of the class.
   std::vector<WCHAR> class_name_;
+
+  // Name of the base class.
+  std::vector<WCHAR> base_class_name_;
 
   // Vector of all the generic types of the class.
   std::vector<CComPtr<ICorDebugType>> generic_types_;
@@ -138,9 +148,23 @@ class DbgClass : public DbgObject {
   // True if this is a primitive type.
   BOOL is_primitive_type_ = FALSE;
 
+  // True if this is an enum type.
+  BOOL is_enum_ = FALSE;
+
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
   std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
+
+  // Array of bytes to contain enum value if this class is an enum.
+  std::vector<std::uint8_t> enum_value_array_;
+
+  // String that represents "System.Enum", which is the name
+  // of the base class of any Enum type.
+  static const std::string kEnumClassName;
+
+  // String that represents "__value" which is the field that determines
+  // the value of an enum.
+  static const std::string kEnumValue;
 };
 
 }  //  namespace google_cloud_debugger
