@@ -40,6 +40,11 @@ enum Heap : std::uint8_t {
 // compressed integers and table index.
 class CustomBinaryStream {
  public:
+  // Consumes a binary stream pointer, takes ownership
+  // of the underlying stream and makes it the underlying
+  // stream of this class.
+  bool ConsumeStream(std::istream *stream);
+
   // Consumes a file and exposes the file content as a binary stream.
   bool ConsumeFile(const std::string &file);
 
@@ -67,7 +72,7 @@ class CustomBinaryStream {
 
   // Returns the number of bytes remaining in the stream.
   std::streamoff GetRemainingStreamLength() const {
-    return end_ - static_cast<std::streampos>(file_stream_->cur);
+    return end_ - static_cast<std::streampos>(stream_->cur);
   }
 
   // Reads the next byte in the stream. Returns false if the byte
@@ -114,11 +119,11 @@ class CustomBinaryStream {
                       std::uint32_t *table_index);
 
   // Returns the current position of the stream.
-  std::streampos Current() { return file_stream_->tellg(); }
+  std::streampos Current() { return stream_->tellg(); }
 
  private:
-  // The underlying file stream.
-  std::unique_ptr<std::ifstream> file_stream_;
+  // The underlying binary stream.
+  std::unique_ptr<std::istream> stream_;
 
   // The end position of the stream.
   std::streampos end_;
