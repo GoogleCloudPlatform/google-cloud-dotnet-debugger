@@ -696,6 +696,7 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
   }
 
   variable->set_value(enum_string);
+  return S_OK;
 }
 
 ULONG64 DbgClass::ExtractEnumValue(CorElementType enum_type, void *enum_value) {

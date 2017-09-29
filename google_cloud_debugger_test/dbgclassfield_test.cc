@@ -30,8 +30,8 @@ using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
 using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::DbgClassField;
 using std::string;
 using std::vector;
@@ -53,12 +53,13 @@ class DbgClassFieldTest : public ::testing::Test {
         .WillOnce(DoAll(
             SetArgPointee<4>(class_field_name_len),
             Return(S_OK)))  // Sets the length of the class the first time.
-        .WillOnce(
-            DoAll(SetArg2ToWcharArray(wchar_string_.data(), class_field_name_len),
-                  SetArgPointee<4>(class_field_name_len),
-                  Return(S_OK)));  // Sets the class' name the second time.
+        .WillOnce(DoAll(
+            SetArg2ToWcharArray(wchar_string_.data(), class_field_name_len),
+            SetArgPointee<4>(class_field_name_len),
+            Return(S_OK)));  // Sets the class' name the second time.
 
-    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsSecond(field_def_, _, _, _, _, _))
         .Times(2)
         .WillRepeatedly(Return(S_OK));
 
@@ -180,7 +181,8 @@ TEST_F(DbgClassFieldTest, TestInitializeError) {
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsSecond(field_def_, _, _, _, _, _))
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
@@ -193,7 +195,8 @@ TEST_F(DbgClassFieldTest, TestInitializeError) {
               GetFieldPropsFirst(field_def_, _, _, _, _, _))
       .WillRepeatedly(DoAll(SetArgPointee<4>(1), Return(S_OK)));
 
-  EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+  EXPECT_CALL(metadataimport_mock_,
+              GetFieldPropsSecond(field_def_, _, _, _, _, _))
       .WillRepeatedly(Return(S_OK));
 
   // GetFieldValue returns error.
@@ -247,7 +250,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    EXPECT_CALL(metadataimport_mock_, GetFieldPropsSecond(_, _, _, _, _))
+    EXPECT_CALL(metadataimport_mock_,
+                GetFieldPropsSecond(field_def_, _, _, _, _, _))
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 

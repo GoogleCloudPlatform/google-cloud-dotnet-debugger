@@ -35,8 +35,8 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                 ULONG *pcOtherMethod) override {
     return GetEventPropsFirst(ev, pClass, szEvent, cchEvent, pchEvent,
                               pdwEventFlags, ptkEventType) &
-           GetEventPropsSecond(pmdAddOn, pmdRemoveOn, pmdFire, rmdOtherMethod,
-                               cMax, pcOtherMethod);
+           GetEventPropsSecond(ev, pmdAddOn, pmdRemoveOn, pmdFire,
+                               rmdOtherMethod, cMax, pcOtherMethod);
   }
 
   virtual HRESULT GetEventPropsFirst(mdEvent ev, mdTypeDef *pClass,
@@ -44,7 +44,7 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                      ULONG *pchEvent, DWORD *pdwEventFlags,
                                      mdToken *ptkEventType) = 0;
 
-  virtual HRESULT GetEventPropsSecond(mdMethodDef *pmdAddOn,
+  virtual HRESULT GetEventPropsSecond(mdEvent ev, mdMethodDef *pmdAddOn,
                                       mdMethodDef *pmdRemoveOn,
                                       mdMethodDef *pmdFire,
                                       mdMethodDef rmdOtherMethod[], ULONG cMax,
@@ -59,7 +59,7 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                  ULONG *pcchValue) override {
     return GetMemberPropsFirst(mb, pClass, szMember, cchMember, pchMember,
                                pdwAttr) &
-           GetMemberPropsSecond(ppvSigBlob, pcbSigBlob, pulCodeRVA,
+           GetMemberPropsSecond(mb, ppvSigBlob, pcbSigBlob, pulCodeRVA,
                                 pdwImplFlags, pdwCPlusTypeFlag, ppValue,
                                 pcchValue);
   }
@@ -68,7 +68,7 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                       LPWSTR szMember, ULONG cchMember,
                                       ULONG *pchMember, DWORD *pdwAttr) = 0;
 
-  virtual HRESULT GetMemberPropsSecond(PCCOR_SIGNATURE *ppvSigBlob,
+  virtual HRESULT GetMemberPropsSecond(mdToken mb, PCCOR_SIGNATURE *ppvSigBlob,
                                        ULONG *pcbSigBlob, ULONG *pulCodeRVA,
                                        DWORD *pdwImplFlags,
                                        DWORD *pdwCPlusTypeFlag,
@@ -83,7 +83,7 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                 ULONG *pcchValue) override {
     return GetFieldPropsFirst(mb, pClass, szField, cchField, pchField,
                               pdwAttr) &
-           GetFieldPropsSecond(ppvSigBlob, pcbSigBlob, pdwCPlusTypeFlag,
+           GetFieldPropsSecond(mb, ppvSigBlob, pcbSigBlob, pdwCPlusTypeFlag,
                                ppValue, pcchValue);
   }
 
@@ -91,11 +91,9 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                      LPWSTR szField, ULONG cchField,
                                      ULONG *pchField, DWORD *pdwAttr) = 0;
 
-  virtual HRESULT GetFieldPropsSecond(PCCOR_SIGNATURE *ppvSigBlob,
-                                      ULONG *pcbSigBlob,
-                                      DWORD *pdwCPlusTypeFlag,
-                                      UVCP_CONSTANT *ppValue,
-                                      ULONG *pcchValue) = 0;
+  virtual HRESULT GetFieldPropsSecond(
+      mdFieldDef mb, PCCOR_SIGNATURE *ppvSigBlob, ULONG *pcbSigBlob,
+      DWORD *pdwCPlusTypeFlag, UVCP_CONSTANT *ppValue, ULONG *pcchValue) = 0;
 
   virtual HRESULT GetPropertyProps(
       mdProperty prop, mdTypeDef *pClass, LPCWSTR szProperty, ULONG cchProperty,
@@ -106,8 +104,8 @@ class PartialMetaDataImportMock : public IMetaDataImport {
     return GetPropertyPropsFirst(prop, pClass, szProperty, cchProperty,
                                  pchProperty, pdwPropFlags, ppvSig, pbSig,
                                  pdwCPlusTypeFlag) &
-           GetPropertyPropsSecond(ppDefaultValue, pcchDefaultValue, pmdSetter,
-                                  pmdGetter, rmdOtherMethod, cMax,
+           GetPropertyPropsSecond(prop, ppDefaultValue, pcchDefaultValue,
+                                  pmdSetter, pmdGetter, rmdOtherMethod, cMax,
                                   pcOtherMethod);
   }
 
@@ -117,12 +115,10 @@ class PartialMetaDataImportMock : public IMetaDataImport {
                                         PCCOR_SIGNATURE *ppvSig, ULONG *pbSig,
                                         DWORD *pdwCPlusTypeFlag) = 0;
 
-  virtual HRESULT GetPropertyPropsSecond(UVCP_CONSTANT *ppDefaultValue,
-                                         ULONG *pcchDefaultValue,
-                                         mdMethodDef *pmdSetter,
-                                         mdMethodDef *pmdGetter,
-                                         mdMethodDef rmdOtherMethod[],
-                                         ULONG cMax, ULONG *pcOtherMethod) = 0;
+  virtual HRESULT GetPropertyPropsSecond(
+      mdProperty prop, UVCP_CONSTANT *ppDefaultValue, ULONG *pcchDefaultValue,
+      mdMethodDef *pmdSetter, mdMethodDef *pmdGetter,
+      mdMethodDef rmdOtherMethod[], ULONG cMax, ULONG *pcOtherMethod) = 0;
 };
 
 class IMetaDataImportMock : public PartialMetaDataImportMock {
@@ -291,35 +287,36 @@ class IMetaDataImportMock : public PartialMetaDataImportMock {
                HRESULT(mdEvent ev, mdTypeDef *pClass, LPCWSTR szEvent,
                        ULONG cchEvent, ULONG *pchEvent, DWORD *pdwEventFlags,
                        mdToken *ptkEventType));
-  MOCK_METHOD6(GetEventPropsSecond,
-               HRESULT(mdMethodDef *pmdAddOn, mdMethodDef *pmdRemoveOn,
-                       mdMethodDef *pmdFire, mdMethodDef rmdOtherMethod[],
-                       ULONG cMax, ULONG *pcOtherMethod));
+  MOCK_METHOD7(GetEventPropsSecond,
+               HRESULT(mdEvent ev, mdMethodDef *pmdAddOn,
+                       mdMethodDef *pmdRemoveOn, mdMethodDef *pmdFire,
+                       mdMethodDef rmdOtherMethod[], ULONG cMax,
+                       ULONG *pcOtherMethod));
   MOCK_METHOD6(GetMemberPropsFirst,
                HRESULT(mdToken mb, mdTypeDef *pClass, LPWSTR szMember,
                        ULONG cchMember, ULONG *pchMember, DWORD *pdwAttr));
-  MOCK_METHOD7(GetMemberPropsSecond,
-               HRESULT(PCCOR_SIGNATURE *ppvSigBlob, ULONG *pcbSigBlob,
-                       ULONG *pulCodeRVA, DWORD *pdwImplFlags,
-                       DWORD *pdwCPlusTypeFlag, UVCP_CONSTANT *ppValue,
-                       ULONG *pcchValue));
+  MOCK_METHOD8(GetMemberPropsSecond,
+               HRESULT(mdToken mb, PCCOR_SIGNATURE *ppvSigBlob,
+                       ULONG *pcbSigBlob, ULONG *pulCodeRVA,
+                       DWORD *pdwImplFlags, DWORD *pdwCPlusTypeFlag,
+                       UVCP_CONSTANT *ppValue, ULONG *pcchValue));
   MOCK_METHOD6(GetFieldPropsFirst,
                HRESULT(mdFieldDef mb, mdTypeDef *pClass, LPWSTR szField,
                        ULONG cchField, ULONG *pchField, DWORD *pdwAttr));
-  MOCK_METHOD5(GetFieldPropsSecond,
-               HRESULT(PCCOR_SIGNATURE *ppvSigBlob, ULONG *pcbSigBlob,
-                       DWORD *pdwCPlusTypeFlag, UVCP_CONSTANT *ppValue,
-                       ULONG *pcchValue));
+  MOCK_METHOD6(GetFieldPropsSecond,
+               HRESULT(mdFieldDef mb, PCCOR_SIGNATURE *ppvSigBlob,
+                       ULONG *pcbSigBlob, DWORD *pdwCPlusTypeFlag,
+                       UVCP_CONSTANT *ppValue, ULONG *pcchValue));
   MOCK_METHOD9(GetPropertyPropsFirst,
                HRESULT(mdProperty prop, mdTypeDef *pClass, LPCWSTR szProperty,
                        ULONG cchProperty, ULONG *pchProperty,
                        DWORD *pdwPropFlags, PCCOR_SIGNATURE *ppvSig,
                        ULONG *pbSig, DWORD *pdwCPlusTypeFlag));
-  MOCK_METHOD7(GetPropertyPropsSecond,
-               HRESULT(UVCP_CONSTANT *ppDefaultValue, ULONG *pcchDefaultValue,
-                       mdMethodDef *pmdSetter, mdMethodDef *pmdGetter,
-                       mdMethodDef rmdOtherMethod[], ULONG cMax,
-                       ULONG *pcOtherMethod));
+  MOCK_METHOD8(GetPropertyPropsSecond,
+               HRESULT(mdProperty prop, UVCP_CONSTANT *ppDefaultValue,
+                       ULONG *pcchDefaultValue, mdMethodDef *pmdSetter,
+                       mdMethodDef *pmdGetter, mdMethodDef rmdOtherMethod[],
+                       ULONG cMax, ULONG *pcOtherMethod));
 };
 
 }  // namespace google_cloud_debugger_test

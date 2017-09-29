@@ -59,9 +59,9 @@ class DbgClassPropertyTest : public ::testing::Test {
             Return(S_OK)));  // Sets the class' name the second time.
 
     EXPECT_CALL(metadataimport_mock_,
-                GetPropertyPropsSecond(_, _, _, _, _, _, _))
+                GetPropertyPropsSecond(property_def_, _, _, _, _, _, _, _))
         .Times(2)
-        .WillRepeatedly(DoAll(SetArgPointee<6>(1), Return(S_OK)));
+        .WillRepeatedly(DoAll(SetArgPointee<7>(1), Return(S_OK)));
 
     class_property_.Initialize(property_def_, &metadataimport_mock_);
 
@@ -132,7 +132,7 @@ TEST_F(DbgClassPropertyTest, TestInitializeError) {
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
-  EXPECT_CALL(metadataimport_mock_, GetPropertyPropsSecond(_, _, _, _, _, _, _))
+  EXPECT_CALL(metadataimport_mock_, GetPropertyPropsSecond(property_def_, _, _, _, _, _, _, _))
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
