@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.3
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_lib", "google_cloud_debugger_lib\google_cloud_debugger_lib.vcxproj", "{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}"
 EndProject
@@ -17,7 +17,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_test"
 		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1} = {AC725B22-C773-45A3-9DDD-ACB5146BC8B1}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.Tests", "Google.Cloud.Diagnostics.Debug.Tests\Google.Cloud.Diagnostics.Debug.Tests.csproj", "{DE03D180-C511-4F7C-909F-FBC59BA55A1D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug.Tests", "Google.Cloud.Diagnostics.Debug.Tests\Google.Cloud.Diagnostics.Debug.Tests.csproj", "{DE03D180-C511-4F7C-909F-FBC59BA55A1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.IntegrationTests", "Google.Cloud.Diagnostics.Debug.IntegrationTests\Google.Cloud.Diagnostics.Debug.IntegrationTests.csproj", "{BA4C96DA-8906-4D0E-9599-41A772C0F572}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.TestApp", "Google.Cloud.Diagnostics.Debug.TestApp\Google.Cloud.Diagnostics.Debug.TestApp.csproj", "{9809ADBA-2956-4FBA-A741-E76FF57D74FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +87,30 @@ Global
 		{DE03D180-C511-4F7C-909F-FBC59BA55A1D}.Release|x64.Build.0 = Release|Any CPU
 		{DE03D180-C511-4F7C-909F-FBC59BA55A1D}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE03D180-C511-4F7C-909F-FBC59BA55A1D}.Release|x86.Build.0 = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|x64.Build.0 = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Debug|x86.Build.0 = Debug|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|x64.ActiveCfg = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|x64.Build.0 = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|x86.ActiveCfg = Release|Any CPU
+		{BA4C96DA-8906-4D0E-9599-41A772C0F572}.Release|x86.Build.0 = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|x64.Build.0 = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Debug|x86.Build.0 = Debug|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|x64.ActiveCfg = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|x64.Build.0 = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|x86.ActiveCfg = Release|Any CPU
+		{9809ADBA-2956-4FBA-A741-E76FF57D74FB}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
