@@ -62,6 +62,7 @@ class CustomBinaryStream {
   void ResetStreamLength();
 
   // Extracts out a null-terminated string at offset in the stream.
+  // This function does not change the stream pointer.
   bool GetString(std::string *result, std::uint32_t offset);
 
   // Returns the number of bytes remaining in the stream.
@@ -116,10 +117,8 @@ class CustomBinaryStream {
   std::streampos Current() { return file_stream_->tellg(); }
 
  private:
-   std::unique_ptr<std::ifstream> file_stream_;
-
-  // The current stream position.
-  //std::streampos iterator_;
+  // The underlying file stream.
+  std::unique_ptr<std::ifstream> file_stream_;
 
   // The end position of the stream.
   std::streampos end_;

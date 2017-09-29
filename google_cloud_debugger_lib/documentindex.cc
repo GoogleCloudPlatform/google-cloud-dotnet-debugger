@@ -66,8 +66,6 @@ bool DocumentIndex::Initialize(const IPortablePdbFile &pdb, int doc_index) {
   hash_algorithm_ =
       GetHashAlgorithmName(hash_guid);
 
-  CustomBinaryStream binary_stream;
-
   if (!pdb.GetHash(doc_row.hash, &hash_)) {
     cerr << "Failed to get heap blob stream.";
     return false;

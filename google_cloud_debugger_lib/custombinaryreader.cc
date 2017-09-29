@@ -52,17 +52,10 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
     std::streampos file_size = file_stream_->tellg();
 
     file_stream_->unsetf(std::ios::skipws);
-
-    //file_size = file_stream_.tellg();
-    //file_content_.reserve(file_size);
     file_stream_->seekg(0, file_stream_->end);
     end_ = file_stream_->tellg();
     file_stream_->seekg(0, file_stream_->beg);
     begin_ = file_stream_->tellg();
-
-    //file_content_.insert(file_content_.begin(),
-    //                     std::istream_iterator<uint8_t>(file_stream_),
-    //                     std::istream_iterator<uint8_t>());
 
     return true;
   }
@@ -135,6 +128,7 @@ void CustomBinaryStream::ResetStreamLength() {
 
 bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   result->clear();
+  // Makes a copy of the current position so we can restores the stream.
   streampos previous_pos = file_stream_->tellg();
   file_stream_->seekg(offset, file_stream_->beg);
   if (file_stream_->fail()) {
@@ -143,7 +137,8 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
     return false;
   }
 
-  size_t char_read = 0;
+  // Read until we encounter a null character
+  // or the end of the file is reached.
   while (file_stream_->tellg() != end_) {
     char read_char;
     file_stream_->read(&read_char, 1);
