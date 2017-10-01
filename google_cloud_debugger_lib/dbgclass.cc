@@ -15,15 +15,21 @@
 #include "dbgclass.h"
 
 #include <array>
+#include <cstdint>
 #include <iostream>
 
 #include "evalcoordinator.h"
 
+using google::cloud::diagnostics::debug::Variable;
 using std::array;
 using std::char_traits;
-using google::cloud::diagnostics::debug::Variable;
+using std::string;
+using std::vector;
 
 namespace google_cloud_debugger {
+
+const string DbgClass::kEnumClassName = "System.Enum";
+const string DbgClass::kEnumValue = "value__";
 
 HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
   HRESULT hr;
@@ -84,6 +90,12 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
       WriteError("Fail to populate parameterized type.");
       return hr;
     }
+
+    hr = PopulateBaseClassName(debug_type);
+    if (FAILED(hr)) {
+      WriteError("Failed to get the base class.");
+      return hr;
+    }
   }
 
   if (!GetIsNull()) {
@@ -138,6 +150,71 @@ HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
                                         &class_flags_, &parent_class_);
   if (FAILED(hr)) {
     WriteError("Failed to get class name.");
+    return hr;
+  }
+  return S_OK;
+}
+
+HRESULT DbgClass::PopulateBaseClassName(ICorDebugType *debug_type) {
+  HRESULT hr;
+  CComPtr<ICorDebugType> base_type;
+
+  hr = debug_type->GetBase(&base_type);
+  if (FAILED(hr)) {
+    WriteError("Failed to get base type.");
+    return hr;
+  }
+
+  CComPtr<ICorDebugClass> base_class;
+  hr = base_type->GetClass(&base_class);
+  if (FAILED(hr)) {
+    WriteError("Failed to get base class.");
+    return hr;
+  }
+
+  mdToken base_class_token = 0;
+  hr = base_class->GetToken(&base_class_token);
+  if (FAILED(hr)) {
+    WriteError("Failed to get base class token.");
+    return hr;
+  }
+
+  CComPtr<ICorDebugModule> base_debug_module;
+  hr = base_class->GetModule(&base_debug_module);
+  if (FAILED(hr)) {
+    WriteError("Failed to get module for base class.");
+    return hr;
+  }
+
+  CComPtr<IMetaDataImport> metadata_import;
+  hr = GetMetadataImportFromModule(base_debug_module, &metadata_import);
+  if (FAILED(hr)) {
+    WriteError("Failed to get metadata for base class.");
+    return hr;
+  }
+
+  ULONG len_base_class_name = 0;
+  DWORD base_class_flags = 0;
+  mdToken parent_base_class = 0;
+  // We have to call this function twice, once to get the length of the class
+  // name and the second time to get the actual class name.
+  // len_class_name includes the \0 at the end.
+  hr = metadata_import->GetTypeDefProps(base_class_token, nullptr, 0,
+                                        &len_base_class_name, &base_class_flags,
+                                        &parent_base_class);
+  if (FAILED(hr)) {
+    WriteError("Failed to get base class name's length.");
+    return hr;
+  }
+
+  base_class_name_.resize(len_base_class_name);
+
+  hr = metadata_import->GetTypeDefProps(
+      base_class_token, base_class_name_.data(), len_base_class_name,
+      &len_base_class_name, &base_class_flags, &parent_base_class);
+
+  if (FAILED(hr)) {
+    WriteError("Failed to get base class name.");
     return hr;
   }
   return S_OK;
@@ -473,9 +550,44 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
       return;
     }
 
-    // If we get E_NOTIMPL, just process it as a class.
+    // If we get E_NOTIMPL, check whether it is an enum.
     if (initialize_hr_ == E_NOTIMPL) {
-      initialize_hr_ = S_OK;
+      if (!debug_type) {
+        WriteError("Failed to process value type.");
+      }
+
+      // Do nothing if this is not an enum.
+      if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
+          0) {
+        initialize_hr_ = S_OK;
+        return;
+      }
+
+      is_enum_ = TRUE;
+
+      CComPtr<ICorDebugGenericValue> generic_value;
+      initialize_hr_ = debug_value->QueryInterface(
+          __uuidof(ICorDebugGenericValue),
+          reinterpret_cast<void **>(&generic_value));
+      if (FAILED(initialize_hr_)) {
+        WriteError("Failed to extract ICorDebugGenericValue from value type.");
+        return;
+      }
+
+      ULONG32 value_size;
+      initialize_hr_ = generic_value->GetSize(&value_size);
+      if (FAILED(initialize_hr_)) {
+        WriteError("Failed to get size of ICorDebugGenericValue.");
+        return;
+      }
+
+      enum_value_array_.resize(value_size);
+      initialize_hr_ = generic_value->GetValue(
+          reinterpret_cast<void *>(enum_value_array_.data()));
+      if (FAILED(initialize_hr_)) {
+        WriteError("Failed to extract value out from ICorDebugGenericValue.");
+        return;
+      }
     } else if (FAILED(initialize_hr_) && initialize_hr_ != E_NOTIMPL) {
       WriteError("Failed to process value type.");
     }
@@ -500,9 +612,9 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   }
 }
 
-BOOL DbgClass::HasMembers() { return !is_primitive_type_; }
+BOOL DbgClass::HasMembers() { return !is_primitive_type_ && !is_enum_; }
 
-BOOL DbgClass::HasValue() { return is_primitive_type_; }
+BOOL DbgClass::HasValue() { return is_primitive_type_ || is_enum_; }
 
 HRESULT DbgClass::PopulateValue(Variable *variable) {
   if (!variable) {
@@ -513,13 +625,106 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
     return initialize_hr_;
   }
 
-  HRESULT hr = primitive_type_value_->PopulateValue(variable);
-  if (FAILED(hr)) {
-    WriteError(primitive_type_value_->GetErrorString());
+  if (!HasValue()) {
+    return E_FAIL;
+  }
+
+  if (is_primitive_type_) {
+    HRESULT hr = primitive_type_value_->PopulateValue(variable);
+    if (FAILED(hr)) {
+      WriteError(primitive_type_value_->GetErrorString());
+    }
+
     return hr;
   }
 
-  return hr;
+  CorElementType enum_type;
+  bool enum_type_found = false;
+  // We have enum type.
+  // First, gets the underlying type. This is from the non-static field __value.
+  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
+    if (*it) {
+      if ((*it)->IsStatic()) {
+        continue;
+      }
+
+      if (kEnumValue.compare((*it)->GetFieldName()) != 0) {
+        continue;
+      }
+
+      PCCOR_SIGNATURE field_signature = (*it)->GetSignature();
+      enum_type = CorSigUncompressElementType(field_signature);
+      enum_type_found = true;
+      break;
+    }
+  }
+
+  if (!enum_type_found) {
+    WriteError("Cannot find the type of the enum.");
+    return E_FAIL;
+  }
+
+  string enum_string;
+  ULONG64 enum_value = ExtractEnumValue(enum_type, enum_value_array_.data());
+  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
+    if (*it) {
+      if ((*it)->IsStatic() || kEnumValue.compare((*it)->GetFieldName()) == 0) {
+        continue;
+      }
+
+      UVCP_CONSTANT raw_default_value = (*it)->GetDefaultValue();
+      ULONG64 const_value =
+          ExtractEnumValue(enum_type, (void *)raw_default_value);
+
+      // If enum_value is different from const_value, but const_value
+      // corresponds to bits in enum_value, then this const_value string is part
+      // of the enum_value string representation.
+      if (enum_value != const_value &&
+          (const_value == 0 || (const_value & enum_value) != const_value)) {
+        continue;
+      }
+
+      // Zero out the bits of const_value in enum_value;
+      enum_value = enum_value & (~const_value);
+
+      if (enum_string.empty()) {
+        enum_string.append((*it)->GetFieldName());
+      } else {
+        enum_string.append(" | " + (*it)->GetFieldName());
+      }
+    }
+  }
+
+  variable->set_value(enum_string);
+  return S_OK;
+}
+
+ULONG64 DbgClass::ExtractEnumValue(CorElementType enum_type, void *enum_value) {
+  switch (enum_type) {
+    case ELEMENT_TYPE_I:
+      return (ULONG64)(*((intptr_t *)enum_value));
+    case ELEMENT_TYPE_U:
+      return (ULONG64)(*((uintptr_t *)enum_value));
+    case ELEMENT_TYPE_CHAR:
+    case ELEMENT_TYPE_I1:
+      return (ULONG64)(*((int8_t *)enum_value));
+    case ELEMENT_TYPE_U1:
+      return (ULONG64)(*((uint8_t *)enum_value));
+    case ELEMENT_TYPE_I2:
+      return (ULONG64)(*((int16_t *)enum_value));
+    case ELEMENT_TYPE_U2:
+      return (ULONG64)(*((uint16_t *)enum_value));
+    case ELEMENT_TYPE_I4:
+      return (ULONG64)(*((int32_t *)enum_value));
+    case ELEMENT_TYPE_U4:
+      return (ULONG64)(*((uint32_t *)enum_value));
+    case ELEMENT_TYPE_I8:
+      return (ULONG64)(*((int64_t *)enum_value));
+    case ELEMENT_TYPE_U8:
+      return (ULONG64)(*((uint64_t *)enum_value));
+    default:
+      return 0;
+  }
 }
 
 HRESULT DbgClass::PopulateMembers(Variable *variable,
@@ -573,10 +778,11 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
   for (auto it = begin(class_properties_); it != end(class_properties_); ++it) {
     if (*it) {
       Variable *property_field_var = variable->add_members();
-      
+
       property_field_var->set_name((*it)->GetPropertyName());
       hr = (*it)->PopulateVariableValue(property_field_var, class_handle_,
-          eval_coordinator, &generic_types_, new_depth);
+                                        eval_coordinator, &generic_types_,
+                                        new_depth);
       if (FAILED(hr)) {
         property_field_var->clear_type();
         property_field_var->clear_members();
