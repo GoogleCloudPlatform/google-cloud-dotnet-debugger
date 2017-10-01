@@ -64,7 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 }
                 return null;
             };
-            return Get(func, predicate);
+            return Poll(func, predicate);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
                 return Client.GrpcClient.GetBreakpoint(request).Breakpoint;
             };
-            return Get(func, predicate);
+            return Poll(func, predicate);
         }
 
         /// <summary>
@@ -96,7 +96,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// given predicate. If the element is not found before the timeout a
         /// <see cref="TimeoutException"/> will be thrown.
         /// </summary>
-        private T Get<T>(Func<T> func, Predicate<T> predicate)
+        private T Poll<T>(Func<T> func, Predicate<T> predicate)
         {
             var time = TimeSpan.Zero;
             while (time < _timeout)
