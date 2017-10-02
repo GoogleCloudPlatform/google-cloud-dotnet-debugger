@@ -15,3 +15,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Google.Cloud.Diagnostics.Debug.Tests")]
+[assembly: InternalsVisibleTo("Google.Cloud.Diagnostics.Debug.IntegrationTests")]
