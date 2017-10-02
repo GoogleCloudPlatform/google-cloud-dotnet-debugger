@@ -72,7 +72,7 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
 
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
-  if (end_ - stream_->tellg() < bytes_to_read) {
+  if (!stream_ || end_ - stream_->tellg() < bytes_to_read) {
     return false;
   }
 
@@ -81,10 +81,16 @@ bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
   return *bytes_read == bytes_to_read;
 }
 
-bool CustomBinaryStream::HasNext() const { return stream_->tellg() < end_; }
+bool CustomBinaryStream::HasNext() const {
+  if (!stream_) {
+    return false;
+  }
+
+  return stream_->tellg() < end_;
+}
 
 bool CustomBinaryStream::Peek(uint8_t *result) const {
-  if (!HasNext()) {
+  if (!stream_ || !HasNext()) {
     return false;
   }
 
@@ -95,7 +101,7 @@ bool CustomBinaryStream::Peek(uint8_t *result) const {
 bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
   // Have to take into account the end_ based on the stream
   // length that we set.
-  if (end_ - stream_->tellg() < index) {
+  if (!stream_ || end_ - stream_->tellg() < index) {
     return false;
   }
 
@@ -109,6 +115,10 @@ bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
+  if (!stream_) {
+    return false;
+  }
+
   stream_->seekg(position, stream_->beg);
   if (stream_->fail()) {
     stream_->clear();
@@ -118,7 +128,7 @@ bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
 }
 
 bool CustomBinaryStream::SetStreamLength(uint32_t length) {
-  if (end_ - stream_->tellg() < length) {
+  if (!stream_ || end_ - stream_->tellg() < length) {
     return false;
   }
 
@@ -127,6 +137,10 @@ bool CustomBinaryStream::SetStreamLength(uint32_t length) {
 }
 
 void CustomBinaryStream::ResetStreamLength() {
+  if (!stream_) {
+    return;
+  }
+
   streampos cur_pos = stream_->tellg();
   stream_->seekg(0, stream_->end);
   end_ = stream_->tellg();
@@ -135,6 +149,10 @@ void CustomBinaryStream::ResetStreamLength() {
 
 bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   result->clear();
+  if (!stream_) {
+    return false;
+  }
+
   // Makes a copy of the current position so we can restores the stream.
   streampos previous_pos = stream_->tellg();
   stream_->seekg(offset, stream_->beg);

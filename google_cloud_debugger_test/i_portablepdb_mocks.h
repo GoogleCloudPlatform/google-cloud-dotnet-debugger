@@ -28,48 +28,42 @@ namespace google_cloud_debugger_test {
 class IPortablePdbFileMock
     : public google_cloud_debugger_portable_pdb::IPortablePdbFile {
  public:
-  MOCK_METHOD1(InitializeFromFile, bool(const std::string &file_path));
-  MOCK_CONST_METHOD2(
-      GetStream,
-      bool(const std::string &name,
-           google_cloud_debugger_portable_pdb::StreamHeader *stream_header));
-  MOCK_CONST_METHOD1(GetHeapString, const std::string &(std::uint32_t index));
-  MOCK_CONST_METHOD2(GetHeapBlobStream,
-                     bool(std::uint32_t index,
-                          google_cloud_debugger_portable_pdb::CustomBinaryStream
-                              *binary_stream));
+  MOCK_METHOD1(InitializeFromFile,
+      bool(const std::string &file_path));
+  MOCK_CONST_METHOD2(GetStream,
+      bool(const std::string &name, google_cloud_debugger_portable_pdb::StreamHeader *stream_header));
+  MOCK_CONST_METHOD2(GetHeapString,
+      bool(std::uint32_t index, std::string *result));
   MOCK_CONST_METHOD2(GetDocumentName,
-                     bool(std::uint32_t index, std::string *doc_name));
-  MOCK_CONST_METHOD1(GetHeapGuid, const std::string &(std::uint32_t index));
-  MOCK_CONST_METHOD0(
-      GetDocumentTable,
-      const std::vector<google_cloud_debugger_portable_pdb::DocumentRow> &());
-  MOCK_CONST_METHOD0(
-      GetLocalScopeTable,
-      const std::vector<google_cloud_debugger_portable_pdb::LocalScopeRow> &());
-  MOCK_CONST_METHOD0(
-      GetLocalVariableTable,
-      const std::vector<google_cloud_debugger_portable_pdb::LocalVariableRow>
-          &());
-  MOCK_CONST_METHOD0(
-      GetMethodDebugInfoTable,
-      const std::vector<
-          google_cloud_debugger_portable_pdb::MethodDebugInformationRow> &());
-  MOCK_CONST_METHOD0(
-      GetLocalConstantTable,
-      const std::vector<google_cloud_debugger_portable_pdb::LocalConstantRow>
-          &());
-  MOCK_CONST_METHOD0(
-      GetDocumentIndexTable,
-      const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IDocumentIndex>>
-          &());
-  MOCK_METHOD1(SetModuleName, void(const std::string &module_name));
-  MOCK_CONST_METHOD0(GetModuleName, const std::string &());
-  MOCK_METHOD1(SetDebugModule, HRESULT(ICorDebugModule *debug_module));
-  MOCK_CONST_METHOD1(GetDebugModule, HRESULT(ICorDebugModule **debug_module));
+      bool(std::uint32_t index, std::string *doc_name));
+  MOCK_CONST_METHOD2(GetHeapGuid,
+      bool(std::uint32_t index, std::string *guid));
+  MOCK_CONST_METHOD2(GetHash,
+      bool(std::uint32_t index, std::vector<std::uint8_t> *hash));
+  MOCK_CONST_METHOD3(GetMethodSeqInfo,
+      bool(std::uint32_t doc_index, std::uint32_t sequence_index, google_cloud_debugger_portable_pdb::MethodSequencePointInformation *sequence_point_info));
+  MOCK_CONST_METHOD0(GetDocumentTable,
+      const std::vector<google_cloud_debugger_portable_pdb::DocumentRow>&());
+  MOCK_CONST_METHOD0(GetLocalScopeTable,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalScopeRow>&());
+  MOCK_CONST_METHOD0(GetLocalVariableTable,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalVariableRow>&());
+  MOCK_CONST_METHOD0(GetMethodDebugInfoTable,
+      const std::vector<google_cloud_debugger_portable_pdb::MethodDebugInformationRow>&());
+  MOCK_CONST_METHOD0(GetLocalConstantTable,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalConstantRow>&());
+  MOCK_CONST_METHOD0(GetDocumentIndexTable,
+      const std::vector<std::unique_ptr<google_cloud_debugger_portable_pdb::IDocumentIndex>>&());
+  MOCK_METHOD1(SetModuleName,
+      void(const std::string &module_name));
+  MOCK_CONST_METHOD0(GetModuleName,
+      const std::string&());
+  MOCK_METHOD1(SetDebugModule,
+      HRESULT(ICorDebugModule *debug_module));
+  MOCK_CONST_METHOD1(GetDebugModule,
+      HRESULT(ICorDebugModule **debug_module));
   MOCK_CONST_METHOD1(GetMetaDataImport,
-                     HRESULT(IMetaDataImport **metadata_import));
+      HRESULT(IMetaDataImport **metadata_import));
 };
 
 // Mock for IDocumentIndex

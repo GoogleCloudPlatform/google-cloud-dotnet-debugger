@@ -70,11 +70,6 @@ class CustomBinaryStream {
   // This function does not change the stream pointer.
   bool GetString(std::string *result, std::uint32_t offset);
 
-  // Returns the number of bytes remaining in the stream.
-  std::streamoff GetRemainingStreamLength() const {
-    return end_ - static_cast<std::streampos>(stream_->cur);
-  }
-
   // Reads the next byte in the stream. Returns false if the byte
   // cannot be read.
   bool ReadByte(std::uint8_t *result);
