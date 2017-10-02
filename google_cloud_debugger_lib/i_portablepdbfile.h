@@ -16,9 +16,9 @@
 #define I_PORTABLE_PDB_H_
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "ccomptr.h"
 #include "cor.h"
@@ -56,21 +56,26 @@ class IPortablePdbFile {
                          StreamHeader *stream_header) const = 0;
 
   // Get string from the heap at index index.
-  virtual bool GetHeapString(std::uint32_t index, std::string *result) const = 0;
+  virtual bool GetHeapString(std::uint32_t index,
+                             std::string *result) const = 0;
 
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
   // spec. Returns true if succeeds.
-  virtual bool GetDocumentName(std::uint32_t index, std::string *doc_name) const = 0;
+  virtual bool GetDocumentName(std::uint32_t index,
+                               std::string *doc_name) const = 0;
 
   // Gets GUID based on index.
   virtual bool GetHeapGuid(std::uint32_t index, std::string *guid) const = 0;
 
   // Gets the hash based on index.
-  virtual bool GetHash(std::uint32_t index, std::vector<std::uint8_t> *hash) const = 0;
+  virtual bool GetHash(std::uint32_t index,
+                       std::vector<std::uint8_t> *hash) const = 0;
 
   // Gets the method sequence information based on index.
-  virtual bool GetMethodSeqInfo(std::uint32_t doc_index, std::uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const = 0;
+  virtual bool GetMethodSeqInfo(
+      std::uint32_t doc_index, std::uint32_t sequence_index,
+      MethodSequencePointInformation *sequence_point_info) const = 0;
 
   // Returns the document table.
   virtual const std::vector<DocumentRow> &GetDocumentTable() const = 0;
@@ -91,7 +96,8 @@ class IPortablePdbFile {
       const = 0;
 
   // Returns the document index table.
-  virtual const std::vector<std::unique_ptr<IDocumentIndex>> &GetDocumentIndexTable() const = 0;
+  virtual const std::vector<std::unique_ptr<IDocumentIndex>>
+      &GetDocumentIndexTable() const = 0;
 
   // Sets the name of the module of this PDB.
   virtual void SetModuleName(const std::string &module_name) = 0;

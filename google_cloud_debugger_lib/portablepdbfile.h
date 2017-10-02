@@ -59,7 +59,9 @@ class PortablePdbFile : public IPortablePdbFile {
   bool GetHash(std::uint32_t index, std::vector<std::uint8_t> *hash) const;
 
   // Gets the method sequence information based on index.
-  bool GetMethodSeqInfo(std::uint32_t doc_index, std::uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const;
+  bool GetMethodSeqInfo(
+      std::uint32_t doc_index, std::uint32_t sequence_index,
+      MethodSequencePointInformation *sequence_point_info) const;
 
   // Returns the document table.
   const std::vector<DocumentRow> &GetDocumentTable() const {

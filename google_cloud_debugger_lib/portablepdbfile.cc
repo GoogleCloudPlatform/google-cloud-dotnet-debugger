@@ -26,8 +26,8 @@
 
 using google_cloud_debugger::CComPtr;
 using std::array;
-using std::string;
 using std::streampos;
+using std::string;
 using std::unique_ptr;
 using std::vector;
 
@@ -58,7 +58,8 @@ bool PortablePdbFile::InitializeStringsHeap() {
 }
 
 bool PortablePdbFile::GetHeapString(uint32_t index, string *heap_string) const {
-  return pdb_file_binary_stream_.GetString(heap_string, string_heap_header_.offset + index);
+  return pdb_file_binary_stream_.GetString(heap_string,
+                                           string_heap_header_.offset + index);
 }
 
 bool PortablePdbFile::InitializeFromFile(const string &file_path) {
@@ -113,7 +114,7 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   if (index == 0) {
     return false;
   }
-  
+
   pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + index);
   uint32_t index_stream_length;
   if (!pdb_file_binary_stream_.ReadCompressedUInt32(&index_stream_length)) {
@@ -144,27 +145,32 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
 
     // 0 means empty string.
     if (part_index != 0) {
-      if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + part_index)) {
+      if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset +
+                                                  part_index)) {
         pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
       uint32_t component_string_length;
-      if (!pdb_file_binary_stream_.ReadCompressedUInt32(&component_string_length)) {
+      if (!pdb_file_binary_stream_.ReadCompressedUInt32(
+              &component_string_length)) {
         pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
       uint32_t bytes_read;
       vector<uint8_t> component_string(component_string_length, 0);
-      if (!pdb_file_binary_stream_.ReadBytes(component_string.data(), component_string_length, &bytes_read)) {
+      if (!pdb_file_binary_stream_.ReadBytes(
+              component_string.data(), component_string_length, &bytes_read)) {
         pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
       result.append(component_string.begin(), component_string.end());
 
-      // Resets the stream that is used to read index of the components of the document name.
-      if (!pdb_file_binary_stream_.SeekFromOrigin(index_stream_pos) || pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
+      // Resets the stream that is used to read index of the components of the
+      // document name.
+      if (!pdb_file_binary_stream_.SeekFromOrigin(index_stream_pos) ||
+          pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
         return false;
       }
     }
@@ -183,7 +189,8 @@ bool PortablePdbFile::GetHeapGuid(uint32_t index, string *guid) const {
   // GUID are 16 bytes. Index is 1-based so we have to minus 1.
   uint32_t offset = (index - 1) * 16;
 
-  if (!pdb_file_binary_stream_.SeekFromOrigin(guid_heap_header_.offset + offset)) {
+  if (!pdb_file_binary_stream_.SeekFromOrigin(guid_heap_header_.offset +
+                                              offset)) {
     return false;
   }
 
@@ -192,7 +199,7 @@ bool PortablePdbFile::GetHeapGuid(uint32_t index, string *guid) const {
   uint32_t num_bytes_read;
 
   if (!pdb_file_binary_stream_.ReadBytes(bytes_read.data(), bytes_read.size(),
-    &num_bytes_read)) {
+                                         &num_bytes_read)) {
     std::cerr << "Failed to read from GUID heap.";
     return false;
   }
@@ -202,7 +209,8 @@ bool PortablePdbFile::GetHeapGuid(uint32_t index, string *guid) const {
 }
 
 bool PortablePdbFile::GetHash(uint32_t index, vector<uint8_t> *hash) const {
-  if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + index)) {
+  if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset +
+                                              index)) {
     return false;
   }
 
@@ -213,7 +221,8 @@ bool PortablePdbFile::GetHash(uint32_t index, vector<uint8_t> *hash) const {
 
   hash->resize(data_length);
   uint32_t bytes_read = 0;
-  if (!pdb_file_binary_stream_.ReadBytes(hash->data(), hash->size(), &bytes_read)) {
+  if (!pdb_file_binary_stream_.ReadBytes(hash->data(), hash->size(),
+                                         &bytes_read)) {
     std::cerr << "Failed to read the hash from the heap blob stream.";
     return false;
   }
@@ -221,8 +230,11 @@ bool PortablePdbFile::GetHash(uint32_t index, vector<uint8_t> *hash) const {
   return true;
 }
 
-bool PortablePdbFile::GetMethodSeqInfo(uint32_t doc_index, uint32_t sequence_index, MethodSequencePointInformation *sequence_point_info) const {
-  if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset + sequence_index)) {
+bool PortablePdbFile::GetMethodSeqInfo(
+    uint32_t doc_index, uint32_t sequence_index,
+    MethodSequencePointInformation *sequence_point_info) const {
+  if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset +
+                                              sequence_index)) {
     return false;
   }
 
@@ -235,7 +247,8 @@ bool PortablePdbFile::GetMethodSeqInfo(uint32_t doc_index, uint32_t sequence_ind
     return false;
   }
 
-  bool result = ParseFrom(doc_index, &pdb_file_binary_stream_, sequence_point_info);
+  bool result =
+      ParseFrom(doc_index, &pdb_file_binary_stream_, sequence_point_info);
   pdb_file_binary_stream_.ResetStreamLength();
   return result;
 }
@@ -276,7 +289,7 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   if (!GetStream(kCompressedStreamName, &compressed_stream_header)) {
     return false;
   }
-  
+
   if (!pdb_file_binary_stream_.SeekFromOrigin(
           compressed_stream_header.offset) ||
       !pdb_file_binary_stream_.SetStreamLength(compressed_stream_header.size)) {

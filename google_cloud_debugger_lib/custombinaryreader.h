@@ -18,13 +18,13 @@
 #include <cstdint>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #include "metadatatables.h"
 
-//typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
+// typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
 
 namespace google_cloud_debugger_portable_pdb {
 struct CompressedMetadataTableHeader;

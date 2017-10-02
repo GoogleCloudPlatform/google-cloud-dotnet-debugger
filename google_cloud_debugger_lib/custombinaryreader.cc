@@ -21,10 +21,10 @@
 
 using std::ifstream;
 using std::ios;
-using std::string;
-using std::vector;
-using std::unique_ptr;
 using std::streampos;
+using std::string;
+using std::unique_ptr;
+using std::vector;
 
 const int one = 1;
 #define big_endian() ((*(char *)&one) == 0)
@@ -62,7 +62,7 @@ bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
 
 bool CustomBinaryStream::ConsumeFile(const string &file) {
   unique_ptr<std::ifstream> file_stream = unique_ptr<std::ifstream>(
-    new (std::nothrow) ifstream(file, ios::in | ios::binary | ios::ate));
+      new (std::nothrow) ifstream(file, ios::in | ios::binary | ios::ate));
   if (!file_stream && !file_stream->is_open()) {
     return false;
   }
@@ -175,8 +175,7 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
 
     if (read_char != 0) {
       *result += read_char;
-    }
-    else {
+    } else {
       break;
     }
   }

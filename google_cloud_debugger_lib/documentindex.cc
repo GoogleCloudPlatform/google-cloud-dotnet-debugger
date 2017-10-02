@@ -24,8 +24,8 @@
 using std::cerr;
 using std::max;
 using std::min;
-using std::vector;
 using std::string;
+using std::vector;
 
 namespace google_cloud_debugger_portable_pdb {
 
@@ -62,9 +62,8 @@ bool DocumentIndex::Initialize(const IPortablePdbFile &pdb, int doc_index) {
     cerr << "Failed to get hash GUID.";
     return false;
   }
- 
-  hash_algorithm_ =
-      GetHashAlgorithmName(hash_guid);
+
+  hash_algorithm_ = GetHashAlgorithmName(hash_guid);
 
   if (!pdb.GetHash(doc_row.hash, &hash_)) {
     cerr << "Failed to get heap blob stream.";
@@ -109,7 +108,7 @@ bool DocumentIndex::ParseMethod(MethodInfo *method, const IPortablePdbFile &pdb,
 
   MethodSequencePointInformation sequence_point_info;
   if (!pdb.GetMethodSeqInfo(doc_index, debug_info_row.sequence_points,
-                             &sequence_point_info)) {
+                            &sequence_point_info)) {
     cerr << "Failed to get Sequence Point Info from MethodDebugInfo row.";
     return false;
   }
