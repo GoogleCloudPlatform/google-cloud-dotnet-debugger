@@ -49,6 +49,9 @@ bool DocumentIndex::Initialize(const IPortablePdbFile &pdb, int doc_index) {
     return false;
   }
 
+  // See:
+  // https://github.com/dotnet/corefx/blob/master/src/System.Reflection.Metadata/specs/PortablePdb-Metadata.md#document-table-0x30
+  // for the various GUIDs.
   string language_guid;
   if (!pdb.GetHeapGuid(doc_row.language, &language_guid)) {
     cerr << "Failed to get language GUID.";

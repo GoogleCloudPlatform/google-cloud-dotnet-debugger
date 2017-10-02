@@ -123,10 +123,13 @@ class PortablePdbFile : public IPortablePdbFile {
   MetadataRootHeader root_header_;
   std::vector<StreamHeader> stream_headers_;
 
+  // Stream header for the Strings heap.
   StreamHeader string_heap_header_;
 
+  // Stream header for the Blob heap.
   StreamHeader blob_heap_header_;
 
+  // Stream header for the GUID heap.
   StreamHeader guid_heap_header_;
 
   // Header for the PDB metadata section.

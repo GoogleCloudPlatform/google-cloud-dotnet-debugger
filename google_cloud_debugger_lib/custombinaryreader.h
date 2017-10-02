@@ -58,15 +58,18 @@ class CustomBinaryStream {
   bool SeekFromCurrent(std::uint32_t position);
 
   // Sets the stream position to position from the original position.
+  // This function ignores the length of the stream set by SetStreamLength.
   bool SeekFromOrigin(std::uint32_t position);
 
   // Sets where the stream will end. This should be less than the current end_.
   bool SetStreamLength(std::uint32_t length);
 
   // Resets the stream length to the original length of the file.
+  // This function is meant to be used to reset the stream after
+  // SetStreamLength has been used.
   void ResetStreamLength();
 
-  // Extracts out a null-terminated string at offset in the stream.
+  // Gets a string starting from the offset to a null terminating character or the end of the stream.
   // This function does not change the stream pointer.
   bool GetString(std::string *result, std::uint32_t offset);
 

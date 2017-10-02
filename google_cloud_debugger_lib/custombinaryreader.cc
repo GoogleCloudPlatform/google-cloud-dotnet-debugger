@@ -14,6 +14,8 @@
 
 #include "custombinaryreader.h"
 
+#include <iostream>
+#include <assert.h>
 #include <iterator>
 #include <vector>
 
@@ -25,6 +27,7 @@ using std::streampos;
 using std::string;
 using std::unique_ptr;
 using std::vector;
+using std::cerr;
 
 const int one = 1;
 #define big_endian() ((*(char *)&one) == 0)
@@ -43,9 +46,7 @@ const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
 const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
 
 bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
-  if (!stream) {
-    return false;
-  }
+  assert(stream != nullptr);
 
   stream_.reset(stream);
 
@@ -58,12 +59,16 @@ bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
 
     return true;
   }
+
+  cerr << "Invalid stream.";
+  return false;
 }
 
 bool CustomBinaryStream::ConsumeFile(const string &file) {
   unique_ptr<std::ifstream> file_stream = unique_ptr<std::ifstream>(
       new (std::nothrow) ifstream(file, ios::in | ios::binary | ios::ate));
   if (!file_stream && !file_stream->is_open()) {
+    cerr << "Failed to open file " << file;
     return false;
   }
 
@@ -72,7 +77,9 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
 
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
-  if (!stream_ || end_ - stream_->tellg() < bytes_to_read) {
+  assert(stream_ != nullptr);
+  if (end_ - stream_->tellg() < bytes_to_read) {
+    cerr << "End of stream reached.";
     return false;
   }
 
@@ -82,15 +89,14 @@ bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
 }
 
 bool CustomBinaryStream::HasNext() const {
-  if (!stream_) {
-    return false;
-  }
-
+  assert(stream_ != nullptr);
   return stream_->tellg() < end_;
 }
 
 bool CustomBinaryStream::Peek(uint8_t *result) const {
-  if (!stream_ || !HasNext()) {
+  assert(stream_ != nullptr);
+  if (!HasNext()) {
+    cerr << "End of stream reached.";
     return false;
   }
 
@@ -99,14 +105,17 @@ bool CustomBinaryStream::Peek(uint8_t *result) const {
 }
 
 bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
+  assert(stream_ != nullptr);
   // Have to take into account the end_ based on the stream
   // length that we set.
-  if (!stream_ || end_ - stream_->tellg() < index) {
+  if (end_ - stream_->tellg() < index) {
+    cerr << "Seeking to a position out of range of the stream.";
     return false;
   }
 
   stream_->seekg(index, stream_->cur);
   if (stream_->fail()) {
+    cerr << "Seek operation failed.";
     stream_->clear();
     return false;
   }
@@ -115,12 +124,11 @@ bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
 }
 
 bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
-  if (!stream_) {
-    return false;
-  }
+  assert(stream_ != nullptr);
 
   stream_->seekg(position, stream_->beg);
   if (stream_->fail()) {
+    cerr << "Seek operation failed.";
     stream_->clear();
     return false;
   }
@@ -128,7 +136,10 @@ bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
 }
 
 bool CustomBinaryStream::SetStreamLength(uint32_t length) {
-  if (!stream_ || end_ - stream_->tellg() < length) {
+  assert(stream_ != nullptr);
+
+  if (end_ - stream_->tellg() < length) {
+    cerr << "Length is larger than the length of the stream.";
     return false;
   }
 
@@ -137,9 +148,7 @@ bool CustomBinaryStream::SetStreamLength(uint32_t length) {
 }
 
 void CustomBinaryStream::ResetStreamLength() {
-  if (!stream_) {
-    return;
-  }
+  assert(stream_ != nullptr);
 
   streampos cur_pos = stream_->tellg();
   stream_->seekg(0, stream_->end);
@@ -149,9 +158,7 @@ void CustomBinaryStream::ResetStreamLength() {
 
 bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   result->clear();
-  if (!stream_) {
-    return false;
-  }
+  assert(stream_ != nullptr);
 
   // Makes a copy of the current position so we can restores the stream.
   streampos previous_pos = stream_->tellg();
@@ -159,6 +166,7 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   if (stream_->fail()) {
     stream_->clear();
     stream_->seekg(previous_pos);
+    cerr << "Failed to seek to the offset point.";
     return false;
   }
 
@@ -170,6 +178,7 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
     if (stream_->fail()) {
       stream_->clear();
       stream_->seekg(previous_pos);
+      cerr << "Failed to read a character from the stream.";
       return false;
     }
 
