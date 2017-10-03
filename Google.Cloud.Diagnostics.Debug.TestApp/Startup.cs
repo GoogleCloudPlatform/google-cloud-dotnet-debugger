@@ -12,26 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.AspNetCore.Hosting;
-using System.IO;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
-    /// <summary>
-    /// A program to test the debugger against.  Not that changes to this 
-    /// may break the integration tests.
-    /// </summary>
-    public class Program
+    public class Startup
     {
-        public static void Main(string[] args)
+        public void ConfigureServices(IServiceCollection services)
         {
-            new WebHostBuilder()
-               .UseKestrel()
-               .UseContentRoot(Directory.GetCurrentDirectory())
-               .UseIISIntegration()
-               .UseStartup<Startup>()
-               .Build()
-               .Run();
+            services.AddMvc();
+        }
+
+        public void Configure(IApplicationBuilder app)
+        { 
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute("default", "{controller=Main}/{action=Hello}");
+            });
         }
     }
 }

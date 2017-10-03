@@ -14,7 +14,9 @@
 
 using Google.Cloud.Debugger.V2;
 using System;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
@@ -44,7 +46,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
-        public void BreakpointHit()
+        public async Task BreakpointHit()
         {
             new Thread(() =>
             {
@@ -55,7 +57,15 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }).Start();
 
             var debuggee = _polling.GetDebuggee(_module, _version);
-            var breakpoint = SetBreakpoint(debuggee.Id, "Program.cs", 38);
+            var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 23);
+
+
+            using (HttpClient client = new HttpClient())
+            {
+                await client.GetAsync("http://localhost:5000/");
+            }
+
+
             var newBp = _polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
 
             // Check that the breakpoint has been hit.
