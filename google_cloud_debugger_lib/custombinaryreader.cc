@@ -177,16 +177,15 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
     return false;
   }
 
-  // Read 100 characters at a time.
-  char buffer[100];
-  size_t buffer_size = sizeof(buffer);
-  size_t chars_left = relative_end_ - stream_->tellg();
-  size_t char_to_read = std::min(buffer_size, chars_left);
+  // Read 100 characters at a time or until the end of the stream,
+  // whichever is smaller.
+  uint32_t chars_left = relative_end_ - stream_->tellg();
+  uint32_t char_to_read = std::min(kStringBufferSize, chars_left);
+  vector<char> buffer(char_to_read, 0);
 
-  bool found_null_char = false;
   while (char_to_read != 0) {
     // Reads char_to_read bytes from the buffer.
-    stream_->read(buffer, char_to_read);
+    stream_->read(buffer.data(), char_to_read);
     if (stream_->fail()) {
       stream_->clear();
       stream_->seekg(previous_pos);
@@ -195,22 +194,18 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
     }
 
     // Finds the null character.
-    size_t i;
-    for (i = 0; i < char_to_read; ++i) {
-      if (buffer[i] == 0) {
-        found_null_char = true;
-        break;
-      }
-    }
+    vector<char>::iterator null_char_pos =
+        std::find(buffer.begin(), buffer.end(), 0);
 
-    result->append(buffer, buffer + i);
-    if (found_null_char) {
+    result->append(buffer.begin(), null_char_pos);
+    // Stop reading if we found the null character.
+    if (null_char_pos != buffer.end()) {
       break;
     }
 
     // If we didn't find the null character, continue reading.
     chars_left = relative_end_ - stream_->tellg();
-    char_to_read = std::min(buffer_size, chars_left);
+    char_to_read = std::min((uint32_t)buffer.size(), chars_left);
   }
 
   stream_->seekg(previous_pos);

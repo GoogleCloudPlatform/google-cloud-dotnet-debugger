@@ -122,6 +122,7 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   }
 
   if (!pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
+    std::cerr << "Failed to set stream length to " << index_stream_length;
     return false;
   }
 
