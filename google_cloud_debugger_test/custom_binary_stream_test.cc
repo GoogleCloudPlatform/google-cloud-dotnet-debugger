@@ -15,21 +15,37 @@
 #include <custombinaryreader.h>
 #include <gtest/gtest.h>
 
+#include <array>
+#include <string>
+
+using std::array;
+using std::string;
+using std::stringstream;
+using std::unique_ptr;
+
 namespace google_cloud_debugger_test {
 
-TEST(BinaryReader, ReadCompressedUnsignedInts) {
-  uint8_t test_data[] = {// Unsigned tests.
-                         0x03, 0x7F, 0x80, 0x80, 0xAE, 0x57, 0xBF, 0xFF, 0xC0,
-                         0x00, 0x40, 0x00, 0xDF, 0xFF, 0xFF, 0xFF};
+// Sets up a string stream based on char array stream_data.
+unique_ptr<stringstream> SetUpStream(char *stream_data, uint32_t stream_size) {
+  unique_ptr<stringstream> test_stream =
+      unique_ptr<stringstream>(new (std::nothrow) stringstream());
+  EXPECT_TRUE(test_stream != nullptr);
+  for (size_t i = 0; i < stream_size; ++i) {
+    *test_stream << stream_data[i];
+  }
+  return test_stream;
+}
 
+TEST(BinaryReader, ReadCompressedUnsignedInts) {
+  char test_data[] = {// Unsigned tests.
+                      0x03, 0x7F, 0x80, 0x80, 0xAE, 0x57, 0xBF, 0xFF,
+                      0xC0, 0x00, 0x40, 0x00, 0xDF, 0xFF, 0xFF, 0xFF};
+  unique_ptr<stringstream> test_stream =
+      SetUpStream(test_data, sizeof(test_data));
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   uint32_t unsigned_int;
-  // Should fail and not throw error if no stream is available.
-  EXPECT_FALSE(binary_stream.ReadCompressedUInt32(&unsigned_int));
 
-  std::vector<uint8_t> test_data_vector(
-      test_data, test_data + sizeof test_data / sizeof test_data[0]);
-  EXPECT_TRUE(binary_stream.ConsumeVector(test_data_vector));
+  EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
 
   // Checks that we can read compressed unsigned int.
   EXPECT_TRUE(binary_stream.ReadCompressedUInt32(&unsigned_int));
@@ -55,18 +71,15 @@ TEST(BinaryReader, ReadCompressedUnsignedInts) {
 }
 
 TEST(BinaryReader, ReadCompressedInts) {
-  uint8_t test_data[] = {0x06, 0x7B, 0x80, 0x80, 0x01, 0xC0, 0x00, 0x40, 0x00,
-                         0x80, 0x01, 0xDF, 0xFF, 0xFF, 0xFE, 0xC0, 0x00, 0x00,
-                         0x01};
-
+  char test_data[] = {0x06, 0x7B, 0x80, 0x80, 0x01, 0xC0, 0x00,
+                      0x40, 0x00, 0x80, 0x01, 0xDF, 0xFF, 0xFF,
+                      0xFE, 0xC0, 0x00, 0x00, 0x01};
+  unique_ptr<stringstream> test_stream =
+      SetUpStream(test_data, sizeof(test_data));
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   int32_t signed_int;
-  // Should fail and not throw error if no stream is available.
-  EXPECT_FALSE(binary_stream.ReadCompressSignedInt32(&signed_int));
 
-  std::vector<uint8_t> test_data_vector(
-      test_data, test_data + sizeof test_data / sizeof test_data[0]);
-  EXPECT_TRUE(binary_stream.ConsumeVector(test_data_vector));
+  EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
 
   // Checks that we can read compressed signed int.
   EXPECT_TRUE(binary_stream.ReadCompressSignedInt32(&signed_int));
@@ -95,23 +108,20 @@ TEST(BinaryReader, ReadCompressedInts) {
 }
 
 TEST(BinaryReader, BasicTests) {
-  uint8_t test_data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
-
+  char test_data[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+  unique_ptr<stringstream> test_stream =
+      SetUpStream(test_data, sizeof(test_data));
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
 
-  std::vector<uint8_t> test_data_vector(
-      test_data, test_data + sizeof test_data / sizeof test_data[0]);
-  EXPECT_TRUE(binary_stream.ConsumeVector(test_data_vector));
+  EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
 
   // Checks that peeking works.
   uint8_t peek_byte;
 
-  EXPECT_EQ(binary_stream.GetRemainingStreamLength(), 8);
   EXPECT_TRUE(binary_stream.Peek(&peek_byte));
   EXPECT_EQ(peek_byte, 0x01);
 
   // Checks that peeking does not change the underlying stream.
-  EXPECT_EQ(binary_stream.GetRemainingStreamLength(), 8);
   EXPECT_TRUE(binary_stream.Peek(&peek_byte));
   EXPECT_EQ(peek_byte, 0x01);
 
@@ -135,8 +145,28 @@ TEST(BinaryReader, BasicTests) {
   // Checks SetStreamLength works.
   EXPECT_FALSE(binary_stream.SetStreamLength(10));
   EXPECT_TRUE(binary_stream.SetStreamLength(2));
+}
 
-  EXPECT_EQ(binary_stream.GetRemainingStreamLength(), 2);
+// Tests that GetString function of CustomBinaryReader works.
+TEST(BinaryReader, GetStringTest) {
+  char test_data[] = {'a', 'b', 'c', 0, 'd', 'e', 'f', 0};
+  unique_ptr<stringstream> test_stream =
+      SetUpStream(test_data, sizeof(test_data));
+  google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
+
+  EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
+
+  // Gets the string abc by using offset 0.
+  std::string first_string;
+
+  EXPECT_TRUE(binary_stream.GetString(&first_string, 0));
+  EXPECT_EQ(first_string, "abc");
+
+  // Gets the string def by using offset 4.
+  std::string second_string;
+
+  EXPECT_TRUE(binary_stream.GetString(&second_string, 4));
+  EXPECT_EQ(second_string, "def");
 }
 
 }  // namespace google_cloud_debugger_test
