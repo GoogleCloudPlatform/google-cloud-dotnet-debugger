@@ -144,13 +144,17 @@ bool CustomBinaryStream::SetStreamLength(uint32_t length) {
   if (stream_->fail()) {
     stream_->clear();
     stream_->seekg(cur_pos);
-    cerr << "Length is larger than the absolute length of the stream.";
+    cerr << "Setting stream length to " << length
+      << " will set the relative end of the stream to a position "
+      << " outside the absolute end of the stream.";
     return false;
   }
 
   if (stream_->tellg() > relative_end_) {
     stream_->seekg(cur_pos);
-    cerr << "Length is larger than the relative length of the stream.";
+    cerr << "Setting stream length to " << length
+      << " will set the relative end of the stream to a position "
+      << " outside the relative end of the stream.";
     return false;
   }
 
