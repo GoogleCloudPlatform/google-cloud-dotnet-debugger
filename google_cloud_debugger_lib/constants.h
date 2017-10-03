@@ -29,7 +29,7 @@ static const std::wstring kPipeNameW = L"dotnet-debugger";
 static const int kBufferSize = 1024;
 
 // The maximum amount of time to wait for a pipe connection in milliseconds.
-static const int kConnectionWaitTimeoutMs = 20000;
+static const int kConnectionWaitTimeoutMs = 60000;
 
 // The amount of time to wait between checks for a pipe connection in milliseconds.
 static const int kConnectionSleepTimeoutMs = 2000;
