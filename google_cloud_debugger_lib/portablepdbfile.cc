@@ -121,7 +121,9 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
     return false;
   }
 
-  pdb_file_binary_stream_.SetStreamLength(index_stream_length);
+  if (!pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
+    return false;
+  }
 
   uint8_t separator;
   if (!pdb_file_binary_stream_.ReadByte(&separator)) {
@@ -170,7 +172,7 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
       // Resets the stream that is used to read index of the components of the
       // document name.
       if (!pdb_file_binary_stream_.SeekFromOrigin(index_stream_pos) ||
-          pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
+          !pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
         return false;
       }
     }

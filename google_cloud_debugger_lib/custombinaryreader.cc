@@ -14,20 +14,20 @@
 
 #include "custombinaryreader.h"
 
-#include <iostream>
 #include <assert.h>
+#include <iostream>
 #include <iterator>
 #include <vector>
 
 #include "metadataheaders.h"
 
+using std::cerr;
 using std::ifstream;
 using std::ios;
 using std::streampos;
 using std::string;
 using std::unique_ptr;
 using std::vector;
-using std::cerr;
 
 const int one = 1;
 #define big_endian() ((*(char *)&one) == 0)
@@ -53,7 +53,8 @@ bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
   if (stream_->good()) {
     stream_->unsetf(std::ios::skipws);
     stream_->seekg(0, stream_->end);
-    end_ = stream_->tellg();
+    absolute_end_ = stream_->tellg();
+    relative_end_ = absolute_end_;
     stream_->seekg(0, stream_->beg);
     begin_ = stream_->tellg();
 
@@ -78,7 +79,7 @@ bool CustomBinaryStream::ConsumeFile(const string &file) {
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
   assert(stream_ != nullptr);
-  if (end_ - stream_->tellg() < bytes_to_read) {
+  if (relative_end_ - stream_->tellg() < bytes_to_read) {
     cerr << "End of stream reached.";
     return false;
   }
@@ -90,7 +91,7 @@ bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
 
 bool CustomBinaryStream::HasNext() const {
   assert(stream_ != nullptr);
-  return stream_->tellg() < end_;
+  return stream_->tellg() < relative_end_;
 }
 
 bool CustomBinaryStream::Peek(uint8_t *result) const {
@@ -108,7 +109,7 @@ bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
   assert(stream_ != nullptr);
   // Have to take into account the end_ based on the stream
   // length that we set.
-  if (end_ - stream_->tellg() < index) {
+  if (relative_end_ - stream_->tellg() < index) {
     cerr << "Seeking to a position out of range of the stream.";
     return false;
   }
@@ -138,22 +139,28 @@ bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
 bool CustomBinaryStream::SetStreamLength(uint32_t length) {
   assert(stream_ != nullptr);
 
-  if (end_ - stream_->tellg() < length) {
-    cerr << "Length is larger than the length of the stream.";
+  streampos cur_pos = stream_->tellg();
+  stream_->seekg(length, stream_->cur);
+  if (stream_->fail()) {
+    stream_->clear();
+    stream_->seekg(cur_pos);
+    cerr << "Length is larger than the absolute length of the stream.";
     return false;
   }
 
-  end_ = stream_->tellg() + static_cast<std::streamoff>(length);
+  if (stream_->tellg() > relative_end_) {
+    stream_->seekg(cur_pos);
+    cerr << "Length is larger than the relative length of the stream.";
+    return false;
+  }
+
   return true;
 }
 
 void CustomBinaryStream::ResetStreamLength() {
   assert(stream_ != nullptr);
 
-  streampos cur_pos = stream_->tellg();
-  stream_->seekg(0, stream_->end);
-  end_ = stream_->tellg();
-  stream_->seekg(cur_pos, stream_->beg);
+  relative_end_ = absolute_end_;
 }
 
 bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
@@ -170,23 +177,40 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
     return false;
   }
 
-  // Read until we encounter a null character
-  // or the end of the file is reached.
-  while (stream_->tellg() != end_) {
-    char read_char;
-    stream_->read(&read_char, 1);
+  // Read 100 characters at a time.
+  char buffer[100];
+  size_t buffer_size = sizeof(buffer);
+  size_t chars_left = relative_end_ - stream_->tellg();
+  size_t char_to_read = std::min(buffer_size, chars_left);
+
+  bool found_null_char = false;
+  while (char_to_read != 0) {
+    // Reads char_to_read bytes from the buffer.
+    stream_->read(buffer, char_to_read);
     if (stream_->fail()) {
       stream_->clear();
       stream_->seekg(previous_pos);
-      cerr << "Failed to read a character from the stream.";
+      cerr << "Failed to read characters from the stream.";
       return false;
     }
 
-    if (read_char != 0) {
-      *result += read_char;
-    } else {
+    // Finds the null character.
+    size_t i;
+    for (i = 0; i < char_to_read; ++i) {
+      if (buffer[i] == 0) {
+        found_null_char = true;
+        break;
+      }
+    }
+
+    result->append(buffer, buffer + i);
+    if (found_null_char) {
       break;
     }
+
+    // If we didn't find the null character, continue reading.
+    chars_left = relative_end_ - stream_->tellg();
+    char_to_read = std::min(buffer_size, chars_left);
   }
 
   stream_->seekg(previous_pos);

@@ -123,11 +123,17 @@ class CustomBinaryStream {
   // The underlying binary stream.
   std::unique_ptr<std::istream> stream_;
 
-  // The end position of the stream.
-  std::streampos end_;
-
-  // The start position of the stream.
+  // The begin position of the stream.
   std::streampos begin_;
+
+  // The absolute end position of the stream.
+  std::streampos absolute_end_;
+
+  // The relative end position of the stream
+  // (sets by SetStreamLength).
+  std::streampos relative_end_;
+
+  std::streamsize size_ = -1;
 };
 
 }  // namespace google_cloud_debugger_portable_pdb

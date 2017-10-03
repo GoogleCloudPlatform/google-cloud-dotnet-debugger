@@ -45,9 +45,6 @@ TEST(BinaryReader, ReadCompressedUnsignedInts) {
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   uint32_t unsigned_int;
 
-  // Should fail and not throw error if no stream is available.
-  EXPECT_FALSE(binary_stream.ReadCompressedUInt32(&unsigned_int));
-
   EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
 
   // Checks that we can read compressed unsigned int.
@@ -81,9 +78,6 @@ TEST(BinaryReader, ReadCompressedInts) {
       SetUpStream(test_data, sizeof(test_data));
   google_cloud_debugger_portable_pdb::CustomBinaryStream binary_stream;
   int32_t signed_int;
-
-  // Should fail and not throw error if no stream is available.
-  EXPECT_FALSE(binary_stream.ReadCompressSignedInt32(&signed_int));
 
   EXPECT_TRUE(binary_stream.ConsumeStream(test_stream.release()));
 
