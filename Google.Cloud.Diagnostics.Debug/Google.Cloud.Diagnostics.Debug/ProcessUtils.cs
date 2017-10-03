@@ -165,6 +165,9 @@ namespace Google.Cloud.Diagnostics.Debug
             ProcessStartInfo startInfo = GetBaseStartInfo(file, args, environment);
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardInput = true;
             return startInfo;
         }
 

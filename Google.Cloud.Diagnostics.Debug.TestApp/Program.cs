@@ -1,4 +1,4 @@
-﻿// Copyright 2017 Google Inc. All Rights Reserved.
+﻿// Copyright 201y Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.AspNetCore.Hosting;
-using System.IO;
+using System;
+using System.Diagnostics;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
@@ -21,17 +22,21 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
     /// A program to test the debugger against.  Not that changes to this 
     /// may break the integration tests.
     /// </summary>
-    public class Program
+    class Program
     {
-        public static void Main(string[] args)
+        static Process proc;
+        static void Main(string[] args)
         {
-            new WebHostBuilder()
-               .UseKestrel()
-               .UseContentRoot(Directory.GetCurrentDirectory())
-               .UseIISIntegration()
-               .UseStartup<Startup>()
-               .Build()
-               .Run();
+            proc = Process.GetCurrentProcess();
+            Console.WriteLine("Process ID: " + proc.Id);
+            while (true)
+            {
+                Thread.Sleep(100);
+                var counter = 1;
+                counter++;
+                var antiCounter = 1;
+                antiCounter--;
+            }
         }
     }
 }

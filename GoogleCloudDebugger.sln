@@ -19,9 +19,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_test"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug.Tests", "Google.Cloud.Diagnostics.Debug.Tests\Google.Cloud.Diagnostics.Debug.Tests.csproj", "{DE03D180-C511-4F7C-909F-FBC59BA55A1D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug.IntegrationTests", "Google.Cloud.Diagnostics.Debug.IntegrationTests\Google.Cloud.Diagnostics.Debug.IntegrationTests.csproj", "{BA4C96DA-8906-4D0E-9599-41A772C0F572}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.IntegrationTests", "Google.Cloud.Diagnostics.Debug.IntegrationTests\Google.Cloud.Diagnostics.Debug.IntegrationTests.csproj", "{BA4C96DA-8906-4D0E-9599-41A772C0F572}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug.TestApp", "Google.Cloud.Diagnostics.Debug.TestApp\Google.Cloud.Diagnostics.Debug.TestApp.csproj", "{9809ADBA-2956-4FBA-A741-E76FF57D74FB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.TestApp", "Google.Cloud.Diagnostics.Debug.TestApp\Google.Cloud.Diagnostics.Debug.TestApp.csproj", "{9809ADBA-2956-4FBA-A741-E76FF57D74FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
