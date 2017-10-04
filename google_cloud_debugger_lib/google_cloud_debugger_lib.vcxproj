@@ -194,6 +194,7 @@
     <ClInclude Include="dbgprimitive.h" />
     <ClInclude Include="documentindex.h" />
     <ClInclude Include="evalcoordinator.h" />
+    <ClInclude Include="icordebughelper.h" />
     <ClInclude Include="i_evalcoordinator.h" />
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="i_portablepdbfile.h" />
@@ -224,6 +225,7 @@
     <ClCompile Include="dbgobject.cc" />
     <ClCompile Include="documentindex.cc" />
     <ClCompile Include="evalcoordinator.cc" />
+    <ClCompile Include="icordebughelper.cc" />
     <ClCompile Include="metadataheaders.cc" />
     <ClCompile Include="metadatatables.cc" />
     <ClCompile Include="named_pipe_client_unix.cc" />
