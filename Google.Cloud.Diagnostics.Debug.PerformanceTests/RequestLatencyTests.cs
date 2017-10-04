@@ -20,8 +20,14 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
 {
     public class RequestLatencyTests : DebuggerTestBase
     {
+        /// <summary>
+        /// The average acceptable increase in latency when the debugger is attached.
+        /// </summary>
         public const int AddedLatencyWhenDebuggingMs = 10;
 
+        /// <summary>
+        /// The number of requests to test against. 
+        /// </summary>
         public const int NumberOfRequest = 100;
 
         public RequestLatencyTests() : base() { }
