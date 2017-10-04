@@ -14,6 +14,7 @@
 
 #include "custombinaryreader.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <iterator>
@@ -145,19 +146,22 @@ bool CustomBinaryStream::SetStreamLength(uint32_t length) {
     stream_->clear();
     stream_->seekg(cur_pos);
     cerr << "Setting stream length to " << length
-      << " will set the relative end of the stream to a position "
-      << " outside the absolute end of the stream.";
+         << " will set the relative end of the stream to a position"
+         << " outside the absolute end of the stream.";
     return false;
   }
 
   if (stream_->tellg() > relative_end_) {
     stream_->seekg(cur_pos);
     cerr << "Setting stream length to " << length
-      << " will set the relative end of the stream to a position "
-      << " outside the relative end of the stream.";
+         << " will set the relative end of the stream to a position"
+         << " outside the relative end of the stream.";
     return false;
   }
 
+  // Sets the relative end and sets the stream back.
+  relative_end_ = stream_->tellg();
+  stream_->seekg(cur_pos);
   return true;
 }
 
