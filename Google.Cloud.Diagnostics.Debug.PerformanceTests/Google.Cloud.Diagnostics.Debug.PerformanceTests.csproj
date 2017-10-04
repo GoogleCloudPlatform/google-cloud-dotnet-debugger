@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.Debugger.V2" Version="1.0.0-alpha02" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0-preview-20170923-02" />
     <PackageReference Include="xunit" Version="2.3.0-beta5-build3769" />
     <PackageReference Include="xunit.runner.console" Version="2.3.0-rc1-build3809" />
@@ -15,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Google.Cloud.Diagnostics.Debug.IntegrationTests\Google.Cloud.Diagnostics.Debug.IntegrationTests.csproj" />
     <ProjectReference Include="..\Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug.csproj" />
   </ItemGroup>
 

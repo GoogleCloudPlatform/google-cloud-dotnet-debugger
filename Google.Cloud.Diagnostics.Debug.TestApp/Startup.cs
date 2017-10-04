@@ -14,6 +14,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
@@ -28,7 +29,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         { 
             app.UseMvc(routes =>
             {
-                routes.MapRoute("default", "{controller=Main}/{action=Hello}");
+                routes.MapRoute("default", "{controller=Main}/{action=Hello}/{message?}");
             });
         }
     }

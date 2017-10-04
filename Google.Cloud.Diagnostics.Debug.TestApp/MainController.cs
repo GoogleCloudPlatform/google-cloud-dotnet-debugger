@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
@@ -21,6 +23,18 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         public string Hello()
         {
             return "Hello, World!";
+        }
+
+        public string Echo(string message)
+        {
+            Thread.Sleep(TimeSpan.FromMilliseconds(50));
+            return message;
+        }
+
+        public string Shutdown()
+        {
+            Program.Shutdown();
+            return "Bye!";
         }
     }
 }
