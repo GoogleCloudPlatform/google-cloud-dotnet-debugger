@@ -21,6 +21,8 @@
 #include <memory>
 
 #include "custombinaryreader.h"
+#include "dbgobject.h"
+#include "icordebughelper.h"
 #include "metadataheaders.h"
 #include "metadatatables.h"
 
@@ -133,30 +135,35 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   }
 
   string result;
+  // Vector containing index into blob heaps of the components of the document
+  // name.
+  vector<uint32_t> part_indices;
   // We essentially have 2 streams, 1 for reading the index of the
   // components of the document name and 1 for getting the components itself.
-  // This variable is used to keep track of the position in the former stream.
-  streampos index_stream_pos;
+  // The first stream is of the form: separator part+. So we will traverse
+  // the stream to get all the parts here.
   while (pdb_file_binary_stream_.HasNext()) {
     uint32_t part_index;
     if (!pdb_file_binary_stream_.ReadCompressedUInt32(&part_index)) {
       pdb_file_binary_stream_.ResetStreamLength();
       return false;
     }
+    part_indices.push_back(part_index);
+  }
 
-    index_stream_pos = pdb_file_binary_stream_.Current();
-
+  // Now we retrieves the components using part_indices.
+  pdb_file_binary_stream_.ResetStreamLength();
+  for (uint32_t part_index : part_indices) {
     // 0 means empty string.
     if (part_index != 0) {
       if (!pdb_file_binary_stream_.SeekFromOrigin(blob_heap_header_.offset +
                                                   part_index)) {
-        pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
+
       uint32_t component_string_length;
       if (!pdb_file_binary_stream_.ReadCompressedUInt32(
               &component_string_length)) {
-        pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
@@ -164,18 +171,10 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
       vector<uint8_t> component_string(component_string_length, 0);
       if (!pdb_file_binary_stream_.ReadBytes(
               component_string.data(), component_string_length, &bytes_read)) {
-        pdb_file_binary_stream_.ResetStreamLength();
         return false;
       }
 
       result.append(component_string.begin(), component_string.end());
-
-      // Resets the stream that is used to read index of the components of the
-      // document name.
-      if (!pdb_file_binary_stream_.SeekFromOrigin(index_stream_pos) ||
-          !pdb_file_binary_stream_.SetStreamLength(index_stream_length)) {
-        return false;
-      }
     }
 
     result += separator;
@@ -184,7 +183,6 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   result.pop_back();
   *doc_name = result;
 
-  pdb_file_binary_stream_.ResetStreamLength();
   return true;
 }
 
@@ -371,20 +369,22 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
     return E_INVALIDARG;
   }
 
-  HRESULT hr;
-  CComPtr<IUnknown> temp_import;
-  hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
+  HRESULT hr = google_cloud_debugger::GetMetadataImportFromModule(
+      debug_module, &metadata_import_);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = temp_import->QueryInterface(
-      IID_IMetaDataImport, reinterpret_cast<void **>(&metadata_import_));
+  vector<WCHAR> module_name;
+  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(&module_name,
+                                                               debug_module);
   if (FAILED(hr)) {
     return hr;
   }
 
+  module_name_ = google_cloud_debugger::ConvertWCharPtrToString(module_name);
   debug_module_ = debug_module;
+
   return S_OK;
 }
 

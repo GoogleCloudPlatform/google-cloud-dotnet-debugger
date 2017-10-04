@@ -110,10 +110,11 @@ class BreakpointCollection {
   HRESULT ActivateOrDeactivateExistingBreakpoint(
       const DbgBreakpoint &breakpoint, BOOL activate);
 
-  // Helper function to get type definition token, signature and name
-  // of a method (identified using method_def).
+  // Helper function to get type definition token, signature, virtual address
+  // and name of a method (identified using method_def).
   HRESULT GetMethodData(IMetaDataImport *metadata_import, uint32_t method_def,
                         mdTypeDef *type_def, PCCOR_SIGNATURE *signature,
+                        ULONG *virtual_address,
                         std::vector<WCHAR> *method_name);
 
   // Helper function to create and initialize a breakpoint client.

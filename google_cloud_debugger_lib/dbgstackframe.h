@@ -77,6 +77,11 @@ class DbgStackFrame {
   // Sets the name of the file this stack frame is in.
   void SetFile(const std::string &file_name) { file_name_ = file_name; }
 
+  // Sets the name of the module this stack frame is in.
+  void SetModuleName(const std::vector<WCHAR> &module_name) {
+    module_name_ = ConvertWCharPtrToString(module_name);
+  }
+
   // Sets the name of the method this stack frame is in.
   void SetMethod(const std::vector<WCHAR> &method_name) {
     method_name_ = ConvertWCharPtrToString(method_name);
@@ -90,6 +95,16 @@ class DbgStackFrame {
   // Sets the line number this stack frame is on.
   void SetLineNumber(std::uint32_t line_number) { line_number_ = line_number; }
 
+  // Sets the virtual address of the function this stack frame is in.
+  void SetFuncVirtualAddr(ULONG32 addr) { func_virtual_addr_ = addr; }
+
+  // Gets the module this stack frame is in.
+  std::string GetModule() const { return module_name_; }
+
+  // Gets the short form of the module name with all the file path stripped.
+  // For example, C:\Test\MyModule.dll becomes MyModule.dll.
+  std::string GetShortModuleName() const;
+
   // Gets the name of the class of this stack frame.
   std::string GetClass() const { return class_name_; }
 
@@ -101,6 +116,9 @@ class DbgStackFrame {
 
   // Gets the line number this stack frame is on.
   std::uint32_t GetLineNumber() const { return line_number_; }
+
+  // Gets the virtual address of the function this stack frame is in.
+  ULONG32 GetFuncVirtualAddr() const { return func_virtual_addr_; }
 
  private:
   // Tuple that contains variable's name, variable's value and the error stream.
@@ -115,11 +133,17 @@ class DbgStackFrame {
   // Name of the method the variables are in.
   std::string method_name_;
 
+  // Name of the module the variables are in.
+  std::string module_name_;
+
   // Name of the class the variables are in.
   std::string class_name_;
 
   // Name of the file the variables are in.
   std::string file_name_;
+
+  // Virtual address of the function this stack frame is in.
+  ULONG32 func_virtual_addr_;
 
   // The line number where the variables are in.
   std::uint32_t line_number_;
