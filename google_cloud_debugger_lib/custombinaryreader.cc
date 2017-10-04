@@ -14,6 +14,7 @@
 
 #include "custombinaryreader.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <iterator>

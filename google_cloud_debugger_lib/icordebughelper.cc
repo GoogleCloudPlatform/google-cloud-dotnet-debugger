@@ -21,8 +21,8 @@ using std::cerr;
 
 namespace google_cloud_debugger {
 
-HRESULT google_cloud_debugger::GetMetadataImportFromModule(ICorDebugModule * debug_module, IMetaDataImport ** metadata_import)
-{
+HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
+                                    IMetaDataImport **metadata_import) {
   if (!debug_module) {
     cerr << "ICorDebugModule cannot be null.";
     return E_INVALIDARG;
@@ -39,7 +39,7 @@ HRESULT google_cloud_debugger::GetMetadataImportFromModule(ICorDebugModule * deb
   }
 
   hr = temp_import->QueryInterface(IID_IMetaDataImport,
-    reinterpret_cast<void **>(metadata_import));
+                                   reinterpret_cast<void **>(metadata_import));
   if (FAILED(hr)) {
     cerr << "Failed to import metadata from module";
     return hr;
@@ -48,7 +48,8 @@ HRESULT google_cloud_debugger::GetMetadataImportFromModule(ICorDebugModule * deb
   return S_OK;
 }
 
-HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name, ICorDebugModule *debug_module) {
+HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name,
+                                         ICorDebugModule *debug_module) {
   if (!module_name || !debug_module) {
     return E_INVALIDARG;
   }
@@ -61,7 +62,8 @@ HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name, ICorDe
   }
 
   module_name->resize(module_name_len);
-  hr = debug_module->GetName(module_name->size(), &module_name_len, module_name->data());
+  hr = debug_module->GetName(module_name->size(), &module_name_len,
+                             module_name->data());
   if (FAILED(hr)) {
     cerr << "Failed to get module name";
   }
@@ -69,4 +71,4 @@ HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name, ICorDe
   return hr;
 }
 
-}
+}  // namespace google_cloud_debugger
