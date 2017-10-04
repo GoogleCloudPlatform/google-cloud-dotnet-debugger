@@ -28,7 +28,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             using (StartTestApp(debugEnabled: true))
             {
                 var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 23);
+                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 25);
 
                 using (HttpClient client = new HttpClient())
                 {

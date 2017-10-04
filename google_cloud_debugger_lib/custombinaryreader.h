@@ -18,12 +18,13 @@
 #include <cstdint>
 #include <fstream>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "metadatatables.h"
 
-typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
+// typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
 
 namespace google_cloud_debugger_portable_pdb {
 struct CompressedMetadataTableHeader;
@@ -39,13 +40,16 @@ enum Heap : std::uint8_t {
 // compressed integers and table index.
 class CustomBinaryStream {
  public:
+  // Size of the buffer used by GetString to read characters into.
+  static const std::uint32_t kStringBufferSize = 100;
+
+  // Consumes a binary stream pointer, takes ownership
+  // of the underlying stream and makes it the underlying
+  // stream of this class.
+  bool ConsumeStream(std::istream *stream);
+
   // Consumes a file and exposes the file content as a binary stream.
   bool ConsumeFile(const std::string &file);
-
-  // Consumes a uint8_t vector and exposes it as a binary stream.
-  // The caller must ensure that the vector remains valid while
-  // using this stream.
-  bool ConsumeVector(const std::vector<uint8_t> &byte_vector);
 
   // Returns true if there is a next byte in the stream.
   bool HasNext() const;
@@ -54,18 +58,23 @@ class CustomBinaryStream {
   bool Peek(std::uint8_t *result) const;
 
   // Sets the stream position to position from the current position.
-  bool SeekFromCurrent(std::uint64_t position);
+  bool SeekFromCurrent(std::uint32_t position);
 
   // Sets the stream position to position from the original position.
-  bool SeekFromOrigin(std::uint64_t position);
+  // This function ignores the length of the stream set by SetStreamLength.
+  bool SeekFromOrigin(std::uint32_t position);
 
   // Sets where the stream will end. This should be less than the current end_.
-  bool SetStreamLength(std::uint64_t length);
+  bool SetStreamLength(std::uint32_t length);
 
-  // Returns the number of bytes remaining in the stream.
-  std::size_t GetRemainingStreamLength() const {
-    return std::distance(iterator_, end_);
-  }
+  // Resets the stream length to the original length of the file.
+  // This function is meant to be used to reset the stream after
+  // SetStreamLength has been used.
+  void ResetStreamLength();
+
+  // Gets a string starting from the offset to a null terminating character or the end of the stream.
+  // This function does not change the stream pointer.
+  bool GetString(std::string *result, std::uint32_t offset);
 
   // Reads the next byte in the stream. Returns false if the byte
   // cannot be read.
@@ -110,27 +119,22 @@ class CustomBinaryStream {
                       const CompressedMetadataTableHeader &metadata_header,
                       std::uint32_t *table_index);
 
-  // Returns the current stream position.
-  binary_stream_iter Current() { return iterator_; }
-
-  // Returns the end position of the stream.
-  binary_stream_iter End() { return end_; }
-
-  // Returns the beginning position of the stream.
-  binary_stream_iter begin() { return begin_; }
+  // Returns the current position of the stream.
+  std::streampos Current() { return stream_->tellg(); }
 
  private:
-  // The binary content of the file (if this stream s from a file).
-  std::vector<std::uint8_t> file_content_;
+  // The underlying binary stream.
+  std::unique_ptr<std::istream> stream_;
 
-  // The current stream position.
-  binary_stream_iter iterator_;
+  // The begin position of the stream.
+  std::streampos begin_;
 
-  // The end position of the stream.
-  binary_stream_iter end_;
+  // The absolute end position of the stream.
+  std::streampos absolute_end_;
 
-  // The start position of the stream.
-  binary_stream_iter begin_;
+  // The relative end position of the stream (sets by SetStreamLength), which
+  // is as far in a PDB file as we need to read.
+  std::streampos relative_end_;
 };
 
 }  // namespace google_cloud_debugger_portable_pdb

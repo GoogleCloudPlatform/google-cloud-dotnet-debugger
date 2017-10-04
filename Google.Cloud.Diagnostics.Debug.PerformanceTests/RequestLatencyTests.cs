@@ -64,7 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
             using (StartTestApp(debugEnabled: true))
             {
                 var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 23);
+                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 25);
 
                 debugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
 

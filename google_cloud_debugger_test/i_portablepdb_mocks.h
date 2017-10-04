@@ -33,14 +33,18 @@ class IPortablePdbFileMock
       GetStream,
       bool(const std::string &name,
            google_cloud_debugger_portable_pdb::StreamHeader *stream_header));
-  MOCK_CONST_METHOD1(GetHeapString, const std::string &(std::uint32_t index));
-  MOCK_CONST_METHOD2(GetHeapBlobStream,
-                     bool(std::uint32_t index,
-                          google_cloud_debugger_portable_pdb::CustomBinaryStream
-                              *binary_stream));
+  MOCK_CONST_METHOD2(GetHeapString,
+                     bool(std::uint32_t index, std::string *result));
   MOCK_CONST_METHOD2(GetDocumentName,
                      bool(std::uint32_t index, std::string *doc_name));
-  MOCK_CONST_METHOD1(GetHeapGuid, const std::string &(std::uint32_t index));
+  MOCK_CONST_METHOD2(GetHeapGuid, bool(std::uint32_t index, std::string *guid));
+  MOCK_CONST_METHOD2(GetHash, bool(std::uint32_t index,
+                                   std::vector<std::uint8_t> *hash));
+  MOCK_CONST_METHOD3(
+      GetMethodSeqInfo,
+      bool(std::uint32_t doc_index, std::uint32_t sequence_index,
+           google_cloud_debugger_portable_pdb::MethodSequencePointInformation
+               *sequence_point_info));
   MOCK_CONST_METHOD0(
       GetDocumentTable,
       const std::vector<google_cloud_debugger_portable_pdb::DocumentRow> &());

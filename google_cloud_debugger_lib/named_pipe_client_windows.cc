@@ -40,7 +40,7 @@ HRESULT NamedPipeClient::WaitForConnection() {
 
   while (timeout > 0) {
     BOOL available =
-        WaitNamedPipeW(pipe_name_.c_str(), kConnectionWaitTimeoutMs);
+        WaitNamedPipeW(pipe_name_.c_str(), kConnectionSleepTimeoutMs);
     if (available) {
       file_found = true;
       break;

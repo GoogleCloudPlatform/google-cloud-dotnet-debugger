@@ -14,15 +14,19 @@
 
 #include "custombinaryreader.h"
 
+#include <assert.h>
 #include <iostream>
 #include <iterator>
 #include <vector>
 
 #include "metadataheaders.h"
 
+using std::cerr;
 using std::ifstream;
 using std::ios;
+using std::streampos;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 const int one = 1;
@@ -41,90 +45,174 @@ const std::uint32_t kCompressedSignedIntOneByteUncompressMask = 0xFFFFFFC0;
 const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
 const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
 
-bool CustomBinaryStream::ConsumeFile(const string &file) {
-  ifstream file_stream(file, ios::in | ios::binary | ios::ate);
-  if (file_stream.is_open()) {
-    std::streampos file_size;
+bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
+  assert(stream != nullptr);
 
-    file_stream.unsetf(std::ios::skipws);
+  stream_.reset(stream);
 
-    file_size = file_stream.tellg();
-    file_content_.reserve(file_size);
-    file_stream.seekg(0, file_stream.beg);
+  if (stream_->good()) {
+    stream_->unsetf(std::ios::skipws);
+    stream_->seekg(0, stream_->end);
+    absolute_end_ = stream_->tellg();
+    relative_end_ = absolute_end_;
+    stream_->seekg(0, stream_->beg);
+    begin_ = stream_->tellg();
 
-    file_content_.insert(file_content_.begin(),
-                         std::istream_iterator<uint8_t>(file_stream),
-                         std::istream_iterator<uint8_t>());
-
-    iterator_ = file_content_.begin();
-    begin_ = file_content_.begin();
-    end_ = file_content_.end();
     return true;
   }
 
+  cerr << "Invalid stream.";
   return false;
 }
 
-bool CustomBinaryStream::ConsumeVector(
-    const std::vector<uint8_t> &byte_vector) {
-  iterator_ = byte_vector.begin();
-  begin_ = byte_vector.begin();
-  end_ = byte_vector.end();
-  return true;
+bool CustomBinaryStream::ConsumeFile(const string &file) {
+  unique_ptr<std::ifstream> file_stream = unique_ptr<std::ifstream>(
+      new (std::nothrow) ifstream(file, ios::in | ios::binary | ios::ate));
+  if (!file_stream && !file_stream->is_open()) {
+    cerr << "Failed to open file " << file;
+    return false;
+  }
+
+  return ConsumeStream(file_stream.release());
 }
 
 bool CustomBinaryStream::ReadBytes(uint8_t *result, uint32_t bytes_to_read,
                                    uint32_t *bytes_read) {
-  *bytes_read = 0;
-  while (*bytes_read != bytes_to_read) {
-    if (iterator_ == end_) {
+  assert(stream_ != nullptr);
+  if (relative_end_ - stream_->tellg() < bytes_to_read) {
+    cerr << "End of stream reached.";
+    return false;
+  }
+
+  stream_->read(reinterpret_cast<char *>(result), bytes_to_read);
+  *bytes_read = stream_->gcount();
+  return *bytes_read == bytes_to_read;
+}
+
+bool CustomBinaryStream::HasNext() const {
+  assert(stream_ != nullptr);
+  return stream_->tellg() < relative_end_;
+}
+
+bool CustomBinaryStream::Peek(uint8_t *result) const {
+  assert(stream_ != nullptr);
+  if (!HasNext()) {
+    cerr << "End of stream reached.";
+    return false;
+  }
+
+  *result = stream_->peek();
+  return true;
+}
+
+bool CustomBinaryStream::SeekFromCurrent(uint32_t index) {
+  assert(stream_ != nullptr);
+  // Have to take into account the end_ based on the stream
+  // length that we set.
+  if (relative_end_ - stream_->tellg() < index) {
+    cerr << "Seeking to a position out of range of the stream.";
+    return false;
+  }
+
+  stream_->seekg(index, stream_->cur);
+  if (stream_->fail()) {
+    cerr << "Seek operation failed.";
+    stream_->clear();
+    return false;
+  }
+
+  return true;
+}
+
+bool CustomBinaryStream::SeekFromOrigin(uint32_t position) {
+  assert(stream_ != nullptr);
+
+  stream_->seekg(position, stream_->beg);
+  if (stream_->fail()) {
+    cerr << "Seek operation failed.";
+    stream_->clear();
+    return false;
+  }
+  return true;
+}
+
+bool CustomBinaryStream::SetStreamLength(uint32_t length) {
+  assert(stream_ != nullptr);
+
+  streampos cur_pos = stream_->tellg();
+  stream_->seekg(length, stream_->cur);
+  if (stream_->fail()) {
+    stream_->clear();
+    stream_->seekg(cur_pos);
+    cerr << "Setting stream length to " << length
+      << " will set the relative end of the stream to a position "
+      << " outside the absolute end of the stream.";
+    return false;
+  }
+
+  if (stream_->tellg() > relative_end_) {
+    stream_->seekg(cur_pos);
+    cerr << "Setting stream length to " << length
+      << " will set the relative end of the stream to a position "
+      << " outside the relative end of the stream.";
+    return false;
+  }
+
+  return true;
+}
+
+void CustomBinaryStream::ResetStreamLength() {
+  assert(stream_ != nullptr);
+
+  relative_end_ = absolute_end_;
+}
+
+bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
+  result->clear();
+  assert(stream_ != nullptr);
+
+  // Makes a copy of the current position so we can restores the stream.
+  streampos previous_pos = stream_->tellg();
+  stream_->seekg(offset, stream_->beg);
+  if (stream_->fail()) {
+    stream_->clear();
+    stream_->seekg(previous_pos);
+    cerr << "Failed to seek to the offset point.";
+    return false;
+  }
+
+  // Read 100 characters at a time or until the end of the stream,
+  // whichever is smaller.
+  uint32_t chars_left = relative_end_ - stream_->tellg();
+  uint32_t char_to_read = std::min(kStringBufferSize, chars_left);
+  vector<char> buffer(char_to_read, 0);
+
+  while (char_to_read != 0) {
+    // Reads char_to_read bytes from the buffer.
+    stream_->read(buffer.data(), char_to_read);
+    if (stream_->fail()) {
+      stream_->clear();
+      stream_->seekg(previous_pos);
+      cerr << "Failed to read characters from the stream.";
       return false;
     }
 
-    *result = *iterator_;
-    result++;
-    iterator_++;
-    ++(*bytes_read);
-  }
-  return true;
-}
+    // Finds the null character.
+    vector<char>::iterator null_char_pos =
+        std::find(buffer.begin(), buffer.end(), 0);
 
-bool CustomBinaryStream::HasNext() const { return iterator_ < end_; }
+    result->append(buffer.begin(), null_char_pos);
+    // Stop reading if we found the null character.
+    if (null_char_pos != buffer.end()) {
+      break;
+    }
 
-bool CustomBinaryStream::Peek(uint8_t *result) const {
-  if (iterator_ == end_) {
-    return false;
-  }
-
-  *result = *iterator_;
-
-  return true;
-}
-
-bool CustomBinaryStream::SeekFromCurrent(uint64_t index) {
-  if (std::distance(iterator_, end_) < index) {
-    return false;
+    // If we didn't find the null character, continue reading.
+    chars_left = relative_end_ - stream_->tellg();
+    char_to_read = std::min((uint32_t)buffer.size(), chars_left);
   }
 
-  iterator_ += index;
-  return true;
-}
-
-bool CustomBinaryStream::SeekFromOrigin(uint64_t position) {
-  if (std::distance(begin_, end_) < position) {
-    return false;
-  }
-
-  iterator_ = begin_ + position;
-  return true;
-}
-
-bool CustomBinaryStream::SetStreamLength(uint64_t length) {
-  if (std::distance(iterator_, end_) < length) {
-    return false;
-  }
-
-  end_ = iterator_ + length;
+  stream_->seekg(previous_pos);
   return true;
 }
 

@@ -25,6 +25,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
     public class Program
     {
         private static CancellationTokenSource _cts = new CancellationTokenSource();
+ 
         public static void Main(string[] args)
         {
             new WebHostBuilder()
