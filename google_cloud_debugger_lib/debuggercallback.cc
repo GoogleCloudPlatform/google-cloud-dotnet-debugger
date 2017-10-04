@@ -22,6 +22,7 @@
 
 #include "ccomptr.h"
 #include "dbgstackframe.h"
+#include "icordebughelper.h"
 #include "portablepdbfile.h"
 
 using google_cloud_debugger_portable_pdb::IPortablePdbFile;
@@ -326,7 +327,6 @@ HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
   }
 
   CComPtr<ICorDebugModule> debug_module;
-  CComPtr<IUnknown> temp_import;
 
   hr = debug_function->GetModule(&debug_module);
   if (FAILED(hr)) {
@@ -334,16 +334,9 @@ HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
     return hr;
   }
 
-  hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
+  hr = GetMetadataImportFromModule(debug_module, metadata_import);
   if (FAILED(hr)) {
     cerr << "Failed to get metadata import from ICorDebugModule.";
-    return hr;
-  }
-
-  hr = temp_import->QueryInterface(IID_IMetaDataImport,
-                                   reinterpret_cast<void **>(metadata_import));
-  if (FAILED(hr)) {
-    cerr << "Failed to get IMetaDataImport.";
     return hr;
   }
 

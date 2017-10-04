@@ -47,11 +47,6 @@ class DbgClass : public DbgObject {
   BOOL HasValue() override;
 
  private:
-  // Given an ICorDebugModule, extracts out IMetaDataImport and stores it in
-  // metadata_import.
-  HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
-                                      IMetaDataImport **metadata_import);
-
   // Populates the class name, the generic parameters, fields and properties
   // of the class.
   // This function first extracts out ICorDebugClass to get the class token.

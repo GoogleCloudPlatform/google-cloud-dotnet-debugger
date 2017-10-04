@@ -13,7 +13,7 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -
 DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o dbgstackframe.o
 PDB_PARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
 BREAKPOINTS = dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o
-ALL_O_FILES = stackframecollection.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
+ALL_O_FILES = stackframecollection.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o icordebughelper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 namedpiped.o: named_pipe_client_unix.h named_pipe_client_unix.cc
@@ -60,6 +60,9 @@ dbgbreakpoint.o: dbgbreakpoint.h dbgbreakpoint.cc
 
 breakpointcollection.o: breakpointcollection.h breakpointcollection.cc
 	clang-3.5 breakpointcollection.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpointcollection.o
+
+icordebughelper.o: icordebughelper.h icordebughelper.cc
+	clang-3.5 icordebughelper.cc ${INCDIRS} ${CC_FLAGS} -c -o icordebughelper.o
 
 debugger.o: debugger.h debugger.cc
 	clang-3.5 debugger.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger.o
