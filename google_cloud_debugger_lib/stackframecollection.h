@@ -46,8 +46,15 @@ class StackFrameCollection : public IStackFrameCollection {
   // ICorDebugILFrame il_frame object.
   HRESULT PopulateLocalVarsAndMethodArgs(
       mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
-      ICorDebugILFrame *il_frame,
+      ICorDebugILFrame *il_frame, IMetaDataImport *metadata_import,
       const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_files);
+
+  // Populates the module, class and function name of a stack frame
+  // using function_token (represents function the frame is in)
+  // and IMetaDataImport (from the module the frame is in).
+  HRESULT PopulateModuleClassAndFunctionName(DbgStackFrame *dbg_stack_frame,
+                                             mdMethodDef function_token,
+                                             IMetaDataImport *metadata_import);
 
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;

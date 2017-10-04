@@ -16,9 +16,11 @@
 
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 #include "dbgbreakpoint.h"
 #include "i_evalcoordinator.h"
+#include "icordebughelper.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -28,6 +30,7 @@ using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
 using std::cerr;
 using std::max;
+using std::string;
 using std::vector;
 
 namespace google_cloud_debugger {
@@ -61,6 +64,13 @@ HRESULT StackFrameCollection::Initialize(
 
     hr = frame->QueryInterface(__uuidof(ICorDebugILFrame),
                                reinterpret_cast<void **>(&il_frame));
+    // Ignore this stack frame since it is not an IL frame.
+    // See whether we can extract out more stacks.
+    if (hr == E_NOINTERFACE) {
+      hr = debug_stack_walk->Next();
+      continue;
+    }
+
     if (FAILED(hr)) {
       cerr << "Failed to get ILFrame";
       return hr;
@@ -90,58 +100,57 @@ HRESULT StackFrameCollection::Initialize(
       return hr;
     }
 
-    // Gets the token of the module above.
-    mdModule target_module_token;
-    hr = frame_module->GetToken(&target_module_token);
+    vector<WCHAR> module_name;
+    hr = GetModuleNameFromICorDebugModule(&module_name, frame_module);
     if (FAILED(hr)) {
-      cerr << "Failed to extract token from ICorDebugModule.";
+      cerr << "Failed to get module name";
       return hr;
     }
 
     DbgStackFrame stack_frame;
+    stack_frame.SetModuleName(module_name);
+    string target_module_name = stack_frame.GetModule();
+
+    CComPtr<IMetaDataImport> metadata_import;
+    hr = GetMetadataImportFromModule(frame_module, &metadata_import);
+    if (FAILED(hr)) {
+      cerr << "Failed to get MetaDataImport from frame module.";
+      return hr;
+    }
+
+    // Populates the module, class and function name of this stack frame
+    // so we can report this even if we don't have local variables or
+    // method arguments.
+    hr = PopulateModuleClassAndFunctionName(&stack_frame, target_function_token,
+                                            metadata_import);
+    if (FAILED(hr)) {
+      cerr << "Failed to populate module, class and function name of the stack "
+              "frame.";
+      return hr;
+    }
 
     for (auto &&pdb_file : pdb_files) {
-      // Extracts out the token that corresponds to the module of the PDB file
-      // and only proceeds if it is the same as target_module_token.
+      // Gets the PDB file that has the same name as the module.
       CComPtr<ICorDebugModule> pdb_debug_module;
       // TODO(quoct): Possible performance improvement by caching the pdb_file
       // based on token.
-      hr = pdb_file->GetDebugModule(&pdb_debug_module);
-      if (FAILED(hr)) {
-        cerr << "Failed to extract debug module from pdb file.";
-        return hr;
-      }
-
-      mdModule pdb_module_token;
-      hr = pdb_debug_module->GetToken(&pdb_module_token);
-      if (FAILED(hr)) {
-        cerr << "Failed to extract token from ICorDebugModule.";
-        return hr;
-      }
-
-      if (target_module_token != pdb_module_token) {
+      string pdb_module_name = pdb_file->GetModuleName();
+      if (pdb_module_name.compare(target_module_name) != 0) {
         continue;
       }
 
       // Tries to populate local variables and method arguments of this frame.
       hr = PopulateLocalVarsAndMethodArgs(target_function_token, &stack_frame,
-                                          il_frame, *pdb_file);
-
-      // S_FALSE is if the method is not found.
-      if (hr == S_FALSE) {
-        continue;
-      }
-
-      // Otherwise, some errors probably happened.
+                                          il_frame, metadata_import, *pdb_file);
       if (FAILED(hr)) {
         cerr << "Failed to populate stack frame information.";
         return hr;
       }
 
-      stack_frames_.push_back(std::move(stack_frame));
       break;
     }
 
+    stack_frames_.push_back(std::move(stack_frame));
     hr = debug_stack_walk->Next();
   }
 
@@ -164,7 +173,8 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
   for (auto &&dbg_stack_frame : stack_frames_) {
     StackFrame *frame = breakpoint->add_stack_frames();
-    frame->set_method_name(dbg_stack_frame.GetClass() + "." +
+    frame->set_method_name(dbg_stack_frame.GetShortModuleName() + "!" +
+                           dbg_stack_frame.GetClass() + "." +
                            dbg_stack_frame.GetMethod());
     SourceLocation *frame_location = frame->mutable_location();
     if (!frame_location) {
@@ -187,41 +197,20 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
 HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
     mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
-    ICorDebugILFrame *il_frame,
+    ICorDebugILFrame *il_frame, IMetaDataImport *metadata_import,
     const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file) {
   if (!dbg_stack_frame || !il_frame) {
     return E_INVALIDARG;
   }
 
+  HRESULT hr;
+  CComPtr<ICorDebugFunction> frame_function;
+  hr = il_frame->GetFunction(&frame_function);
   // Now we try to get the method that corresponds to frame_debug_function.
-  CComPtr<IMetaDataImport> metadata_import;
-  HRESULT hr = pdb_file.GetMetaDataImport(&metadata_import);
-
-  mdTypeDef type_def = 0;
-  ULONG method_name_length = 0;
-  DWORD flags1 = 0;
-  ULONG signature_blob = 0;
-  ULONG rva = 0;
-  DWORD flags2 = 0;
-  PCCOR_SIGNATURE target_method_signature = 0;
-
-  // Retrieves the name of the method that this stack frame is at.
-  hr = metadata_import->GetMethodProps(
-      target_function_token, &type_def, nullptr, 0, &method_name_length,
-      &flags1, &target_method_signature, &signature_blob, &rva, &flags2);
+  CComPtr<ICorDebugModule> frame_module;
+  hr = frame_function->GetModule(&frame_module);
   if (FAILED(hr)) {
-    cerr << "Failed to get length of name of method for stack frame.";
-    return hr;
-  }
-
-  std::vector<WCHAR> method_name(method_name_length, 0);
-
-  hr = metadata_import->GetMethodProps(
-      target_function_token, &type_def, method_name.data(), method_name.size(),
-      &method_name_length, &flags1, &target_method_signature, &signature_blob,
-      &rva, &flags2);
-  if (FAILED(hr)) {
-    cerr << "Failed to get name of method for stack frame.";
+    cerr << "Failed to get ICorDebugModule from ICorDebugFunction.";
     return hr;
   }
 
@@ -230,47 +219,29 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
   for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
     for (auto &&method : document_index->GetMethods()) {
       PCCOR_SIGNATURE current_method_signature = 0;
+      ULONG current_method_virtual_addr = 0;
+      mdTypeDef type_def = 0;
+      ULONG method_name_length = 0;
+      DWORD flags1 = 0;
+      ULONG signature_blob;
+      DWORD flags2 = 0;
 
-      // TODO(quoct): Cache the method signature in MethodInfo method so we
-      // don't have to keep calling this.
       hr = metadata_import->GetMethodProps(
           method.method_def, &type_def, nullptr, 0, &method_name_length,
-          &flags1, &current_method_signature, &signature_blob, &rva, &flags2);
+          &flags1, &current_method_signature, &signature_blob,
+          &current_method_virtual_addr, &flags2);
       if (FAILED(hr)) {
         cerr << "Failed to extract method info from method "
              << method.method_def;
         return hr;
       }
 
-      if (current_method_signature != target_method_signature) {
+      // Checks that the virtual address of this method matches the one of the
+      // stack frame.
+      if (current_method_virtual_addr !=
+          dbg_stack_frame->GetFuncVirtualAddr()) {
         continue;
       }
-
-      // Retrieves the class name.
-      // TODO(quoct): Cache the class name in MethodInfo method.
-      mdToken extends_token;
-      DWORD class_flags;
-      ULONG class_name_length;
-      hr = metadata_import->GetTypeDefProps(type_def, nullptr, 0,
-                                            &class_name_length, &class_flags,
-                                            &extends_token);
-      if (FAILED(hr)) {
-        cerr << "Failed to get length of name of class type for stack frame.";
-        return hr;
-      }
-
-      std::vector<WCHAR> class_name(class_name_length, 0);
-      hr = metadata_import->GetTypeDefProps(
-          type_def, class_name.data(), class_name.size(), &class_name_length,
-          &class_flags, &extends_token);
-      if (FAILED(hr)) {
-        cerr << "Failed to get name of class type for stack frame.";
-        return hr;
-      }
-
-      dbg_stack_frame->SetFile(document_index->GetFilePath());
-      dbg_stack_frame->SetMethod(method_name);
-      dbg_stack_frame->SetClass(class_name);
 
       // Retrieves the IP offset in the function that corresponds to this stack
       // frame.
@@ -329,7 +300,75 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
     }
   }
 
-  return S_FALSE;
+  return S_OK;
+}
+
+HRESULT StackFrameCollection::PopulateModuleClassAndFunctionName(
+    DbgStackFrame *dbg_stack_frame, mdMethodDef function_token,
+    IMetaDataImport *metadata_import) {
+  if (!dbg_stack_frame || !metadata_import) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr;
+  mdTypeDef type_def = 0;
+  ULONG method_name_length = 0;
+  DWORD flags1 = 0;
+  ULONG signature_blob = 0;
+  ULONG target_method_virtual_addr = 0;
+  DWORD flags2 = 0;
+  PCCOR_SIGNATURE target_method_signature = 0;
+
+  // Retrieves the name of the method that this stack frame is at.
+  hr = metadata_import->GetMethodProps(
+      function_token, &type_def, nullptr, 0, &method_name_length, &flags1,
+      &target_method_signature, &signature_blob, &target_method_virtual_addr,
+      &flags2);
+
+  if (FAILED(hr)) {
+    cerr << "Failed to get length of name of method for stack frame.";
+    return hr;
+  }
+
+  std::vector<WCHAR> method_name(method_name_length, 0);
+
+  hr = metadata_import->GetMethodProps(
+      function_token, &type_def, method_name.data(), method_name.size(),
+      &method_name_length, &flags1, &target_method_signature, &signature_blob,
+      &target_method_virtual_addr, &flags2);
+  if (FAILED(hr)) {
+    cerr << "Failed to get name of method for stack frame.";
+    return hr;
+  }
+
+  // Retrieves the class name.
+  // TODO(quoct): Cache the class name in MethodInfo method.
+  mdToken extends_token;
+  DWORD class_flags;
+  ULONG class_name_length;
+  hr = metadata_import->GetTypeDefProps(
+      type_def, nullptr, 0, &class_name_length, &class_flags, &extends_token);
+  if (FAILED(hr)) {
+    cerr << "Failed to get length of name of class type for stack frame.";
+    return hr;
+  }
+
+  std::vector<WCHAR> class_name(class_name_length, 0);
+  hr = metadata_import->GetTypeDefProps(type_def, class_name.data(),
+                                        class_name.size(), &class_name_length,
+                                        &class_flags, &extends_token);
+  if (FAILED(hr)) {
+    cerr << "Failed to get name of class type for stack frame.";
+    return hr;
+  }
+
+  // Even if we cannot get variables, we should still report
+  // method and class name of this frame.
+  dbg_stack_frame->SetMethod(method_name);
+  dbg_stack_frame->SetClass(class_name);
+  dbg_stack_frame->SetFuncVirtualAddr(target_method_virtual_addr);
+
+  return S_OK;
 }
 
 }  //  namespace google_cloud_debugger
