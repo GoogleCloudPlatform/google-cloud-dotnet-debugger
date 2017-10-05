@@ -334,7 +334,7 @@ HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
     return hr;
   }
 
-  hr = GetMetadataImportFromModule(debug_module, metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(debug_module, metadata_import);
   if (FAILED(hr)) {
     cerr << "Failed to get metadata import from ICorDebugModule.";
     return hr;

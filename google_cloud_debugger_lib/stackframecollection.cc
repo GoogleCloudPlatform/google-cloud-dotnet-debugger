@@ -66,6 +66,8 @@ HRESULT StackFrameCollection::Initialize(
                                reinterpret_cast<void **>(&il_frame));
     // Ignore this stack frame since it is not an IL frame.
     // See whether we can extract out more stacks.
+    // TODO(quoct): See whether we can extract out function name
+    // and class name from a non-IL frame.
     if (hr == E_NOINTERFACE) {
       hr = debug_stack_walk->Next();
       continue;
@@ -101,7 +103,7 @@ HRESULT StackFrameCollection::Initialize(
     }
 
     vector<WCHAR> module_name;
-    hr = GetModuleNameFromICorDebugModule(&module_name, frame_module);
+    hr = GetModuleNameFromICorDebugModule(frame_module, &module_name);
     if (FAILED(hr)) {
       cerr << "Failed to get module name";
       return hr;
@@ -112,7 +114,7 @@ HRESULT StackFrameCollection::Initialize(
     string target_module_name = stack_frame.GetModule();
 
     CComPtr<IMetaDataImport> metadata_import;
-    hr = GetMetadataImportFromModule(frame_module, &metadata_import);
+    hr = GetMetadataImportFromICorDebugModule(frame_module, &metadata_import);
     if (FAILED(hr)) {
       cerr << "Failed to get MetaDataImport from frame module.";
       return hr;
@@ -319,7 +321,8 @@ HRESULT StackFrameCollection::PopulateModuleClassAndFunctionName(
   DWORD flags2 = 0;
   PCCOR_SIGNATURE target_method_signature = 0;
 
-  // Retrieves the name of the method that this stack frame is at.
+  // Retrieves the length of the name of the method that this stack frame
+  // is at.
   hr = metadata_import->GetMethodProps(
       function_token, &type_def, nullptr, 0, &method_name_length, &flags1,
       &target_method_signature, &signature_blob, &target_method_virtual_addr,
@@ -332,6 +335,7 @@ HRESULT StackFrameCollection::PopulateModuleClassAndFunctionName(
 
   std::vector<WCHAR> method_name(method_name_length, 0);
 
+  // Retrieves the name of the method that this stack frame is at.
   hr = metadata_import->GetMethodProps(
       function_token, &type_def, method_name.data(), method_name.size(),
       &method_name_length, &flags1, &target_method_signature, &signature_blob,
