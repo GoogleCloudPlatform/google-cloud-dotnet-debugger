@@ -46,6 +46,9 @@ const std::uint32_t kCompressedSignedIntOneByteUncompressMask = 0xFFFFFFC0;
 const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
 const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
 
+// Size of the buffer used by GetString to read characters into.
+const std::uint32_t kStringBufferSize = 100;
+
 bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
   assert(stream != nullptr);
 
