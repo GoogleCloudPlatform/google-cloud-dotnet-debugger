@@ -85,6 +85,11 @@ HRESULT DbgStackFrame::PopulateLocalVariables(
                                                          ICorDebugValue>(
       local_enum, &debug_values);
 
+  // Variables not available at this frame (e.g. ,optimized away).
+  if (hr == CORDBG_E_IL_VAR_NOT_AVAILABLE) {
+    return S_OK;
+  }
+
   if (FAILED(hr)) {
     cerr << "Failed to retrieve local variables.";
     return hr;
@@ -143,6 +148,11 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
   hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
                                                          ICorDebugValue>(
       method_arg_enum, &method_arg_values);
+
+  if (hr == CORDBG_E_IL_VAR_NOT_AVAILABLE) {
+    return S_OK;
+  }
+
   if (FAILED(hr)) {
     cerr << "Failed to retrieve method arguments.";
     return hr;
@@ -320,6 +330,21 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {
   object_depth_ = depth;
+}
+
+string DbgStackFrame::GetShortModuleName() const {
+  string module_name = GetModule();
+  size_t slash_idx = module_name.find_last_of('\\');
+  if (slash_idx != string::npos) {
+    module_name = module_name.substr(slash_idx + 1);
+  }
+
+  slash_idx = module_name.find_last_of('/');
+  if (slash_idx != string::npos) {
+    module_name = module_name.substr(slash_idx + 1);
+  }
+
+  return module_name;
 }
 
 }  //  namespace google_cloud_debugger
