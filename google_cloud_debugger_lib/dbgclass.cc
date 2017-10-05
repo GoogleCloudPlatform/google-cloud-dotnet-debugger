@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "evalcoordinator.h"
+#include "icordebughelper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::array;
@@ -72,7 +73,7 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromModule(debug_module, &metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(debug_module, &metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get metadata");
     return hr;
@@ -187,7 +188,7 @@ HRESULT DbgClass::PopulateBaseClassName(ICorDebugType *debug_type) {
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromModule(base_debug_module, &metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get metadata for base class.");
     return hr;
@@ -324,33 +325,6 @@ HRESULT DbgClass::PopulateParameterizedType() {
         return hr;
       }
     }
-  }
-
-  return S_OK;
-}
-
-HRESULT DbgClass::GetMetadataImportFromModule(
-    ICorDebugModule *debug_module, IMetaDataImport **metadata_import) {
-  if (!debug_module) {
-    WriteError("ICorDebugModule cannot be null.");
-    return E_INVALIDARG;
-  }
-
-  CComPtr<IUnknown> temp_import;
-  HRESULT hr;
-
-  hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
-
-  if (FAILED(hr)) {
-    WriteError("Failed to get metadata import.");
-    return hr;
-  }
-
-  hr = temp_import->QueryInterface(IID_IMetaDataImport,
-                                   reinterpret_cast<void **>(metadata_import));
-  if (FAILED(hr)) {
-    WriteError("Failed to import metadata from module");
-    return hr;
   }
 
   return S_OK;

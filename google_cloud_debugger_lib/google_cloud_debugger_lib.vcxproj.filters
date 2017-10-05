@@ -67,6 +67,9 @@
     <ClCompile Include="stackframecollection.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="icordebughelper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="breakpointcollection.h">
@@ -160,6 +163,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_stackframecollection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="icordebughelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

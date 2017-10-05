@@ -68,7 +68,6 @@ class IPortablePdbFileMock
       const std::vector<
           std::unique_ptr<google_cloud_debugger_portable_pdb::IDocumentIndex>>
           &());
-  MOCK_METHOD1(SetModuleName, void(const std::string &module_name));
   MOCK_CONST_METHOD0(GetModuleName, const std::string &());
   MOCK_METHOD1(SetDebugModule, HRESULT(ICorDebugModule *debug_module));
   MOCK_CONST_METHOD1(GetDebugModule, HRESULT(ICorDebugModule **debug_module));

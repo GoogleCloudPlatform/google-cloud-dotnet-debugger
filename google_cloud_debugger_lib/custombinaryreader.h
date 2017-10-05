@@ -40,9 +40,6 @@ enum Heap : std::uint8_t {
 // compressed integers and table index.
 class CustomBinaryStream {
  public:
-  // Size of the buffer used by GetString to read characters into.
-  static const std::uint32_t kStringBufferSize = 100;
-
   // Consumes a binary stream pointer, takes ownership
   // of the underlying stream and makes it the underlying
   // stream of this class.

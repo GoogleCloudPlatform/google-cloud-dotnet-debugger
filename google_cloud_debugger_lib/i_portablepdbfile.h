@@ -99,9 +99,6 @@ class IPortablePdbFile {
   virtual const std::vector<std::unique_ptr<IDocumentIndex>>
       &GetDocumentIndexTable() const = 0;
 
-  // Sets the name of the module of this PDB.
-  virtual void SetModuleName(const std::string &module_name) = 0;
-
   // Gets the name of the module of this PDB.
   virtual const std::string &GetModuleName() const = 0;
 

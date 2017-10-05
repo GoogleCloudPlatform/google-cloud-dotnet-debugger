@@ -14,6 +14,7 @@
 
 #include "custombinaryreader.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <iterator>
@@ -44,6 +45,9 @@ const std::uint32_t kCompressedUIntFourByteUncompressMask = 0x1FFFFFFF;
 const std::uint32_t kCompressedSignedIntOneByteUncompressMask = 0xFFFFFFC0;
 const std::uint32_t kCompressedSignedIntTwoByteUncompressMask = 0xFFFFE000;
 const std::uint32_t kCompressedSignedIntFourByteUncompressMask = 0xF0000000;
+
+// Size of the buffer used by GetString to read characters into.
+const std::uint32_t kStringBufferSize = 100;
 
 bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
   assert(stream != nullptr);
@@ -145,19 +149,22 @@ bool CustomBinaryStream::SetStreamLength(uint32_t length) {
     stream_->clear();
     stream_->seekg(cur_pos);
     cerr << "Setting stream length to " << length
-      << " will set the relative end of the stream to a position "
-      << " outside the absolute end of the stream.";
+         << " will set the relative end of the stream to a position"
+         << " outside the absolute end of the stream.";
     return false;
   }
 
   if (stream_->tellg() > relative_end_) {
     stream_->seekg(cur_pos);
     cerr << "Setting stream length to " << length
-      << " will set the relative end of the stream to a position "
-      << " outside the relative end of the stream.";
+         << " will set the relative end of the stream to a position"
+         << " outside the relative end of the stream.";
     return false;
   }
 
+  // Sets the relative end and sets the stream back.
+  relative_end_ = stream_->tellg();
+  stream_->seekg(cur_pos);
   return true;
 }
 
@@ -406,4 +413,5 @@ bool CustomBinaryStream::ReadTableIndex(
 
   return ReadUInt32(table_index);
 }
+
 }  // namespace google_cloud_debugger_portable_pdb

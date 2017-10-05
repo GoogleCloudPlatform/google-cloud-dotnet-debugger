@@ -95,11 +95,6 @@ class PortablePdbFile : public IPortablePdbFile {
     return document_indices_;
   }
 
-  // Sets the name of the module of this PDB.
-  void SetModuleName(const std::string &module_name) {
-    module_name_ = module_name;
-  }
-
   // Gets the name of the module of this PDB.
   const std::string &GetModuleName() const { return module_name_; }
 
