@@ -73,7 +73,7 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromModule(debug_module, &metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(debug_module, &metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get metadata");
     return hr;
@@ -188,7 +188,7 @@ HRESULT DbgClass::PopulateBaseClassName(ICorDebugType *debug_type) {
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromModule(base_debug_module, &metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get metadata for base class.");
     return hr;
