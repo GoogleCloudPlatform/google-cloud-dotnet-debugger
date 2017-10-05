@@ -12,84 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Google.Cloud.Debugger.V2;
-using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
-    public class DebuggerTests
+    public class DebuggerTests : DebuggerTestBase
     {
-        private const string _module = nameof(DebuggerTests);
-        private readonly string _version;
-        private readonly string _projectId;
-
-        private readonly DebuggerPolling _polling;
-        private readonly AgentOptions _options;
-
-        public DebuggerTests()
-        {
-            _polling = new DebuggerPolling();
-            _version = Guid.NewGuid().ToString();
-            _projectId = Utils.GetProjectIdFromEnvironment();
-            _options = new AgentOptions
-            {
-                Module = _module,
-                Version = _version,
-                ProjectId = _projectId,
-                Debugger = Utils.GetDebugger(),
-                Application = Utils.GetApplication(),
-            };
-        }
+        public DebuggerTests() : base() { }
 
         [Fact]
         public async Task BreakpointHit()
         {
-            new Thread(() =>
+            using (StartTestApp(debugEnabled: true))
             {
-                using (var agent = new Agent(_options))
+                var debuggee = Polling.GetDebuggee(Module, Version);
+                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 25);
+
+                using (HttpClient client = new HttpClient())
                 {
-                    agent.StartAndBlock();
+                    await client.GetAsync(AppUrlBase);
                 }
-            }).Start();
 
-            var debuggee = _polling.GetDebuggee(_module, _version);
-            var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 23);
+                var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
 
-
-            using (HttpClient client = new HttpClient())
-            {
-                await client.GetAsync("http://localhost:5000/");
-            }
-
-
-            var newBp = _polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
-
-            // Check that the breakpoint has been hit.
-            Assert.True(newBp.IsFinalState);
-        }
-
-        /// <summary>
-        /// Set a breakpoint at a file and line for a given debuggee.
-        /// </summary>
-        private Debugger.V2.Breakpoint SetBreakpoint(string debuggeeId, string path, int line)
-        {
-            SetBreakpointRequest request = new SetBreakpointRequest
-            {
-                DebuggeeId = debuggeeId,
-                Breakpoint = new Debugger.V2.Breakpoint
-                {
-                    Location = new Debugger.V2.SourceLocation
-                    {
-                        Path = path,
-                        Line = line,
-                    }
-                }
-            };
-            return _polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
+                // Check that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+            }           
         }
     }
 }

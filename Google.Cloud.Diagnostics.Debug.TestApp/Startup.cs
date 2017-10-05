@@ -27,8 +27,8 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         public void Configure(IApplicationBuilder app)
         { 
             app.UseMvc(routes =>
-            {
-                routes.MapRoute("default", "{controller=Main}/{action=Hello}");
+            { 
+                routes.MapRoute("default", "{controller=Main}/{action=Hello}/{message?}");
             });
         }
     }

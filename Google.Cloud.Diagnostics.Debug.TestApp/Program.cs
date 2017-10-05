@@ -14,6 +14,7 @@
 
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
@@ -23,6 +24,8 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
     /// </summary>
     public class Program
     {
+        private static CancellationTokenSource _cts = new CancellationTokenSource();
+ 
         public static void Main(string[] args)
         {
             new WebHostBuilder()
@@ -31,7 +34,9 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
                .UseIISIntegration()
                .UseStartup<Startup>()
                .Build()
-               .Run();
+               .Run(_cts.Token);
         }
+
+        public static void Shutdown() =>_cts.Cancel();
     }
 }

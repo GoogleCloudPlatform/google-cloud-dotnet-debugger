@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Runtime.CompilerServices;
+using Xunit;
 
-[assembly: InternalsVisibleTo("Google.Cloud.Diagnostics.Debug.Tests")]
-[assembly: InternalsVisibleTo("Google.Cloud.Diagnostics.Debug.IntegrationTests")]
-[assembly: InternalsVisibleTo("Google.Cloud.Diagnostics.Debug.PerformanceTests")]
+// TODO(talarico): These tests currently run the app on the same url and port and cannot be run in parallel.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]

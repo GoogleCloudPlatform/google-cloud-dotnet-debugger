@@ -21,7 +21,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// <summary>
     /// Options for starting a <see cref="Debuglet"/>.
     /// </summary>
-    internal class AgentOptions
+    public class AgentOptions
     {
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
