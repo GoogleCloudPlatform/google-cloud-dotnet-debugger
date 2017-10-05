@@ -140,8 +140,12 @@ bool PortablePdbFile::GetDocumentName(uint32_t index, string *doc_name) const {
   vector<uint32_t> part_indices;
   // We essentially have 2 streams, 1 for reading the index of the
   // components of the document name and 1 for getting the components itself.
-  // The first stream is of the form: separator part+. So we will traverse
-  // the stream to get all the parts here.
+  // The first stream is of the form "(separator) (part_index)+", which is a
+  // separator followed by a number of part indices.
+  // A part index is a compressed integer into the #Blob heap. Using the part
+  // index, we can extract out the part string.
+  // The document name is a concatenation of the parts separated by the
+  // separator.
   while (pdb_file_binary_stream_.HasNext()) {
     uint32_t part_index;
     if (!pdb_file_binary_stream_.ReadCompressedUInt32(&part_index)) {
@@ -369,15 +373,15 @@ HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
     return E_INVALIDARG;
   }
 
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromModule(
+  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
       debug_module, &metadata_import_);
   if (FAILED(hr)) {
     return hr;
   }
 
   vector<WCHAR> module_name;
-  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(&module_name,
-                                                               debug_module);
+  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(debug_module,
+                                                               &module_name);
   if (FAILED(hr)) {
     return hr;
   }

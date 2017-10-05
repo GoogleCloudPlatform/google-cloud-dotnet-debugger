@@ -21,7 +21,7 @@ using std::cerr;
 
 namespace google_cloud_debugger {
 
-HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
+HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
                                     IMetaDataImport **metadata_import) {
   if (!debug_module) {
     cerr << "ICorDebugModule cannot be null.";
@@ -48,8 +48,8 @@ HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
   return S_OK;
 }
 
-HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name,
-                                         ICorDebugModule *debug_module) {
+HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
+                                         std::vector<WCHAR> *module_name) {
   if (!module_name || !debug_module) {
     return E_INVALIDARG;
   }

@@ -26,11 +26,12 @@ namespace google_cloud_debugger {
 
 // Given an ICorDebugModule, extracts out IMetaDataImport and stores it in
 // metadata_import.
-HRESULT GetMetadataImportFromModule(ICorDebugModule *debug_module,
-                                           IMetaDataImport **metadata_import);
+HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
+                                             IMetaDataImport **metadata_import);
 
 // Extracts module name from ICorDebugModule.
-HRESULT GetModuleNameFromICorDebugModule(std::vector<WCHAR> *module_name, ICorDebugModule *debug_module);
+HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
+                                         std::vector<WCHAR> *module_name);
 
 }  // namespace google_cloud_debugger
 
