@@ -100,8 +100,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 TimeSpan totalTime = TimeSpan.Zero;
                 for (int i = 0; i < numRequests; i++)
                 {
-                    var watch = Stopwatch.StartNew();
-                    var result = await client.GetAsync($"{url ?? AppUrlEcho}/{i}");
+                    Stopwatch watch = Stopwatch.StartNew();
+                    HttpResponseMessage result = await client.GetAsync($"{url ?? AppUrlEcho}/{i}");
                     totalTime += watch.Elapsed;
                 }
                 return totalTime.TotalMilliseconds / numRequests;

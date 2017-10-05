@@ -32,6 +32,15 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
 
         public RequestLatencyTests() : base() { }
 
+        /// <summary>
+        /// This test ensures the debugger does not add more than 10ms of
+        /// latency to a request when the debugger is attached and no
+        /// breakpoint is set.
+        /// 
+        /// This is tested by taking the average latency of request to an
+        /// application with no debugger attached and then the average latency
+        /// of requests to the same application with a debugger attached.
+        /// </summary>
         [Fact]
         public async Task DebuggerAttached_NoBreakpointsSet()
         {
@@ -51,6 +60,15 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
             Assert.True(debugAvgLatency <= noDebugAvgLatency + AddedLatencyWhenDebuggingMs);
         }
 
+        /// <summary>
+        /// This test ensures the debugger does not add more than 10ms of
+        /// latency to a request when the debugger is attached and
+        /// breakpoint is set (but not hit).
+        /// 
+        /// This is tested by taking the average latency of request to an
+        /// application with no debugger attached and then the average latency
+        /// of requests to the same application with a debugger attached.
+        /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointSet()
         {
