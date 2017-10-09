@@ -32,10 +32,13 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} 
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
 
-TESTS = unit_test_main.o breakpoint_client_test.o dbgbreakpoint_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgclass_test.o dbgarray_test.o stackframecollection_test.o custom_binary_stream_test.o common_action_mocks.o
+TESTS = unit_test_main.o breakpoint_client_test.o dbgbreakpoint_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgclass_test.o dbgarray_test.o stackframecollection_test.o custom_binary_stream_test.o common_action_mocks.o i_portablepdb_mocks.o
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.5 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
+
+i_portablepdb_mocks.o: i_portablepdb_mocks.h i_portablepdb_mocks.cc
+	clang-3.5 i_portablepdb_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o i_portablepdb_mocks.o
 
 breakpoint_client_test.o: breakpoint_client_test.cc
 	clang-3.5 breakpoint_client_test.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_client_test.o

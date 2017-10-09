@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <custombinaryreader.h>
 #include <gtest/gtest.h>
 #include <cstdlib>
@@ -133,12 +134,15 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
                               uint32_t il_offset) {
   assert(method_first_line < breakpoint_line);
 
+  // Minimum amount of lines from breakpoint to last line.
+  uint32_t min_line = 10;
+
   // This method's first line is less than the breakpoint's line
   // and its last line is greater than the breakpoint's line,
   // so the TrySetBreakpoint method should be able to use this method.
   MethodInfo method;
   method.first_line = method_first_line;
-  method.last_line = breakpoint_line + max(breakpoint_line, 10);
+  method.last_line = breakpoint_line + std::max(breakpoint_line, min_line);
   method.method_def = method_def;
 
   // Puts a sequence point that does not match the line of the breakpoint.
