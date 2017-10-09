@@ -111,6 +111,11 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Gets the average CPU percentage during requests.
+        /// </summary>
+        /// <param name="numRequests">The number of requests to sample.</param>
+        /// <returns>The average CPU percentage during requests.</returns>
         public async Task<double> GetAverageCpuPercentAsync(int numRequests)
         {
             var processId = await GetProcessId();
