@@ -89,6 +89,36 @@ class IDocumentIndexMock
       const std::vector<google_cloud_debugger_portable_pdb::MethodInfo> &());
 };
 
+// Fixtures that contains information to mock an IDocumentIndex.
+class IDocumentIndexFixture {
+ public:
+  // Name of the file of the document index.
+  std::string file_name_;
+
+  // Method in the document index.
+  std::vector<google_cloud_debugger_portable_pdb::MethodInfo> methods_;
+};
+
+// Fixtures that contains information to mock a Portable PDB file.
+class PortablePDBFileFixture {
+ public:
+  // Sets up mock calls for file_mock objecct.
+  virtual void SetUpIPortablePDBFile(IPortablePdbFileMock *file_mock);
+
+  // Module name of the PDB file.
+  std::string module_name_ = "My module";
+
+  // Documents contained in document_indices.
+  IDocumentIndexFixture first_doc_;
+  IDocumentIndexFixture second_doc_;
+
+  // Document Indices that the file_mock_ contains.
+  // Only contains 1 document index that has file_name_ file path.
+  std::vector<
+      std::unique_ptr<google_cloud_debugger_portable_pdb::IDocumentIndex>>
+      document_indices_;
+};
+
 }  // namespace google_cloud_debugger_test
 
 #endif  //  I_PORTABLE_PDB_FILE_H_

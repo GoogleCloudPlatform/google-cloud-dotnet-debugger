@@ -67,7 +67,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.DebuggerArguments, null);
-            _process = Process.Start(startInfo);
+            //_process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
             // TODO(talarico): Is this (^^) true? Should we change this logic?
@@ -82,7 +82,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public void Dispose()
         {
             // TODO(talarico): Be sure to signal the debugger to detach.
-            _process?.Dispose();
+            //_process?.Dispose();
             _cts.Cancel();
         }
 
@@ -136,11 +136,10 @@ namespace Google.Cloud.Diagnostics.Debug
                             server.WriteBreakpointAsync(breakpoint).Wait();
                         }
 
-                        // Send new breakpoints to the debugger.
-                        IEnumerable<StackdriverBreakpoint> newBreakpoints = serverBreakpoints
-                            .Where(b => !_breakpointLocationToId.ContainsKey(b.GetLocationIdentifier()));
-
-                        foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
+                        // Send all breakpoints to the debugger.
+                        // Even if the breakpoint is already set, the debugger will ignore it
+                        // so we don't have to worry about sending over existing breakpoints.
+                        foreach (StackdriverBreakpoint breakpoint in serverBreakpoints)
                         {
                             if (!string.IsNullOrWhiteSpace(breakpoint.Condition) || breakpoint.Expressions.Count() != 0)
                             {

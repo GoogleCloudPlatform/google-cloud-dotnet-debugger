@@ -143,10 +143,10 @@ class DbgStackFrame {
   std::string file_name_;
 
   // Virtual address of the function this stack frame is in.
-  ULONG32 func_virtual_addr_;
+  ULONG32 func_virtual_addr_ = 0;
 
   // The line number where the variables are in.
-  std::uint32_t line_number_;
+  std::uint32_t line_number_ = 0;
 };
 
 }  //  namespace google_cloud_debugger

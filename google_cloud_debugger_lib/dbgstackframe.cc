@@ -289,7 +289,9 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   }
 
   location->set_line(line_number_);
-  location->set_path(file_name_);
+  string unix_file_path = file_name_;
+  std::replace(unix_file_path.begin(), unix_file_path.end(), '\\', '/');
+  location->set_path(unix_file_path);
 
   for (const auto &variable_tuple : variables_) {
     Variable *variable = stack_frame->add_locals();
