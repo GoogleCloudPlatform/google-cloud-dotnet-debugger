@@ -67,7 +67,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.DebuggerArguments, null);
-            //_process = Process.Start(startInfo);
+            _process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
             // TODO(talarico): Is this (^^) true? Should we change this logic?
@@ -82,7 +82,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public void Dispose()
         {
             // TODO(talarico): Be sure to signal the debugger to detach.
-            //_process?.Dispose();
+            _process?.Dispose();
             _cts.Cancel();
         }
 
