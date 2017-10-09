@@ -19,8 +19,8 @@
 #include <algorithm>
 #include <iostream>
 
-#include "named_pipe_client.h"
 #include "debuggercallback.h"
+#include "named_pipe_client.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -277,8 +277,9 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
   mdTypeDef type_def;
   vector<WCHAR> method_name;
   PCCOR_SIGNATURE signature;
+  ULONG method_virtual_addr;
   hr = GetMethodData(metadata_import, breakpoint->GetMethodDef(), &type_def,
-                     &signature, &method_name);
+                     &signature, &method_virtual_addr, &method_name);
 
   if (FAILED(hr)) {
     return hr;
@@ -310,8 +311,8 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
     }
 
     // For all the methods with the same name, search for the method
-    // that has the same signature and uses its method token to
-    // activate the breakpoint.
+    // that has the same signature and virtual address and uses its method token
+    // to activate the breakpoint.
     for (size_t i = 0; i < method_defs_returned; ++i) {
       ULONG temp_method_name_length;
       DWORD temp_flags1;
@@ -325,7 +326,7 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
           &temp_flags1, &temp_signature, &temp_signature_blob, &temp_rva,
           &temp_flags2);
 
-      if (signature != temp_signature) {
+      if (signature != temp_signature || method_virtual_addr != temp_rva) {
         continue;
       }
 
@@ -445,6 +446,7 @@ HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,
                                             uint32_t method_def,
                                             mdTypeDef *type_def,
                                             PCCOR_SIGNATURE *signature,
+                                            ULONG *virtual_address,
                                             std::vector<WCHAR> *method_name) {
   if (!type_def || !metadata_import || !method_name || !signature) {
     return E_INVALIDARG;
@@ -457,9 +459,9 @@ HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,
   ULONG rva;
   DWORD flags2;
 
-  hr = metadata_import->GetMethodProps(method_def, type_def, nullptr, 0,
-                                       &method_name_length, &flags1, signature,
-                                       &signature_blob, &rva, &flags2);
+  hr = metadata_import->GetMethodProps(
+      method_def, type_def, nullptr, 0, &method_name_length, &flags1, signature,
+      &signature_blob, virtual_address, &flags2);
   if (FAILED(hr)) {
     cerr << "Failed to get method props for method " << method_def;
     return hr;
@@ -468,7 +470,8 @@ HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,
   method_name->resize(method_name_length);
   hr = metadata_import->GetMethodProps(
       method_def, type_def, method_name->data(), method_name->size(),
-      &method_name_length, &flags1, signature, &signature_blob, &rva, &flags2);
+      &method_name_length, &flags1, signature, &signature_blob, virtual_address,
+      &flags2);
 
   if (FAILED(hr)) {
     cerr << "Failed to get method props for method " << method_def;
