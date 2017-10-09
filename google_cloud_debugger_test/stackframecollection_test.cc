@@ -48,6 +48,8 @@ namespace google_cloud_debugger_test {
 
 class FrameFixture {
  public:
+  // Sets up the various mock calls in the frame based on the
+  // argument provided. See function's body comments.
   void SetUpFrame(ICorDebugModuleMock *debug_module,
                   IMetaDataImportMock *metadata_import,
                   ULONG function_virtual_addr, mdMethodDef function_token,
@@ -207,6 +209,9 @@ class StackFrameCollectionTest : public ::testing::Test {
  protected:
   virtual void SetUp() {}
 
+  // Sets up the StackFrameCollection to return 3 frames.
+  // Also sets up the ICorDebugModule debug_module_ to be
+  // the module that the 3 frames are in.
   virtual void SetUpStackWalk() {
     // Sets up the stack walk to return 3 frames.
     EXPECT_CALL(debug_stack_walk_, GetFrame(_))
@@ -234,6 +239,8 @@ class StackFrameCollectionTest : public ::testing::Test {
                             func_name + "2", class_token + 2, class_name + "2");
     third_frame_.SetUpILFrame(false, 0);
 
+    // Sets up debug_module_ so it will return module_name_
+    // when queried.
     ON_CALL(debug_module_, GetMetaDataInterface(IID_IMetaDataImport, _))
         .WillByDefault(
             DoAll(SetArgPointee<1>(&metadata_import_), Return(S_OK)));
