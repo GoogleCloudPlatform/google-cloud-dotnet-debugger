@@ -36,6 +36,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>The url to echo the last piece of the path from the test application.</summary>
         public static readonly string AppUrlEcho = $"{AppUrlBase}/Main/Echo";
 
+        /// <summary>The url to get the process id from the test application.</summary>
+        public static readonly string AppUrlProcessId = $"{AppUrlBase}/Main/ProcessId";
+
         /// <summary>The module of the a debuggee.</summary>
         public readonly string Module;
 
@@ -104,6 +107,45 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     totalTime += watch.Elapsed;
                 }
                 return totalTime.TotalMilliseconds / numRequests;
+            }
+        }
+
+        /// <summary>
+        /// Gets the average CPU percentage during requests.
+        /// </summary>
+        /// <param name="numRequests">The number of requests to sample.</param>
+        /// <returns>The average CPU percentage during requests.</returns>
+        public async Task<double> GetAverageCpuPercentAsync(int numRequests)
+        {
+            var processId = await GetProcessId();
+            var process = Process.GetProcessById(processId);
+
+            using (HttpClient client = new HttpClient())
+            {
+                TimeSpan totalTime = TimeSpan.Zero;
+                TimeSpan totalCpuTime = TimeSpan.Zero;
+                for (int i = 0; i < numRequests; i++)
+                {
+                    Stopwatch watch = Stopwatch.StartNew();
+                    var startingCpu = process.TotalProcessorTime;
+                    HttpResponseMessage result = await client.GetAsync($"{AppUrlEcho}/{i}");
+                    totalCpuTime += process.TotalProcessorTime - startingCpu;
+                    totalTime += watch.Elapsed;
+                }
+                return totalCpuTime.TotalMilliseconds / totalTime.TotalMilliseconds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the process id for the running test application.
+        /// </summary>
+        public async Task<int> GetProcessId()
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                HttpResponseMessage result = await client.GetAsync(AppUrlProcessId);
+                var resultStr = await result.Content.ReadAsStringAsync();
+                return Int32.Parse(resultStr);
             }
         }
 
