@@ -51,6 +51,12 @@
     <ClCompile Include="dbgclass_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="stackframecollection_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="i_portable_pdb_mocks.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="i_evalcoordinator_mock.h">
