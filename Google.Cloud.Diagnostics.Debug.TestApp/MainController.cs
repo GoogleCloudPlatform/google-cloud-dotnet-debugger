@@ -14,6 +14,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
@@ -35,6 +36,11 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         {
             Program.Shutdown();
             return "Bye!";
+        }
+
+        public int ProcessId()
+        {
+            return Process.GetCurrentProcess().Id;
         }
     }
 }
