@@ -88,12 +88,11 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
-        /// Gets the average latency for requests to a give url.
+        /// Gets the average latency for requests to the <see cref="AppUrlEcho"/> url.
         /// </summary>
         /// <param name="numRequests">The number of requests to sample.</param>
-        /// <param name="url">Optional, the url to hit.  Defaults to <see cref="AppUrlEcho"/></param>
-        /// <returns>The average latency of requests to the given url.</returns>
-        public async Task<double> GetAverageLatencyAsync(int numRequests, string url = null)
+        /// <returns>The average latency of requests to the url.</returns>
+        public async Task<double> GetAverageLatencyAsync(int numRequests)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -101,7 +100,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 for (int i = 0; i < numRequests; i++)
                 {
                     Stopwatch watch = Stopwatch.StartNew();
-                    HttpResponseMessage result = await client.GetAsync($"{url ?? AppUrlEcho}/{i}");
+                    await client.GetAsync($"{AppUrlEcho}/{i}");
                     totalTime += watch.Elapsed;
                 }
                 return totalTime.TotalMilliseconds / numRequests;
