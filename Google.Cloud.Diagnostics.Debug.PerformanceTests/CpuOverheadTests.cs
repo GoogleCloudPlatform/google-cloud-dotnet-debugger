@@ -39,6 +39,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         public const double AddedCpuWhenEvaluatingPercent = 0.01;
 
+        public CpuOverheadTests() : base() { }
+
         /// <summary>
         /// This test ensures the debugger does not add more than 0.1% of
         /// CPU time to a when the debugger is attached and no
