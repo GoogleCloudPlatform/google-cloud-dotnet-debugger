@@ -29,132 +29,106 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         public const int AddedLatencyWhenDebuggingMs = 10;
 
-        /// <summary>
-        /// The number of requests to test against. 
-        /// </summary>
-        public const int NumberOfRequest = 100;
-
         public RequestLatencyTests() : base() { }
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10ms of
         /// latency to a request when the debugger is attached and no
         /// breakpoint is set.
-        /// 
-        /// This is tested by taking the average latency of request to an
-        /// application with no debugger attached and then the average latency
-        /// of requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_NoBreakpointsSet()
-        {
-            double noDebugAvgLatency;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
-            }
-
-            double debugAvgLatency;
-            using (StartTestApp(debugEnabled: true))
-            {
-                var debuggee = Polling.GetDebuggee(Module, Version);
-                debugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
-            }
-
-            AssertAcceptableLatency(noDebugAvgLatency, debugAvgLatency);
-        }
+        public async Task DebuggerAttached_NoBreakpointsSet() => 
+            await RunLatencyTestAsync();
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10ms of
         /// latency to a request when the debugger is attached and
         /// breakpoint is set (but not hit).
-        /// 
-        /// This is tested by taking the average latency of request to an
-        /// application with no debugger attached and then the average latency
-        /// of requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointSet()
-        {
-            double noDebugAvgLatency;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
-            }
-
-            double debugAvgLatency;
-            using (StartTestApp(debugEnabled: true))
-            {
-                var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 25);
-
-                debugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
-
-                var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id, isFinal: false);
-                Assert.False(newBp.IsFinalState);
-            }
-
-            AssertAcceptableLatency(noDebugAvgLatency, debugAvgLatency);
-        }
-
+        public async Task DebuggerAttached_BreakpointSet() =>
+            await RunLatencyTestAsync(setBreakpoint: true);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10ms of
         /// latency to a request when the debugger is attached and
         /// breakpoint is hit.
-        /// 
-        /// This is tested by taking the average latency of request to an
-        /// application with no debugger attached and then the average latency
-        /// of requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointHit()
+        public async Task DebuggerAttached_BreakpointHit() =>
+            await RunLatencyTestAsync(setBreakpoint: true, hitBreakpoint: true);
+
+        /// <summary>
+        /// Run a test to check latency while the debugger is enabled.
+        /// This is tested by taking the average latency during requests to an
+        /// application with no debugger attached and then the average latency during
+        /// requests to the same application with a debugger attached (with the options
+        /// breakpoints being set and hit during the requests).
+        /// </summary>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
+        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
+        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
+        private async Task RunLatencyTestAsync(bool setBreakpoint = false, bool hitBreakpoint = false)
         {
-            double noDebugAvgLatency;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgLatency = await GetAverageLatencyAsync(NumberOfRequest);
-            }
+           double noDebugAvgLatency = await GetAverageLatencyAsync(debugEnabled: false);
+           double debugAvgLatency = await GetAverageLatencyAsync(debugEnabled: true, 
+               setBreakpoint: setBreakpoint, hitBreakpoint: hitBreakpoint);
 
-            double debugAvgLatency;
-            using (StartTestApp(debugEnabled: true))
-            {
-                var debuggee = Polling.GetDebuggee(Module, Version);
+            Console.WriteLine($"Average latency (ms) used w/o a debugger attached: {noDebugAvgLatency}");
+            Console.WriteLine($"Average latency (ms) used w/ a debugger attached: {debugAvgLatency}");
+            Console.WriteLine($"Latency increase (ms): {debugAvgLatency - noDebugAvgLatency}");
 
+            Assert.True(debugAvgLatency <= noDebugAvgLatency + AddedLatencyWhenDebuggingMs,
+              $"Avg latency (ms) w/o a debugger attached: {noDebugAvgLatency}\n" +
+              $"Avg latency (ms) w/ a debugger attached: {debugAvgLatency}\n" +
+              $"This is {debugAvgLatency - noDebugAvgLatency - AddedLatencyWhenDebuggingMs} more than expectable.");
+        }
+
+        /// <summary>
+        /// Starts the test application (Google.Cloud.Diagnostics.Debug.TestApp) and
+        /// gets the average latency for requests to the <see cref="AppUrlEcho"/> url for 
+        /// <see cref="NumberOfRequest"/> requests.
+        /// </summary>
+        /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
+        ///     Defaults to false.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
+        ///     Defaults to false.</param>
+        /// <returns>The average latency of requests to the url.</returns>
+        private async Task<double> GetAverageLatencyAsync(
+            bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
+        {
+            using (StartTestApp(debugEnabled: debugEnabled))
+            {
+                var debuggee = debugEnabled ? Polling.GetDebuggee(Module, Version) : null;
                 using (HttpClient client = new HttpClient())
                 {
                     TimeSpan totalTime = TimeSpan.Zero;
                     for (int i = 0; i < NumberOfRequest; i++)
                     {
-                        // Set a breakpoint and wait to ensure the debuggee picks it up.
-                        var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 31);
-                        Thread.Sleep(TimeSpan.FromSeconds(.5));
+                        Debugger.V2.Breakpoint breakpoint = null;
+                        if (setBreakpoint)
+                        {
+                            var line = hitBreakpoint ? 31 : 25;
+                            // Set a breakpoint and wait to ensure the debuggee picks it up.
+                            breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", line);
+                            Thread.Sleep(TimeSpan.FromSeconds(.5));
+                        }
 
                         Stopwatch watch = Stopwatch.StartNew();
                         await client.GetAsync($"{AppUrlEcho}/{i}");
                         totalTime += watch.Elapsed;
-                       
-                        var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
-                        Assert.True(newBp.IsFinalState);
-                    }
-                    debugAvgLatency = totalTime.TotalMilliseconds / NumberOfRequest;
-                }                
-            }
-            AssertAcceptableLatency(noDebugAvgLatency, debugAvgLatency);
-        }
 
-        /// <summary>
-        /// Assert that the latency of requests to an app with a debugger and without are within
-        /// the acceptable range (10ms).
-        /// </summary>
-        /// <param name="noDebugAvgLatency">The average latency for requests to an app with no debugger attached.</param>
-        /// <param name="debugAvgLatency">The average latency for requests to an app with a debugger attached.</param>
-        private void AssertAcceptableLatency(double noDebugAvgLatency, double debugAvgLatency)
-        {
-            Assert.True(debugAvgLatency <= noDebugAvgLatency + AddedLatencyWhenDebuggingMs,
-               $"Avg latency w/o a debugger attached: {noDebugAvgLatency}\n" +
-               $"Avg latency w/ a debugger attached: {debugAvgLatency}\n" +
-               $"This is {debugAvgLatency - noDebugAvgLatency - AddedLatencyWhenDebuggingMs} more than expectable.");
+                        if (setBreakpoint)
+                        {
+                            var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id, isFinal: hitBreakpoint);
+                            Assert.Equal(hitBreakpoint, newBp.IsFinalState);
+                        }
+                    }
+                    return totalTime.TotalMilliseconds / NumberOfRequest;
+                }
+            }
         }
     }
 }
