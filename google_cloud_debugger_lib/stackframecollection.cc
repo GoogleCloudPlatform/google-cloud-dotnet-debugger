@@ -62,11 +62,14 @@ HRESULT StackFrameCollection::Initialize(
     }
 
     // Gets ICorDebugFunction that corresponds to the function at this frame.
+    // We delay the logic to query the IL frame until we have to get the
+    // variables and method arguments.
     CComPtr<ICorDebugFunction> frame_function;
     hr = frame->GetFunction(&frame_function);
     // This means the debug function is not available (mostly because of
     // native code) so we skip to the next frame.
     if (hr == CORDBG_E_CODE_NOT_AVAILABLE) {
+      cerr << "Skipping non-IL frame.";
       hr = debug_stack_walk->Next();
       continue;
     }

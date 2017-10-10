@@ -286,8 +286,8 @@ class StackFrameCollectionTest : public ::testing::Test {
                   SetArgPointee<8>(first_frame_.frame_func_virtual_addr_),
                   Return(S_OK)));
 
-    // Gives method a sequence point that matches the IP Offset of the first
-    // frame.
+    // Gives the method a sequence point that matches the IP Offset of the
+    // first frame.
     SequencePoint seq_point;
     seq_point.start_line = 30;
     seq_point.il_offset = first_frame_.ip_offset_;
@@ -328,7 +328,7 @@ class StackFrameCollectionTest : public ::testing::Test {
   FrameFixture third_frame_;
 };
 
-// Tests the Initialize function of stack frame collection
+// Tests the Initialize function of stack frame collection when
 // no PDB file matches the module.
 TEST_F(StackFrameCollectionTest, TestInitializeWithoutPDBFile) {
   StackFrameCollection stack_frame_collection;
