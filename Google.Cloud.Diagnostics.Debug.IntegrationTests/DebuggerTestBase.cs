@@ -66,7 +66,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Version = Version,
                 ProjectId = ProjectId,
                 Debugger = Utils.GetDebugger(),
-                Application = Utils.GetApplication(),
+                ApplicationPath = Utils.GetApplication(),
             };
         }
 

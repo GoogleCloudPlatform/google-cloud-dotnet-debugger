@@ -3,6 +3,7 @@
 
 // TODO: Add cleanup to release pointer.
 
+#include <cxxopts.hpp>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -13,53 +14,92 @@
 
 #include "dbgobject.h"
 
+using cxxopts::Options;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::Debugger;
 using std::cerr;
 using std::cin;
 using std::endl;
 using std::hex;
 using std::string;
-using google_cloud_debugger::Debugger;
-using google_cloud_debugger::ConvertStringToWCharPtr;
 
 // If given this option, the debugger will not perform property evaluation.
-const string kEvaluationOption = "--property-evaluation";
+const string kEvaluationOption = "property-evaluation";
+
+// If given this option, the debugger will start the application using this
+// path.
+const string kApplicationPathOption = "application-path";
+
+// If given this option, the debugger will attach to the running application
+// with this process ID.
+const string kApplicationIDOption = "application-id";
 
 int main(int argc, char *argv[]) {
-  if (argc == 1) {
-    cerr << "Expects path to the application to be debugged." << endl;
-    return E_INVALIDARG;
-  }
+  Options options("GoogleCloudConsoleDebugger",
+                  "Google Cloud Console Debugger for .NET");
 
-  HRESULT hr;
+  bool property_evaluation = false;
+  string app_path;
+  uint32_t app_id;
 
-  // First argument to the test app will be the full path to the
-  // process we want to debug.
-  // Second argument is set if we need to perform property evaluation.
-  Debugger debugger;
-  string app_path(argv[1]);
-  string command_line = "dotnet " + app_path;
-  std::vector<WCHAR> result = ConvertStringToWCharPtr(command_line);
+  options.add_options()(kApplicationPathOption,
+                        "Path to the application. If used, the debugger will "
+                        "start the application using this path.",
+                        cxxopts::value<std::string>(app_path))(
+      kApplicationIDOption,
+      "Process ID of the application to be debugged. If used, the debugger "
+      "will attach to the running application using this ID.",
+      cxxopts::value<std::uint32_t>(app_id))(
+      kEvaluationOption,
+      "If used, the debugger will attempt to evaluate property of classes by. "
+      "This may modify the state of the application.",
+      cxxopts::value<bool>(property_evaluation));
 
-  if (result.size() == 0) {
-    cerr << "Application's name is not valid." << endl;
+  options.parse(argc, argv);
+
+  // Cannot supply both path and ID to the option.
+  if (options.count(kApplicationPathOption) &&
+      options.count(kApplicationIDOption)) {
+    cerr << "The debugger can only take in either the application path or the "
+            "process ID of the running application, not both.";
     return -1;
   }
 
-  hr = debugger.StartDebugging(result);
+  // Missing either path or ID.
+  if (!options.count(kApplicationPathOption) &&
+      !options.count(kApplicationIDOption)) {
+    cerr << "Either the application path or the process ID of the running "
+            "application has to be given to the debugger.";
+    return -1;
+  }
+
+  Debugger debugger;
+  HRESULT hr;
+
+  if (options.count(kApplicationPathOption)) {
+    // string app_path = options[kApplicationPathOption].as<std::string>();
+    string command_line = "dotnet " + app_path;
+    std::vector<WCHAR> wchar_command_line =
+        ConvertStringToWCharPtr(command_line);
+
+    if (wchar_command_line.size() == 0) {
+      cerr << "Application's name is not valid." << endl;
+      return -1;
+    }
+
+    hr = debugger.StartDebugging(wchar_command_line);
+  } else {
+    // uint32_t app_id = options[kApplicationIDOption].as<std::uint32_t>();
+    hr = debugger.StartDebugging(app_id);
+  }
+
   if (FAILED(hr)) {
     cerr << "Debugger fails with HRESULT " << hex << hr << endl;
     return -1;
   }
 
-  // Checks for property evaluation.
-  // TODO(quoct): Look into libraries for parsing arguments.
-  if (argc == 3) {
-    string evaluation(argv[2]);
-    if (kEvaluationOption.compare(evaluation) == 0) {
-      // Turns on property evaluation.
-      debugger.SetPropertyEvaluation(TRUE);
-    }
-  }
+  // Sets property evaluation.
+  debugger.SetPropertyEvaluation(property_evaluation);
 
   // This will launch an infinite while loop to wait and read.
   // When the server connection of the named pipe breaks, the loop
