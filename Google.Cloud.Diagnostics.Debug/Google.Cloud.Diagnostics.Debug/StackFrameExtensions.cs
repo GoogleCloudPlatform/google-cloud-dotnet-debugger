@@ -34,7 +34,8 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 Location = new StackdriverSourceLocation
                 {
-                    Path = stackframe.Location?.Path,
+                    // Reports the server using Unix style.
+                    Path = stackframe.Location?.Path?.Replace('\\', '/') ?? string.Empty,
                     Line = stackframe.Location?.Line ?? 0
                 },
                 

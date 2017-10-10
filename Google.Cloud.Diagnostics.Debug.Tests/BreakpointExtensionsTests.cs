@@ -24,7 +24,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     public class BreakpointExtensionsTests
     {
         private const string _id = "breakpoint-id";
-        private const string _path = "breakpoint-Path";
+        private const string _path = "C:\\breakpoint-Path";
         private const int _line = 11;
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
             var sdBreakpoint = breakpoint.Convert();
             Assert.Equal(_id, sdBreakpoint.Id);
-            Assert.Equal(_path, sdBreakpoint.Location.Path);
+            Assert.Equal(_path.Replace('\\', '/'), sdBreakpoint.Location.Path);
             Assert.Equal(_line, sdBreakpoint.Location.Line);
             Assert.Equal(breakpoint.CreateTime, sdBreakpoint.CreateTime);
             Assert.Equal(breakpoint.FinalTime, sdBreakpoint.FinalTime);
@@ -113,7 +113,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                     Line = _line
                 }
             };
-            Assert.Equal("breakpoint-path:11", breakpoint.GetLocationIdentifier());
+            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
         }
 
         [Fact]
@@ -127,7 +127,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                     Line = _line
                 }
             };
-            Assert.Equal("breakpoint-path:11", breakpoint.GetLocationIdentifier());
+            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
         }
     }
 }

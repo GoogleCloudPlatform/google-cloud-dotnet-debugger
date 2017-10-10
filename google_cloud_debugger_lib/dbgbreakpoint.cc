@@ -157,9 +157,7 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   }
 
   location->set_line(line_);
-  string unix_file_path = file_name_;
-  std::replace(unix_file_path.begin(), unix_file_path.end(), '\\', '/');
-  location->set_path(unix_file_path);
+  location->set_path(file_name_);
 
   return stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
 }

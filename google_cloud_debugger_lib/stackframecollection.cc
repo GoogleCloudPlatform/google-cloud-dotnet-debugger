@@ -69,7 +69,10 @@ HRESULT StackFrameCollection::Initialize(
     // This means the debug function is not available (mostly because of
     // native code) so we skip to the next frame.
     if (hr == CORDBG_E_CODE_NOT_AVAILABLE) {
-      cerr << "Skipping non-IL frame.";
+      // Adds an empty stack frame.
+      DbgStackFrame stack_frame;
+      stack_frame.SetEmpty(true);
+      stack_frames_.push_back(std::move(stack_frame));
       hr = debug_stack_walk->Next();
       continue;
     }
@@ -184,6 +187,12 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
   for (auto &&dbg_stack_frame : stack_frames_) {
     StackFrame *frame = breakpoint->add_stack_frames();
+    // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
+    if (dbg_stack_frame.IsEmpty()) {
+      frame->set_method_name("Undebuggable code.");
+      continue;
+    }
+
     frame->set_method_name(dbg_stack_frame.GetShortModuleName() + "!" +
                            dbg_stack_frame.GetClass() + "." +
                            dbg_stack_frame.GetMethod());

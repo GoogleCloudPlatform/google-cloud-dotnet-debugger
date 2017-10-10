@@ -57,7 +57,8 @@ namespace Google.Cloud.Diagnostics.Debug
                 Id = breakpoint.Id,
                 Location = new StackdriverSourceLocation
                 {
-                    Path = breakpoint.Location?.Path,
+                    // Change path to Unix style before reporting to the server.
+                    Path = breakpoint.Location?.Path?.Replace('\\', '/') ?? string.Empty,
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
@@ -73,7 +74,8 @@ namespace Google.Cloud.Diagnostics.Debug
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
             GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
             GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            string path = breakpoint.Location?.Path;
+            // Normalize the path in the key to account for Linux vs Windows difference.
+            string path = breakpoint.Location?.Path?.Replace('\\', '/');
             int? line = breakpoint.Location?.Line;
             return $"{path}:{line}".ToLower();
         }
@@ -86,7 +88,8 @@ namespace Google.Cloud.Diagnostics.Debug
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
             GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
             GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            string path = breakpoint.Location?.Path;
+            // Normalize the path in the key to account for Linux vs Windows difference.
+            string path = breakpoint.Location?.Path?.Replace('\\', '/');
             int? line = breakpoint.Location?.Line;
             return $"{path}:{line}".ToLower();
         }
