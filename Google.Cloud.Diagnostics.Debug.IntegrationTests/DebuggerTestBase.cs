@@ -137,6 +137,37 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
+        /// Gets the average memory usage during requests.
+        /// </summary>
+        /// <param name="numRequests">The number of requests to sample.</param>
+        /// <returns>The average memory usage during requests.</returns>
+        public async Task<double> GetAverageMemoryUsageMBAsync(int numRequests)
+        {
+            var processId = await GetProcessId();
+            var process = Process.GetProcessById(processId);
+
+            using (HttpClient client = new HttpClient())
+            {
+                long totalMemory = 0;
+                for (int i = 0; i < numRequests; i++)
+                {
+                    int counter = 0;
+                    long memory = 0;
+                    Task<HttpResponseMessage> task = client.GetAsync($"{AppUrlEcho}/{i}");
+                    // TODO(talarico): Can we do better?
+                    while (!task.IsCompleted)
+                    {
+                        memory += process.WorkingSet64;
+                        counter++;
+                        Timer.Sleep(TimeSpan.FromMilliseconds(2));
+                    }
+                    totalMemory += memory / counter;
+                }
+                return (totalMemory / numRequests) / Math.Pow(2, 20);
+            }
+        }
+
+        /// <summary>
         /// Gets the process id for the running test application.
         /// </summary>
         public async Task<int> GetProcessId()
