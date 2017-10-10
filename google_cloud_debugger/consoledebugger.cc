@@ -3,18 +3,16 @@
 
 // TODO: Add cleanup to release pointer.
 
-#include <cxxopts.hpp>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <vector>
 
+#include "dbgobject.h"
 #include "debugger.h"
+#include "optionparser.h"
 #include "winerror.h"
 
-#include "dbgobject.h"
-
-using cxxopts::Options;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::Debugger;
 using std::cerr;
@@ -34,50 +32,68 @@ const string kApplicationPathOption = "application-path";
 // with this process ID.
 const string kApplicationIDOption = "application-id";
 
+enum optionIndex {
+  UNKNOWN,
+  APPLICATIONPATH,
+  APPLICATIONID,
+  PROPERTYEVALUATION
+};
+const option::Descriptor usage[] = {
+    {UNKNOWN, 0, "", "", option::Arg::None,
+     "USAGE: example [options]\n\n"
+     "Options:"},
+    {APPLICATIONPATH, 0, "", kApplicationPathOption.c_str(),
+     option::Arg::Optional,
+     "  --application-path  \tPath to the application. If used, the debugger "
+     "will start the application using this path."},
+    {APPLICATIONID, 0, "", kApplicationIDOption.c_str(), option::Arg::Optional,
+     "  --application-id  \tProcess ID of the application to be debugged. If "
+     "used, the debugger will attach to the running application using this "
+     "ID."},
+    {PROPERTYEVALUATION, 0, "", kEvaluationOption.c_str(), option::Arg::None,
+     "  --property-evaluation  \tIf used, the debugger will attempt to "
+     "evaluate property of classes. This may modify the state of the "
+     "application"},
+    {0, 0, 0, 0, 0, 0}  // Needs this, otherwise the parser throws error.
+};
+
 int main(int argc, char *argv[]) {
-  Options options("GoogleCloudConsoleDebugger",
-                  "Google Cloud Console Debugger for .NET");
-
-  bool property_evaluation = false;
-  string app_path;
-  uint32_t app_id;
-
-  options.add_options()(kApplicationPathOption,
-                        "Path to the application. If used, the debugger will "
-                        "start the application using this path.",
-                        cxxopts::value<std::string>(app_path))(
-      kApplicationIDOption,
-      "Process ID of the application to be debugged. If used, the debugger "
-      "will attach to the running application using this ID.",
-      cxxopts::value<std::uint32_t>(app_id))(
-      kEvaluationOption,
-      "If used, the debugger will attempt to evaluate property of classes by. "
-      "This may modify the state of the application.",
-      cxxopts::value<bool>(property_evaluation));
-
-  options.parse(argc, argv);
-
-  // Cannot supply both path and ID to the option.
-  if (options.count(kApplicationPathOption) &&
-      options.count(kApplicationIDOption)) {
-    cerr << "The debugger can only take in either the application path or the "
-            "process ID of the running application, not both.";
-    return -1;
+  if (argc > 0) {
+    // Skips first argument.
+    argc -= 1;
+    argv += 1;
   }
 
-  // Missing either path or ID.
-  if (!options.count(kApplicationPathOption) &&
-      !options.count(kApplicationIDOption)) {
-    cerr << "Either the application path or the process ID of the running "
-            "application has to be given to the debugger.";
+  // Initializing codes from http://optionparser.sourceforge.net/index.html
+  // example.
+  option::Stats stats(usage, argc, argv);
+  std::vector<option::Option> options(stats.options_max);
+  std::vector<option::Option> buffer(stats.options_max);
+
+  option::Parser parse(usage, argc, argv, options.data(), buffer.data());
+
+  if (parse.error()) return 1;
+
+  if (argc == 0) {
+    option::printUsage(std::cout, usage);
+    return 0;
+  }
+
+  bool property_evaluation = options[PROPERTYEVALUATION].count();
+
+  // Has to supply either path or ID, not both.
+  if ((options[APPLICATIONPATH].count() && options[APPLICATIONID].count()) ||
+      (!options[APPLICATIONPATH].count() && !options[APPLICATIONID].count())) {
+    cerr << "The debugger can only take in either the application path or the "
+            "process ID of the running application, not both.";
     return -1;
   }
 
   Debugger debugger;
   HRESULT hr;
 
-  if (options.count(kApplicationPathOption)) {
-    // string app_path = options[kApplicationPathOption].as<std::string>();
+  if (options[APPLICATIONPATH].count()) {
+    string app_path = string(options[APPLICATIONPATH].arg);
     string command_line = "dotnet " + app_path;
     std::vector<WCHAR> wchar_command_line =
         ConvertStringToWCharPtr(command_line);
@@ -89,8 +105,16 @@ int main(int argc, char *argv[]) {
 
     hr = debugger.StartDebugging(wchar_command_line);
   } else {
-    // uint32_t app_id = options[kApplicationIDOption].as<std::uint32_t>();
-    hr = debugger.StartDebugging(app_id);
+    try {
+      int app_id = stoi(string(options[APPLICATIONID].arg));
+      if (app_id < 0) {
+        cerr << "Application ID has to be a positive.";
+      }
+      hr = debugger.StartDebugging(app_id);
+    } catch (std::invalid_argument &ex) {
+      cerr << "Application ID is not a valid positive number.";
+      return -1;
+    }
   }
 
   if (FAILED(hr)) {

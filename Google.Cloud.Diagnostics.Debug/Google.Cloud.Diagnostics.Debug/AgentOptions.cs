@@ -72,13 +72,13 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 if (ApplicationId.HasValue)
                 {
-                    return PropertyEvaluation ? $"{ApplicationIdOption} {ApplicationId} {PropertyEvaluationOption}"
-                        : $"{ApplicationIdOption} {ApplicationId}";
+                    return PropertyEvaluation ? $"{ApplicationIdOption}={ApplicationId} {PropertyEvaluationOption}"
+                        : $"{ApplicationIdOption}={ApplicationId}";
                 }
                 else
                 {
-                    return PropertyEvaluation ? $"{ApplicationPathOption} {ApplicationPath} {PropertyEvaluationOption}"
-                        : $"{ApplicationPathOption} {ApplicationId}";
+                    return PropertyEvaluation ? $"{ApplicationPathOption}={ApplicationPath} {PropertyEvaluationOption}"
+                        : $"{ApplicationPathOption}={ApplicationId}";
                 }
             }
         }
