@@ -137,7 +137,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                         {
                             memory += process.WorkingSet64;
                             counter++;
-                            Thread.Sleep(TimeSpan.FromMilliseconds(2));
+                            Timer.Sleep(TimeSpan.FromMilliseconds(2));
                         }
                         totalMemory += memory / counter;
 
