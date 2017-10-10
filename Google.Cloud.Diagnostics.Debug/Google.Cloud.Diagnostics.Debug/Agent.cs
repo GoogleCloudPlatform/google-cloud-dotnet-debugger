@@ -136,11 +136,10 @@ namespace Google.Cloud.Diagnostics.Debug
                             server.WriteBreakpointAsync(breakpoint).Wait();
                         }
 
-                        // Send new breakpoints to the debugger.
-                        IEnumerable<StackdriverBreakpoint> newBreakpoints = serverBreakpoints
-                            .Where(b => !_breakpointLocationToId.ContainsKey(b.GetLocationIdentifier()));
-
-                        foreach (StackdriverBreakpoint breakpoint in newBreakpoints)
+                        // Send all breakpoints to the debugger.
+                        // Even if the breakpoint is already set, the debugger will ignore it
+                        // so we don't have to worry about sending over existing breakpoints.
+                        foreach (StackdriverBreakpoint breakpoint in serverBreakpoints)
                         {
                             if (!string.IsNullOrWhiteSpace(breakpoint.Condition) || breakpoint.Expressions.Count() != 0)
                             {

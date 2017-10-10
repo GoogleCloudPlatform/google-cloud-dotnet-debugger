@@ -124,7 +124,7 @@ class ICorDebugClassMock : public ICorDebugClass {
 };
 
 class ICorDebugHeapValue2Mock : public ICorDebugHeapValue2 {
-public:
+ public:
   IUNKNOWN_MOCK
 
   MOCK_METHOD2(CreateHandle, HRESULT(CorDebugHandleType type,
@@ -136,46 +136,32 @@ class ICorDebugArrayValueMock : public ICorDebugArrayValue {
  public:
   ICORDEBUG_MOCK
 
-  MOCK_METHOD1(IsValid,
-      HRESULT(BOOL * pbValid));
+  MOCK_METHOD1(IsValid, HRESULT(BOOL *pbValid));
   MOCK_METHOD1(CreateRelocBreakpoint,
-      HRESULT(ICorDebugValueBreakpoint ** ppBreakpoint));
-  MOCK_METHOD1(GetElementType,
-      HRESULT(CorElementType * pType));
-  MOCK_METHOD1(GetRank,
-      HRESULT(ULONG32 * pnRank));
-  MOCK_METHOD1(GetCount,
-      HRESULT(ULONG32 * pnCount));
-  MOCK_METHOD2(GetDimensions,
-      HRESULT(ULONG32 cdim, ULONG32 dims[]));
-  MOCK_METHOD1(HasBaseIndicies,
-      HRESULT(BOOL * pbHasBaseIndicies));
-  MOCK_METHOD2(GetBaseIndicies,
-      HRESULT(ULONG32 cdim, ULONG32 indicies[]));
-  MOCK_METHOD3(GetElement,
-      HRESULT(ULONG32 cdim, ULONG32 indices[], ICorDebugValue ** ppValue));
+               HRESULT(ICorDebugValueBreakpoint **ppBreakpoint));
+  MOCK_METHOD1(GetElementType, HRESULT(CorElementType *pType));
+  MOCK_METHOD1(GetRank, HRESULT(ULONG32 *pnRank));
+  MOCK_METHOD1(GetCount, HRESULT(ULONG32 *pnCount));
+  MOCK_METHOD2(GetDimensions, HRESULT(ULONG32 cdim, ULONG32 dims[]));
+  MOCK_METHOD1(HasBaseIndicies, HRESULT(BOOL *pbHasBaseIndicies));
+  MOCK_METHOD2(GetBaseIndicies, HRESULT(ULONG32 cdim, ULONG32 indicies[]));
+  MOCK_METHOD3(GetElement, HRESULT(ULONG32 cdim, ULONG32 indices[],
+                                   ICorDebugValue **ppValue));
   MOCK_METHOD2(GetElementAtPosition,
-      HRESULT(ULONG32 nPosition, ICorDebugValue ** ppValue));
+               HRESULT(ULONG32 nPosition, ICorDebugValue **ppValue));
 };
 
 class ICorDebugHandleValueMock : public ICorDebugHandleValue {
  public:
   ICORDEBUG_MOCK
 
-  MOCK_METHOD1(IsNull,
-      HRESULT(BOOL * pbNull));
-  MOCK_METHOD1(GetValue,
-      HRESULT(CORDB_ADDRESS * pValue));
-  MOCK_METHOD1(SetValue,
-      HRESULT(CORDB_ADDRESS value));
-  MOCK_METHOD1(Dereference,
-      HRESULT(ICorDebugValue ** ppValue));
-  MOCK_METHOD1(DereferenceStrong,
-      HRESULT(ICorDebugValue ** ppValue));
-  MOCK_METHOD1(GetHandleType,
-      HRESULT(CorDebugHandleType * pType));
-  MOCK_METHOD0(Dispose,
-      HRESULT(void));
+  MOCK_METHOD1(IsNull, HRESULT(BOOL *pbNull));
+  MOCK_METHOD1(GetValue, HRESULT(CORDB_ADDRESS *pValue));
+  MOCK_METHOD1(SetValue, HRESULT(CORDB_ADDRESS value));
+  MOCK_METHOD1(Dereference, HRESULT(ICorDebugValue **ppValue));
+  MOCK_METHOD1(DereferenceStrong, HRESULT(ICorDebugValue **ppValue));
+  MOCK_METHOD1(GetHandleType, HRESULT(CorDebugHandleType *pType));
+  MOCK_METHOD0(Dispose, HRESULT(void));
 };
 
 class ICorDebugThreadMock : public ICorDebugThread {
@@ -248,6 +234,33 @@ class ICorDebugFrameMock : public ICorDebugFrame {
   MOCK_METHOD1(CreateStepper, HRESULT(ICorDebugStepper **ppStepper));
 };
 
+class ICorDebugILFrameMock : public ICorDebugILFrame {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(GetChain, HRESULT(ICorDebugChain **ppChain));
+  MOCK_METHOD1(GetCode, HRESULT(ICorDebugCode **ppCode));
+  MOCK_METHOD1(GetFunction, HRESULT(ICorDebugFunction **ppFunction));
+  MOCK_METHOD1(GetFunctionToken, HRESULT(mdMethodDef *pToken));
+  MOCK_METHOD2(GetStackRange,
+               HRESULT(CORDB_ADDRESS *pStart, CORDB_ADDRESS *pEnd));
+  MOCK_METHOD1(GetCaller, HRESULT(ICorDebugFrame **ppFrame));
+  MOCK_METHOD1(GetCallee, HRESULT(ICorDebugFrame **ppFrame));
+  MOCK_METHOD1(CreateStepper, HRESULT(ICorDebugStepper **ppStepper));
+  MOCK_METHOD2(GetIP, HRESULT(ULONG32 *pnOffset,
+                              CorDebugMappingResult *pMappingResult));
+  MOCK_METHOD1(SetIP, HRESULT(ULONG32 nOffset));
+  MOCK_METHOD1(EnumerateLocalVariables,
+               HRESULT(ICorDebugValueEnum **ppValueEnum));
+  MOCK_METHOD2(GetLocalVariable,
+               HRESULT(DWORD dwIndex, ICorDebugValue **ppValue));
+  MOCK_METHOD1(EnumerateArguments, HRESULT(ICorDebugValueEnum **ppValueEnum));
+  MOCK_METHOD2(GetArgument, HRESULT(DWORD dwIndex, ICorDebugValue **ppValue));
+  MOCK_METHOD1(GetStackDepth, HRESULT(ULONG32 *pDepth));
+  MOCK_METHOD2(GetStackValue, HRESULT(DWORD dwIndex, ICorDebugValue **ppValue));
+  MOCK_METHOD1(CanSetIP, HRESULT(ULONG32 nOffset));
+};
+
 class ICorDebugFunctionMock : public ICorDebugFunction {
  public:
   IUNKNOWN_MOCK
@@ -318,6 +331,18 @@ class ICorDebugBreakpointMock : public ICorDebugBreakpoint {
   MOCK_METHOD1(IsActive, HRESULT(BOOL *pbActive));
 };
 
+class ICorDebugStackWalkMock : public ICorDebugStackWalk {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD4(GetContext, HRESULT(ULONG32 contextFlags, ULONG32 contextBufSize,
+                                   ULONG32 *contextSize, BYTE contextBuf[]));
+  MOCK_METHOD3(SetContext, HRESULT(CorDebugSetContextFlag flag,
+                                   ULONG32 contextSize, BYTE context[]));
+  MOCK_METHOD0(Next, HRESULT(void));
+  MOCK_METHOD1(GetFrame, HRESULT(ICorDebugFrame **pFrame));
+};
+
 // Mock class for ICorDebugType.
 class ICorDebugTypeMock : public ICorDebugType {
  public:
@@ -345,16 +370,24 @@ class ICorDebugTypeEnumMock : public ICorDebugTypeEnum {
  public:
   IUNKNOWN_MOCK
 
-  MOCK_METHOD1(Skip,
-      HRESULT(ULONG celt));
-  MOCK_METHOD0(Reset,
-      HRESULT(void));
-  MOCK_METHOD1(Clone,
-      HRESULT(ICorDebugEnum ** ppEnum));
-  MOCK_METHOD1(GetCount,
-      HRESULT(ULONG * pcelt));
-  MOCK_METHOD3(Next,
-      HRESULT(ULONG celt, ICorDebugType * values[], ULONG * pceltFetched));
+  MOCK_METHOD1(Skip, HRESULT(ULONG celt));
+  MOCK_METHOD0(Reset, HRESULT(void));
+  MOCK_METHOD1(Clone, HRESULT(ICorDebugEnum **ppEnum));
+  MOCK_METHOD1(GetCount, HRESULT(ULONG *pcelt));
+  MOCK_METHOD3(Next, HRESULT(ULONG celt, ICorDebugType *values[],
+                             ULONG *pceltFetched));
+};
+
+class ICorDebugValueEnumMock : public ICorDebugValueEnum {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(Skip, HRESULT(ULONG celt));
+  MOCK_METHOD0(Reset, HRESULT(void));
+  MOCK_METHOD1(Clone, HRESULT(ICorDebugEnum **ppEnum));
+  MOCK_METHOD1(GetCount, HRESULT(ULONG *pcelt));
+  MOCK_METHOD3(Next, HRESULT(ULONG celt, ICorDebugValue *values[],
+                             ULONG *pceltFetched));
 };
 
 }  // namespace google_cloud_debugger_test

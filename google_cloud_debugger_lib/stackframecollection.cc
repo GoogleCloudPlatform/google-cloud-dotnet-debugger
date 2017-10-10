@@ -46,7 +46,6 @@ HRESULT StackFrameCollection::Initialize(
   }
 
   CComPtr<ICorDebugFrame> frame;
-  CComPtr<ICorDebugILFrame> il_frame;
   HRESULT hr = S_OK;
 
   // Walks through the stack and populates stack_frames_ vector.
@@ -62,25 +61,22 @@ HRESULT StackFrameCollection::Initialize(
       return hr;
     }
 
-    hr = frame->QueryInterface(__uuidof(ICorDebugILFrame),
-                               reinterpret_cast<void **>(&il_frame));
-    // Ignore this stack frame since it is not an IL frame.
-    // See whether we can extract out more stacks.
-    // TODO(quoct): See whether we can extract out function name
-    // and class name from a non-IL frame.
-    if (hr == E_NOINTERFACE) {
+    // Gets ICorDebugFunction that corresponds to the function at this frame.
+    // We delay the logic to query the IL frame until we have to get the
+    // variables and method arguments.
+    CComPtr<ICorDebugFunction> frame_function;
+    hr = frame->GetFunction(&frame_function);
+    // This means the debug function is not available (mostly because of
+    // native code) so we skip to the next frame.
+    if (hr == CORDBG_E_CODE_NOT_AVAILABLE) {
+      // Adds an empty stack frame.
+      DbgStackFrame stack_frame;
+      stack_frame.SetEmpty(true);
+      stack_frames_.push_back(std::move(stack_frame));
       hr = debug_stack_walk->Next();
       continue;
     }
 
-    if (FAILED(hr)) {
-      cerr << "Failed to get ILFrame";
-      return hr;
-    }
-
-    // Gets ICorDebugFunction that corresponds to the function at this frame.
-    CComPtr<ICorDebugFunction> frame_function;
-    hr = il_frame->GetFunction(&frame_function);
     if (FAILED(hr)) {
       cerr << "Failed to get ICorDebugFunction from IL Frame.";
       return hr;
@@ -131,6 +127,22 @@ HRESULT StackFrameCollection::Initialize(
       return hr;
     }
 
+    CComPtr<ICorDebugILFrame> il_frame;
+    hr = frame->QueryInterface(__uuidof(ICorDebugILFrame),
+                               reinterpret_cast<void **>(&il_frame));
+    // If this is a non-IL frame, we cannot get local variables
+    // and method arguments so simply skip that step.
+    if (hr == E_NOINTERFACE) {
+      stack_frames_.push_back(std::move(stack_frame));
+      hr = debug_stack_walk->Next();
+      continue;
+    }
+
+    if (FAILED(hr)) {
+      cerr << "Failed to get ILFrame";
+      return hr;
+    }
+
     for (auto &&pdb_file : pdb_files) {
       // Gets the PDB file that has the same name as the module.
       CComPtr<ICorDebugModule> pdb_debug_module;
@@ -175,6 +187,12 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
   for (auto &&dbg_stack_frame : stack_frames_) {
     StackFrame *frame = breakpoint->add_stack_frames();
+    // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
+    if (dbg_stack_frame.IsEmpty()) {
+      frame->set_method_name("Undebuggable code.");
+      continue;
+    }
+
     frame->set_method_name(dbg_stack_frame.GetShortModuleName() + "!" +
                            dbg_stack_frame.GetClass() + "." +
                            dbg_stack_frame.GetMethod());
@@ -206,14 +224,20 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
   }
 
   HRESULT hr;
-  CComPtr<ICorDebugFunction> frame_function;
-  hr = il_frame->GetFunction(&frame_function);
-  // Now we try to get the method that corresponds to frame_debug_function.
-  CComPtr<ICorDebugModule> frame_module;
-  hr = frame_function->GetModule(&frame_module);
+  // Retrieves the IP offset in the function that corresponds to this stack
+  // frame.
+  ULONG32 ip_offset;
+  CorDebugMappingResult mapping_result;
+  hr = il_frame->GetIP(&ip_offset, &mapping_result);
   if (FAILED(hr)) {
-    cerr << "Failed to get ICorDebugModule from ICorDebugFunction.";
+    cerr << "Failed to get instruction pointer offset from ICorDebugFrame.";
     return hr;
+  }
+
+  // Can't show this stack frame as the mapping is not good.
+  if (mapping_result == CorDebugMappingResult::MAPPING_NO_INFO ||
+      mapping_result == CorDebugMappingResult::MAPPING_UNMAPPED_ADDRESS) {
+    return S_FALSE;
   }
 
   // Loops through all methods in all the documents of the pdb file to find
@@ -245,21 +269,8 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
         continue;
       }
 
-      // Retrieves the IP offset in the function that corresponds to this stack
-      // frame.
-      ULONG32 ip_offset;
-      CorDebugMappingResult mapping_result;
-      hr = il_frame->GetIP(&ip_offset, &mapping_result);
-      if (FAILED(hr)) {
-        cerr << "Failed to get instruction pointer offset from ICorDebugFrame.";
-        return hr;
-      }
-
-      // Can't show this stack frame as the mapping is not good.
-      if (mapping_result == CorDebugMappingResult::MAPPING_NO_INFO ||
-          mapping_result == CorDebugMappingResult::MAPPING_UNMAPPED_ADDRESS) {
-        return S_FALSE;
-      }
+      // Sets the file path since we know we are in the correct function.
+      dbg_stack_frame->SetFile(document_index->GetFilePath());
 
       long matching_sequence_point_position = -1;
 

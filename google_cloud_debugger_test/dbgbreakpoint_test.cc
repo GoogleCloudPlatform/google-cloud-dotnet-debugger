@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <custombinaryreader.h>
 #include <gtest/gtest.h>
 #include <cstdlib>
@@ -46,35 +47,13 @@ class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     breakpoint_.Initialize(file_name_, id_, line_, column_);
-    SetUpIPortablePDBFile();
-  }
-
-  virtual void SetUpIPortablePDBFile() {
-    // Makes a vector with a Document Index mock
-    unique_ptr<IDocumentIndex> doc_index(new (std::nothrow)
-                                             IDocumentIndexMock());
-
-    // Gets the raw pointer so we can set the mock calls.
-    IDocumentIndexMock *index_mock =
-        reinterpret_cast<IDocumentIndexMock *>(doc_index.get());
-    document_indices_.push_back(std::move(doc_index));
-
-    // Makes the Document Index Mock returns method_ when GetMethod is called.
-    ON_CALL(*index_mock, GetMethods()).WillByDefault(ReturnRef(methods_));
-
-    // Document Index should have the same file path as breakpoint.
-    ON_CALL(*index_mock, GetFilePath()).WillByDefault(ReturnRef(file_name_));
-
-    // The portable PDB file will return a list of Document Indices.
-    ON_CALL(file_mock_, GetDocumentIndexTable())
-        .WillByDefault(ReturnRef(document_indices_));
+    // Gives the PDB file the same file name as this breakpoint's file name.
+    pdb_file_fixture_.first_doc_.file_name_ = file_name_;
+    pdb_file_fixture_.SetUpIPortablePDBFile(&file_mock_);
   }
 
   // ICorDebugBreakpoint associated with this breakpoint.
   ICorDebugBreakpointMock cordebug_breakpoint_;
-
-  // Mock object for PDB file associated with the breakpoint.
-  IPortablePdbFileMock file_mock_;
 
   // Breakpoint.
   DbgBreakpoint breakpoint_;
@@ -94,13 +73,11 @@ class DbgBreakpointTest : public ::testing::Test {
   // Column of the breakpoint.
   uint32_t column_ = 64;
 
-  // Method in the document index for this breakpoint.
-  vector<MethodInfo> methods_;
+  // Mock object for Portable PDB file.
+  IPortablePdbFileMock file_mock_;
 
-  // Document Indices that the file_mock_ contains.
-  // Only contains 1 document index that has the same file
-  // path as this breakpoint.
-  vector<unique_ptr<IDocumentIndex>> document_indices_;
+  // Fixture for the PDB File.
+  PortablePDBFileFixture pdb_file_fixture_;
 };
 
 // Tests that the Initialize function sets up the correct fields.
@@ -157,12 +134,15 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
                               uint32_t il_offset) {
   assert(method_first_line < breakpoint_line);
 
+  // Minimum amount of lines from breakpoint to last line.
+  uint32_t min_line = 10;
+
   // This method's first line is less than the breakpoint's line
   // and its last line is greater than the breakpoint's line,
   // so the TrySetBreakpoint method should be able to use this method.
   MethodInfo method;
   method.first_line = method_first_line;
-  method.last_line = breakpoint_line + max(breakpoint_line, 10);
+  method.last_line = breakpoint_line + std::max(breakpoint_line, min_line);
   method.method_def = method_def;
 
   // Puts a sequence point that does not match the line of the breakpoint.
@@ -211,8 +191,8 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
 
   // Push the methods into the method vector that
   // the document index matching this Breakpoint will return.
-  methods_.push_back(method);
-  methods_.push_back(method2);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method2);
 
   EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset);
@@ -248,9 +228,9 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
 
   // Push the methods into the method vector that
   // the document index matching this Breakpoint will return.
-  methods_.push_back(method);
-  methods_.push_back(method2);
-  methods_.push_back(method3);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method2);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method3);
 
   EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset_3);
@@ -283,8 +263,8 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
 
   // Push the methods into the method vector that
   // the document index matching this Breakpoint will return.
-  methods_.push_back(method);
-  methods_.push_back(method2);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method);
+  pdb_file_fixture_.first_doc_.methods_.push_back(method2);
 
   EXPECT_FALSE(breakpoint_.TrySetBreakpoint(file_mock_));
 }

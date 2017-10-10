@@ -159,6 +159,8 @@
     <ClCompile Include="dbgclassproperty_test.cc" />
     <ClCompile Include="dbgprimitive_test.cc" />
     <ClCompile Include="dbgstring_test.cc" />
+    <ClCompile Include="i_portable_pdb_mocks.cc" />
+    <ClCompile Include="stackframecollection_test.cc" />
     <ClCompile Include="unit_test_main.cc" />
   </ItemGroup>
   <ItemGroup>

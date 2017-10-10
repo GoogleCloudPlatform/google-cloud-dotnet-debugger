@@ -120,6 +120,12 @@ class DbgStackFrame {
   // Gets the virtual address of the function this stack frame is in.
   ULONG32 GetFuncVirtualAddr() const { return func_virtual_addr_; }
 
+  // Returns if this is just an empty frame with no information.
+  bool IsEmpty() { return empty_; }
+
+  // Sets whether this is an empty frame.
+  void SetEmpty(bool empty) { empty_ = empty; }
+
  private:
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
@@ -143,10 +149,13 @@ class DbgStackFrame {
   std::string file_name_;
 
   // Virtual address of the function this stack frame is in.
-  ULONG32 func_virtual_addr_;
+  ULONG32 func_virtual_addr_ = 0;
 
   // The line number where the variables are in.
-  std::uint32_t line_number_;
+  std::uint32_t line_number_ = 0;
+
+  // True if this is an empty frame with no information.
+  bool empty_ = false;
 };
 
 }  //  namespace google_cloud_debugger

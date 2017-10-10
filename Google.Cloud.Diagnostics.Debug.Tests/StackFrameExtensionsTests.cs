@@ -19,7 +19,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     public class StackFrameExtensionsTests
     {
         private const string _method = "frame-method";
-        private const string _path = "frame-path";
+        private const string _path = "C:\\frame-path";
         private const int _line = 11;
 
         [Fact]
@@ -47,7 +47,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
             var sdStackFrame = stackframe.Convert();
             Assert.Equal(_method, sdStackFrame.Function);
-            Assert.Equal(_path, sdStackFrame.Location.Path);
+            Assert.Equal(_path.Replace("\\", "/"), sdStackFrame.Location.Path);
             Assert.Equal(_line, sdStackFrame.Location.Line);
             Assert.Single(sdStackFrame.Arguments);
             Assert.Equal(3, sdStackFrame.Locals.Count);
