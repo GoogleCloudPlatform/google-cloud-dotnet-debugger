@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using Google.Cloud.Diagnostics.Debug.IntegrationTests;
 using System;
 using System.Diagnostics;
@@ -46,41 +45,52 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         [Fact]
         public async Task DebuggerAttached()
         {
-            Func<bool, Task<double>> averageStartTimeMs = async delegate (bool debugEnabled)
-            {
-                double totalStartTimeMs = 0;
-                for (int i = 0; i < NumberOfRequest; i++)
-                {
-                    using (HttpClient client = new HttpClient())
-                    {
-                        Stopwatch watch = Stopwatch.StartNew();
-                        using (StartTestApp(debugEnabled: debugEnabled))
-                        {
-                            // Allow for retries, this may happen if the app is
-                            // taking a very long time to start.
-                            for (int j = 0; j < 5; j++)
-                            {
-                                try
-                                {
-                                    await client.GetAsync($"{AppUrlEcho}/{i}");
-                                    break;
-                                }
-                                catch (HttpRequestException) { }
-                            }
-                        }
-                        totalStartTimeMs += watch.Elapsed.TotalMilliseconds;
-                    }
-                }
-                return totalStartTimeMs / NumberOfRequest;
-            };
+            var noDebugAvgStartTimeMs = await GetAverageStartUpTimeAsync(debugEnabled: false);
+            var debugAvgStartTimeMs = await GetAverageStartUpTimeAsync(debugEnabled: true);
 
-            var noDebugAvgStartTimeMs = await averageStartTimeMs(false);
-            var debugAvgStartTimeMs = await averageStartTimeMs(true);
+            Console.WriteLine($"Avg start time w/o a debugger attached: {noDebugAvgStartTimeMs}");
+            Console.WriteLine($"Avg start time w/ a debugger attached: {debugAvgStartTimeMs}");
+            Console.WriteLine($"Avg start time increase: {noDebugAvgStartTimeMs - debugAvgStartTimeMs}");
 
             Assert.True(debugAvgStartTimeMs <= noDebugAvgStartTimeMs + AddedStartTimeWhenDebuggingMs,
               $"Avg start time w/o a debugger attached: {noDebugAvgStartTimeMs}\n" +
               $"Avg start time w/ a debugger attached: {debugAvgStartTimeMs}\n" +
               $"This is {debugAvgStartTimeMs - noDebugAvgStartTimeMs - AddedStartTimeWhenDebuggingMs} more than expectable.");
+        }
+
+        /// <summary>
+        /// Starts the test application (Google.Cloud.Diagnostics.Debug.TestApp)
+        /// <see cref="NumberOfRequest"/> times and takes the average startup time to get
+        /// a response to the home page of the app.
+        /// </summary>
+        /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
+        /// <returns>The average start time for the application.</returns>
+        private async Task<double> GetAverageStartUpTimeAsync(bool debugEnabled)
+        {
+            double totalStartTimeMs = 0;
+            for (int i = 0; i < NumberOfRequest; i++)
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    Stopwatch watch = Stopwatch.StartNew();
+                    using (StartTestApp(debugEnabled: debugEnabled))
+                    {
+                        // Allow for retries, this may happen if the app is
+                        // taking a very long time to start.
+                        for (int j = 0; j < 5; j++)
+                        {
+                            try
+                            {
+                                await client.GetAsync($"{AppUrlEcho}/{i}");
+                                break;
+                            }
+                            catch (HttpRequestException) { }
+                        }
+                    }
+                    totalStartTimeMs += watch.Elapsed.TotalMilliseconds;
+                }
+            }
+            return totalStartTimeMs / NumberOfRequest;
         }
     }
 }
