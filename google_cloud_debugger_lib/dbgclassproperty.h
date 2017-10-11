@@ -50,9 +50,7 @@ class DbgClassProperty : public StringStreamWrapper {
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
 
-  std::string GetPropertyName() {
-    return ConvertWCharPtrToString(property_name_);
-  }
+  const std::string &GetPropertyName() const { return property_name_; }
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
@@ -60,8 +58,8 @@ class DbgClassProperty : public StringStreamWrapper {
  private:
   // Helper function to set the value of variable to this property's value.
   HRESULT PopulateVariableValueHelper(
-    google::cloud::diagnostics::debug::Variable *variable,
-    IEvalCoordinator *eval_coordinator);
+      google::cloud::diagnostics::debug::Variable *variable,
+      IEvalCoordinator *eval_coordinator);
 
   // Attribute flags applied to the property.
   DWORD property_attributes_ = 0;
@@ -99,7 +97,7 @@ class DbgClassProperty : public StringStreamWrapper {
   BOOL exception_occurred_ = FALSE;
 
   // Name of the property.
-  std::vector<WCHAR> property_name_;
+  std::string property_name_;
 
   // Vector of tokens that represent other methods associated with the property.
   std::vector<mdMethodDef> other_methods_;
