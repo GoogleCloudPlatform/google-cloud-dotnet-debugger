@@ -51,11 +51,11 @@ void DbgClassProperty::Initialize(mdProperty property_def,
     return;
   }
 
-  property_name_.resize(property_name_length);
+  std::vector<WCHAR> wchar_property_name(property_name_length, 0);
   other_methods_.resize(other_methods_length);
 
   initialized_hr_ = metadata_import->GetPropertyProps(
-      property_def_, &parent_token_, property_name_.data(),
+      property_def_, &parent_token_, wchar_property_name.data(),
       property_name_.size(), &property_name_length, &property_attributes_,
       &signature_metadata_, &sig_metadata_length_, &default_value_type_flags,
       &default_value_, &default_value_len_, &property_setter_function,
@@ -65,6 +65,8 @@ void DbgClassProperty::Initialize(mdProperty property_def,
   if (FAILED(initialized_hr_)) {
     WriteError("Failed to get property metadata.");
   }
+
+  property_name_ = ConvertWCharPtrToString(wchar_property_name);
 }
 
 HRESULT DbgClassProperty::PopulateVariableValue(

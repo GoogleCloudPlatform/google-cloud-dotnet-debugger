@@ -40,9 +40,11 @@ class DbgClassField : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Variable *variable,
       IEvalCoordinator *eval_coordinator);
 
-  std::string GetFieldName() const {
-    return ConvertWCharPtrToString(field_name_);
-  }
+  // Returns the field name.
+  const std::string &GetFieldName() const { return field_name_; }
+
+  // Returns true if this is a backing field for a property.
+  const bool IsBackingField() const { return is_backing_field_; }
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
@@ -84,9 +86,11 @@ class DbgClassField : public StringStreamWrapper {
   // is ELEMENT_TYPE_STRING. Otherwise, it is not relevant.
   ULONG default_value_len_ = 0;
 
-  // Name of the field. We don't use wstring because GetFieldProps expect
-  // a WCHAR array.
-  std::vector<WCHAR> field_name_;
+  // Name of the field.
+  std::string field_name_;
+
+  // True if this is a backing field for a property.
+  bool is_backing_field_ = false;
 
   // Value of the field.
   std::unique_ptr<DbgObject> field_value_;

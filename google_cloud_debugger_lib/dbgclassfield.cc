@@ -20,6 +20,7 @@
 #include "evalcoordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
+using std::string;
 
 namespace google_cloud_debugger {
 void DbgClassField::Initialize(mdFieldDef field_def,
@@ -27,6 +28,8 @@ void DbgClassField::Initialize(mdFieldDef field_def,
                                ICorDebugObjectValue *debug_obj_value,
                                ICorDebugClass *debug_class,
                                ICorDebugType *class_type, int depth) {
+  static const string kBackingField = ">k__BackingField";
+
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
@@ -62,17 +65,36 @@ void DbgClassField::Initialize(mdFieldDef field_def,
     return;
   }
 
-  field_name_.resize(len_field_name);
+  std::vector<WCHAR> wchar_field_name(len_field_name, 0);
 
   // Second call to get the actual name.
   initialized_hr_ = metadata_import->GetFieldProps(
-      field_def_, &class_token_, field_name_.data(), len_field_name,
+      field_def_, &class_token_, wchar_field_name.data(), len_field_name,
       &len_field_name, &field_attributes_, &signature_metadata_,
       &signature_metadata_len_, &default_value_type_flags_, &default_value_,
       &default_value_len_);
   if (FAILED(initialized_hr_)) {
     WriteError("Failed to populate field metadata.");
     return;
+  }
+
+  field_name_ = ConvertWCharPtrToString(wchar_field_name);
+
+  // If field name is <Property>k__BackingField, change it to
+  // Property because it is the backing field of a property.
+  if (field_name_.size() > kBackingField.size() + 1) {
+    // Checks that field name is of the form <Property>k__BackingField.
+    if (field_name_[0] == '<') {
+      string::size_type position;
+      // Checks that field_name_ ends with k_BackingField.
+      position = field_name_.find(kBackingField,
+                                  field_name_.size() - kBackingField.size());
+      // Extracts out the field name.
+      if (position != string::npos) {
+        is_backing_field_ = true;
+        field_name_ = field_name_.substr(1, position - 1);
+      }
+    }
   }
 
   initialized_hr_ =

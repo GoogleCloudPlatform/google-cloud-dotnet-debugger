@@ -111,6 +111,8 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
     }
 
     if (GetEvaluationDepth() >= 0) {
+      // Populates the fields first before the properties in case
+      // we have backing fields for properties.
       hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
       if (FAILED(hr)) {
         WriteError("Failed to populate class fields.");
@@ -188,7 +190,8 @@ HRESULT DbgClass::PopulateBaseClassName(ICorDebugType *debug_type) {
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
+  hr =
+      GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get metadata for base class.");
     return hr;
@@ -364,6 +367,11 @@ HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
 
         class_field->Initialize(field_defs[i], metadata_import, debug_obj_value,
                                 debug_class, debug_type, evaluation_depth - 1);
+        if (class_field->IsBackingField()) {
+          // Insert class names into set so we can use it to check later
+          // for backing fields.
+          class_backing_fields_names_.insert(class_field->GetFieldName());
+        }
         class_fields_.push_back(std::move(class_field));
       }
     } else {
@@ -407,7 +415,14 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
         }
 
         class_property->Initialize(property_defs[i], metadata_import);
-        class_properties_.push_back(std::move(class_property));
+        // If property name is MyProperty, checks whether there is a backing
+        // field with the same name. We only add this property in if there is
+        // no fields with the same name.
+        if (class_backing_fields_names_.find(
+                class_property->GetPropertyName()) ==
+            class_backing_fields_names_.end()) {
+          class_properties_.push_back(std::move(class_property));
+        }
       }
     } else {
       break;

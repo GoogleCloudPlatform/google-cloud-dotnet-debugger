@@ -24,12 +24,12 @@
 #include "i_evalcoordinator_mock.h"
 #include "i_metadataimport_mock.h"
 
+using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Mock;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
@@ -598,6 +598,36 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   EXPECT_EQ(variable.members(0).value(), std::to_string(first_field_value_));
   EXPECT_EQ(variable.members(1).value(), std::to_string(second_field_value_));
   EXPECT_EQ(variable.members(2).value(), std::to_string(property_value_));
+}
+
+// Test PopulateMembers function when there is a property with backing field.
+TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
+  // Makes the second field the backing field of the class property.
+  class_second_field_ = "<" + class_property_ + ">k__BackingField";
+  SetUpDbgClass();
+  SetUpBaseClass();
+  SetUpMetaDataImport();
+  SetUpClassField();
+  SetUpClassProperty();
+
+  Variable variable;
+  DbgClass dbg_class(&debug_type_, 1);
+  dbg_class.Initialize(&object_value_, FALSE);
+
+  HRESULT hr = dbg_class.GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  // Nothing should be evaluated since we have the backing field.
+  EXPECT_CALL(eval_coordinator_, CreateEval(_)).Times(0);
+  hr = dbg_class.PopulateMembers(&variable, &eval_coordinator_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  EXPECT_EQ(variable.members_size(), 2);
+  EXPECT_EQ(variable.members(0).type(), "System.Int32");
+  EXPECT_EQ(variable.members(1).type(), "System.Int32");
+
+  EXPECT_EQ(variable.members(0).value(), std::to_string(first_field_value_));
+  EXPECT_EQ(variable.members(1).value(), std::to_string(second_field_value_));
 }
 
 // Test error cases for PopulateMembers function.

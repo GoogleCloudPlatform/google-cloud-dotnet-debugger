@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include <custombinaryreader.h>
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <cstdlib>
 #include <string>
 
@@ -35,6 +35,7 @@ using google_cloud_debugger::DbgBreakpoint;
 using google_cloud_debugger_portable_pdb::IDocumentIndex;
 using google_cloud_debugger_portable_pdb::MethodInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
+using std::max;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -142,7 +143,7 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
   // so the TrySetBreakpoint method should be able to use this method.
   MethodInfo method;
   method.first_line = method_first_line;
-  method.last_line = breakpoint_line + std::max(breakpoint_line, min_line);
+  method.last_line = breakpoint_line + max(breakpoint_line, min_line);
   method.method_def = method_def;
 
   // Puts a sequence point that does not match the line of the breakpoint.

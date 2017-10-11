@@ -24,11 +24,11 @@
 #include "i_evalcoordinator_mock.h"
 #include "i_metadataimport_mock.h"
 
+using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
@@ -45,6 +45,7 @@ class DbgClassFieldTest : public ::testing::Test {
 
   virtual void SetUpField(bool non_static_field, int32_t field_value = 20,
                           bool initialize_field_value = true) {
+    wchar_string_ = ConvertStringToWCharPtr(class_field_name_);
     uint32_t class_field_name_len = wchar_string_.size();
 
     EXPECT_CALL(metadataimport_mock_,
@@ -144,19 +145,31 @@ class DbgClassFieldTest : public ::testing::Test {
 
   string class_field_name_ = "FieldName";
 
-  vector<WCHAR> wchar_string_ = ConvertStringToWCharPtr(class_field_name_);
+  vector<WCHAR> wchar_string_;
 };
 
 // Tests the Initialize function of DbgClassField for non-static field.
 TEST_F(DbgClassFieldTest, TestInitializeNonStatic) {
   SetUpField(TRUE, 20);
   EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+  EXPECT_FALSE(class_field_.IsBackingField());
 }
 
 // Tests the Initialize function of DbgClassField for static field.
 TEST_F(DbgClassFieldTest, TestInitializeStatic) {
   SetUpField(FALSE, 20);
   EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+  EXPECT_FALSE(class_field_.IsBackingField());
+}
+
+// Tests the Initialize function of DbgClassField for field that is
+// backing a property.
+TEST_F(DbgClassFieldTest, TestInitializeBackingField) {
+  string real_field_name = "BackingField";
+  class_field_name_ = "<" + real_field_name + ">k__BackingField";
+  SetUpField(FALSE, 20);
+  EXPECT_EQ(class_field_.GetFieldName(), real_field_name);
+  EXPECT_TRUE(class_field_.IsBackingField());
 }
 
 // Tests error cases for the Initialize function of DbgClassField.

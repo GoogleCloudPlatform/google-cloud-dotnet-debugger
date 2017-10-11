@@ -16,6 +16,7 @@
 #define DBG_CLASS_H_
 
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "dbgclassfield.h"
@@ -149,6 +150,9 @@ class DbgClass : public DbgObject {
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
   std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
+
+  // Sets of all the fields' names.
+  std::unordered_set<std::string> class_backing_fields_names_;
 
   // Array of bytes to contain enum value if this class is an enum.
   std::vector<std::uint8_t> enum_value_array_;
