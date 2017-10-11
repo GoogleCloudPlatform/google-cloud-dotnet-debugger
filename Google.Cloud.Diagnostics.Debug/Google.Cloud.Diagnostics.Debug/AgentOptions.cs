@@ -42,7 +42,9 @@ namespace Google.Cloud.Diagnostics.Debug
         public string Debugger { get; set; }
 
         [Option("application-path",
-            HelpText = "A path to the .NET CORE application dll to be debugged.")]
+            HelpText = "A path to the .NET CORE application dll to be debugged." +
+            " This will delay the start up of the application as the debugger needs" +
+            " to be set up to ensure that startup code will be debugged.")]
         public string ApplicationPath { get; set; }
 
         [Option("application-id",

@@ -39,6 +39,10 @@ enum optionIndex {
   PROPERTYEVALUATION
 };
 const option::Descriptor usage[] = {
+    // The first dummy Descriptor is used for unknown options,
+    // which is a string in the argument vector that is not a lone minus '-'
+    // but starts with a minus character and does not match any options.
+    // If we don't have this, unknown options will be dropped silently.
     {UNKNOWN, 0, "", "", option::Arg::None,
      "USAGE: example [options]\n\n"
      "Options:"},
@@ -72,7 +76,11 @@ int main(int argc, char *argv[]) {
 
   option::Parser parse(usage, argc, argv, options.data(), buffer.data());
 
-  if (parse.error()) return 1;
+  if (parse.error()) {
+    cerr << "Failed to parse arguments.";
+    option::printUsage(std::cout, usage);
+    return -1;
+  }
 
   if (argc == 0) {
     option::printUsage(std::cout, usage);
