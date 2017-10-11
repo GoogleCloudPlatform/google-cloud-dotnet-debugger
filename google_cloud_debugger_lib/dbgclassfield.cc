@@ -28,6 +28,8 @@ void DbgClassField::Initialize(mdFieldDef field_def,
                                ICorDebugObjectValue *debug_obj_value,
                                ICorDebugClass *debug_class,
                                ICorDebugType *class_type, int depth) {
+  // If a field is a backing field of a property, its name will
+  // end with this.
   static const string kBackingField = ">k__BackingField";
 
   if (metadata_import == nullptr) {
@@ -80,8 +82,8 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 
   field_name_ = ConvertWCharPtrToString(wchar_field_name);
 
-  // If field name is <Property>k__BackingField, change it to
-  // Property because it is the backing field of a property.
+  // If field name is <MyProperty>k__BackingField, change it to
+  // MyProperty because it is the backing field of a property.
   if (field_name_.size() > kBackingField.size() + 1) {
     // Checks that field name is of the form <Property>k__BackingField.
     if (field_name_[0] == '<') {

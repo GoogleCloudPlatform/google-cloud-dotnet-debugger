@@ -416,8 +416,12 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
 
         class_property->Initialize(property_defs[i], metadata_import);
         // If property name is MyProperty, checks whether there is a backing
-        // field with the same name. We only add this property in if there is
-        // no fields with the same name.
+        // field with the name <MyProperty>k__BackingField. Note that we have
+        // logic to process backing fields' names to strip out the "<" and
+        // ">k__BackingField" of the field name and places them in the set
+        // class_backing_fields_names. Hence, we only need to check whether
+        // MyProperty is in this set or not. If it is, then it is backed
+        // by a field already, so don't add it to class_properties_.
         if (class_backing_fields_names_.find(
                 class_property->GetPropertyName()) ==
             class_backing_fields_names_.end()) {
