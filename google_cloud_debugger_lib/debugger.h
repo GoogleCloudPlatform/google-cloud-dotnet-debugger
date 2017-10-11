@@ -38,7 +38,9 @@ class Debugger final {
   // If registration is successful, dbgshim will invoke CallbackFunction,
   // which will set the cordebug_, cordebug_process_ and debugger_callback_
   // fields of this debugger.
-  HRESULT StartDebugging(DWORD process_id);
+  // If kill_proc is set to true, this Debugger object will kill the
+  // process upon termination.
+  HRESULT StartDebugging(DWORD process_id, bool kill_proc = false);
 
   // Given a command line, starts a suspended process by running that
   // command line and attach the debugger to the process before resuming it.
@@ -89,6 +91,9 @@ class Debugger final {
 
   // Helper function to deactivate all breakpoints.
   void DeactivateBreakpoints();
+
+  // True if we should kill the process upon termination.
+  bool kill_proc_;
 };
 
 }  // namespace google_cloud_debugger

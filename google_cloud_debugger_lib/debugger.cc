@@ -57,6 +57,10 @@ Debugger::~Debugger() {
     hr = cordebug_->Terminate();
   }
 
+  if (!kill_proc_) {
+    return;
+  }
+
 #ifdef PAL_STDCPP_COMPAT
   // Use kill on Linux. 0 means success.
   if (kill(proc_id_, SIGTERM) != 0) {
@@ -92,7 +96,7 @@ HRESULT Debugger::CancelSyncBreakpoints() {
   return debugger_callback_->CancelSyncBreakpoints();
 }
 
-HRESULT Debugger::StartDebugging(DWORD process_id) {
+HRESULT Debugger::StartDebugging(DWORD process_id, bool kill_proc) {
   HRESULT hr;
 
   if (!debugger_callback_) {
@@ -114,6 +118,7 @@ HRESULT Debugger::StartDebugging(DWORD process_id) {
   // it will call the CallbackFunction that we passed to
   // RegisterForRuntimeStartup.
   proc_id_ = process_id;
+  kill_proc_ = kill_proc;
   return RegisterForRuntimeStartup(proc_id_, CallbackFunction, this,
                                    &unregister_token_);
 }
@@ -132,7 +137,8 @@ HRESULT Debugger::StartDebugging(vector<WCHAR> command_line) {
   }
 
   // Attaches the debugger.
-  hr = StartDebugging(process_id);
+  // Add the option to kill the process when exiting.
+  hr = StartDebugging(process_id, true);
   if (FAILED(hr)) {
     cerr << "Failed to attached to process " << process_id
          << " with HRESULT " << hex << hr << endl;
