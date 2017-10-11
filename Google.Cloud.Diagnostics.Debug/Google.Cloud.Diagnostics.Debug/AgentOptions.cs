@@ -26,6 +26,12 @@ namespace Google.Cloud.Diagnostics.Debug
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
+        // If given this option, the debugger will start and debug an application using this path.
+        public const string ApplicationPathOption = "--application-path";
+
+        // If given this option, the debugger will attach to a running application using this process ID.
+        public const string ApplicationIdOption = "--application-id";
+
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
 
@@ -35,9 +41,15 @@ namespace Google.Cloud.Diagnostics.Debug
         [Option("debugger", Required = true, HelpText = "A path to the debugger to use.")]
         public string Debugger { get; set; }
 
-        [Option("application", Required = true,
-            HelpText = "A path to the .NET CORE application dll to be debugged.")]
-        public string Application { get; set; }
+        [Option("application-path",
+            HelpText = "A path to the .NET CORE application dll to be debugged." +
+            " This will delay the start up of the application as the debugger needs" +
+            " to be set up to ensure that startup code will be debugged.")]
+        public string ApplicationPath { get; set; }
+
+        [Option("application-id",
+            HelpText = "Process ID of a running .NET CORE application to be debugged.")]
+        public int? ApplicationId { get; set; }
 
         [Option("project-id",
             HelpText = "The Google Cloud Console project the debuggee is associated with.")]
@@ -52,15 +64,24 @@ namespace Google.Cloud.Diagnostics.Debug
         public int WaitTime { get; set; }
 
         /// <summary>
-        /// Returns the processed arguments to pass to the debugger. The argument will be separated
-        /// by white space. The first argument is the application name, the second argument, if
-        /// applicable, is whether properties will be evaluated.
+        /// Returns the processed arguments to pass to the debugger.
+        /// It will either be "application-path path (-property-evaluation)"
+        /// or "application-id id (-property-evaluation).
         /// </summary>
         public string DebuggerArguments
         {
             get
             {
-                return PropertyEvaluation ? Application + PropertyEvaluationOption : Application;
+                if (ApplicationId.HasValue)
+                {
+                    return PropertyEvaluation ? $"{ApplicationIdOption}={ApplicationId} {PropertyEvaluationOption}"
+                        : $"{ApplicationIdOption}={ApplicationId}";
+                }
+                else
+                {
+                    return PropertyEvaluation ? $"{ApplicationPathOption}={ApplicationPath} {PropertyEvaluationOption}"
+                        : $"{ApplicationPathOption}={ApplicationId}";
+                }
             }
         }
 
@@ -76,7 +97,6 @@ namespace Google.Cloud.Diagnostics.Debug
                 GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));
                 GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
                 GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
-                GaxPreconditions.CheckNotNullOrEmpty(o.Application, nameof(o.Application));
                 GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? Common.Platform.ProjectId, nameof(o.ProjectId));
                 GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
 
@@ -85,10 +105,20 @@ namespace Google.Cloud.Diagnostics.Debug
                     throw new FileNotFoundException($"Debugger file not found: '{o.Debugger}'");
                 }
 
-                o.Application = Path.GetFullPath(o.Application);
-                if (!File.Exists(o.Application))
+                if ((string.IsNullOrWhiteSpace(o.ApplicationPath) && !o.ApplicationId.HasValue)
+                    || (!string.IsNullOrWhiteSpace(o.ApplicationPath) && o.ApplicationId.HasValue))
                 {
-                    throw new FileNotFoundException($"Application file not found: '{o.Application}'");
+                    throw new System.ArgumentException("Please supply either the path to the .NET CORE application dll"
+                        + " or the process ID of a running application, NOT both.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(o.ApplicationPath))
+                {
+                    o.ApplicationPath = Path.GetFullPath(o.ApplicationPath);
+                    if (!File.Exists(o.ApplicationPath))
+                    {
+                        throw new FileNotFoundException($"Application file not found: '{o.ApplicationPath}'");
+                    }
                 }
 
                 options = o;
