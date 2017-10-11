@@ -54,7 +54,7 @@ class DbgClass : public DbgObject {
   // It will then extract out ICorDebugModule from ICorDebugClass.
   // From the ICorDebugModule, we can get IMetaDataImport object,
   // which is used to extract out various metadata information of the class.
-  HRESULT PopulateDefTokens(ICorDebugValue *class_value);
+  HRESULT PopulateDefTokensAndClassMembers(ICorDebugValue *class_value);
 
   // Populates the class name and stores the result in class_name_.
   HRESULT PopulateClassName(IMetaDataImport *metadata_import);
@@ -73,8 +73,28 @@ class DbgClass : public DbgObject {
   // Populates the class properties and stores the fields in class_fields_.
   HRESULT PopulateProperties(IMetaDataImport *metadata_import);
 
-  // Evaluates and stores the ValueType object in valuetype_value_.
+  // Processes the case where this object is a class type (not
+  // ValueType or Enum). Debug_value is the ICorDebugValue represents this
+  // class object, metadata_import is the IMetaDataImport from this
+  // class' module and debug_class is the ICorDebugClass representing
+  // this class.
+  HRESULT ProcessClassType(ICorDebugValue *debug_value,
+                           ICorDebugClass *debug_class,
+                           IMetaDataImport *metadata_import);
+
+  // Evaluates ValueType object.
+  HRESULT ProcessValueType(ICorDebugValue *debug_value,
+                           ICorDebugClass *debug_class,
+                           IMetaDataImport *metadata_import);
+
+  // Evaluates and stores the primitive type object in valuetype_value_.
+  // Primitive types are integral type (int, short, long, double).
   HRESULT ProcessPrimitiveType(ICorDebugValue *debug_value);
+
+  // Evaluates the class as an enum.
+  HRESULT ProcessEnumType(ICorDebugValue *debug_value,
+                          ICorDebugClass *debug_class,
+                          IMetaDataImport *metadata_import);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
