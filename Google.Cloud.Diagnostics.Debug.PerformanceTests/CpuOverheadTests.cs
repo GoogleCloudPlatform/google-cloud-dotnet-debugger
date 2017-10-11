@@ -25,11 +25,6 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
     public class CpuOverheadTests : DebuggerTestBase
     {
         /// <summary>
-        /// The number of requests to test against. 
-        /// </summary>
-        public const int NumberOfRequest = 100;
-
-        /// <summary>
         /// The average acceptable percent increase in CPU when the debugger is attached.
         /// </summary>
         public const double AddedCpuWhenDebuggingPercent = 0.001;
@@ -45,118 +40,47 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// This test ensures the debugger does not add more than 0.1% of
         /// CPU time to a when the debugger is attached and no
         /// breakpoint is set
-        /// 
-        /// This is tested by taking the CPU time during requests to an
-        /// application with no debugger attached and then the CPU time during
-        /// of requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_NoBreakpointsSet()
-        {
-            double noDebugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(NumberOfRequest);
-            }
-
-            double debugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: true))
-            {
-                debugAvgPercentCpu = await GetAverageCpuPercentAsync(NumberOfRequest);
-            }
-
-            AssertAcceptableCpu(noDebugAvgPercentCpu, debugAvgPercentCpu, AddedCpuWhenDebuggingPercent);
-        }
+        public async Task DebuggerAttached_NoBreakpointsSet() =>
+            await RunCpuTestAsync(AddedCpuWhenDebuggingPercent);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 0.1% of
         /// CPU time to a when the debugger is attached and
         /// breakpoint is set (but not hit).
-        /// 
-        /// This is tested by taking the average CPU time during requests to an
-        /// application with no debugger attached and then the CPU time during
-        /// requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointsSet()
-        {
-            double noDebugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(NumberOfRequest);
-            }
-
-            double debugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: true))
-            {
-                var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 25);
-                debugAvgPercentCpu = await GetAverageCpuPercentAsync(NumberOfRequest);
-            }
-
-            AssertAcceptableCpu(noDebugAvgPercentCpu, debugAvgPercentCpu, AddedCpuWhenDebuggingPercent);
-        }
+        public async Task DebuggerAttached_BreakpointsSet() =>
+            await RunCpuTestAsync(AddedCpuWhenEvaluatingPercent, setBreakpoint: true);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 1% of
         /// CPU time to a when the debugger is attached and
         /// breakpoint is hit.
-        /// 
-        /// This is tested by taking the average lCPU time during requests to an
-        /// application with no debugger attached and CPU time during
-        /// of requests to the same application with a debugger attached.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointHit()
-        {
-            double noDebugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: false))
-            {
-                noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(NumberOfRequest);
-            }
-
-            double debugAvgPercentCpu;
-            using (StartTestApp(debugEnabled: true))
-            {
-                var processId = await GetProcessId();
-                var debugProcess = Process.GetProcessById(processId);
-                var debuggee = Polling.GetDebuggee(Module, Version);
-
-                TimeSpan totalTime = TimeSpan.Zero;
-                TimeSpan totalCpuTime = TimeSpan.Zero;
-                using (HttpClient client = new HttpClient())
-                {
-                    for (int i = 0; i < NumberOfRequest; i++)
-                    {
-                        // Set a breakpoint and wait to ensure the debuggee picks it up.
-                        var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 31);
-                        Thread.Sleep(TimeSpan.FromSeconds(.5));
-
-                        Stopwatch watch = Stopwatch.StartNew();
-                        var startingCpu = debugProcess.TotalProcessorTime;
-                        await client.GetAsync($"{AppUrlEcho}/{i}");
-                        totalCpuTime += debugProcess.TotalProcessorTime - startingCpu;
-                        totalTime += watch.Elapsed;
-
-                        var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
-                        Assert.True(newBp.IsFinalState);
-                    }
-                }
-                debugAvgPercentCpu = totalCpuTime.TotalMilliseconds / totalTime.TotalMilliseconds;
-            }
-
-            AssertAcceptableCpu(noDebugAvgPercentCpu, debugAvgPercentCpu, AddedCpuWhenEvaluatingPercent);
-        }
+        public async Task DebuggerAttached_BreakpointHit() => 
+            await RunCpuTestAsync(
+                AddedCpuWhenDebuggingPercent, setBreakpoint: true, hitBreakpoint: true);
 
         /// <summary>
-        /// Assert that the CPU usage during requests to an app with a debugger and without are within
-        /// the acceptable range.
+        /// Run a test to check CPU usage while the debugger is enabled.
+        /// This is tested by taking the CPU usage during requests to an
+        /// application with no debugger attached and then the CPU usage during
+        /// requests to the same application with a debugger attached (with the options
+        /// breakpoints being set and hit during the requests).
         /// </summary>
-        /// <param name="noDebugAvgPercentCpu">The average percentage of CPU time for an app with no debugger attached.</param>
-        /// <param name="debugAvgPercentCpu">The average percentage of CPU time for an app with a debugger attached.</param>
-        /// <param name="acceptableCpuIncrease">The acceptable percentage of CPU increase.</param>
-        private void AssertAcceptableCpu(double noDebugAvgPercentCpu, double debugAvgPercentCpu, double acceptableCpuIncrease)
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
+        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
+        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
+        private async Task RunCpuTestAsync(double acceptableCpuIncrease, bool setBreakpoint = false, bool hitBreakpoint = false)
         {
+            double noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: false);
+            double debugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: true,
+                setBreakpoint: setBreakpoint, hitBreakpoint: hitBreakpoint);
+
             Console.WriteLine($"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}");
             Console.WriteLine($"Percent CPU time w/ a debugger attached: {debugAvgPercentCpu}");
             Console.WriteLine($"Percent CPU increase: {debugAvgPercentCpu - noDebugAvgPercentCpu}");
@@ -165,6 +89,58 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                $"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}\n" +
                $"Percent CPU time w/ a debugger attached: {debugAvgPercentCpu}\n" +
                $"This is {debugAvgPercentCpu - noDebugAvgPercentCpu - acceptableCpuIncrease} more than expectable.");
+        }
+
+        /// <summary>
+        /// Starts the test application (Google.Cloud.Diagnostics.Debug.TestApp) and
+        /// gets the average CPU percentage during requests to <see cref="AppUrlEcho"/> url for 
+        /// <see cref="NumberOfRequest"/> requests.
+        /// </summary>
+        /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
+        ///     Defaults to false.</param>
+        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
+        ///     Defaults to false.</param>
+        /// <returns>The average CPU percentage during requests.</returns>
+        private async Task<double> GetAverageCpuPercentAsync(
+            bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
+        {
+            using (StartTestApp(debugEnabled: debugEnabled))
+            {
+                var processId = await GetProcessId();
+                var process = Process.GetProcessById(processId);
+                var debuggee = debugEnabled ? Polling.GetDebuggee(Module, Version) : null;
+
+                using (HttpClient client = new HttpClient())
+                {
+                    TimeSpan totalTime = TimeSpan.Zero;
+                    TimeSpan totalCpuTime = TimeSpan.Zero;
+                    for (int i = 0; i < NumberOfRequest; i++)
+                    {
+                        Debugger.V2.Breakpoint breakpoint = null;
+                        if (setBreakpoint)
+                        {
+                            var line = hitBreakpoint ? 31 : 25;
+                            // Set a breakpoint and wait to ensure the debuggee picks it up.
+                            breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", line);
+                            Thread.Sleep(TimeSpan.FromSeconds(.5));
+                        }
+
+                        Stopwatch watch = Stopwatch.StartNew();
+                        var startingCpu = process.TotalProcessorTime;
+                        HttpResponseMessage result = await client.GetAsync($"{AppUrlEcho}/{i}");
+                        totalCpuTime += process.TotalProcessorTime - startingCpu;
+                        totalTime += watch.Elapsed;
+
+                        if (setBreakpoint)
+                        {
+                            var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id, isFinal: hitBreakpoint);
+                            Assert.Equal(hitBreakpoint, newBp.IsFinalState);
+                        }
+                    }
+                    return totalCpuTime.TotalMilliseconds / totalTime.TotalMilliseconds;
+                }
+            }
         }
     }
 }

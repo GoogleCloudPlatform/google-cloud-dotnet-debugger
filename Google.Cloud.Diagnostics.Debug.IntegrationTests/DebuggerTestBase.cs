@@ -39,6 +39,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>The url to get the process id from the test application.</summary>
         public static readonly string AppUrlProcessId = $"{AppUrlBase}/Main/ProcessId";
 
+        /// <summary>The number of requests to test against. </summary>
+        public static readonly int NumberOfRequest = 100;
+
         /// <summary>The module of the a debuggee.</summary>
         public readonly string Module;
 
@@ -91,83 +94,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
-        /// Gets the average latency for requests to the <see cref="AppUrlEcho"/> url.
-        /// </summary>
-        /// <param name="numRequests">The number of requests to sample.</param>
-        /// <returns>The average latency of requests to the url.</returns>
-        public async Task<double> GetAverageLatencyAsync(int numRequests)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                TimeSpan totalTime = TimeSpan.Zero;
-                for (int i = 0; i < numRequests; i++)
-                {
-                    Stopwatch watch = Stopwatch.StartNew();
-                    await client.GetAsync($"{AppUrlEcho}/{i}");
-                    totalTime += watch.Elapsed;
-                }
-                return totalTime.TotalMilliseconds / numRequests;
-            }
-        }
-
-        /// <summary>
-        /// Gets the average CPU percentage during requests.
-        /// </summary>
-        /// <param name="numRequests">The number of requests to sample.</param>
-        /// <returns>The average CPU percentage during requests.</returns>
-        public async Task<double> GetAverageCpuPercentAsync(int numRequests)
-        {
-            var processId = await GetProcessId();
-            var process = Process.GetProcessById(processId);
-
-            using (HttpClient client = new HttpClient())
-            {
-                TimeSpan totalTime = TimeSpan.Zero;
-                TimeSpan totalCpuTime = TimeSpan.Zero;
-                for (int i = 0; i < numRequests; i++)
-                {
-                    Stopwatch watch = Stopwatch.StartNew();
-                    var startingCpu = process.TotalProcessorTime;
-                    HttpResponseMessage result = await client.GetAsync($"{AppUrlEcho}/{i}");
-                    totalCpuTime += process.TotalProcessorTime - startingCpu;
-                    totalTime += watch.Elapsed;
-                }
-                return totalCpuTime.TotalMilliseconds / totalTime.TotalMilliseconds;
-            }
-        }
-
-        /// <summary>
-        /// Gets the average memory usage during requests.
-        /// </summary>
-        /// <param name="numRequests">The number of requests to sample.</param>
-        /// <returns>The average memory usage during requests.</returns>
-        public async Task<double> GetAverageMemoryUsageMBAsync(int numRequests)
-        {
-            var processId = await GetProcessId();
-            var process = Process.GetProcessById(processId);
-
-            using (HttpClient client = new HttpClient())
-            {
-                long totalMemory = 0;
-                for (int i = 0; i < numRequests; i++)
-                {
-                    int counter = 0;
-                    long memory = 0;
-                    Task<HttpResponseMessage> task = client.GetAsync($"{AppUrlEcho}/{i}");
-                    // TODO(talarico): Can we do better?
-                    while (!task.IsCompleted)
-                    {
-                        memory += process.WorkingSet64;
-                        counter++;
-                        Timer.Sleep(TimeSpan.FromMilliseconds(2));
-                    }
-                    totalMemory += memory / counter;
-                }
-                return (totalMemory / numRequests) / Math.Pow(2, 20);
-            }
-        }
-
-        /// <summary>
         /// Gets the process id for the running test application.
         /// </summary>
         public async Task<int> GetProcessId()
@@ -185,9 +111,35 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         /// <param name="debugEnabled">True if the debugger should be started with and attached
         ///     to the app</param>
-        /// <returns>A</returns>
-        public IDisposable StartTestApp(bool debugEnabled)
-            => debugEnabled ? (IDisposable) StartTestAppDebug() : StartTestApp();
+        /// <param name="waitForStart">Optional. True if this method should block until the
+        ///     application is started and can be queried.  Defaults to true.</param>
+        /// <returns>A test application.</returns>
+        public IDisposable StartTestApp(bool debugEnabled, bool waitForStart = true)
+        { 
+            var app = debugEnabled ? (IDisposable)StartTestAppDebug() : StartTestApp();
+
+            if (waitForStart)
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    // Allow the app a chance to start up as it may not start
+                    // right away.
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try
+                        {
+                            client.GetAsync(AppUrlBase).Wait();
+                            break;
+                        }
+                        catch (AggregateException) when (i < 4)
+                        {
+                            Thread.Sleep(TimeSpan.FromSeconds(1));
+                        }
+                    }
+                }
+            }
+            return app;
+        }
 
         /// <summary>
         /// Starts the test app with no debugger attached.
