@@ -175,7 +175,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
   // 2 1 0 -> 2 1 1 -> 2 1 2 -> 2 1 3 ->
   // 2 2 0 -> 2 2 1 -> 2 2 2 -> 2 2 3
   while (current_index < total_items &&
-         current_index < kMaxArrayItemsToRetrieve) {
+         current_index < max_items_to_retrieved_) {
     // Uses the current combination as the name.
     string name = "[";
     for (int index = 0; index < dimensions_tracker.size(); ++index) {

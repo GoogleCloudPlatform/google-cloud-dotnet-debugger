@@ -76,6 +76,9 @@ class DbgPrimitive : public DbgObject {
     return generic_value->GetValue(&value_);
   }
 
+  // Returns the primitive value stored.
+  T GetValue() { return value_; }
+
   // No evaluation is needed!
   HRESULT PopulateValue(
       google::cloud::diagnostics::debug::Variable *variable) override {

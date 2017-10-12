@@ -18,6 +18,8 @@
 #include <cstdint>
 #include <iostream>
 
+#include "dbgarray.h"
+#include "dbgprimitive.h"
 #include "evalcoordinator.h"
 #include "icordebughelper.h"
 
@@ -31,6 +33,9 @@ namespace google_cloud_debugger {
 
 const string DbgClass::kEnumClassName = "System.Enum";
 const string DbgClass::kEnumValue = "value__";
+const string DbgClass::kListClassName = "System.Collections.Generic.List`1";
+const string DbgClass::kListItemsFieldName = "_items";
+const string DbgClass::kListSizeFieldName = "_size";
 
 HRESULT DbgClass::PopulateDefTokensAndClassMembers(
     ICorDebugValue *class_value) {
@@ -449,6 +454,11 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
     return S_OK;
   }
 
+  // This is a list.
+  if (kListClassName.compare(ConvertWCharPtrToString(base_class_name_))) {
+    return ProcessListType(debug_obj_value, debug_class, metadata_import);
+  }
+
   // Populates the fields first before the properties in case
   // we have backing fields for properties.
   hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
@@ -463,6 +473,36 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
       WriteError("Failed to populate class properties.");
       return hr;
     }
+  }
+
+  return hr;
+}
+
+HRESULT DbgClass::ProcessListType(ICorDebugObjectValue *debug_obj_value, ICorDebugClass *debug_class, IMetaDataImport *metadata_import) {
+  HRESULT hr;
+  is_list_ = TRUE;
+
+  // DbgObject representings the int that counts the size of the list.
+  unique_ptr<DbgObject> list_size;
+
+  // Extracts out the size of the list.
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kListSizeFieldName, &list_size);
+  if (FAILED(hr)) {
+    WriteError("Failed to find field that represents the size of the list.");
+    return hr;
+  }
+  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(list_size.get())->GetValue();
+
+  // Extracts out the items of the list.
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kListItemsFieldName, &list_items_);
+  if (FAILED(hr)) {
+    WriteError("Failed to get the items of the list.");
+  }
+
+  // Makes sure we don't grab more items than we need (this can happen because if a list size is 2,
+  // the underlying items_ array can have 4 items).
+  if (count_ < 10) {
+    (reinterpret_cast<DbgArray *>(list_items_.get()))->SetMaxArrayItemsToRetrieve(count_);
   }
 
   return hr;
@@ -622,6 +662,36 @@ HRESULT DbgClass::ProcessEnumType(ICorDebugValue *debug_value,
   }
 
   return S_OK;
+}
+
+HRESULT DbgClass::ExtractField(ICorDebugObjectValue *debug_obj_value,
+  ICorDebugClass *debug_class,
+  IMetaDataImport *metadata_import,
+  const std::string &field_name,
+  std::unique_ptr<DbgObject>* field_value) {
+  HRESULT hr;
+  mdFieldDef field_def;
+
+  std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
+  hr = metadata_import->FindField(class_token_, wchar_field_name.data(), nullptr, 0, &field_def);
+  if (FAILED(hr)) {
+    WriteError("Failed to find field that represents items of the list.");
+    return hr;
+  }
+
+  CComPtr<ICorDebugValue> debug_field_value;
+  hr = debug_obj_value->GetFieldValue(debug_class, field_def, &debug_field_value);
+  if (FAILED(hr)) {
+    WriteError("Failed to get field that represents list's items.");
+    return hr;
+  }
+
+  hr = CreateDbgObject(debug_field_value, GetEvaluationDepth() - 1, field_value, GetErrorStream());
+  if (FAILED(hr)) {
+    WriteError("Failed to evaluate the items of the list.");
+  }
+
+  return hr;
 }
 
 void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
@@ -784,6 +854,15 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
   }
 
   HRESULT hr;
+
+  if (is_list_ && list_items_) {
+    // Sets the Count property of the list.
+    Variable *list_count = variable->add_members();
+    list_count->set_name("Count");
+    list_count->set_value(std::to_string(count_));
+    return list_items_->PopulateMembers(variable, eval_coordinator);
+  }
+
   int new_depth = GetEvaluationDepth() - 1;
 
   bool not_first = false;

@@ -68,8 +68,11 @@ class DbgArray : public DbgObject {
 
   BOOL HasValue() override { return false; }
 
-  // TODO(quoct): Add an argument on the debugger to change this value.
-  static const int kMaxArrayItemsToRetrieve = 1000;
+  // Sets the maximum amount of items that the array will retrieve
+  // when PopulateMembers is called.
+  void SetMaxArrayItemsToRetrieve(std::uint32_t target) {
+    max_items_to_retrieved_ = target;
+  }
 
  private:
   // A strong handle to the underlying array object.
@@ -86,6 +89,10 @@ class DbgArray : public DbgObject {
   // Each value in this array specifies the number of elements in
   // a dimension in this array.
   std::vector<ULONG32> dimensions_;
+
+  // The maximum amount of items to retrieve in an array.
+  // Defaults to 10.
+  std::uint32_t max_items_to_retrieved_ = 10;
 };
 
 }  //  namespace google_cloud_debugger

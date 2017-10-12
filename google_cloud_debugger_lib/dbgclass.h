@@ -82,6 +82,17 @@ class DbgClass : public DbgObject {
                            ICorDebugClass *debug_class,
                            IMetaDataImport *metadata_import);
 
+  // Processes the case where the object is a list. In this case,
+  // we extract out size of the list (size_ field) and items in the list
+  // (items_ field). The number of items displayed (when PopulateMembers
+  // is called) is the minimum of:
+  //  1. The size of the list.
+  //  2. The maximum number of items that a DbgArray can display (10
+  // by default).
+  HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
+    ICorDebugClass *debug_class,
+    IMetaDataImport *metadata_import);
+
   // Evaluates ValueType object.
   HRESULT ProcessValueType(ICorDebugValue *debug_value,
                            ICorDebugClass *debug_class,
@@ -95,6 +106,14 @@ class DbgClass : public DbgObject {
   HRESULT ProcessEnumType(ICorDebugValue *debug_value,
                           ICorDebugClass *debug_class,
                           IMetaDataImport *metadata_import);
+
+  // Given a field name, creates a DbgObject that represents the value
+  // of the field in this object.
+  HRESULT ExtractField(ICorDebugObjectValue *debug_obj_value,
+    ICorDebugClass *debug_class,
+    IMetaDataImport *metadata_import,
+    const std::string &field_name,
+    std::unique_ptr<DbgObject> *field_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
@@ -167,12 +186,21 @@ class DbgClass : public DbgObject {
   // True if this is an enum type.
   BOOL is_enum_ = FALSE;
 
+  // True if this is a list.
+  BOOL is_list_ = FALSE;
+
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
   std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
 
   // Sets of all the fields' names.
   std::unordered_set<std::string> class_backing_fields_names_;
+
+  // Number of items in this object if this is a list, dictionary or hashset.
+  std::int32_t count_;
+
+  // Pointer to an array of items of this class if this class object is a list.
+  std::unique_ptr<DbgObject> list_items_;
 
   // Array of bytes to contain enum value if this class is an enum.
   std::vector<std::uint8_t> enum_value_array_;
@@ -184,6 +212,15 @@ class DbgClass : public DbgObject {
   // String that represents "__value" which is the field that determines
   // the value of an enum.
   static const std::string kEnumValue;
+
+  // String that represents "System.Collection.Generic.List`1".
+  static const std::string kListClassName;
+
+  // "_size", which is the field that represents size of a list.
+  static const std::string kListSizeFieldName;
+
+  // "_items", which is the field that contains all items in a list.
+  static const std::string kListItemsFieldName;
 };
 
 }  //  namespace google_cloud_debugger
