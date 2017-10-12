@@ -84,7 +84,11 @@ class DbgClass : public DbgObject {
 
   // Processes the case where the object is a list. In this case,
   // we extract out size of the list (size_ field) and items in the list
-  // (items_ field).
+  // (items_ field). The number of items displayed (when PopulateMembers
+  // is called) is the minimum of:
+  //  1. The size of the list.
+  //  2. The maximum number of items that a DbgArray can display (10
+  // by default).
   HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
     ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import);
