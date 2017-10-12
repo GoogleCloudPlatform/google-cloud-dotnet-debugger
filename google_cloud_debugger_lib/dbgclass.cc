@@ -32,7 +32,8 @@ namespace google_cloud_debugger {
 const string DbgClass::kEnumClassName = "System.Enum";
 const string DbgClass::kEnumValue = "value__";
 
-HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
+HRESULT DbgClass::PopulateDefTokensAndClassMembers(
+    ICorDebugValue *class_value) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
   CComPtr<ICorDebugType> debug_type;
@@ -99,37 +100,15 @@ HRESULT DbgClass::PopulateDefTokens(ICorDebugValue *class_value) {
     }
   }
 
-  if (!GetIsNull()) {
-    CComPtr<ICorDebugObjectValue> debug_obj_value;
-
-    hr = class_value->QueryInterface(
-        __uuidof(ICorDebugObjectValue),
-        reinterpret_cast<void **>(&debug_obj_value));
-    if (FAILED(hr)) {
-      WriteError("Failed to cast ICorDebugValue to ICorDebugObjValue.");
-      return hr;
-    }
-
-    if (GetEvaluationDepth() >= 0) {
-      // Populates the fields first before the properties in case
-      // we have backing fields for properties.
-      hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
-      if (FAILED(hr)) {
-        WriteError("Failed to populate class fields.");
-        return hr;
-      }
-
-      if (cor_type_ == ELEMENT_TYPE_CLASS) {
-        hr = PopulateProperties(metadata_import);
-        if (FAILED(hr)) {
-          WriteError("Failed to populate class properties.");
-          return hr;
-        }
-      }
-    }
+  if (GetIsNull()) {
+    return S_OK;
   }
 
-  return S_OK;
+  if (cor_type_ != ELEMENT_TYPE_CLASS) {
+    return ProcessValueType(class_value, debug_class, metadata_import);
+  }
+
+  return ProcessClassType(class_value, debug_class, metadata_import);
 }
 
 HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
@@ -440,6 +419,92 @@ HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
   return S_OK;
 }
 
+HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
+                                   ICorDebugClass *debug_class,
+                                   IMetaDataImport *metadata_import) {
+  // Create a handle if it is a class so we won't lose the object.
+  CComPtr<ICorDebugHeapValue2> heap_value;
+  HRESULT hr = debug_value->QueryInterface(
+      __uuidof(ICorDebugHeapValue2), reinterpret_cast<void **>(&heap_value));
+  if (FAILED(hr)) {
+    WriteError("Failed to create heap value for object.");
+    return hr;
+  }
+
+  hr = heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG,
+                                &class_handle_);
+  if (FAILED(hr)) {
+    WriteError("Failed to create handle for ICorDebugValue.");
+  }
+
+  CComPtr<ICorDebugObjectValue> debug_obj_value;
+  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
+                                   reinterpret_cast<void **>(&debug_obj_value));
+  if (FAILED(hr)) {
+    WriteError("Failed to cast ICorDebugValue to ICorDebugObjValue.");
+    return hr;
+  }
+
+  if (GetEvaluationDepth() == 0) {
+    return S_OK;
+  }
+
+  // Populates the fields first before the properties in case
+  // we have backing fields for properties.
+  hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
+  if (FAILED(hr)) {
+    WriteError("Failed to populate class fields.");
+    return hr;
+  }
+
+  if (cor_type_ == ELEMENT_TYPE_CLASS) {
+    hr = PopulateProperties(metadata_import);
+    if (FAILED(hr)) {
+      WriteError("Failed to populate class properties.");
+      return hr;
+    }
+  }
+
+  return hr;
+}
+
+HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
+                                   ICorDebugClass *debug_class,
+                                   IMetaDataImport *metadata_import) {
+  CComPtr<ICorDebugType> debug_type;
+  HRESULT hr = ProcessPrimitiveType(debug_value);
+  if (SUCCEEDED(hr)) {
+    is_primitive_type_ = TRUE;
+    return hr;
+  }
+
+  // If we get E_NOTIMPL, check whether it is an enum.
+  if (hr == E_NOTIMPL) {
+    debug_type = GetDebugType();
+    if (!debug_type) {
+      WriteError("Failed to process value type.");
+    }
+
+    // Do nothing if this is not an enum.
+    if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
+        0) {
+      hr = S_OK;
+      return hr;
+    }
+
+    // This is an enum.
+    is_enum_ = TRUE;
+    hr = ProcessEnumType(debug_value, debug_class, metadata_import);
+    if (FAILED(hr)) {
+      WriteError("Failed to process enum type.");
+    }
+  } else if (FAILED(hr) && hr != E_NOTIMPL) {
+    WriteError("Failed to process value type.");
+  }
+
+  return hr;
+}
+
 HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value) {
 // TODO(quoct): Add more cases and make these variables static.
 #ifdef PAL_STDCPP_COMPAT
@@ -511,6 +576,54 @@ HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value) {
   return E_NOTIMPL;
 }
 
+HRESULT DbgClass::ProcessEnumType(ICorDebugValue *debug_value,
+                                  ICorDebugClass *debug_class,
+                                  IMetaDataImport *metadata_import) {
+  CComPtr<ICorDebugGenericValue> generic_value;
+  HRESULT hr =
+      debug_value->QueryInterface(__uuidof(ICorDebugGenericValue),
+                                  reinterpret_cast<void **>(&generic_value));
+  if (FAILED(hr)) {
+    WriteError("Failed to extract ICorDebugGenericValue from value type.");
+    return hr;
+  }
+
+  ULONG32 value_size;
+  hr = generic_value->GetSize(&value_size);
+  if (FAILED(hr)) {
+    WriteError("Failed to get size of ICorDebugGenericValue.");
+    return hr;
+  }
+
+  enum_value_array_.resize(value_size);
+  hr = generic_value->GetValue(
+      reinterpret_cast<void *>(enum_value_array_.data()));
+  if (FAILED(hr)) {
+    WriteError("Failed to extract value out from ICorDebugGenericValue.");
+    return hr;
+  }
+
+  // To get the different enum values, we have to process the field
+  // of this class.
+  CComPtr<ICorDebugObjectValue> obj_value;
+  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
+                                   reinterpret_cast<void **>(&obj_value));
+  if (FAILED(hr)) {
+    WriteError(
+        "Failed to get ICorDebugObjectValue from ICorDebugValue while "
+        "evaluating Enum.");
+    return hr;
+  }
+
+  hr = PopulateFields(metadata_import, obj_value, debug_class);
+  if (FAILED(hr)) {
+    WriteError("Failed to populate class fields while evaluating Enum.");
+    return hr;
+  }
+
+  return S_OK;
+}
+
 void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   SetIsNull(is_null);
   CComPtr<ICorDebugType> debug_type;
@@ -525,83 +638,9 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     }
   }
 
-  initialize_hr_ = PopulateDefTokens(debug_value);
+  initialize_hr_ = PopulateDefTokensAndClassMembers(debug_value);
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to populate definition tokens.");
-    return;
-  }
-
-  if (GetIsNull()) {
-    return;
-  }
-
-  if (cor_type_ != ELEMENT_TYPE_CLASS) {
-    // Value type.
-    initialize_hr_ = ProcessPrimitiveType(debug_value);
-    if (SUCCEEDED(initialize_hr_)) {
-      is_primitive_type_ = TRUE;
-      return;
-    }
-
-    // If we get E_NOTIMPL, check whether it is an enum.
-    if (initialize_hr_ == E_NOTIMPL) {
-      if (!debug_type) {
-        WriteError("Failed to process value type.");
-      }
-
-      // Do nothing if this is not an enum.
-      if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
-          0) {
-        initialize_hr_ = S_OK;
-        return;
-      }
-
-      is_enum_ = TRUE;
-
-      CComPtr<ICorDebugGenericValue> generic_value;
-      initialize_hr_ = debug_value->QueryInterface(
-          __uuidof(ICorDebugGenericValue),
-          reinterpret_cast<void **>(&generic_value));
-      if (FAILED(initialize_hr_)) {
-        WriteError("Failed to extract ICorDebugGenericValue from value type.");
-        return;
-      }
-
-      ULONG32 value_size;
-      initialize_hr_ = generic_value->GetSize(&value_size);
-      if (FAILED(initialize_hr_)) {
-        WriteError("Failed to get size of ICorDebugGenericValue.");
-        return;
-      }
-
-      enum_value_array_.resize(value_size);
-      initialize_hr_ = generic_value->GetValue(
-          reinterpret_cast<void *>(enum_value_array_.data()));
-      if (FAILED(initialize_hr_)) {
-        WriteError("Failed to extract value out from ICorDebugGenericValue.");
-        return;
-      }
-    } else if (FAILED(initialize_hr_) && initialize_hr_ != E_NOTIMPL) {
-      WriteError("Failed to process value type.");
-    }
-  }
-
-  // Create a handle if it is a class so we won't lose the object.
-  if (cor_type_ == ELEMENT_TYPE_CLASS) {
-    CComPtr<ICorDebugHeapValue2> heap_value_;
-
-    initialize_hr_ = debug_value->QueryInterface(
-        __uuidof(ICorDebugHeapValue2), reinterpret_cast<void **>(&heap_value_));
-    if (FAILED(initialize_hr_)) {
-      WriteError("Failed to create heap value for object.");
-      return;
-    }
-
-    initialize_hr_ = heap_value_->CreateHandle(
-        CorDebugHandleType::HANDLE_STRONG, &class_handle_);
-    if (FAILED(initialize_hr_)) {
-      WriteError("Failed to create handle for ICorDebugValue.");
-    }
   }
 }
 
