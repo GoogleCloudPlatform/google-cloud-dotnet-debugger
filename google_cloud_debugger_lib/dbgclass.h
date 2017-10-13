@@ -47,6 +47,17 @@ class DbgClass : public DbgObject {
   BOOL HasMembers() override;
   BOOL HasValue() override;
 
+  // Various .NET class types that we need to process differently
+  // rather than just printing out fields and properties.
+  enum ClassType {
+    DEFAULT,        // Default class type.
+    PRIMITIVETYPE,  // Integral type and bool.
+    ENUM,           // Enum type.
+    LIST,           // System.Collections.Generic.List type.
+    SET,            // System.Collections.Generic.HashSet type.
+    DICTIONARY      // System.Collections.Generic.Dictionary type.
+  };
+
  private:
   // Processes the class name, the generic parameters, fields and properties
   // of the class.
@@ -67,8 +78,8 @@ class DbgClass : public DbgObject {
 
   // Processes the class fields and stores the fields in class_fields_.
   HRESULT ProcessFields(IMetaDataImport *metadata_import,
-                         ICorDebugObjectValue *debug_obj_value,
-                         ICorDebugClass *debug_class);
+                        ICorDebugObjectValue *debug_obj_value,
+                        ICorDebugClass *debug_class);
 
   // Processes the class properties and stores the fields in class_fields_.
   HRESULT ProcessProperties(IMetaDataImport *metadata_import);
@@ -90,8 +101,8 @@ class DbgClass : public DbgObject {
   //  2. The maximum number of items that a DbgArray can display (10
   // by default).
   HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
-    ICorDebugClass *debug_class,
-    IMetaDataImport *metadata_import);
+                          ICorDebugClass *debug_class,
+                          IMetaDataImport *metadata_import);
 
   // Processes the case where the object is a hash set. This function
   // extracts out these fields:
@@ -101,8 +112,8 @@ class DbgClass : public DbgObject {
   //  3. _lastIndex, which tells us the last valid index of _items
   // array (the last valid index is lastIndex_ - 1).
   HRESULT ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
-    ICorDebugClass *debug_class,
-    IMetaDataImport *metadata_import);
+                             ICorDebugClass *debug_class,
+                             IMetaDataImport *metadata_import);
 
   // Evaluates ValueType object.
   HRESULT ProcessValueType(ICorDebugValue *debug_value,
@@ -126,10 +137,10 @@ class DbgClass : public DbgObject {
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
   HRESULT ExtractField(ICorDebugObjectValue *debug_obj_value,
-    ICorDebugClass *debug_class,
-    IMetaDataImport *metadata_import,
-    const std::string &field_name,
-    std::unique_ptr<DbgObject> *field_value);
+                       ICorDebugClass *debug_class,
+                       IMetaDataImport *metadata_import,
+                       const std::string &field_name,
+                       std::unique_ptr<DbgObject> *field_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
@@ -196,17 +207,9 @@ class DbgClass : public DbgObject {
   // Object represents the value if this object is a ValueType.
   std::unique_ptr<DbgObject> primitive_type_value_;
 
-  // True if this is a primitive type.
-  BOOL is_primitive_type_ = FALSE;
-
-  // True if this is an enum type.
-  BOOL is_enum_ = FALSE;
-
-  // True if this is a list.
-  BOOL is_list_ = FALSE;
-
-  // True if this is a hash set.
-  BOOL is_hash_set_ = FALSE;
+  // The type of this class. This is needed so we know how to
+  // display the class to the user.
+  ClassType class_type_ = ClassType::DEFAULT;
 
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
@@ -222,8 +225,8 @@ class DbgClass : public DbgObject {
   // into the _slots array.= of the hash set.
   std::int32_t hashset_last_index_;
 
-  // Pointer to an array of items of this class if this class object is a collection
-  // type (list, hashset, etc.).
+  // Pointer to an array of items of this class if this class object is a
+  // collection type (list, hashset, etc.).
   std::unique_ptr<DbgObject> collection_items_;
 
   // Array of bytes to contain enum value if this class is an enum.

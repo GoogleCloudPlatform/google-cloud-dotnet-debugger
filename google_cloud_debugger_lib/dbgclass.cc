@@ -36,15 +36,15 @@ namespace google_cloud_debugger {
 const string DbgClass::kEnumClassName = "System.Enum";
 const string DbgClass::kEnumValue = "value__";
 const string DbgClass::kListClassName = "System.Collections.Generic.List`1";
-const string DbgClass::kHashSetClassName = "System.Collections.Generic.HashSet`1";
+const string DbgClass::kHashSetClassName =
+    "System.Collections.Generic.HashSet`1";
 const string DbgClass::kListItemsFieldName = "_items";
 const string DbgClass::kHashSetSlotsFieldName = "_slots";
 const string DbgClass::kHashSetCountFieldName = "_count";
 const string DbgClass::kHashSetLastIndexFieldName = "_lastIndex";
 const string DbgClass::kListSizeFieldName = "_size";
 
-HRESULT DbgClass::ProcessDefTokensAndClassMembers(
-    ICorDebugValue *class_value) {
+HRESULT DbgClass::ProcessDefTokensAndClassMembers(ICorDebugValue *class_value) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
   CComPtr<ICorDebugType> debug_type;
@@ -324,8 +324,8 @@ HRESULT DbgClass::ProcessParameterizedType() {
 }
 
 HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
-                                 ICorDebugObjectValue *debug_obj_value,
-                                 ICorDebugClass *debug_class) {
+                                ICorDebugObjectValue *debug_obj_value,
+                                ICorDebugClass *debug_class) {
   CComPtr<ICorDebugType> debug_type;
   HCORENUM cor_enum = nullptr;
   int evaluation_depth = GetEvaluationDepth();
@@ -489,65 +489,79 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
   return hr;
 }
 
-HRESULT DbgClass::ProcessListType(ICorDebugObjectValue *debug_obj_value, ICorDebugClass *debug_class, IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessListType(ICorDebugObjectValue *debug_obj_value,
+                                  ICorDebugClass *debug_class,
+                                  IMetaDataImport *metadata_import) {
   HRESULT hr;
-  is_list_ = TRUE;
+  class_type_ = ClassType::LIST;
 
   // DbgObject representings the int that counts the size of the list.
   unique_ptr<DbgObject> list_size;
 
   // Extracts out the size of the list.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kListSizeFieldName, &list_size);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    kListSizeFieldName, &list_size);
   if (FAILED(hr)) {
     WriteError("Failed to find field that represents the size of the list.");
     return hr;
   }
-  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(list_size.get())->GetValue();
+  count_ =
+      reinterpret_cast<DbgPrimitive<int32_t> *>(list_size.get())->GetValue();
 
   // Extracts out the items of the list.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kListItemsFieldName, &collection_items_);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    kListItemsFieldName, &collection_items_);
   if (FAILED(hr)) {
     WriteError("Failed to get the items of the list.");
   }
 
-  // Makes sure we don't grab more items than we need (this can happen because if a list size is 2,
-  // the underlying items_ array can have 4 items).
+  // Makes sure we don't grab more items than we need (this can happen because
+  // if a list size is 2, the underlying items_ array can have 4 items).
   if (count_ < 10) {
-    (reinterpret_cast<DbgArray *>(collection_items_.get()))->SetMaxArrayItemsToRetrieve(count_);
+    (reinterpret_cast<DbgArray *>(collection_items_.get()))
+        ->SetMaxArrayItemsToRetrieve(count_);
   }
 
   return hr;
 }
 
-HRESULT DbgClass::ProcessHashSetType(ICorDebugObjectValue *debug_obj_value, ICorDebugClass *debug_class, IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
+                                     ICorDebugClass *debug_class,
+                                     IMetaDataImport *metadata_import) {
   HRESULT hr;
-  is_hash_set_ = TRUE;
+  class_type_ = ClassType::SET;
 
   // DbgObject representings the int that counts the size of the hash set.
   unique_ptr<DbgObject> hash_set_size;
 
   // Extracts out the size of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kHashSetCountFieldName, &hash_set_size);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    kHashSetCountFieldName, &hash_set_size);
   if (FAILED(hr)) {
     WriteError("Failed to find field that represents the size of the list.");
     return hr;
   }
-  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(hash_set_size.get())->GetValue();
+  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(hash_set_size.get())
+               ->GetValue();
 
   // DbgObject representings the last index field of the hash set, see comments
   // on hashset_last_index_ for more details.
   unique_ptr<DbgObject> last_index;
 
   // Extracts out the size of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kHashSetLastIndexFieldName, &last_index);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    kHashSetLastIndexFieldName, &last_index);
   if (FAILED(hr)) {
-    WriteError("Failed to find field that represents the last index of the hash set.");
+    WriteError(
+        "Failed to find field that represents the last index of the hash set.");
     return hr;
   }
-  hashset_last_index_ = reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
+  hashset_last_index_ =
+      reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
 
   // Extracts out the slots array of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, kHashSetSlotsFieldName, &collection_items_);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    kHashSetSlotsFieldName, &collection_items_);
   if (FAILED(hr)) {
     WriteError("Failed to get the items of the list.");
   }
@@ -561,7 +575,7 @@ HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
   CComPtr<ICorDebugType> debug_type;
   HRESULT hr = ProcessPrimitiveType(debug_value);
   if (SUCCEEDED(hr)) {
-    is_primitive_type_ = TRUE;
+    class_type_ = ClassType::PRIMITIVETYPE;
     return hr;
   }
 
@@ -576,10 +590,12 @@ HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
     if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
         0) {
       CComPtr<ICorDebugObjectValue> debug_obj_value;
-      hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-        reinterpret_cast<void **>(&debug_obj_value));
+      hr = debug_value->QueryInterface(
+          __uuidof(ICorDebugObjectValue),
+          reinterpret_cast<void **>(&debug_obj_value));
       if (FAILED(hr)) {
-        WriteError("Cannot extract ICorDebugObjectValue from ValueType object.");
+        WriteError(
+            "Cannot extract ICorDebugObjectValue from ValueType object.");
         return hr;
       }
 
@@ -593,7 +609,7 @@ HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
     }
 
     // This is an enum.
-    is_enum_ = TRUE;
+    class_type_ = ClassType::ENUM;
     hr = ProcessEnumType(debug_value, debug_class, metadata_import);
     if (FAILED(hr)) {
       WriteError("Failed to process enum type.");
@@ -725,28 +741,31 @@ HRESULT DbgClass::ProcessEnumType(ICorDebugValue *debug_value,
 }
 
 HRESULT DbgClass::ExtractField(ICorDebugObjectValue *debug_obj_value,
-  ICorDebugClass *debug_class,
-  IMetaDataImport *metadata_import,
-  const std::string &field_name,
-  std::unique_ptr<DbgObject>* field_value) {
+                               ICorDebugClass *debug_class,
+                               IMetaDataImport *metadata_import,
+                               const std::string &field_name,
+                               std::unique_ptr<DbgObject> *field_value) {
   HRESULT hr;
   mdFieldDef field_def;
 
   std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
-  hr = metadata_import->FindField(class_token_, wchar_field_name.data(), nullptr, 0, &field_def);
+  hr = metadata_import->FindField(class_token_, wchar_field_name.data(),
+                                  nullptr, 0, &field_def);
   if (FAILED(hr)) {
     WriteError("Failed to find field that represents items of the list.");
     return hr;
   }
 
   CComPtr<ICorDebugValue> debug_field_value;
-  hr = debug_obj_value->GetFieldValue(debug_class, field_def, &debug_field_value);
+  hr = debug_obj_value->GetFieldValue(debug_class, field_def,
+                                      &debug_field_value);
   if (FAILED(hr)) {
     WriteError("Failed to get field that represents list's items.");
     return hr;
   }
 
-  hr = CreateDbgObject(debug_field_value, GetEvaluationDepth() - 1, field_value, GetErrorStream());
+  hr = CreateDbgObject(debug_field_value, GetEvaluationDepth() - 1, field_value,
+                       GetErrorStream());
   if (FAILED(hr)) {
     WriteError("Failed to evaluate the items of the list.");
   }
@@ -774,9 +793,15 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   }
 }
 
-BOOL DbgClass::HasMembers() { return !is_primitive_type_ && !is_enum_; }
+BOOL DbgClass::HasMembers() {
+  return class_type_ != ClassType::PRIMITIVETYPE &&
+         class_type_ != ClassType::ENUM;
+}
 
-BOOL DbgClass::HasValue() { return is_primitive_type_ || is_enum_; }
+BOOL DbgClass::HasValue() {
+  return class_type_ == ClassType::PRIMITIVETYPE ||
+         class_type_ == ClassType::ENUM;
+}
 
 HRESULT DbgClass::PopulateValue(Variable *variable) {
   if (!variable) {
@@ -791,7 +816,7 @@ HRESULT DbgClass::PopulateValue(Variable *variable) {
     return E_FAIL;
   }
 
-  if (is_primitive_type_) {
+  if (class_type_ == ClassType::PRIMITIVETYPE) {
     HRESULT hr = primitive_type_value_->PopulateValue(variable);
     if (FAILED(hr)) {
       WriteError(primitive_type_value_->GetErrorString());
@@ -915,7 +940,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
 
   HRESULT hr;
 
-  if (is_list_ && collection_items_) {
+  if (class_type_ == ClassType::LIST && collection_items_) {
     // Sets the Count property of the list.
     Variable *list_count = variable->add_members();
     list_count->set_name("Count");
@@ -924,7 +949,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
     return collection_items_->PopulateMembers(variable, eval_coordinator);
   }
 
-  if (is_hash_set_ && collection_items_) {
+  if (class_type_ == ClassType::SET && collection_items_) {
     return PopulateHashSet(variable, eval_coordinator);
   }
 
@@ -971,7 +996,9 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable, IEvalCoordinator *eval_coordinator) {
+HRESULT DbgClass::PopulateHashSet(
+    google::cloud::diagnostics::debug::Variable *variable,
+    IEvalCoordinator *eval_coordinator) {
   HRESULT hr;
   // Sets the Count property of the HashSet.
   Variable *list_count = variable->add_members();
@@ -985,75 +1012,85 @@ HRESULT DbgClass::PopulateHashSet(google::cloud::diagnostics::debug::Variable *v
   int32_t items_fetched_so_far = 0;
   // Casts the collection_items_ to an array.
   DbgArray *slots_array = reinterpret_cast<DbgArray *>(collection_items_.get());
-  // We get items from the _items array. We have to make sure we don't go beyond the
-  // hashset_last_index_ because items at this point onwards will either be invalid
-  // or out of bound of the array.
-  while (index < hashset_last_index_ && items_fetched_so_far < max_items_to_fetch) {
+  // We get items from the _items array. We have to make sure we don't go beyond
+  // the hashset_last_index_ because items at this point onwards will either be
+  // invalid or out of bound of the array.
+  while (index < hashset_last_index_ &&
+         items_fetched_so_far < max_items_to_fetch) {
     // Extracts out the item from the array.
     CComPtr<ICorDebugValue> array_item;
     hr = slots_array->GetArrayItem(index, &array_item);
     if (FAILED(hr)) {
-      WriteError("Failed to get hash set item at index " + std::to_string(index));
+      WriteError("Failed to get hash set item at index " +
+                 std::to_string(index));
       return hr;
     }
 
-    // Now creates a DbgObject that represents the Slot object from the array_item
-    // we got above.
-    // Each Slot has the form
-    // struct Slot { int hashCode; T value; int next; }
+    // Now creates a DbgObject that represents the Slot object from the
+    // array_item we got above. Each Slot has the form struct Slot { int
+    // hashCode; T value; int next; }
     unique_ptr<DbgObject> slot_item_obj;
-    hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj, GetErrorStream());
+    hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj,
+                         GetErrorStream());
     if (FAILED(hr)) {
-      WriteError("Failed to evaluate hash set item at index " + std::to_string(index));
+      WriteError("Failed to evaluate hash set item at index " +
+                 std::to_string(index));
       return hr;
     }
 
     // Casts the DbgObject to a class.
     DbgClass *slot_item = reinterpret_cast<DbgClass *>(slot_item_obj.get());
     // Try to find the hashCode field of the struct.
-    const auto &find_hash_code =
-        std::find_if(slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
-                     [&](std::unique_ptr<DbgClassField> &class_field) {
-                       return class_field->GetFieldName().compare("hashCode") == 0;
-                     });
+    const auto &find_hash_code = std::find_if(
+        slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
+        [&](std::unique_ptr<DbgClassField> &class_field) {
+          return class_field->GetFieldName().compare("hashCode") == 0;
+        });
     if (find_hash_code == slot_item->class_fields_.end()) {
-      WriteError("Item at index " + std::to_string(index) + " does not have a hash code.");
+      WriteError("Item at index " + std::to_string(index) +
+                 " does not have a hash code.");
       return E_FAIL;
     }
 
-    // Gets the underlying DbgObject that represents the field hashCode of the struct.
+    // Gets the underlying DbgObject that represents the field hashCode of the
+    // struct.
     DbgObject *hash_code_obj = (*find_hash_code)->GetFieldValue();
     if (!hash_code_obj) {
-      WriteError("Failed to evaluate hash code for item at index " + std::to_string(index));
+      WriteError("Failed to evaluate hash code for item at index " +
+                 std::to_string(index));
       return E_FAIL;
     }
 
     // Since hashCode is an int, we cast it to a DbgPrimitive<int32_t>.
-    DbgPrimitive<int32_t> *hash_code_primitive_obj = reinterpret_cast<DbgPrimitive<int32_t> *>(hash_code_obj);
+    DbgPrimitive<int32_t> *hash_code_primitive_obj =
+        reinterpret_cast<DbgPrimitive<int32_t> *>(hash_code_obj);
     int32_t hash_code_value = hash_code_primitive_obj->GetValue();
     // Now the hashCode of the struct is actually processed in such a way that
-    // they can only be greater than or equal to 0. If they are -1, then this means
-    // this is not a valid item (probably removed), so we continue to the next index.
+    // they can only be greater than or equal to 0. If they are -1, then this
+    // means this is not a valid item (probably removed), so we continue to the
+    // next index.
     if (hash_code_value == -1) {
       index++;
       continue;
     }
 
     // Try to find the value field of the struct.
-    const auto &find_value =
-        std::find_if(slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
-                     [&](std::unique_ptr<DbgClassField> &class_field) {
-                       return class_field->GetFieldName().compare("value") == 0;
-                     });
+    const auto &find_value = std::find_if(
+        slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
+        [&](std::unique_ptr<DbgClassField> &class_field) {
+          return class_field->GetFieldName().compare("value") == 0;
+        });
     if (find_value == slot_item->class_fields_.end()) {
-      WriteError("Failed to retrieve value for item at index " + std::to_string(index));
+      WriteError("Failed to retrieve value for item at index " +
+                 std::to_string(index));
       return E_FAIL;
     }
 
     // Gets the underlying DbgObject that represents value field.
     DbgObject *underlying_item = (*find_value)->GetFieldValue();
     if (!underlying_item) {
-      WriteError("Failed to evaluate the value of item at index " + std::to_string(index));
+      WriteError("Failed to evaluate the value of item at index " +
+                 std::to_string(index));
       return E_FAIL;
     }
 
@@ -1066,7 +1103,6 @@ HRESULT DbgClass::PopulateHashSet(google::cloud::diagnostics::debug::Variable *v
   }
   return S_OK;
 }
-
 
 HRESULT DbgClass::PopulateType(Variable *variable) {
   if (!variable) {
@@ -1102,7 +1138,8 @@ HRESULT DbgClass::PopulateType(Variable *variable) {
       }
       class_name += place_holder->type();
 
-      if (empty_generic_objects_.size() > 1 && i != empty_generic_objects_.size() - 1) {
+      if (empty_generic_objects_.size() > 1 &&
+          i != empty_generic_objects_.size() - 1) {
         class_name += ", ";
       }
     }
