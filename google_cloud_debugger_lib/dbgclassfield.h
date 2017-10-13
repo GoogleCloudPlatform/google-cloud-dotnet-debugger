@@ -58,6 +58,9 @@ class DbgClassField : public StringStreamWrapper {
   // Returns the default value of the field (useful if the field is an enum).
   UVCP_CONSTANT GetDefaultValue() const { return default_value_; }
 
+  // Gets the underlying DbgObject of this field's value.
+  DbgObject *GetFieldValue() { return field_value_.get(); }
+
  private:
   // Token for the class that the field belongs to.
   mdTypeDef class_token_ = 0;

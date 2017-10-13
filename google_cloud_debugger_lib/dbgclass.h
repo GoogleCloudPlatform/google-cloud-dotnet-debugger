@@ -73,6 +73,11 @@ class DbgClass : public DbgObject {
   // Populates the class properties and stores the fields in class_fields_.
   HRESULT PopulateProperties(IMetaDataImport *metadata_import);
 
+  // Populates variable with a field count (number of items in this hash set)
+  // and the members of this hash set.
+  HRESULT PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable,
+                          IEvalCoordinator *eval_coordinator);
+
   // Processes the case where this object is a class type (not
   // ValueType or Enum). Debug_value is the ICorDebugValue represents this
   // class object, metadata_import is the IMetaDataImport from this
@@ -83,13 +88,24 @@ class DbgClass : public DbgObject {
                            IMetaDataImport *metadata_import);
 
   // Processes the case where the object is a list. In this case,
-  // we extract out size of the list (size_ field) and items in the list
-  // (items_ field). The number of items displayed (when PopulateMembers
+  // we extract out size of the list (_size field) and items in the list
+  // (_items field). The number of items displayed (when PopulateMembers
   // is called) is the minimum of:
   //  1. The size of the list.
   //  2. The maximum number of items that a DbgArray can display (10
   // by default).
   HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
+    ICorDebugClass *debug_class,
+    IMetaDataImport *metadata_import);
+
+  // Processes the case where the object is a hash set. This function
+  // extracts out these fields:
+  //  1. field _count, which counts the number of items.
+  //  2. _items, which is an array of Slot struct, which contains
+  // the actual object and its hash.
+  //  3. _lastIndex, which tells us the last valid index of _items
+  // array (the last valid index is lastIndex_ - 1).
+  HRESULT ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
     ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import);
 
@@ -189,6 +205,9 @@ class DbgClass : public DbgObject {
   // True if this is a list.
   BOOL is_list_ = FALSE;
 
+  // True if this is a hash set.
+  BOOL is_hash_set_ = FALSE;
+
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
   std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
@@ -196,11 +215,16 @@ class DbgClass : public DbgObject {
   // Sets of all the fields' names.
   std::unordered_set<std::string> class_backing_fields_names_;
 
-  // Number of items in this object if this is a list, dictionary or hashset.
+  // Number of items in this object if this is a list, dictionary or hash set.
   std::int32_t count_;
 
-  // Pointer to an array of items of this class if this class object is a list.
-  std::unique_ptr<DbgObject> list_items_;
+  // Any number greater than or equal to this number won't be a valid index
+  // into the _slots array.= of the hash set.
+  std::int32_t hashset_last_index_;
+
+  // Pointer to an array of items of this class if this class object is a collection
+  // type (list, hashset, etc.).
+  std::unique_ptr<DbgObject> collection_items_;
 
   // Array of bytes to contain enum value if this class is an enum.
   std::vector<std::uint8_t> enum_value_array_;
@@ -216,11 +240,24 @@ class DbgClass : public DbgObject {
   // String that represents "System.Collection.Generic.List`1".
   static const std::string kListClassName;
 
-  // "_size", which is the field that represents size of a list.
+  // String that represents "System.Collection.Generic.HashSet`1".
+  static const std::string kHashSetClassName;
+
+  // "_size", which is the field that represents size of a list and hashset.
   static const std::string kListSizeFieldName;
 
   // "_items", which is the field that contains all items in a list.
   static const std::string kListItemsFieldName;
+
+  // "_slots", which is the field that contains items in the hashset.
+  static const std::string kHashSetSlotsFieldName;
+
+  // "_lastIndex", which is the field that contains the last index of the
+  // hash set, see comment for hashset_last_index_.
+  static const std::string kHashSetLastIndexFieldName;
+
+  // "_count", which is the field that counts the size of the hash set.
+  static const std::string kHashSetCountFieldName;
 };
 
 }  //  namespace google_cloud_debugger
