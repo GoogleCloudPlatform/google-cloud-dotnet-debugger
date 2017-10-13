@@ -43,7 +43,7 @@ const string DbgClass::kHashSetCountFieldName = "_count";
 const string DbgClass::kHashSetLastIndexFieldName = "_lastIndex";
 const string DbgClass::kListSizeFieldName = "_size";
 
-HRESULT DbgClass::PopulateDefTokensAndClassMembers(
+HRESULT DbgClass::ProcessDefTokensAndClassMembers(
     ICorDebugValue *class_value) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
@@ -91,20 +91,20 @@ HRESULT DbgClass::PopulateDefTokensAndClassMembers(
     return hr;
   }
 
-  hr = PopulateClassName(metadata_import);
+  hr = ProcessClassName(metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to get class name.");
     return hr;
   }
 
   if (debug_type) {
-    hr = PopulateParameterizedType();
+    hr = ProcessParameterizedType();
     if (FAILED(hr)) {
       WriteError("Fail to populate parameterized type.");
       return hr;
     }
 
-    hr = PopulateBaseClassName(debug_type);
+    hr = ProcessBaseClassName(debug_type);
     if (FAILED(hr)) {
       WriteError("Failed to get the base class.");
       return hr;
@@ -122,7 +122,7 @@ HRESULT DbgClass::PopulateDefTokensAndClassMembers(
   return ProcessClassType(class_value, debug_class, metadata_import);
 }
 
-HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessClassName(IMetaDataImport *metadata_import) {
   HRESULT hr;
   ULONG len_class_name;
 
@@ -148,7 +148,7 @@ HRESULT DbgClass::PopulateClassName(IMetaDataImport *metadata_import) {
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateBaseClassName(ICorDebugType *debug_type) {
+HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
   HRESULT hr;
   CComPtr<ICorDebugType> base_type;
 
@@ -259,7 +259,7 @@ HRESULT DbgClass::CountGenericParams(IMetaDataImport *pMetaDataImport,
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateParameterizedType() {
+HRESULT DbgClass::ProcessParameterizedType() {
   HRESULT hr;
   CComPtr<ICorDebugTypeEnum> type_enum;
   CComPtr<ICorDebugType> debug_type;
@@ -323,7 +323,7 @@ HRESULT DbgClass::PopulateParameterizedType() {
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
+HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
                                  ICorDebugObjectValue *debug_obj_value,
                                  ICorDebugClass *debug_class) {
   CComPtr<ICorDebugType> debug_type;
@@ -376,7 +376,7 @@ HRESULT DbgClass::PopulateFields(IMetaDataImport *metadata_import,
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateProperties(IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
   HRESULT hr;
   array<mdProperty, 100> property_defs;
   HCORENUM cor_enum = nullptr;
@@ -472,14 +472,14 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
 
   // Populates the fields first before the properties in case
   // we have backing fields for properties.
-  hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
+  hr = ProcessFields(metadata_import, debug_obj_value, debug_class);
   if (FAILED(hr)) {
     WriteError("Failed to populate class fields.");
     return hr;
   }
 
   if (cor_type_ == ELEMENT_TYPE_CLASS) {
-    hr = PopulateProperties(metadata_import);
+    hr = ProcessProperties(metadata_import);
     if (FAILED(hr)) {
       WriteError("Failed to populate class properties.");
       return hr;
@@ -583,7 +583,7 @@ HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
         return hr;
       }
 
-      hr = PopulateFields(metadata_import, debug_obj_value, debug_class);
+      hr = ProcessFields(metadata_import, debug_obj_value, debug_class);
       if (FAILED(hr)) {
         WriteError("Failed to populate class fields.");
         return hr;
@@ -715,7 +715,7 @@ HRESULT DbgClass::ProcessEnumType(ICorDebugValue *debug_value,
     return hr;
   }
 
-  hr = PopulateFields(metadata_import, obj_value, debug_class);
+  hr = ProcessFields(metadata_import, obj_value, debug_class);
   if (FAILED(hr)) {
     WriteError("Failed to populate class fields while evaluating Enum.");
     return hr;
@@ -768,7 +768,7 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     }
   }
 
-  initialize_hr_ = PopulateDefTokensAndClassMembers(debug_value);
+  initialize_hr_ = ProcessDefTokensAndClassMembers(debug_value);
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to populate definition tokens.");
   }

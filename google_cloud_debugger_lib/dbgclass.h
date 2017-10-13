@@ -48,35 +48,30 @@ class DbgClass : public DbgObject {
   BOOL HasValue() override;
 
  private:
-  // Populates the class name, the generic parameters, fields and properties
+  // Processes the class name, the generic parameters, fields and properties
   // of the class.
   // This function first extracts out ICorDebugClass to get the class token.
   // It will then extract out ICorDebugModule from ICorDebugClass.
   // From the ICorDebugModule, we can get IMetaDataImport object,
   // which is used to extract out various metadata information of the class.
-  HRESULT PopulateDefTokensAndClassMembers(ICorDebugValue *class_value);
+  HRESULT ProcessDefTokensAndClassMembers(ICorDebugValue *class_value);
 
-  // Populates the class name and stores the result in class_name_.
-  HRESULT PopulateClassName(IMetaDataImport *metadata_import);
+  // Processes the class name and stores the result in class_name_.
+  HRESULT ProcessClassName(IMetaDataImport *metadata_import);
 
-  // Populates the base class' name and stores the result in base_class_name_.
-  HRESULT PopulateBaseClassName(ICorDebugType *debug_type);
+  // Processes the base class' name and stores the result in base_class_name_.
+  HRESULT ProcessBaseClassName(ICorDebugType *debug_type);
 
-  // Populates the generic parameters of the class.
-  HRESULT PopulateParameterizedType();
+  // Processes the generic parameters of the class.
+  HRESULT ProcessParameterizedType();
 
-  // Populates the class fields and stores the fields in class_fields_.
-  HRESULT PopulateFields(IMetaDataImport *metadata_import,
+  // Processes the class fields and stores the fields in class_fields_.
+  HRESULT ProcessFields(IMetaDataImport *metadata_import,
                          ICorDebugObjectValue *debug_obj_value,
                          ICorDebugClass *debug_class);
 
-  // Populates the class properties and stores the fields in class_fields_.
-  HRESULT PopulateProperties(IMetaDataImport *metadata_import);
-
-  // Populates variable with a field count (number of items in this hash set)
-  // and the members of this hash set.
-  HRESULT PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable,
-                          IEvalCoordinator *eval_coordinator);
+  // Processes the class properties and stores the fields in class_fields_.
+  HRESULT ProcessProperties(IMetaDataImport *metadata_import);
 
   // Processes the case where this object is a class type (not
   // ValueType or Enum). Debug_value is the ICorDebugValue represents this
@@ -122,6 +117,11 @@ class DbgClass : public DbgObject {
   HRESULT ProcessEnumType(ICorDebugValue *debug_value,
                           ICorDebugClass *debug_class,
                           IMetaDataImport *metadata_import);
+
+  // Populates variable with a field count (number of items in this hash set)
+  // and the members of this hash set.
+  HRESULT PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable,
+                          IEvalCoordinator *eval_coordinator);
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
