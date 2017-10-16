@@ -33,5 +33,5 @@ easier to avoid frustration later on.
 ## Tests and Documentation
 
 All significant changes are expected to be accompanied by at minimum unit tests.
-If appropriate make the needed documentation changes.  If you are making a larger
+If appropriate, make the needed documentation changes.  If you are making a larger
 change or adding a new feature please add integration tests as well.
