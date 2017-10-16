@@ -47,31 +47,42 @@ class DbgClass : public DbgObject {
   BOOL HasMembers() override;
   BOOL HasValue() override;
 
+  // Various .NET class types that we need to process differently
+  // rather than just printing out fields and properties.
+  enum ClassType {
+    DEFAULT,        // Default class type.
+    PRIMITIVETYPE,  // Integral type and bool.
+    ENUM,           // Enum type.
+    LIST,           // System.Collections.Generic.List type.
+    SET,            // System.Collections.Generic.HashSet type.
+    DICTIONARY      // System.Collections.Generic.Dictionary type.
+  };
+
  private:
-  // Populates the class name, the generic parameters, fields and properties
+  // Processes the class name, the generic parameters, fields and properties
   // of the class.
   // This function first extracts out ICorDebugClass to get the class token.
   // It will then extract out ICorDebugModule from ICorDebugClass.
   // From the ICorDebugModule, we can get IMetaDataImport object,
   // which is used to extract out various metadata information of the class.
-  HRESULT PopulateDefTokensAndClassMembers(ICorDebugValue *class_value);
+  HRESULT ProcessDefTokensAndClassMembers(ICorDebugValue *class_value);
 
-  // Populates the class name and stores the result in class_name_.
-  HRESULT PopulateClassName(IMetaDataImport *metadata_import);
+  // Processes the class name and stores the result in class_name_.
+  HRESULT ProcessClassName(IMetaDataImport *metadata_import);
 
-  // Populates the base class' name and stores the result in base_class_name_.
-  HRESULT PopulateBaseClassName(ICorDebugType *debug_type);
+  // Processes the base class' name and stores the result in base_class_name_.
+  HRESULT ProcessBaseClassName(ICorDebugType *debug_type);
 
-  // Populates the generic parameters of the class.
-  HRESULT PopulateParameterizedType();
+  // Processes the generic parameters of the class.
+  HRESULT ProcessParameterizedType();
 
-  // Populates the class fields and stores the fields in class_fields_.
-  HRESULT PopulateFields(IMetaDataImport *metadata_import,
-                         ICorDebugObjectValue *debug_obj_value,
-                         ICorDebugClass *debug_class);
+  // Processes the class fields and stores the fields in class_fields_.
+  HRESULT ProcessFields(IMetaDataImport *metadata_import,
+                        ICorDebugObjectValue *debug_obj_value,
+                        ICorDebugClass *debug_class);
 
-  // Populates the class properties and stores the fields in class_fields_.
-  HRESULT PopulateProperties(IMetaDataImport *metadata_import);
+  // Processes the class properties and stores the fields in class_fields_.
+  HRESULT ProcessProperties(IMetaDataImport *metadata_import);
 
   // Processes the case where this object is a class type (not
   // ValueType or Enum). Debug_value is the ICorDebugValue represents this
@@ -83,15 +94,26 @@ class DbgClass : public DbgObject {
                            IMetaDataImport *metadata_import);
 
   // Processes the case where the object is a list. In this case,
-  // we extract out size of the list (size_ field) and items in the list
-  // (items_ field). The number of items displayed (when PopulateMembers
+  // we extract out size of the list (_size field) and items in the list
+  // (_items field). The number of items displayed (when PopulateMembers
   // is called) is the minimum of:
   //  1. The size of the list.
   //  2. The maximum number of items that a DbgArray can display (10
   // by default).
   HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
-    ICorDebugClass *debug_class,
-    IMetaDataImport *metadata_import);
+                          ICorDebugClass *debug_class,
+                          IMetaDataImport *metadata_import);
+
+  // Processes the case where the object is a hash set. This function
+  // extracts out these fields:
+  //  1. field _count, which counts the number of items.
+  //  2. _items, which is an array of Slot struct, which contains
+  // the actual object and its hash.
+  //  3. _lastIndex, which tells us the last valid index of _items
+  // array (the last valid index is lastIndex_ - 1).
+  HRESULT ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
+                             ICorDebugClass *debug_class,
+                             IMetaDataImport *metadata_import);
 
   // Evaluates ValueType object.
   HRESULT ProcessValueType(ICorDebugValue *debug_value,
@@ -107,13 +129,18 @@ class DbgClass : public DbgObject {
                           ICorDebugClass *debug_class,
                           IMetaDataImport *metadata_import);
 
+  // Populates variable with a field count (number of items in this hash set)
+  // and the members of this hash set.
+  HRESULT PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable,
+                          IEvalCoordinator *eval_coordinator);
+
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
   HRESULT ExtractField(ICorDebugObjectValue *debug_obj_value,
-    ICorDebugClass *debug_class,
-    IMetaDataImport *metadata_import,
-    const std::string &field_name,
-    std::unique_ptr<DbgObject> *field_value);
+                       ICorDebugClass *debug_class,
+                       IMetaDataImport *metadata_import,
+                       const std::string &field_name,
+                       std::unique_ptr<DbgObject> *field_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
@@ -180,14 +207,9 @@ class DbgClass : public DbgObject {
   // Object represents the value if this object is a ValueType.
   std::unique_ptr<DbgObject> primitive_type_value_;
 
-  // True if this is a primitive type.
-  BOOL is_primitive_type_ = FALSE;
-
-  // True if this is an enum type.
-  BOOL is_enum_ = FALSE;
-
-  // True if this is a list.
-  BOOL is_list_ = FALSE;
+  // The type of this class. This is needed so we know how to
+  // display the class to the user.
+  ClassType class_type_ = ClassType::DEFAULT;
 
   // Class fields and properties.
   std::vector<std::unique_ptr<DbgClassField>> class_fields_;
@@ -196,11 +218,16 @@ class DbgClass : public DbgObject {
   // Sets of all the fields' names.
   std::unordered_set<std::string> class_backing_fields_names_;
 
-  // Number of items in this object if this is a list, dictionary or hashset.
+  // Number of items in this object if this is a list, dictionary or hash set.
   std::int32_t count_;
 
-  // Pointer to an array of items of this class if this class object is a list.
-  std::unique_ptr<DbgObject> list_items_;
+  // Any number greater than or equal to this number won't be a valid index
+  // into the _slots array.= of the hash set.
+  std::int32_t hashset_last_index_;
+
+  // Pointer to an array of items of this class if this class object is a
+  // collection type (list, hashset, etc.).
+  std::unique_ptr<DbgObject> collection_items_;
 
   // Array of bytes to contain enum value if this class is an enum.
   std::vector<std::uint8_t> enum_value_array_;
@@ -216,11 +243,24 @@ class DbgClass : public DbgObject {
   // String that represents "System.Collection.Generic.List`1".
   static const std::string kListClassName;
 
-  // "_size", which is the field that represents size of a list.
+  // String that represents "System.Collection.Generic.HashSet`1".
+  static const std::string kHashSetClassName;
+
+  // "_size", which is the field that represents size of a list and hashset.
   static const std::string kListSizeFieldName;
 
   // "_items", which is the field that contains all items in a list.
   static const std::string kListItemsFieldName;
+
+  // "_slots", which is the field that contains items in the hashset.
+  static const std::string kHashSetSlotsFieldName;
+
+  // "_lastIndex", which is the field that contains the last index of the
+  // hash set, see comment for hashset_last_index_.
+  static const std::string kHashSetLastIndexFieldName;
+
+  // "_count", which is the field that counts the size of the hash set.
+  static const std::string kHashSetCountFieldName;
 };
 
 }  //  namespace google_cloud_debugger

@@ -92,7 +92,7 @@ class DbgArray : public DbgObject {
 
   // The maximum amount of items to retrieve in an array.
   // Defaults to 10.
-  std::uint32_t max_items_to_retrieved_ = 10;
+  std::uint32_t max_items_to_retrieved_ = DbgObject::collection_size_;
 };
 
 }  //  namespace google_cloud_debugger
