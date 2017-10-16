@@ -43,7 +43,8 @@ const string DbgClass::kHashSetClassName =
 const string DbgClass::kHashSetSlotsFieldName = "_slots";
 const string DbgClass::kHashSetCountFieldName = "_count";
 const string DbgClass::kHashSetLastIndexFieldName = "_lastIndex";
-const string DbgClass::kDictionaryClassName = "System.Collections.Generic.Dictionary`2";
+const string DbgClass::kDictionaryClassName =
+    "System.Collections.Generic.Dictionary`2";
 const string DbgClass::kDictionaryCountFieldName = "count";
 const string DbgClass::kDictionaryItemsFieldName = "entries";
 const string DbgClass::kDictionaryKeyFieldName = "key";
@@ -220,7 +221,8 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
   return S_OK;
 }
 
-HRESULT DbgClass::ExtractField(const std::string &field_name, DbgObject **field_value) {
+HRESULT DbgClass::ExtractField(const std::string &field_name,
+                               DbgObject **field_value) {
   // Try to find the hashCode field of the struct.
   const auto &find_field = std::find_if(
       class_fields_.begin(), class_fields_.end(),
@@ -493,10 +495,13 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
   // This is a list.
   if (kListClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
     class_type_ = ClassType::LIST;
-    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kListSizeFieldName, kListItemsFieldName, string());
+    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
+                               kListSizeFieldName, kListItemsFieldName,
+                               string());
     if (SUCCEEDED(hr)) {
-      // Makes sure we don't grab more items than we need (this can happen because
-      // if a list size is 2, the underlying items_ array can have 4 items).
+      // Makes sure we don't grab more items than we need (this can happen
+      // because if a list size is 2, the underlying items_ array can have 4
+      // items).
       if (count_ < DbgObject::collection_size_) {
         (reinterpret_cast<DbgArray *>(collection_items_.get()))
             ->SetMaxArrayItemsToRetrieve(count_);
@@ -508,13 +513,17 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
   // This is a hash set.
   if (kHashSetClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
     class_type_ = ClassType::SET;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kHashSetCountFieldName, kHashSetSlotsFieldName, kHashSetLastIndexFieldName);
+    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
+                                 kHashSetCountFieldName, kHashSetSlotsFieldName,
+                                 kHashSetLastIndexFieldName);
   }
 
   // This is a dictionary
   if (kDictionaryClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
     class_type_ = ClassType::DICTIONARY;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kDictionaryCountFieldName, kDictionaryItemsFieldName, string());
+    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
+                                 kDictionaryCountFieldName,
+                                 kDictionaryItemsFieldName, string());
   }
 
   // Populates the fields first before the properties in case
@@ -547,10 +556,11 @@ HRESULT DbgClass::ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
   unique_ptr<DbgObject> collection_size;
 
   // Extracts out the size of the collection.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    count_field, &collection_size);
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import, count_field,
+                    &collection_size);
   if (FAILED(hr)) {
-    WriteError("Failed to find field that represents the size of the collection.");
+    WriteError(
+        "Failed to find field that represents the size of the collection.");
     return hr;
   }
   count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(collection_size.get())
@@ -968,7 +978,8 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
     return collection_items_->PopulateMembers(variable, eval_coordinator);
   }
 
-  if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) && collection_items_) {
+  if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) &&
+      collection_items_) {
     return PopulateHashSetOrDictionary(variable, eval_coordinator);
   }
 
@@ -1037,8 +1048,10 @@ HRESULT DbgClass::PopulateHashSetOrDictionary(
   // sure we don't go beyond the hashset_last_index_ because items at this point
   // onwards will either be invalid or out of bound of the array.
   // If this is a dictionary, we just have to make sure we go until count_.
-  // We will only get items in the array that has hashCode greater or equal to 0.
-  int32_t max_index = (class_type_ == ClassType::SET) ? hashset_last_index_ : count_;
+  // We will only get items in the array that has hashCode greater or equal to
+  // 0.
+  int32_t max_index =
+      (class_type_ == ClassType::SET) ? hashset_last_index_ : count_;
 
   for (int32_t index = 0; index < max_index; ++index) {
     // Extracts out the item from the array.
@@ -1070,7 +1083,8 @@ HRESULT DbgClass::PopulateHashSetOrDictionary(
     DbgClass *slot_item = reinterpret_cast<DbgClass *>(slot_item_obj.get());
     // Try to find the hashCode field of the struct.
     DbgObject *hash_code_obj = nullptr;
-    hr = slot_item->ExtractField(kHashSetAndDictHashCodeFieldName, &hash_code_obj);
+    hr = slot_item->ExtractField(kHashSetAndDictHashCodeFieldName,
+                                 &hash_code_obj);
     if (FAILED(hr)) {
       WriteError("Failed to evaluate hash code for item at index " +
                  std::to_string(index));
@@ -1118,8 +1132,7 @@ HRESULT DbgClass::PopulateHashSetOrDictionary(
       // We don't have to worry about error since PopulateVariableValue
       // will automatically sets error in item_proto.
       value_obj->PopulateVariableValue(item_proto, eval_coordinator);
-    }
-    else {
+    } else {
       // For dictionary, we also display the key. So an item would be
       // [index]: { "key": Key, "value": Value }
       Variable *key_proto = item_proto->add_members();

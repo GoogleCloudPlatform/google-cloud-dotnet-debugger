@@ -105,11 +105,11 @@ class DbgClass : public DbgObject {
   // above (the last valid index is the last index - 1). This only applies
   // to hash set.
   HRESULT ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
-                             ICorDebugClass *debug_class,
-                             IMetaDataImport *metadata_import,
-                             const std::string &count_field,
-                             const std::string &entries_field,
-                             const std::string &last_index_field);
+                                ICorDebugClass *debug_class,
+                                IMetaDataImport *metadata_import,
+                                const std::string &count_field,
+                                const std::string &entries_field,
+                                const std::string &last_index_field);
 
   // Evaluates ValueType object.
   HRESULT ProcessValueType(ICorDebugValue *debug_value,
@@ -127,8 +127,9 @@ class DbgClass : public DbgObject {
 
   // Populates variable with a field count (number of items in this hash set
   // or dictionary) and the members of this hash set or dictionary.
-  HRESULT PopulateHashSetOrDictionary(google::cloud::diagnostics::debug::Variable *variable,
-                          IEvalCoordinator *eval_coordinator);
+  HRESULT PopulateHashSetOrDictionary(
+      google::cloud::diagnostics::debug::Variable *variable,
+      IEvalCoordinator *eval_coordinator);
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
@@ -142,8 +143,7 @@ class DbgClass : public DbgObject {
   // stores the pointer to the value of that field in field_value.
   // This function assumes that this DbgClass object has already been
   // initialized (so the class_fields_ vector are populated).
-  HRESULT ExtractField(const std::string &field_name,
-                       DbgObject **field_value);
+  HRESULT ExtractField(const std::string &field_name, DbgObject **field_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
