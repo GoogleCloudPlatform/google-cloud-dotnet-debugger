@@ -36,13 +36,19 @@ namespace google_cloud_debugger {
 const string DbgClass::kEnumClassName = "System.Enum";
 const string DbgClass::kEnumValue = "value__";
 const string DbgClass::kListClassName = "System.Collections.Generic.List`1";
+const string DbgClass::kListItemsFieldName = "_items";
+const string DbgClass::kListSizeFieldName = "_size";
 const string DbgClass::kHashSetClassName =
     "System.Collections.Generic.HashSet`1";
-const string DbgClass::kListItemsFieldName = "_items";
 const string DbgClass::kHashSetSlotsFieldName = "_slots";
 const string DbgClass::kHashSetCountFieldName = "_count";
 const string DbgClass::kHashSetLastIndexFieldName = "_lastIndex";
-const string DbgClass::kListSizeFieldName = "_size";
+const string DbgClass::kDictionaryClassName = "System.Collections.Generic.Dictionary`2";
+const string DbgClass::kDictionaryCountFieldName = "count";
+const string DbgClass::kDictionaryItemsFieldName = "entries";
+const string DbgClass::kDictionaryKeyFieldName = "key";
+const string DbgClass::kHashSetAndDictValueFieldName = "value";
+const string DbgClass::kHashSetAndDictHashCodeFieldName = "hashCode";
 
 HRESULT DbgClass::ProcessDefTokensAndClassMembers(ICorDebugValue *class_value) {
   HRESULT hr;
@@ -211,6 +217,30 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
     WriteError("Failed to get base class name.");
     return hr;
   }
+  return S_OK;
+}
+
+HRESULT DbgClass::ExtractField(const std::string &field_name, DbgObject **field_value) {
+  // Try to find the hashCode field of the struct.
+  const auto &find_field = std::find_if(
+      class_fields_.begin(), class_fields_.end(),
+      [&](std::unique_ptr<DbgClassField> &class_field) {
+        return class_field->GetFieldName().compare(field_name) == 0;
+      });
+  if (find_field == class_fields_.end()) {
+    WriteError("Class does not have field " + field_name);
+    return E_FAIL;
+  }
+
+  // Gets the underlying DbgObject that represents the field hashCode of the
+  // struct.
+  DbgObject *field_obj = (*find_field)->GetFieldValue();
+  if (!field_obj) {
+    WriteError("Failed to evaluate value for field " + field_name);
+    return E_FAIL;
+  }
+
+  *field_value = field_obj;
   return S_OK;
 }
 
@@ -462,12 +492,29 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
 
   // This is a list.
   if (kListClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
-    return ProcessListType(debug_obj_value, debug_class, metadata_import);
+    class_type_ = ClassType::LIST;
+    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kListSizeFieldName, kListItemsFieldName, string());
+    if (SUCCEEDED(hr)) {
+      // Makes sure we don't grab more items than we need (this can happen because
+      // if a list size is 2, the underlying items_ array can have 4 items).
+      if (count_ < DbgObject::collection_size_) {
+        (reinterpret_cast<DbgArray *>(collection_items_.get()))
+            ->SetMaxArrayItemsToRetrieve(count_);
+      }
+    }
+    return hr;
   }
 
   // This is a hash set.
   if (kHashSetClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
-    return ProcessHashSetType(debug_obj_value, debug_class, metadata_import);
+    class_type_ = ClassType::SET;
+    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kHashSetCountFieldName, kHashSetSlotsFieldName, kHashSetLastIndexFieldName);
+  }
+
+  // This is a dictionary
+  if (kDictionaryClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
+    class_type_ = ClassType::DICTIONARY;
+    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import, kDictionaryCountFieldName, kDictionaryItemsFieldName, string());
   }
 
   // Populates the fields first before the properties in case
@@ -489,82 +536,54 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
   return hr;
 }
 
-HRESULT DbgClass::ProcessListType(ICorDebugObjectValue *debug_obj_value,
-                                  ICorDebugClass *debug_class,
-                                  IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
+                                        ICorDebugClass *debug_class,
+                                        IMetaDataImport *metadata_import,
+                                        const std::string &count_field,
+                                        const std::string &entries_field,
+                                        const std::string &last_index_field) {
   HRESULT hr;
-  class_type_ = ClassType::LIST;
+  // DbgObject representings the int that counts the size of the collection.
+  unique_ptr<DbgObject> collection_size;
 
-  // DbgObject representings the int that counts the size of the list.
-  unique_ptr<DbgObject> list_size;
-
-  // Extracts out the size of the list.
+  // Extracts out the size of the collection.
   hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    kListSizeFieldName, &list_size);
+                    count_field, &collection_size);
   if (FAILED(hr)) {
-    WriteError("Failed to find field that represents the size of the list.");
+    WriteError("Failed to find field that represents the size of the collection.");
     return hr;
   }
-  count_ =
-      reinterpret_cast<DbgPrimitive<int32_t> *>(list_size.get())->GetValue();
-
-  // Extracts out the items of the list.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    kListItemsFieldName, &collection_items_);
-  if (FAILED(hr)) {
-    WriteError("Failed to get the items of the list.");
-  }
-
-  // Makes sure we don't grab more items than we need (this can happen because
-  // if a list size is 2, the underlying items_ array can have 4 items).
-  if (count_ < DbgObject::collection_size_) {
-    (reinterpret_cast<DbgArray *>(collection_items_.get()))
-        ->SetMaxArrayItemsToRetrieve(count_);
-  }
-
-  return hr;
-}
-
-HRESULT DbgClass::ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
-                                     ICorDebugClass *debug_class,
-                                     IMetaDataImport *metadata_import) {
-  HRESULT hr;
-  class_type_ = ClassType::SET;
-
-  // DbgObject representings the int that counts the size of the hash set.
-  unique_ptr<DbgObject> hash_set_size;
-
-  // Extracts out the size of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    kHashSetCountFieldName, &hash_set_size);
-  if (FAILED(hr)) {
-    WriteError("Failed to find field that represents the size of the set.");
-    return hr;
-  }
-  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(hash_set_size.get())
+  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(collection_size.get())
                ->GetValue();
+
+  // Extracts out the array that contains items in the collection.
+  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                    entries_field, &collection_items_);
+  if (FAILED(hr)) {
+    WriteError("Failed to get the items of the collection.");
+    return hr;
+  }
+
+  // If there is no last index field, then we don't need to extract it.
+  if (last_index_field.empty()) {
+    return hr;
+  }
 
   // DbgObject representings the last index field of the hash set, see comments
   // on hashset_last_index_ for more details.
   unique_ptr<DbgObject> last_index;
 
-  // Extracts out the size of the hash set.
+  // Extracts out the last index of the hash set.
   hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    kHashSetLastIndexFieldName, &last_index);
+                    last_index_field, &last_index);
   if (FAILED(hr)) {
     WriteError(
         "Failed to find field that represents the last index of the hash set.");
     return hr;
   }
+
   hashset_last_index_ =
       reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
-
-  // Extracts out the slots array of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    kHashSetSlotsFieldName, &collection_items_);
-  if (FAILED(hr)) {
-    WriteError("Failed to get the items of the list.");
-  }
 
   return hr;
 }
@@ -949,8 +968,8 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
     return collection_items_->PopulateMembers(variable, eval_coordinator);
   }
 
-  if (class_type_ == ClassType::SET && collection_items_) {
-    return PopulateHashSet(variable, eval_coordinator);
+  if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) && collection_items_) {
+    return PopulateHashSetOrDictionary(variable, eval_coordinator);
   }
 
   int new_depth = GetEvaluationDepth() - 1;
@@ -967,6 +986,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
         class_field_var->clear_members();
         class_field_var->clear_value();
         SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
+        ResetErrorStream();
       }
     }
   }
@@ -989,6 +1009,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
         property_field_var->clear_members();
         property_field_var->clear_value();
         SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
+        ResetErrorStream();
       }
     }
   }
@@ -996,28 +1017,30 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateHashSet(
+HRESULT DbgClass::PopulateHashSetOrDictionary(
     google::cloud::diagnostics::debug::Variable *variable,
     IEvalCoordinator *eval_coordinator) {
   HRESULT hr;
-  // Sets the Count property of the HashSet.
+  // Sets the Count property of the HashSet or Dictionary.
   Variable *list_count = variable->add_members();
   list_count->set_name("Count");
   list_count->set_value(std::to_string(count_));
   list_count->set_type("System.Int32");
 
-  // Now we start fetching items from the hash set.
+  // Now we start fetching items from the hash set or dictionary.
   int32_t index = 0;
   int32_t max_items_to_fetch = min(count_, DbgClass::collection_size_);
   int32_t items_fetched_so_far = 0;
   // Casts the collection_items_ to an array.
   DbgArray *slots_array = reinterpret_cast<DbgArray *>(collection_items_.get());
-  // We get items from the _items array. We have to make sure we don't go beyond
-  // the hashset_last_index_ because items at this point onwards will either be
-  // invalid or out of bound of the array.
+  // We get items from the _items array. If this is a hash set, we have to make
+  // sure we don't go beyond the hashset_last_index_ because items at this point
+  // onwards will either be invalid or out of bound of the array.
+  // If this is a dictionary, we just have to make sure we go until count_.
   // We will only get items in the array that has hashCode greater or equal to 0.
-  while (index < hashset_last_index_ &&
-         items_fetched_so_far < max_items_to_fetch) {
+  int32_t max_index = (class_type_ == ClassType::SET) ? hashset_last_index_ : count_;
+
+  for (int32_t index = 0; index < max_index; ++index) {
     // Extracts out the item from the array.
     CComPtr<ICorDebugValue> array_item;
     hr = slots_array->GetArrayItem(index, &array_item);
@@ -1030,11 +1053,15 @@ HRESULT DbgClass::PopulateHashSet(
     // Now creates a DbgObject that represents the Slot object from the
     // array_item we got above. Each Slot has the form struct Slot { int
     // hashCode; T value; int next; }
+    // If this is a dictionary, then we will have Entry object with
+    // the form Entry { int hashCode; TKey key; TValue value; int next; }
+    // So a dictionary entry is essentially the same as a set slot except
+    // that the dictionary entry has a key.
     unique_ptr<DbgObject> slot_item_obj;
     hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj,
                          GetErrorStream());
     if (FAILED(hr)) {
-      WriteError("Failed to evaluate hash set item at index " +
+      WriteError("Failed to create DbgObject for item at index " +
                  std::to_string(index));
       return hr;
     }
@@ -1042,24 +1069,12 @@ HRESULT DbgClass::PopulateHashSet(
     // Casts the DbgObject to a class.
     DbgClass *slot_item = reinterpret_cast<DbgClass *>(slot_item_obj.get());
     // Try to find the hashCode field of the struct.
-    const auto &find_hash_code = std::find_if(
-        slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
-        [&](std::unique_ptr<DbgClassField> &class_field) {
-          return class_field->GetFieldName().compare("hashCode") == 0;
-        });
-    if (find_hash_code == slot_item->class_fields_.end()) {
-      WriteError("Item at index " + std::to_string(index) +
-                 " does not have a hash code.");
-      return E_FAIL;
-    }
-
-    // Gets the underlying DbgObject that represents the field hashCode of the
-    // struct.
-    DbgObject *hash_code_obj = (*find_hash_code)->GetFieldValue();
-    if (!hash_code_obj) {
+    DbgObject *hash_code_obj = nullptr;
+    hr = slot_item->ExtractField(kHashSetAndDictHashCodeFieldName, &hash_code_obj);
+    if (FAILED(hr)) {
       WriteError("Failed to evaluate hash code for item at index " +
                  std::to_string(index));
-      return E_FAIL;
+      return hr;
     }
 
     // Since hashCode is an int, we cast it to a DbgPrimitive<int32_t>.
@@ -1069,38 +1084,57 @@ HRESULT DbgClass::PopulateHashSet(
     // Now the hashCode of the struct is actually processed in such a way that
     // they can only be greater than or equal to 0. If they are -1, then this
     // means this is not a valid item (probably removed), so we continue to the
-    // next index.
+    // next index. This is true for both hash set and dictionary.
     if (hash_code_value == -1) {
-      index++;
       continue;
     }
 
-    // Try to find the value field of the struct.
-    const auto &find_value = std::find_if(
-        slot_item->class_fields_.begin(), slot_item->class_fields_.end(),
-        [&](std::unique_ptr<DbgClassField> &class_field) {
-          return class_field->GetFieldName().compare("value") == 0;
-        });
-    if (find_value == slot_item->class_fields_.end()) {
-      WriteError("Failed to retrieve value for item at index " +
-                 std::to_string(index));
-      return E_FAIL;
-    }
-
     // Gets the underlying DbgObject that represents value field.
-    DbgObject *underlying_item = (*find_value)->GetFieldValue();
-    if (!underlying_item) {
+    DbgObject *value_obj = nullptr;
+    hr = slot_item->ExtractField(kHashSetAndDictValueFieldName, &value_obj);
+    if (FAILED(hr)) {
       WriteError("Failed to evaluate the value of item at index " +
                  std::to_string(index));
-      return E_FAIL;
+      return hr;
+    }
+
+    DbgObject *key_obj = nullptr;
+    // If this is a dictionary, we have to find the key field of the struct.
+    if (class_type_ == ClassType::DICTIONARY) {
+      hr = slot_item->ExtractField(kDictionaryKeyFieldName, &key_obj);
+      if (FAILED(hr)) {
+        WriteError("Failed to evaluate the value of the key at index " +
+                   std::to_string(index));
+        return hr;
+      }
     }
 
     // Now creates a member that represents this item.
     Variable *item_proto = variable->add_members();
     item_proto->set_name("[" + std::to_string(items_fetched_so_far) + "]");
-    underlying_item->PopulateVariableValue(item_proto, eval_coordinator);
+
+    // For hash set, just display item as [index]: value.
+    if (class_type_ == ClassType::SET) {
+      // We don't have to worry about error since PopulateVariableValue
+      // will automatically sets error in item_proto.
+      value_obj->PopulateVariableValue(item_proto, eval_coordinator);
+    }
+    else {
+      // For dictionary, we also display the key. So an item would be
+      // [index]: { "key": Key, "value": Value }
+      Variable *key_proto = item_proto->add_members();
+      key_proto->set_name(kDictionaryKeyFieldName);
+      key_obj->PopulateVariableValue(key_proto, eval_coordinator);
+
+      Variable *value_proto = item_proto->add_members();
+      value_proto->set_name(kHashSetAndDictValueFieldName);
+      value_obj->PopulateVariableValue(value_proto, eval_coordinator);
+    }
+
     items_fetched_so_far++;
-    index++;
+    if (items_fetched_so_far >= max_items_to_fetch) {
+      break;
+    }
   }
   return S_OK;
 }
