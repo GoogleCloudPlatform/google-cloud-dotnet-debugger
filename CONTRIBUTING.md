@@ -3,6 +3,11 @@
 Want to contribute? Great! Please read this page so your submission can go
 through smoothly.
 
+1. Read and sign our Contributor License Agreement (See below).
+1. Fork this repository.
+1. Write changes, tests, integration tests and documentation in your fork.
+1. Create a pull request.
+
 ## Contributor License Agreement
 
 Before we can use your code, you must sign the
@@ -24,3 +29,9 @@ into the repository. Before you start working on a larger contribution, you
 should get in touch with us first through the issue tracker with your idea so
 that we can help out and possibly guide you. Coordinating up front makes it much
 easier to avoid frustration later on.
+
+## Tests and Documentation
+
+All significant changes are expected to be accompanied by at minimum unit tests.
+If appropriate make the needed documentation changes.  If you are making a larger
+change or adding a new feature please add integration tests as well.
