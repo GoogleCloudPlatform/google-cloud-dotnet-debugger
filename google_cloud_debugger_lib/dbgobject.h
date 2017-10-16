@@ -173,6 +173,9 @@ class DbgObject : public StringStreamWrapper {
  protected:
   // The HRESULT when Initialize is called.
   HRESULT initialize_hr_ = S_OK;
+
+  // The maximum number of items in a collection that we will expand.
+  static const std::int32_t collection_size_;
 };
 
 }  //  namespace google_cloud_debugger

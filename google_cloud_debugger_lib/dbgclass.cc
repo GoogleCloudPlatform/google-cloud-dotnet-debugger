@@ -517,7 +517,7 @@ HRESULT DbgClass::ProcessListType(ICorDebugObjectValue *debug_obj_value,
 
   // Makes sure we don't grab more items than we need (this can happen because
   // if a list size is 2, the underlying items_ array can have 4 items).
-  if (count_ < 10) {
+  if (count_ < DbgObject::collection_size_) {
     (reinterpret_cast<DbgArray *>(collection_items_.get()))
         ->SetMaxArrayItemsToRetrieve(count_);
   }
@@ -538,7 +538,7 @@ HRESULT DbgClass::ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
   hr = ExtractField(debug_obj_value, debug_class, metadata_import,
                     kHashSetCountFieldName, &hash_set_size);
   if (FAILED(hr)) {
-    WriteError("Failed to find field that represents the size of the list.");
+    WriteError("Failed to find field that represents the size of the set.");
     return hr;
   }
   count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(hash_set_size.get())
@@ -1008,13 +1008,14 @@ HRESULT DbgClass::PopulateHashSet(
 
   // Now we start fetching items from the hash set.
   int32_t index = 0;
-  int32_t max_items_to_fetch = min(count_, 10);
+  int32_t max_items_to_fetch = min(count_, DbgClass::collection_size_);
   int32_t items_fetched_so_far = 0;
   // Casts the collection_items_ to an array.
   DbgArray *slots_array = reinterpret_cast<DbgArray *>(collection_items_.get());
   // We get items from the _items array. We have to make sure we don't go beyond
   // the hashset_last_index_ because items at this point onwards will either be
   // invalid or out of bound of the array.
+  // We will only get items in the array that has hashCode greater or equal to 0.
   while (index < hashset_last_index_ &&
          items_fetched_so_far < max_items_to_fetch) {
     // Extracts out the item from the array.
