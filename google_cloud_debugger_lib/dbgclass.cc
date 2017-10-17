@@ -223,7 +223,7 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
 
 HRESULT DbgClass::ExtractField(const std::string &field_name,
                                DbgObject **field_value) {
-  // Try to find the hashCode field of the struct.
+  // Try to find the field field_name of this object.
   const auto &find_field = std::find_if(
       class_fields_.begin(), class_fields_.end(),
       [&](std::unique_ptr<DbgClassField> &class_field) {
@@ -234,8 +234,8 @@ HRESULT DbgClass::ExtractField(const std::string &field_name,
     return E_FAIL;
   }
 
-  // Gets the underlying DbgObject that represents the field hashCode of the
-  // struct.
+  // Gets the underlying DbgObject that represents the field field_name
+  // of this object.
   DbgObject *field_obj = (*find_field)->GetFieldValue();
   if (!field_obj) {
     WriteError("Failed to evaluate value for field " + field_name);
