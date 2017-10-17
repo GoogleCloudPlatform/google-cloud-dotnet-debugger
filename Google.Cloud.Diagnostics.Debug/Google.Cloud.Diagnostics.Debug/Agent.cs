@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
+using Grpc.Core;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -33,9 +34,22 @@ namespace Google.Cloud.Diagnostics.Debug
     /// report hit breakpoints.
     /// TODO(talarico): These docs need to be significantly expanded (use watchpoint).
     /// TODO(talarico): Add example of how to start this.
+    /// TODO(talarico): Refactor this class it's become to random and some functions do too much.
     /// </summary>
     internal sealed class Agent : IDisposable
     {
+        /// <summary>
+        /// The minimum amount of time we will sleep when backing off failed RPC calls.
+        /// The wait time may be higher if the user sets the option.
+        /// </summary>
+        private static readonly TimeSpan _minBackOffWaitTime = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// The maximum amount of time we will sleep when backing off failed RPC calls.
+        /// The wait time may be higher if the user sets the option.
+        /// </summary>
+        private static readonly TimeSpan _maxBackOffWaitTime = TimeSpan.FromSeconds(10);
+
         private readonly AgentOptions _options;
         private readonly DebuggerClient _client;
         // Key is a location identifier (from path and line number) and value is ID of an existing breakpoint.
@@ -51,7 +65,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public Agent(AgentOptions options, Controller2Client controlClient = null)
         {
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _client = new DebuggerClient(options, controlClient ?? Controller2Client.Create());
+            _client = TryAction(() => new DebuggerClient(options, controlClient));
             _breakpointLocationToId = new ConcurrentDictionary<string, string>();
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
@@ -63,7 +77,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public void StartAndBlock()
         {
             // Register the debuggee.
-            _client.Register();
+            TryAction(() => { _client.Register(); return true; });
 
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.DebuggerArguments, null);
@@ -101,7 +115,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 {
                     server.WaitForConnectionAsync().Wait();
                     tcs.SetResult(true);
-                    while (!cancellationToken.IsCancellationRequested)
+                    RepeatRpcAction(() =>
                     {
                         var serverBreakpoints = TryAction(() => _client.ListBreakpoints());
 
@@ -120,8 +134,10 @@ namespace Google.Cloud.Diagnostics.Debug
                                 throw new ArgumentException("Location must contains file name and line number.");
                             }
 
-                            var location = new SourceLocation() {
-                                Path = locationStrings[0], Line = Int32.Parse(locationStrings[1])
+                            var location = new SourceLocation()
+                            {
+                                Path = locationStrings[0],
+                                Line = Int32.Parse(locationStrings[1])
                             };
 
                             var breakpoint = new Breakpoint
@@ -154,9 +170,7 @@ namespace Google.Cloud.Diagnostics.Debug
                                 server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
                             }
                         }
-
-                        Thread.Sleep(TimeSpan.FromSeconds(_options.WaitTime));
-                    }
+                    }, TimeSpan.FromSeconds(_options.WaitTime), cancellationToken);
                 }
             }).Start();
             return tcs.Task;
@@ -177,7 +191,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 {
                     server.WaitForConnectionAsync().Wait();
                     tcs.SetResult(true);
-                    while (!cancellationToken.IsCancellationRequested)
+                    RepeatRpcAction(() =>
                     {
                         Task<Breakpoint> breakpointFromDebugger = server.ReadBreakpointAsync();
                         breakpointFromDebugger.Wait();
@@ -197,10 +211,44 @@ namespace Google.Cloud.Diagnostics.Debug
                         // User may have removed it before the debugger has a chance to remove the breakpoint.
 
                         TryAction(() => _client.UpdateBreakpoint(breakpoint));
-                    }
+                    }, TimeSpan.Zero, cancellationToken);
                 }
             }).Start();
             return tcs.Task;
+        }
+
+        /// <summary>
+        /// Repeats an action that may throw and <see cref="RpcException"/>.
+        /// If an <see cref="RpcException"/> is thrown the <paramref name="waitTime"/> will double
+        /// until the action is successful (up to <see cref="_maxBackOffWaitTime"/>).  When the action
+        /// is successful the wait between calls will return to the original amount.
+        /// </summary>
+        /// <param name="action">The action to repeated make.</param>
+        /// <param name="waitTime">The time to wait between calls to the action.</param>
+        /// <param name="cancellationToken">A token to signal this action should stop.</param>
+        private void RepeatRpcAction(Action action, TimeSpan waitTime, CancellationToken cancellationToken)
+        {
+            TimeSpan originalWaitTime = waitTime;
+            TimeSpan currentWaitTime = waitTime;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    action();
+                    currentWaitTime = originalWaitTime;
+                }
+                catch (RpcException e)
+                {
+                    Console.WriteLine( $"RpcException with status code '{e.Status.StatusCode}' \n {e}");
+                    if (currentWaitTime < _maxBackOffWaitTime)
+                    {
+                        currentWaitTime = TimeSpan.FromTicks(currentWaitTime.Ticks * 2);
+                    }
+                    currentWaitTime = currentWaitTime == TimeSpan.Zero ? _minBackOffWaitTime : currentWaitTime;
+                }
+                Thread.Sleep(currentWaitTime);
+            }
+
         }
 
         /// <summary>
