@@ -93,27 +93,23 @@ class DbgClass : public DbgObject {
                            ICorDebugClass *debug_class,
                            IMetaDataImport *metadata_import);
 
-  // Processes the case where the object is a list. In this case,
-  // we extract out size of the list (_size field) and items in the list
-  // (_items field). The number of items displayed (when PopulateMembers
-  // is called) is the minimum of:
-  //  1. The size of the list.
-  //  2. The maximum number of items that a DbgArray can display (10
-  // by default).
-  HRESULT ProcessListType(ICorDebugObjectValue *debug_obj_value,
-                          ICorDebugClass *debug_class,
-                          IMetaDataImport *metadata_import);
-
-  // Processes the case where the object is a hash set. This function
-  // extracts out these fields:
-  //  1. field _count, which counts the number of items.
-  //  2. _items, which is an array of Slot struct, which contains
-  // the actual object and its hash.
-  //  3. _lastIndex, which tells us the last valid index of _items
-  // array (the last valid index is lastIndex_ - 1).
-  HRESULT ProcessHashSetType(ICorDebugObjectValue *debug_obj_value,
-                             ICorDebugClass *debug_class,
-                             IMetaDataImport *metadata_import);
+  // Processes the case where the object is a collection (list, hash set
+  // or a dictionary).
+  // This function extracts out these fields:
+  //  1. Field with the name count_field, which counts the number of items.
+  //  2. Field with the name entries_field. For list case, this is an array
+  // which contains the objects. For hash set and dictionary cases, this
+  // is an array of struct, which contains the actual object, its hash and
+  // its key (dictionary case).
+  //  3. last_index_field, which tells us the last valid index of the array
+  // above (the last valid index is the last index - 1). This only applies
+  // to hash set.
+  HRESULT ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
+                                ICorDebugClass *debug_class,
+                                IMetaDataImport *metadata_import,
+                                const std::string &count_field,
+                                const std::string &entries_field,
+                                const std::string &last_index_field);
 
   // Evaluates ValueType object.
   HRESULT ProcessValueType(ICorDebugValue *debug_value,
@@ -129,10 +125,11 @@ class DbgClass : public DbgObject {
                           ICorDebugClass *debug_class,
                           IMetaDataImport *metadata_import);
 
-  // Populates variable with a field count (number of items in this hash set)
-  // and the members of this hash set.
-  HRESULT PopulateHashSet(google::cloud::diagnostics::debug::Variable *variable,
-                          IEvalCoordinator *eval_coordinator);
+  // Populates variable with a field count (number of items in this hash set
+  // or dictionary) and the members of this hash set or dictionary.
+  HRESULT PopulateHashSetOrDictionary(
+      google::cloud::diagnostics::debug::Variable *variable,
+      IEvalCoordinator *eval_coordinator);
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
@@ -141,6 +138,12 @@ class DbgClass : public DbgObject {
                        IMetaDataImport *metadata_import,
                        const std::string &field_name,
                        std::unique_ptr<DbgObject> *field_value);
+
+  // Search class_fields_ vector for a field with name field_name and
+  // stores the pointer to the value of that field in field_value.
+  // This function assumes that this DbgClass object has already been
+  // initialized (so the class_fields_ vector are populated).
+  HRESULT ExtractField(const std::string &field_name, DbgObject **field_value);
 
   // Counts the number of generic params in the class.
   HRESULT CountGenericParams(IMetaDataImport *metadata_import, ULONG32 *count);
@@ -243,14 +246,14 @@ class DbgClass : public DbgObject {
   // String that represents "System.Collection.Generic.List`1".
   static const std::string kListClassName;
 
-  // String that represents "System.Collection.Generic.HashSet`1".
-  static const std::string kHashSetClassName;
-
   // "_size", which is the field that represents size of a list and hashset.
   static const std::string kListSizeFieldName;
 
   // "_items", which is the field that contains all items in a list.
   static const std::string kListItemsFieldName;
+
+  // String that represents "System.Collection.Generic.HashSet`1".
+  static const std::string kHashSetClassName;
 
   // "_slots", which is the field that contains items in the hashset.
   static const std::string kHashSetSlotsFieldName;
@@ -261,6 +264,27 @@ class DbgClass : public DbgObject {
 
   // "_count", which is the field that counts the size of the hash set.
   static const std::string kHashSetCountFieldName;
+
+  // String that represents "System.Collection.Generic.Dictionary`2".
+  static const std::string kDictionaryClassName;
+
+  // "entries", which is the field that contains items in the dictionary.
+  static const std::string kDictionaryItemsFieldName;
+
+  // "count", which is the field that counts the size of the dictionary.
+  static const std::string kDictionaryCountFieldName;
+
+  // "key", which is the field that stores the key in an Entry struct
+  // of a dictionary.
+  static const std::string kDictionaryKeyFieldName;
+
+  // "value", which is the field that stores the value in Entry/Slot
+  // struct of a dictionary/set.
+  static const std::string kHashSetAndDictValueFieldName;
+
+  // "hashCode", which is the field that stores the hash code in Entry/Slot
+  // struct of a dictionary/set.
+  static const std::string kHashSetAndDictHashCodeFieldName;
 };
 
 }  //  namespace google_cloud_debugger
