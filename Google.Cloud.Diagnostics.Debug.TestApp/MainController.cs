@@ -14,6 +14,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
@@ -29,6 +30,15 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         public string Echo(string message)
         {
             Thread.Sleep(TimeSpan.FromMilliseconds(50));
+            List<string> testList = new List<string>();
+            HashSet<string> testSet = new HashSet<string>();
+            Dictionary<string, int> testDictionary = new Dictionary<string, int>();
+            for (int i = 0; i < 5; i += 1)
+            {
+                testList.Add($"List{message}{i}");
+                testSet.Add($"Set{message}{i}");
+                testDictionary[$"Key{message}{i}"] = i;
+            }
             return message;
         }
 
