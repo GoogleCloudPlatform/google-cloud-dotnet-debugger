@@ -24,7 +24,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// <summary>
     /// A server to read and write breakpoints with clients.
     /// </summary>
-    public class BreakpointServer : IDisposable
+    public class BreakpointServer : IBreakpointServer
     {
         /// <summary>A semaphore to protect the buffer.</summary>
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
@@ -41,16 +41,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="pipe">The named pipe to send and receive breakpoint messages with.</param>
         public BreakpointServer(INamedPipeServer pipe) =>_pipe = pipe;
 
-        /// <summary>
-        /// Waits for a client to connect.
-        /// </summary>
+        /// <inheritdoc />
         public Task WaitForConnectionAsync() => _pipe.WaitForConnectionAsync();
 
-        /// <summary>
-        /// Read a breakpoint from the client.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The breakpoint message.</returns>
+        /// <inheritdoc />
         public async Task<Breakpoint> ReadBreakpointAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -91,12 +85,7 @@ namespace Google.Cloud.Diagnostics.Debug
             }
         }
 
-        /// <summary>
-        /// Write a breakpoint to the client.
-        /// </summary>
-        /// <param name="breakpoint">The breakpoint to write.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <inheritdoc />
         public Task WriteBreakpointAsync(Breakpoint breakpoint, CancellationToken cancellationToken = default(CancellationToken))
         {
             List<byte> bytes = new List<byte>();
