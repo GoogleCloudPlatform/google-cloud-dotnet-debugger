@@ -50,8 +50,11 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// before it returns. At this breakpoint, we can collect and examine
         /// List, HashSet and Dictionary collection.
         /// </summary>
-        [Fact]
-        public async Task TestCollection()
+        [Theory]
+        [InlineData("List")]
+        [InlineData("Set")]
+        [InlineData("Dictionary")]
+        public async Task TestCollection(string collectionName)
         {
             using (StartTestApp(debugEnabled: true))
             {
@@ -69,41 +72,32 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 // Check that the breakpoint has been hit.
                 Assert.True(newBp.IsFinalState);
 
-                // Checks that breakpoint contains collection.
-                DebuggerStackFrame firstFrame = newBp.StackFrames[0];
+                // Checks that the first frame of the breakpoint contains collection.
+                DebuggerVariable collection = newBp.StackFrames[0].Locals.FirstOrDefault(localVar
+                    => localVar.Name == $"test{collectionName}");
+                Assert.NotNull(collection);
 
-                TestCollectionHelper("List", collectionKey, firstFrame);
-                TestCollectionHelper("Set", collectionKey, firstFrame);
-                TestCollectionHelper("Dictionary", collectionKey, firstFrame);
-            }
-        }
-
-        private void TestCollectionHelper(string collectionName, string collectionKey, DebuggerStackFrame stackFrame)
-        {
-            // Tests that list contains the correct item.
-            DebuggerVariable collection = stackFrame.Locals.FirstOrDefault(localVar => localVar.Name == $"test{collectionName}");
-            Assert.NotNull(collection);
-
-            Assert.Equal(6, collection.Members.Count);
-            DebuggerVariable collectionCount = collection.Members.FirstOrDefault(member => member.Name == "Count");
-            Assert.NotNull(collectionCount);
-            Assert.Equal("5", collectionCount.Value);
-            for (int i = 0; i < 5; i += 1)
-            {
-                DebuggerVariable item = collection.Members.FirstOrDefault(member => member.Name == $"[{i}]");
-                Assert.NotNull(item);
-                if (collectionName == "Dictionary")
+                Assert.Equal(6, collection.Members.Count);
+                DebuggerVariable collectionCount = collection.Members.FirstOrDefault(member => member.Name == "Count");
+                Assert.NotNull(collectionCount);
+                Assert.Equal("5", collectionCount.Value);
+                for (int i = 0; i < 5; i += 1)
                 {
-                    DebuggerVariable key = item.Members.FirstOrDefault(member => member.Name == "key");
-                    DebuggerVariable value = item.Members.FirstOrDefault(member => member.Name == "value");
-                    Assert.NotNull(key);
-                    Assert.NotNull(value);
-                    Assert.Equal($"Key{collectionKey}{i}", key.Value);
-                    Assert.Equal($"{i}", value.Value);
-                }
-                else
-                {
-                    Assert.Equal($"{collectionName}{collectionKey}{i}", item.Value);
+                    DebuggerVariable item = collection.Members.FirstOrDefault(member => member.Name == $"[{i}]");
+                    Assert.NotNull(item);
+                    if (collectionName == "Dictionary")
+                    {
+                        DebuggerVariable key = item.Members.FirstOrDefault(member => member.Name == "key");
+                        DebuggerVariable value = item.Members.FirstOrDefault(member => member.Name == "value");
+                        Assert.NotNull(key);
+                        Assert.NotNull(value);
+                        Assert.Equal($"Key{collectionKey}{i}", key.Value);
+                        Assert.Equal($"{i}", value.Value);
+                    }
+                    else
+                    {
+                        Assert.Equal($"{collectionName}{collectionKey}{i}", item.Value);
+                    }
                 }
             }
         }
