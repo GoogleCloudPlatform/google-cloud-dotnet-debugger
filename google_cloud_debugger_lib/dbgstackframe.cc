@@ -81,15 +81,21 @@ HRESULT DbgStackFrame::PopulateLocalVariables(
   HRESULT hr;
 
   vector<CComPtr<ICorDebugValue>> debug_values;
-  ULONG variable_retrieved;
   hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
                                                          ICorDebugValue>(
       local_enum, &debug_values);
 
-  // Just logs the error, the debug_values array may still have values.
+  // If hr is a failed HRESULT, this may be because some (not all) variables
+  // are not available. As such, we should simply log the error and try
+  // to enumerate through the debug_values vector to see which variables
+  // are available.
   if (FAILED(hr)) {
     cerr << "Failed to retrieve some local variables " << std::hex << hr;
     hr = S_OK;
+  }
+
+  if (debug_values.size() == 0) {
+    return S_OK;
   }
 
   for (size_t i = 0; i < debug_values.size(); ++i) {
