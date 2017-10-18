@@ -280,20 +280,6 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::CustomNotification(
   return appdomain->Continue(FALSE);
 }
 
-HRESULT DebuggerCallback::EnumerateAppDomains(
-    std::vector<CComPtr<ICorDebugAppDomain>> *result) {
-  HRESULT hr;
-  CComPtr<ICorDebugAppDomainEnum> appdomain_enum;
-  hr = debug_process_->EnumerateAppDomains(&appdomain_enum);
-  if (FAILED(hr)) {
-    cerr << "Failed to get ICorDebugAppDomainEnum.";
-    return hr;
-  }
-
-  return DebuggerCallback::EnumerateICorDebugSpecifiedType<
-      ICorDebugAppDomainEnum, ICorDebugAppDomain>(appdomain_enum, result);
-}
-
 HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
     ICorDebugBreakpoint *debug_breakpoint, mdMethodDef *function_token,
     ULONG32 *il_offset, IMetaDataImport **metadata_import) {
