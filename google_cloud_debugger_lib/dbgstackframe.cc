@@ -81,18 +81,15 @@ HRESULT DbgStackFrame::PopulateLocalVariables(
   HRESULT hr;
 
   vector<CComPtr<ICorDebugValue>> debug_values;
+  ULONG variable_retrieved;
   hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
                                                          ICorDebugValue>(
       local_enum, &debug_values);
 
-  // Variables not available at this frame (e.g. ,optimized away).
-  if (hr == CORDBG_E_IL_VAR_NOT_AVAILABLE) {
-    return S_OK;
-  }
-
+  // Just logs the error, the debug_values array may still have values.
   if (FAILED(hr)) {
-    cerr << "Failed to retrieve local variables.";
-    return hr;
+    cerr << "Failed to retrieve some local variables " << std::hex << hr;
+    hr = S_OK;
   }
 
   for (size_t i = 0; i < debug_values.size(); ++i) {
@@ -149,12 +146,12 @@ HRESULT DbgStackFrame::PopulateMethodArguments(
                                                          ICorDebugValue>(
       method_arg_enum, &method_arg_values);
 
-  if (hr == CORDBG_E_IL_VAR_NOT_AVAILABLE) {
-    return S_OK;
+  if (FAILED(hr)) {
+    cerr << "Failed to retrieve method arguments " << std::hex << hr;
+    hr = S_OK;
   }
 
-  if (FAILED(hr)) {
-    cerr << "Failed to retrieve method arguments.";
+  if (method_arg_values.size() == 0) {
     return hr;
   }
 

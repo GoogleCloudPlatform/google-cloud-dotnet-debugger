@@ -168,9 +168,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     debug_process_ = debug_process;
   };
 
-  // Enumerates all app domains in the application.
-  HRESULT EnumerateAppDomains(std::vector<CComPtr<ICorDebugAppDomain>> *result);
-
   // Returns all the PDB files that are parsed.
   const std::vector<
       std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
@@ -202,16 +199,19 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   // Template function to enumerate different ICorDebug enumerations.
   // All the enumerated items will be stored in vector result.
+  // Even if HRESULT returned is not SUCCEED, the result array may
+  // be filled too.
   template <typename ICorDebugSpecifiedTypeEnum,
             typename ICorDebugSpecifiedType>
   static HRESULT EnumerateICorDebugSpecifiedType(
       ICorDebugSpecifiedTypeEnum *debug_enum,
       std::vector<CComPtr<ICorDebugSpecifiedType>> *result) {
     if (!result) {
-      return E_FAIL;
+      return E_INVALIDARG;
     }
 
     size_t result_index = 0;
+    result->clear();
     HRESULT hr = E_FAIL;
     while (true) {
       ULONG value_to_retrieve = 20;
@@ -222,12 +222,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
       hr = debug_enum->Next(value_to_retrieve, temp_values.data(),
                             &value_retrieved);
-
-      if (FAILED(hr)) {
-        std::cerr << "Failed to enumerate ICorDebug.";
-        return hr;
-      }
-
       if (value_retrieved == 0) {
         break;
       }
@@ -237,6 +231,11 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
         (*result)[result_index] = temp_values[k];
         temp_values[k]->Release();
         ++result_index;
+      }
+
+      if (FAILED(hr)) {
+        std::cerr << "Failed to enumerate ICorDebug " << std::hex << hr;
+        return hr;
       }
     }
 

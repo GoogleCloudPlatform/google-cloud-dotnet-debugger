@@ -234,7 +234,10 @@ void Debugger::DeactivateBreakpoints() {
       appdomain_enum, &appdomains);
 
   if (FAILED(hr)) {
-    cerr << "Failed to enumerate app domains: " << hex << hr << endl;
+    cerr << "Failed to enumerate some app domains: " << hex << hr << endl;
+  }
+
+  if (appdomains.size() == 0) {
     return;
   }
 
@@ -252,7 +255,10 @@ void Debugger::DeactivateBreakpoints() {
                                                       &breakpoints);
 
     if (FAILED(hr)) {
-      cerr << "Failed to enumerate breakpoints: " << hex << hr << endl;
+      cerr << "Failed to enumerate some breakpoints: " << hex << hr << endl;
+    }
+
+    if (breakpoints.size() == 0) {
       continue;
     }
 
