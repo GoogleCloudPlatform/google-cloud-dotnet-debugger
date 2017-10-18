@@ -16,6 +16,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
+using DebuggerVariable = Google.Cloud.Debugger.V2.Variable;
+using DebuggerStackFrame = Google.Cloud.Debugger.V2.StackFrame;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -68,56 +70,40 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Assert.True(newBp.IsFinalState);
 
                 // Checks that breakpoint contains collection.
-                Debugger.V2.StackFrame firstFrame = newBp.StackFrames[0];
+                DebuggerStackFrame firstFrame = newBp.StackFrames[0];
 
-                // Tests that list contains the correct item.
-                Debugger.V2.Variable list = firstFrame.Locals.FirstOrDefault(localVar => localVar.Name == "testList");
-                Assert.NotNull(list);
+                TestCollectionHelper("List", collectionKey, firstFrame);
+                TestCollectionHelper("Set", collectionKey, firstFrame);
+                TestCollectionHelper("Dictionary", collectionKey, firstFrame);
+            }
+        }
 
-                Assert.Equal(6, list.Members.Count);
-                Debugger.V2.Variable listCount = list.Members.FirstOrDefault(member => member.Name == "Count");
-                Assert.NotNull(listCount);
-                Assert.Equal("5", listCount.Value);
-                for (int i = 0; i < 5; i += 1)
+        private void TestCollectionHelper(string collectionName, string collectionKey, DebuggerStackFrame stackFrame)
+        {
+            // Tests that list contains the correct item.
+            DebuggerVariable collection = stackFrame.Locals.FirstOrDefault(localVar => localVar.Name == $"test{collectionName}");
+            Assert.NotNull(collection);
+
+            Assert.Equal(6, collection.Members.Count);
+            DebuggerVariable collectionCount = collection.Members.FirstOrDefault(member => member.Name == "Count");
+            Assert.NotNull(collectionCount);
+            Assert.Equal("5", collectionCount.Value);
+            for (int i = 0; i < 5; i += 1)
+            {
+                DebuggerVariable item = collection.Members.FirstOrDefault(member => member.Name == $"[{i}]");
+                Assert.NotNull(item);
+                if (collectionName == "Dictionary")
                 {
-                    Debugger.V2.Variable item = list.Members.FirstOrDefault(member => member.Name == $"[{i}]");
-                    Assert.NotNull(item);
-                    Assert.Equal($"List{collectionKey}{i}", item.Value);
-                }
-
-                // Tests that set contains the correct item.
-                Debugger.V2.Variable set = firstFrame.Locals.FirstOrDefault(localVar => localVar.Name == "testSet");
-                Assert.NotNull(set);
-
-                Assert.Equal(6, set.Members.Count);
-                Debugger.V2.Variable setCount = set.Members.FirstOrDefault(member => member.Name == "Count");
-                Assert.NotNull(setCount);
-                Assert.Equal("5", setCount.Value);
-                for (int i = 0; i < 5; i += 1)
-                {
-                    Debugger.V2.Variable item = set.Members.FirstOrDefault(member => member.Name == $"[{i}]");
-                    Assert.NotNull(item);
-                    Assert.Equal($"Set{collectionKey}{i}", item.Value);
-                }
-
-                // Tests that dictionary contains the correct item.
-                Debugger.V2.Variable dictionary = firstFrame.Locals.FirstOrDefault(localVar => localVar.Name == "testDictionary");
-                Assert.NotNull(dictionary);
-
-                Assert.Equal(6, dictionary.Members.Count);
-                Debugger.V2.Variable dictionaryCount = dictionary.Members.FirstOrDefault(member => member.Name == "Count");
-                Assert.NotNull(dictionaryCount);
-                Assert.Equal("5", dictionaryCount.Value);
-                for (int i = 0; i < 5; i += 1)
-                {
-                    Debugger.V2.Variable item = dictionary.Members.FirstOrDefault(member => member.Name == $"[{i}]");
-                    Assert.NotNull(item);
-                    Debugger.V2.Variable key = item.Members.FirstOrDefault(member => member.Name == "key");
-                    Debugger.V2.Variable value = item.Members.FirstOrDefault(member => member.Name == "value");
+                    DebuggerVariable key = item.Members.FirstOrDefault(member => member.Name == "key");
+                    DebuggerVariable value = item.Members.FirstOrDefault(member => member.Name == "value");
                     Assert.NotNull(key);
                     Assert.NotNull(value);
                     Assert.Equal($"Key{collectionKey}{i}", key.Value);
                     Assert.Equal($"{i}", value.Value);
+                }
+                else
+                {
+                    Assert.Equal($"{collectionName}{collectionKey}{i}", item.Value);
                 }
             }
         }
