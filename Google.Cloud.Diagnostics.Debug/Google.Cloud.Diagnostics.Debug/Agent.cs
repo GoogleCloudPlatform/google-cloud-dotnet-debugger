@@ -57,6 +57,7 @@ namespace Google.Cloud.Diagnostics.Debug
             // Register the debuggee.
             TryAction(() => _client.Register());
 
+            // Start the debugger.
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                 _options.Debugger, _options.DebuggerArguments, null);
             _process = Process.Start(startInfo);
@@ -126,7 +127,6 @@ namespace Google.Cloud.Diagnostics.Debug
             }).Start();
             return tcs.Task;
         }
-
 
         /// <summary>
         /// Tries to perform an action. If a <see cref="DebuggeeDisabledException"/> is
