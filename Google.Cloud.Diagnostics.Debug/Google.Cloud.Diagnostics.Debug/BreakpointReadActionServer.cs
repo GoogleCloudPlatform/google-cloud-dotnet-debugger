@@ -17,16 +17,29 @@ using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
+    /// <summary>
+    /// An implementation of the <see cref="BreakpointActionServer"/> that
+    /// handles reading breakpoints and reporting them to the debugger API.
+    /// </summary>
     public class BreakpointReadActionServer : BreakpointActionServer
     {
         private readonly IDebuggerClient _client;
 
+        /// <summary>
+        /// Create a new <see cref="BreakpointReadActionServer"/>.
+        /// </summary>
+        /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="client">The debugger client to send updated breakpoints to.</param>
         public BreakpointReadActionServer(
             IBreakpointServer server, IDebuggerClient client) : base (server)
         {
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
         }
 
+        /// <summary>
+        /// Blocks and reads a breakpoint from the <see cref="IBreakpointServer"/>
+        /// and then sends the sends the breakpoint to the debugger API.
+        /// </summary>
         internal override void MainAction()
         {
             Breakpoint readBreakpoint = _server.ReadBreakpointAsync().Result;

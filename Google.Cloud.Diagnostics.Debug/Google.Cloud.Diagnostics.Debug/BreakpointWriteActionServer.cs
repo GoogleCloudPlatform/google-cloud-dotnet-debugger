@@ -17,11 +17,21 @@ using System.Linq;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
+    /// <summary>
+    /// An implementation of the <see cref="BreakpointActionServer"/> that
+    /// handles reading breakpoints from the debugger API and reporting
+    /// them to the <see cref="IBreakpointServer"/>.
+    /// </summary>
     public class BreakpointWriteActionServer : BreakpointActionServer
     {
         private readonly IDebuggerClient _client;
         private readonly BreakpointManager _breakpointManager;
 
+        /// <summary>
+        /// Create a new <see cref="BreakpointWriteActionServer"/>.
+        /// </summary>
+        /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="client">The debugger client to send updated breakpoints to.</param>
         public BreakpointWriteActionServer(
             IBreakpointServer server, IDebuggerClient client) : base (server)
         {
@@ -29,6 +39,11 @@ namespace Google.Cloud.Diagnostics.Debug
             _breakpointManager = new BreakpointManager();
         }
 
+        /// <summary>
+        /// Lists breakpoints from the debugger API.  Stale breakpoints are removed,
+        /// new breakpoints are sent to the <see cref="IBreakpointServer"/> and 
+        /// breakpoints that cannot be processed are returned with an error.
+        /// </summary>
         internal override void MainAction()
         {
             var serverBreakpoints = _client.ListBreakpoints();

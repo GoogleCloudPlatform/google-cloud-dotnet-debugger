@@ -19,7 +19,12 @@ using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
-    public abstract class BreakpointActionServer :IDisposable
+    /// <summary>
+    /// A wrapper around an <see cref="IBreakpointServer"/> to help repeat an
+    /// action against that server with a potential delay and retry logic for
+    /// <see cref="RpcException"/>s.
+    /// </summary>
+    public abstract class BreakpointActionServer : IDisposable
     {
         /// <summary>
         /// The default minimum amount of time we will sleep when backing off failed RPC calls.
@@ -43,6 +48,12 @@ namespace Google.Cloud.Diagnostics.Debug
 
         protected readonly IBreakpointServer _server;
 
+        /// <summary>
+        /// Create a new <see cref="BreakpointActionServer"/>.
+        /// </summary>
+        /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="minBackOffWaitTime">The minimum amount of time we will sleep when backing off failed RPC calls.</param>
+        /// <param name="maxBackOffWaitTime">The maximum amount of time we will sleep when backing off failed RPC calls</param>
         public BreakpointActionServer(IBreakpointServer server,
             TimeSpan? minBackOffWaitTime = null, TimeSpan? maxBackOffWaitTime = null)
         {
@@ -51,23 +62,27 @@ namespace Google.Cloud.Diagnostics.Debug
             _maxBackOffWaitTime = maxBackOffWaitTime ?? _defaultMaxBackOffWaitTime;
         }
 
+        /// <inheritdoc />
         public void Dispose() => _server.Dispose();
 
+        /// <summary>
+        /// Waits for the underlying <see cref="IBreakpointServer"/> to connect.
+        /// </summary>
         public void WaitForConnection() => _server.WaitForConnectionAsync().Wait();
  
+        /// <summary>
+        /// The main logic of the action server. To be implemented by each parent class.
+        /// </summary>
         internal abstract void MainAction();
 
-        /*
-          /// <summary>
-        /// Repeats an action that may throw and <see cref="RpcException"/>.
-        /// If an <see cref="RpcException"/> is thrown the <paramref name="waitTime"/> will double
-        /// until the action is successful (up to <see cref="_maxBackOffWaitTime"/>).  When the action
+        /// <summary>
+        /// Repeats the <see cref="MainAction"/> function.  If an <see cref="RpcException"/>
+        /// is thrown the <paramref name="waitTime"/> will double until the action is
+        /// successful (up to <see cref="_maxBackOffWaitTime"/>).  When the action
         /// is successful the wait between calls will return to the original amount.
         /// </summary>
-        /// <param name="waitTime">The time to wait between calls to the action.</param>
-        /// <param name="cancellationToken">A token to signal this action should stop.</param>
-         */
-
+        /// <param name="waitTime">The time to wait between calls to the <see cref="MainAction"/>.</param>
+        /// <param name="cancellationToken">A token to signal this loop should stop.</param>
         public void StartActionLoop(TimeSpan waitTime, CancellationToken cancellationToken)
         {
             TimeSpan originalWaitTime = waitTime;

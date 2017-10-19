@@ -24,6 +24,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 {
     public class BreakpointActionServerTests
     {
+        // The tolerance for number of calls to the main action.
         private static readonly int Tolerance = 10;
         private static readonly TimeSpan _minBackOffWaitTime = TimeSpan.FromMilliseconds(10);
         private static readonly TimeSpan _maxBackOffWaitTime = TimeSpan.FromMilliseconds(100);
@@ -89,6 +90,12 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.InRange(_fakeActionServer.Counter, estimatedCalls - Tolerance, estimatedCalls + Tolerance);
         }
 
+        /// <summary>
+        /// Run the main loop for a given amount of time.
+        /// </summary>
+        /// <param name="testTime">The amount of time to run the main action loop for.</param>
+        /// <param name="waitTime">The wait time to be passed to the server.</param>
+        /// <returns>The actual time elapsed in milliseconds during the run of the test.</returns>
         private long RunLoop(TimeSpan testTime, TimeSpan waitTime)
         {
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -104,9 +111,16 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             return timer.ElapsedMilliseconds;
         }
 
+        /// <summary>
+        /// A fake <see cref="FakeBreakpointActionServer"/>.
+        /// </summary>
         private class FakeBreakpointActionServer : BreakpointActionServer
         {
+            // The number of times the MainAction has been called.
             public int Counter = 0;
+
+            // The number of times to throw exceptions during a call to the
+            // MainAction function.
             public int ThrowTimes = 0;
 
             public FakeBreakpointActionServer(IBreakpointServer server) : 

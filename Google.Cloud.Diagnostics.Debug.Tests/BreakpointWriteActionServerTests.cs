@@ -121,6 +121,10 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 Match.Create((Breakpoint b) => !b.Activated), It.IsAny<CancellationToken>()), Times.Exactly(4));
         }
 
+        /// <summary>
+        /// Creates a matcher that will match a <see cref="StackdriverBreakpoint"/>
+        /// that has a status set that conditions and expressions are not supported.
+        /// </summary>
         private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id)
         {
             return (b) =>
@@ -128,6 +132,9 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 b.Status.Description.Format == Messages.CondExpNotSupported;
         }
 
+        /// <summary>
+        /// Create a list of <see cref="StackdriverBreakpoint"/>s.
+        /// </summary>
         private List<StackdriverBreakpoint> CreateBreakpoints(int numBreakpoints)
         {
             List<StackdriverBreakpoint> breakpoints = new List<StackdriverBreakpoint>();
