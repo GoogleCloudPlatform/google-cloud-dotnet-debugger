@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using Google.Api.Gax;
-using System.Threading.Tasks;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -28,15 +27,11 @@ namespace Google.Cloud.Diagnostics.Debug
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
         }
 
-        protected override void MainAction()
+        internal override void MainAction()
         {
-            Task<Breakpoint> breakpointFromDebugger = _server.ReadBreakpointAsync();
-            breakpointFromDebugger.Wait();
-
-            Breakpoint readBreakpoint = breakpointFromDebugger.Result;
+            Breakpoint readBreakpoint = _server.ReadBreakpointAsync().Result;
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
             breakpoint.IsFinalState = true;
-
             _client.UpdateBreakpoint(breakpoint);
         }
     }

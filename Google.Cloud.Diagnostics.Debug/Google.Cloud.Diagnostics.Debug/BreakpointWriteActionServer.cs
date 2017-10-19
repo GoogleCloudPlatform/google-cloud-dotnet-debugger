@@ -29,7 +29,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _breakpointManager = new BreakpointManager();
         }
 
-        protected override void MainAction()
+        internal override void MainAction()
         {
             var serverBreakpoints = _client.ListBreakpoints();
             var bpmResponse = _breakpointManager.UpdateBreakpoints(serverBreakpoints);

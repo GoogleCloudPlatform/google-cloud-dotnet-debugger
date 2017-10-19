@@ -22,31 +22,40 @@ namespace Google.Cloud.Diagnostics.Debug
     public abstract class BreakpointActionServer :IDisposable
     {
         /// <summary>
-        /// The minimum amount of time we will sleep when backing off failed RPC calls.
-        /// The wait time may be higher if the user sets the option.
+        /// The default minimum amount of time we will sleep when backing off failed RPC calls.
         /// </summary>
-        private static readonly TimeSpan _minBackOffWaitTime = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan _defaultMinBackOffWaitTime = TimeSpan.FromSeconds(1);
+
+        /// <summary>
+        /// The default maximum amount of time we will sleep when backing off failed RPC calls.
+        /// </summary>
+        private static readonly TimeSpan _defaultMaxBackOffWaitTime = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// The minimum amount of time we will sleep when backing off failed RPC calls.
+        /// </summary>
+        private readonly TimeSpan _minBackOffWaitTime;
 
         /// <summary>
         /// The maximum amount of time we will sleep when backing off failed RPC calls.
-        /// The wait time may be higher if the user sets the option.
         /// </summary>
-        private static readonly TimeSpan _maxBackOffWaitTime = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan _maxBackOffWaitTime;
 
         protected readonly IBreakpointServer _server;
 
-        public BreakpointActionServer(IBreakpointServer server)
+        public BreakpointActionServer(IBreakpointServer server,
+            TimeSpan? minBackOffWaitTime = null, TimeSpan? maxBackOffWaitTime = null)
         {
             _server = GaxPreconditions.CheckNotNull(server, nameof(server));
+            _minBackOffWaitTime = minBackOffWaitTime ?? _defaultMinBackOffWaitTime;
+            _maxBackOffWaitTime = maxBackOffWaitTime ?? _defaultMaxBackOffWaitTime;
         }
 
         public void Dispose() => _server.Dispose();
 
         public void WaitForConnection() => _server.WaitForConnectionAsync().Wait();
  
-
-        protected abstract void MainAction();
-
+        internal abstract void MainAction();
 
         /*
           /// <summary>
@@ -75,7 +84,8 @@ namespace Google.Cloud.Diagnostics.Debug
                     Console.WriteLine($"RpcException with status code '{e.Status.StatusCode}' \n {e}");
                     if (currentWaitTime < _maxBackOffWaitTime)
                     {
-                        currentWaitTime = TimeSpan.FromTicks(currentWaitTime.Ticks * 2);
+                        currentWaitTime = TimeSpan.FromTicks(
+                            Math.Min(currentWaitTime.Ticks * 2, _maxBackOffWaitTime.Ticks));
                     }
                     currentWaitTime = currentWaitTime == TimeSpan.Zero ? _minBackOffWaitTime : currentWaitTime;
                 }
