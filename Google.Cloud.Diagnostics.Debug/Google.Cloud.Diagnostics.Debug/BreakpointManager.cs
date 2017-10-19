@@ -18,19 +18,40 @@ using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
+    /// <summary>
+    /// Manages the current state of breakpoints.
+    /// </summary>
     public sealed class BreakpointManager
     {
+        /// <summary>
+        /// A response from the <see cref="BreakpointManager"/>
+        /// </summary>
         public class BreakpointManagerResponse
         {
+            /// <summary>
+            /// New breakpoints from the last update.
+            /// </summary>
             public IEnumerable<StackdriverBreakpoint> New { get; set; }
+
+            /// <summary>
+            /// Breakpoints from during this update.
+            /// </summary>
             public IEnumerable<StackdriverBreakpoint> Removed { get; set; }
         }
 
+        /// <summary>
+        /// The list of current breakpoints.
+        /// </summary>
         private readonly Dictionary<string, StackdriverBreakpoint> _breakpointLocationToId =
             new Dictionary<string, StackdriverBreakpoint>();
 
+        /// <summary>A lock to protect the breakpoint dictionary.</summary>
         private readonly object _mutex = new object();
 
+        /// <summary>
+        /// Update the current set of active breakpoints.
+        /// </summary>
+        /// <param name="activeBreakpoints">The current set of active breakpoints from the debugger API.</param>
         public BreakpointManagerResponse UpdateBreakpoints(IEnumerable<StackdriverBreakpoint> activeBreakpoints)
         {
             lock (_mutex)
@@ -39,16 +60,15 @@ namespace Google.Cloud.Diagnostics.Debug
                     activeBreakpoints.ToDictionary(b => b.GetLocationIdentifier(), b => b));
 
                 var newBreakpoints = activeBreakpoints.Where(b => !_breakpointLocationToId.ContainsKey(b.GetLocationIdentifier())).ToList();
-                var removedBreakpoints = _breakpointLocationToId.Keys
-                    .Where(identifier => !identifiersToBreakpoint.ContainsKey(identifier))
-                    .Select(id => _breakpointLocationToId[id])
-                    .ToList();
-
                 foreach (var newBreakpoint in newBreakpoints)
                 {
                     _breakpointLocationToId[newBreakpoint.GetLocationIdentifier()] = newBreakpoint;
                 }
 
+                var removedBreakpoints = _breakpointLocationToId.Keys
+                    .Where(identifier => !identifiersToBreakpoint.ContainsKey(identifier))
+                    .Select(id => _breakpointLocationToId[id])
+                    .ToList();
                 foreach (var removedBreakpoint in removedBreakpoints)
                 {
                     _breakpointLocationToId.Remove(removedBreakpoint.GetLocationIdentifier());

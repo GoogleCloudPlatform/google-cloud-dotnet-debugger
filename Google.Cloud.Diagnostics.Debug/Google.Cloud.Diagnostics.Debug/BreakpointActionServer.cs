@@ -46,6 +46,9 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         private readonly TimeSpan _maxBackOffWaitTime;
 
+        /// <summary>
+        /// The breakpoint server.
+        /// </summary>
         protected readonly IBreakpointServer _server;
 
         /// <summary>
