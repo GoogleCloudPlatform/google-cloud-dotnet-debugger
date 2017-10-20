@@ -25,7 +25,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     public class BreakpointActionServerTests
     {
         // The tolerance for number of calls to the main action.
-        private static readonly int Tolerance = 10;
+        private static readonly int _tolerance = 10;
         private static readonly TimeSpan _minBackOffWaitTime = TimeSpan.FromMilliseconds(10);
         private static readonly TimeSpan _maxBackOffWaitTime = TimeSpan.FromMilliseconds(100);
 
@@ -59,7 +59,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             var waitTime = TimeSpan.FromMilliseconds(10);
             var elapsedMilliseconds = RunLoop(TimeSpan.FromSeconds(1), waitTime);
             var estimatedCalls = elapsedMilliseconds / waitTime.TotalMilliseconds;
-            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - Tolerance, estimatedCalls + Tolerance);
+            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - _tolerance, estimatedCalls + _tolerance);
         }
 
         [Fact]
@@ -73,7 +73,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             // call time is 140.  (300 - 140)/100 = 1.6 =~ 2
             // Call wait times (20, 40, 80, 100, 100, 100...)
             var estimatedCalls = (elapsedMilliseconds / _maxBackOffWaitTime.TotalMilliseconds) - 2;
-            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - Tolerance, estimatedCalls + Tolerance);
+            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - _tolerance, estimatedCalls + _tolerance);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             // call time is 240.  (240 - (4 * 10)) / 10 = 20;
             // Call wait times (20, 40, 80, 100, 10, 10...)
             var estimatedCalls = (elapsedMilliseconds / waitTime.TotalMilliseconds) - 20;
-            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - Tolerance, estimatedCalls + Tolerance);
+            Assert.InRange(_fakeActionServer.Counter, estimatedCalls - _tolerance, estimatedCalls + _tolerance);
         }
 
         /// <summary>
