@@ -112,7 +112,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         /// <summary>
-        /// A fake <see cref="FakeBreakpointActionServer"/>.
+        /// A fake <see cref="BreakpointActionServer"/>.
         /// </summary>
         private class FakeBreakpointActionServer : BreakpointActionServer
         {

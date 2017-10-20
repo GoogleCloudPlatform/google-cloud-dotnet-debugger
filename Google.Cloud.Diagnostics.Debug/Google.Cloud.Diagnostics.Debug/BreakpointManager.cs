@@ -42,7 +42,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// The list of current breakpoints.
         /// </summary>
-        private readonly Dictionary<string, StackdriverBreakpoint> _breakpointLocationToId =
+        private readonly Dictionary<string, StackdriverBreakpoint> _breakpointDictionary =
             new Dictionary<string, StackdriverBreakpoint>();
 
         /// <summary>A lock to protect the breakpoint dictionary.</summary>
@@ -59,19 +59,19 @@ namespace Google.Cloud.Diagnostics.Debug
                 var identifiersToBreakpoint = new Dictionary<string, StackdriverBreakpoint>(
                     activeBreakpoints.ToDictionary(b => b.GetLocationIdentifier(), b => b));
 
-                var newBreakpoints = activeBreakpoints.Where(b => !_breakpointLocationToId.ContainsKey(b.GetLocationIdentifier())).ToList();
+                var newBreakpoints = activeBreakpoints.Where(b => !_breakpointDictionary.ContainsKey(b.GetLocationIdentifier())).ToList();
                 foreach (var newBreakpoint in newBreakpoints)
                 {
-                    _breakpointLocationToId[newBreakpoint.GetLocationIdentifier()] = newBreakpoint;
+                    _breakpointDictionary[newBreakpoint.GetLocationIdentifier()] = newBreakpoint;
                 }
 
-                var removedBreakpoints = _breakpointLocationToId.Keys
+                var removedBreakpoints = _breakpointDictionary.Keys
                     .Where(identifier => !identifiersToBreakpoint.ContainsKey(identifier))
-                    .Select(id => _breakpointLocationToId[id])
+                    .Select(id => _breakpointDictionary[id])
                     .ToList();
                 foreach (var removedBreakpoint in removedBreakpoints)
                 {
-                    _breakpointLocationToId.Remove(removedBreakpoint.GetLocationIdentifier());
+                    _breakpointDictionary.Remove(removedBreakpoint.GetLocationIdentifier());
                 }
 
                 return new BreakpointManagerResponse
