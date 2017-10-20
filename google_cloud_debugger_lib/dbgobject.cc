@@ -40,6 +40,7 @@ HRESULT DbgObject::CreateDbgObjectHelper(
     return E_INVALIDARG;
   }
 
+  HRESULT hr;
   unique_ptr<DbgObject> temp_object;
   switch (cor_element_type) {
     case CorElementType::ELEMENT_TYPE_BOOLEAN:
@@ -110,8 +111,11 @@ HRESULT DbgObject::CreateDbgObjectHelper(
     case CorElementType::ELEMENT_TYPE_CLASS:
     case CorElementType::ELEMENT_TYPE_VALUETYPE:
     case CorElementType::ELEMENT_TYPE_OBJECT:
-      temp_object =
-          unique_ptr<DbgObject>(new (std::nothrow) DbgClass(debug_type, depth));
+      hr = DbgClass::CreateDbgClassObject(debug_type, depth, debug_value,
+                                          is_null, &temp_object, err_stream);
+      if (FAILED(hr)) {
+        return hr;
+      }
       break;
     default:
       return E_NOTIMPL;

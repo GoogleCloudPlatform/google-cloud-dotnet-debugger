@@ -70,6 +70,12 @@
     <ClCompile Include="icordebughelper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbgenum.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_builtin_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="breakpointcollection.h">
@@ -166,6 +172,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="icordebughelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="class_names.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbgenum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_builtin_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
