@@ -439,7 +439,7 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
 HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
                                    ICorDebugClass *debug_class,
                                    IMetaDataImport *metadata_import) {
-  class_type_ == ClassType::DEFAULT;
+  class_type_ = ClassType::DEFAULT;
   HRESULT hr;
 
   CComPtr<ICorDebugObjectValue> debug_obj_value;
