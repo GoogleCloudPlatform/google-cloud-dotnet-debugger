@@ -17,7 +17,7 @@
 
 #include <string>
 
-// This file contains all the different .NET class names.
+// This file contains .NET class names.
 
 namespace google_cloud_debugger {
 
