@@ -45,7 +45,7 @@ class DbgBuiltinCollection : public DbgClass {
                            ICorDebugClass *debug_class,
                            IMetaDataImport *metadata_import) override;
 
-  // Populates variable with a field count (number of items in this hash set
+  // Populates variables with a field count (number of items in this hash set
   // or dictionary) and the members of this hash set or dictionary.
   HRESULT PopulateHashSetOrDictionary(
       google::cloud::diagnostics::debug::Variable *variable,
@@ -60,15 +60,11 @@ class DbgBuiltinCollection : public DbgClass {
   // which contains the objects. For hash set and dictionary cases, this
   // is an array of struct, which contains the actual object, its hash and
   // its key (dictionary case).
-  //  3. last_index_field, which tells us the last valid index of the array
-  // above (the last valid index is the last index - 1). This only applies
-  // to hash set.
   HRESULT ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
                                 ICorDebugClass *debug_class,
                                 IMetaDataImport *metadata_import,
                                 const std::string &count_field,
-                                const std::string &entries_field,
-                                const std::string &last_index_field);
+                                const std::string &entries_field);
 
   // Number of items in this object if this is a list, dictionary or hash set.
   std::int32_t count_;
@@ -80,10 +76,6 @@ class DbgBuiltinCollection : public DbgClass {
   // Pointer to an array of items of this class if this class object is a
   // collection type (list, hashset, etc.).
   std::unique_ptr<DbgObject> collection_items_;
-
-  // String that represents "__value" which is the field that determines
-  // the value of an enum.
-  static const std::string kEnumValue;
 
   // "_size", which is the field that represents size of a list and hashset.
   static const std::string kListSizeFieldName;
@@ -118,6 +110,10 @@ class DbgBuiltinCollection : public DbgClass {
   // "hashCode", which is the field that stores the hash code in Entry/Slot
   // struct of a dictionary/set.
   static const std::string kHashSetAndDictHashCodeFieldName;
+
+  // "Count", which is the proto field that represents the number
+  // of items in this object.
+  static const std::string kCountProtoFieldName;
 };
 
 }  //  namespace google_cloud_debugger

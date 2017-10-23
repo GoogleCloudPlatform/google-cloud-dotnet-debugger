@@ -43,6 +43,7 @@ const string DbgBuiltinCollection::kDictionaryKeyFieldName = "key";
 const string DbgBuiltinCollection::kHashSetAndDictValueFieldName = "value";
 const string DbgBuiltinCollection::kHashSetAndDictHashCodeFieldName =
     "hashCode";
+const string DbgBuiltinCollection::kCountProtoFieldName = "Count";
 
 HRESULT DbgBuiltinCollection::ProcessClassType(
     ICorDebugValue *debug_value, ICorDebugClass *debug_class,
@@ -60,8 +61,7 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
   if (kListClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::LIST;
     hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                               kListSizeFieldName, kListItemsFieldName,
-                               string());
+                               kListSizeFieldName, kListItemsFieldName);
     if (SUCCEEDED(hr)) {
       // Makes sure we don't grab more items than we need (this can happen
       // because if a list size is 2, the underlying items_ array can have 4
@@ -77,17 +77,34 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
   // This is a hash set.
   if (kHashSetClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::SET;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kHashSetCountFieldName, kHashSetSlotsFieldName,
-                                 kHashSetLastIndexFieldName);
+    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
+                               kHashSetCountFieldName, kHashSetSlotsFieldName);
+    if (SUCCEEDED(hr)) {
+      // For hash set, we also needs the _lastIndex field, which tells us
+      // the last valid index in the collection_items_ array. See comments
+      // on hashset_last_index_ for more details.
+      unique_ptr<DbgObject> last_index;
+
+      // Extracts out the last index of the hash set.
+      hr = ExtractField(debug_obj_value, debug_class, metadata_import,
+                        kHashSetLastIndexFieldName, &last_index);
+      if (FAILED(hr)) {
+        WriteError(
+            "Failed to find field that represents the last index of the hash set.");
+        return hr;
+      }
+
+      hashset_last_index_ =
+          reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
+    }
+    return hr;
   }
 
   // This is a dictionary
   if (kDictionaryClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::DICTIONARY;
     return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kDictionaryCountFieldName,
-                                 kDictionaryItemsFieldName, string());
+                                 kDictionaryCountFieldName, kDictionaryItemsFieldName);
   }
 
   return E_NOTIMPL;
@@ -96,9 +113,9 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
 HRESULT DbgBuiltinCollection::ProcessCollectionType(
     ICorDebugObjectValue *debug_obj_value, ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import, const std::string &count_field,
-    const std::string &entries_field, const std::string &last_index_field) {
+    const std::string &entries_field) {
   HRESULT hr;
-  // DbgObject representings the int that counts the size of the collection.
+  // DbgObject representing the int that counts the size of the collection.
   unique_ptr<DbgObject> collection_size;
 
   // Extracts out the size of the collection.
@@ -119,27 +136,6 @@ HRESULT DbgBuiltinCollection::ProcessCollectionType(
     WriteError("Failed to get the items of the collection.");
     return hr;
   }
-
-  // If there is no last index field, then we don't need to extract it.
-  if (last_index_field.empty()) {
-    return hr;
-  }
-
-  // DbgObject representings the last index field of the hash set, see comments
-  // on hashset_last_index_ for more details.
-  unique_ptr<DbgObject> last_index;
-
-  // Extracts out the last index of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    last_index_field, &last_index);
-  if (FAILED(hr)) {
-    WriteError(
-        "Failed to find field that represents the last index of the hash set.");
-    return hr;
-  }
-
-  hashset_last_index_ =
-      reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
 
   return hr;
 }
@@ -164,18 +160,17 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
   }
 
   if (GetEvaluationDepth() == 0) {
-    WriteError("... Object Inspection Depth Limit reached.");
+    WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
   }
 
-  HRESULT hr;
+  // Sets the Count property of the collection.
+  Variable *list_count = variable->add_members();
+  list_count->set_name(kCountProtoFieldName);
+  list_count->set_value(std::to_string(count_));
+  list_count->set_type(kInt32ClassName);
 
   if (class_type_ == ClassType::LIST && collection_items_) {
-    // Sets the Count property of the list.
-    Variable *list_count = variable->add_members();
-    list_count->set_name("Count");
-    list_count->set_value(std::to_string(count_));
-    list_count->set_type("System.Int32");
     return collection_items_->PopulateMembers(variable, eval_coordinator);
   }
 
@@ -193,14 +188,8 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
 HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     google::cloud::diagnostics::debug::Variable *variable,
     IEvalCoordinator *eval_coordinator) {
+  // Start fetching items from the hash set or dictionary.
   HRESULT hr;
-  // Sets the Count property of the HashSet or Dictionary.
-  Variable *list_count = variable->add_members();
-  list_count->set_name("Count");
-  list_count->set_value(std::to_string(count_));
-  list_count->set_type("System.Int32");
-
-  // Now we start fetching items from the hash set or dictionary.
   int32_t index = 0;
   int32_t max_items_to_fetch = min(count_, DbgClass::collection_size_);
   int32_t items_fetched_so_far = 0;
@@ -291,7 +280,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
 
     // For hash set, just display item as [index]: value.
     if (class_type_ == ClassType::SET) {
-      // We don't have to worry about error since PopulateVariableValue
+      // We don't have to worry about errors since PopulateVariableValue
       // will automatically sets error in item_proto.
       value_obj->PopulateVariableValue(item_proto, eval_coordinator);
     } else {
