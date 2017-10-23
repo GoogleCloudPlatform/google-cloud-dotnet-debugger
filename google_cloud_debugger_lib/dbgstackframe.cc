@@ -44,6 +44,11 @@ HRESULT DbgStackFrame::Initialize(
     return E_INVALIDARG;
   }
 
+  if (!metadata_import) {
+    cerr << "Null MetaDataImport.";
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugValueEnum> local_enum;
   CComPtr<ICorDebugValueEnum> method_arg_enum;
@@ -55,7 +60,7 @@ HRESULT DbgStackFrame::Initialize(
   }
 
   // The populate methods will write errors
-  hr = PopulateLocalVariables(local_enum, variable_infos);
+  hr = ProcessLocalVariable(local_enum, variable_infos);
   if (FAILED(hr)) {
     return hr;
   }
@@ -67,7 +72,7 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
-  hr = PopulateMethodArguments(method_arg_enum, method_token, metadata_import);
+  hr = ProcessMethodArguments(method_arg_enum, method_token, metadata_import);
   if (FAILED(hr)) {
     return hr;
   }
@@ -75,7 +80,7 @@ HRESULT DbgStackFrame::Initialize(
   return S_OK;
 }
 
-HRESULT DbgStackFrame::PopulateLocalVariables(
+HRESULT DbgStackFrame::ProcessLocalVariable(
     ICorDebugValueEnum *local_enum,
     const vector<LocalVariableInfo> &variable_infos) {
   HRESULT hr;
@@ -141,7 +146,7 @@ HRESULT DbgStackFrame::PopulateLocalVariables(
   return S_OK;
 }
 
-HRESULT DbgStackFrame::PopulateMethodArguments(
+HRESULT DbgStackFrame::ProcessMethodArguments(
     ICorDebugValueEnum *method_arg_enum, mdMethodDef method_token,
     IMetaDataImport *metadata_import) {
   static const string kMethodArg = "method_argument";

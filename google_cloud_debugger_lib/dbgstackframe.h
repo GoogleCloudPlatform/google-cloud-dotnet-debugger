@@ -115,7 +115,7 @@ class DbgStackFrame {
  private:
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
-  HRESULT PopulateLocalVariables(
+  HRESULT ProcessLocalVariable(
       ICorDebugValueEnum *local_enum,
       const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
           &variable_infos);
@@ -123,10 +123,10 @@ class DbgStackFrame {
   // Extract method arguments from method_arg_enum.
   // DbgBreakpoint and IMetaDataImport objects are used
   // to get the variables' names.
-  HRESULT PopulateMethodArguments(ICorDebugValueEnum *method_arg_enum,
-                                  mdMethodDef method_token,
-                                  IMetaDataImport *metadata_import);
-   
+  HRESULT ProcessMethodArguments(ICorDebugValueEnum *method_arg_enum,
+                                 mdMethodDef method_token,
+                                 IMetaDataImport *metadata_import);
+
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
 
