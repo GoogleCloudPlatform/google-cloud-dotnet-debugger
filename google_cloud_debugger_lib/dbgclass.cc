@@ -19,8 +19,9 @@
 #include <cstdint>
 #include <iostream>
 
+#include "dbg_builtin_collection.h"
 #include "dbgarray.h"
-#include "dbgprimitive.h"
+#include "dbgenum.h"
 #include "evalcoordinator.h"
 #include "icordebughelper.h"
 
@@ -29,43 +30,26 @@ using std::array;
 using std::char_traits;
 using std::min;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 namespace google_cloud_debugger {
-
-const string DbgClass::kEnumClassName = "System.Enum";
-const string DbgClass::kEnumValue = "value__";
-const string DbgClass::kListClassName = "System.Collections.Generic.List`1";
-const string DbgClass::kListItemsFieldName = "_items";
-const string DbgClass::kListSizeFieldName = "_size";
-const string DbgClass::kHashSetClassName =
-    "System.Collections.Generic.HashSet`1";
-const string DbgClass::kHashSetSlotsFieldName = "_slots";
-const string DbgClass::kHashSetCountFieldName = "_count";
-const string DbgClass::kHashSetLastIndexFieldName = "_lastIndex";
-const string DbgClass::kDictionaryClassName =
-    "System.Collections.Generic.Dictionary`2";
-const string DbgClass::kDictionaryCountFieldName = "count";
-const string DbgClass::kDictionaryItemsFieldName = "entries";
-const string DbgClass::kDictionaryKeyFieldName = "key";
-const string DbgClass::kHashSetAndDictValueFieldName = "value";
-const string DbgClass::kHashSetAndDictHashCodeFieldName = "hashCode";
-
-HRESULT DbgClass::ProcessDefTokensAndClassMembers(ICorDebugValue *class_value) {
+HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
+                                       ICorDebugValue *debug_value,
+                                       BOOL is_null,
+                                       unique_ptr<DbgObject> *result_object,
+                                       std::ostringstream *err_stream) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
-  CComPtr<ICorDebugType> debug_type;
-  debug_type = GetDebugType();
-
   if (!debug_type) {
     CComPtr<ICorDebugObjectValue> debug_obj_value;
 
-    hr = class_value->QueryInterface(
+    hr = debug_value->QueryInterface(
         __uuidof(ICorDebugObjectValue),
         reinterpret_cast<void **>(&debug_obj_value));
 
     if (FAILED(hr)) {
-      WriteError("Cannot get class information.");
+      *err_stream << "Cannot get class information.";
       return hr;
     }
     hr = debug_obj_value->GetClass(&debug_class);
@@ -74,115 +58,173 @@ HRESULT DbgClass::ProcessDefTokensAndClassMembers(ICorDebugValue *class_value) {
   }
 
   if (FAILED(hr)) {
-    WriteError("Failed to get class from object value.");
+    *err_stream << "Failed to get class from object value.";
     return hr;
   }
 
-  hr = debug_class->GetToken(&class_token_);
+  mdTypeDef class_token;
+  hr = debug_class->GetToken(&class_token);
   if (FAILED(hr)) {
-    WriteError("Failed to get class token.");
+    *err_stream << "Failed to get class token.";
     return hr;
   }
 
   CComPtr<ICorDebugModule> debug_module;
   hr = debug_class->GetModule(&debug_module);
   if (FAILED(hr)) {
-    WriteError("Failed to get module");
+    *err_stream << "Failed to get module";
     return hr;
   }
 
   CComPtr<IMetaDataImport> metadata_import;
   hr = GetMetadataImportFromICorDebugModule(debug_module, &metadata_import);
   if (FAILED(hr)) {
-    WriteError("Failed to get metadata");
+    *err_stream << "Failed to get metadata";
     return hr;
   }
 
-  hr = ProcessClassName(metadata_import);
+  string class_name;
+  hr = ProcessClassName(class_token, metadata_import, &class_name, err_stream);
   if (FAILED(hr)) {
-    WriteError("Failed to get class name.");
+    *err_stream << "Failed to get class name.";
     return hr;
   }
 
-  if (debug_type) {
-    hr = ProcessParameterizedType();
-    if (FAILED(hr)) {
-      WriteError("Fail to populate parameterized type.");
-      return hr;
+  if (is_null) {
+    unique_ptr<DbgClass> null_obj(new (std::nothrow)
+                                      DbgClass(debug_type, depth));
+    if (!null_obj) {
+      *err_stream << "Ran out of memory to create null class object.";
+      return E_OUTOFMEMORY;
     }
-
-    hr = ProcessBaseClassName(debug_type);
-    if (FAILED(hr)) {
-      WriteError("Failed to get the base class.");
-      return hr;
-    }
-  }
-
-  if (GetIsNull()) {
+    null_obj->class_name_ = class_name;
+    null_obj->class_token_ = class_token;
+    *result_object = std::move(null_obj);
     return S_OK;
   }
 
-  if (cor_type_ != ELEMENT_TYPE_CLASS) {
-    return ProcessValueType(class_value, debug_class, metadata_import);
-  }
+  hr = ProcessPrimitiveType(debug_value, class_name, result_object, err_stream);
+  if (SUCCEEDED(hr)) {
+    // Nothing to do here as ProcessPrimitiveType already creates
+    // a primitive object.
+    return hr;
+  } else if (hr == E_NOTIMPL) {
+    string base_class_name;
+    hr = ProcessBaseClassName(debug_type, &base_class_name, err_stream);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get the base class.";
+      return hr;
+    }
 
-  return ProcessClassType(class_value, debug_class, metadata_import);
+    unique_ptr<DbgClass> class_obj;
+
+    if (kEnumClassName.compare(base_class_name) == 0) {
+      class_obj =
+          unique_ptr<DbgEnum>(new (std::nothrow) DbgEnum(debug_type, depth));
+    } else if (kListClassName.compare(class_name) == 0 ||
+               kHashSetClassName.compare(class_name) == 0 ||
+               kDictionaryClassName.compare(class_name) == 0) {
+      class_obj = unique_ptr<DbgBuiltinCollection>(
+          new (std::nothrow) DbgBuiltinCollection(debug_type, depth));
+    } else {
+      class_obj =
+          unique_ptr<DbgClass>(new (std::nothrow) DbgClass(debug_type, depth));
+    }
+
+    if (!class_obj) {
+      *err_stream << "Ran out of memory to create class object.";
+      return E_OUTOFMEMORY;
+    }
+
+    class_obj->class_name_ = class_name;
+    class_obj->class_token_ = class_token;
+
+    hr = class_obj->ProcessClassType(debug_value, debug_class, metadata_import);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to process class based on their types.";
+      return hr;
+    }
+
+    *result_object = std::move(class_obj);
+    return hr;
+  } else {
+    *err_stream << "Failed to process value type.";
+    return hr;
+  }
 }
 
-HRESULT DbgClass::ProcessClassName(IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
+                                   IMetaDataImport *metadata_import,
+                                   std::string *class_name,
+                                   std::ostringstream *err_stream) {
+  if (!class_name || !metadata_import || !err_stream) {
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
   ULONG len_class_name;
+  DWORD class_flags = 0;
+  mdToken parent_class = 0;
 
   // We have to call this function twice, once to get the length of the class
   // name and the second time to get the actual class name.
   // len_class_name includes the \0 at the end.
   hr = metadata_import->GetTypeDefProps(
-      class_token_, nullptr, 0, &len_class_name, &class_flags_, &parent_class_);
+      class_token, nullptr, 0, &len_class_name, &class_flags, &parent_class);
   if (FAILED(hr)) {
-    WriteError("Failed to get class name's length.");
+    *err_stream << "Failed to get class name's length.";
     return hr;
   }
 
-  class_name_.resize(len_class_name);
+  vector<WCHAR> wchar_class_name(len_class_name, 0);
 
-  hr = metadata_import->GetTypeDefProps(class_token_, class_name_.data(),
+  hr = metadata_import->GetTypeDefProps(class_token, wchar_class_name.data(),
                                         len_class_name, &len_class_name,
-                                        &class_flags_, &parent_class_);
+                                        &class_flags, &parent_class);
   if (FAILED(hr)) {
-    WriteError("Failed to get class name.");
+    *err_stream << "Failed to get class name.";
     return hr;
   }
+
+  *class_name = ConvertWCharPtrToString(wchar_class_name);
+
   return S_OK;
 }
 
-HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
+HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
+                                       std::string *base_class_name,
+                                       std::ostringstream *err_stream) {
+  if (!debug_type || !base_class_name || !err_stream) {
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugType> base_type;
 
   hr = debug_type->GetBase(&base_type);
   if (FAILED(hr)) {
-    WriteError("Failed to get base type.");
+    *err_stream << "Failed to get base type.";
     return hr;
   }
 
   CComPtr<ICorDebugClass> base_class;
   hr = base_type->GetClass(&base_class);
   if (FAILED(hr)) {
-    WriteError("Failed to get base class.");
+    *err_stream << "Failed to get base class.";
     return hr;
   }
 
   mdToken base_class_token = 0;
   hr = base_class->GetToken(&base_class_token);
   if (FAILED(hr)) {
-    WriteError("Failed to get base class token.");
+    *err_stream << "Failed to get base class token.";
     return hr;
   }
 
   CComPtr<ICorDebugModule> base_debug_module;
   hr = base_class->GetModule(&base_debug_module);
   if (FAILED(hr)) {
-    WriteError("Failed to get module for base class.");
+    *err_stream << "Failed to get module for base class.";
     return hr;
   }
 
@@ -190,35 +232,12 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type) {
   hr =
       GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
   if (FAILED(hr)) {
-    WriteError("Failed to get metadata for base class.");
+    *err_stream << "Failed to get metadata for base class.";
     return hr;
   }
 
-  ULONG len_base_class_name = 0;
-  DWORD base_class_flags = 0;
-  mdToken parent_base_class = 0;
-  // We have to call this function twice, once to get the length of the class
-  // name and the second time to get the actual class name.
-  // len_class_name includes the \0 at the end.
-  hr = metadata_import->GetTypeDefProps(base_class_token, nullptr, 0,
-                                        &len_base_class_name, &base_class_flags,
-                                        &parent_base_class);
-  if (FAILED(hr)) {
-    WriteError("Failed to get base class name's length.");
-    return hr;
-  }
-
-  base_class_name_.resize(len_base_class_name);
-
-  hr = metadata_import->GetTypeDefProps(
-      base_class_token, base_class_name_.data(), len_base_class_name,
-      &len_base_class_name, &base_class_flags, &parent_base_class);
-
-  if (FAILED(hr)) {
-    WriteError("Failed to get base class name.");
-    return hr;
-  }
-  return S_OK;
+  return ProcessClassName(base_class_token, metadata_import, base_class_name,
+                          err_stream);
 }
 
 HRESULT DbgClass::ExtractField(const std::string &field_name,
@@ -243,51 +262,6 @@ HRESULT DbgClass::ExtractField(const std::string &field_name,
   }
 
   *field_value = field_obj;
-  return S_OK;
-}
-
-HRESULT DbgClass::CountGenericParams(IMetaDataImport *pMetaDataImport,
-                                     ULONG32 *count) {
-  ULONG32 result = 0;
-  CComPtr<IMetaDataImport2> metadata_import_2;
-  HRESULT hr;
-
-  // Cannot use UUID for MetaDataImport.
-  hr = pMetaDataImport->QueryInterface(
-      IID_IMetaDataImport2, reinterpret_cast<void **>(&metadata_import_2));
-  if (FAILED(hr)) {
-    WriteError("Failed to extract IMetaDataImport2.");
-    return hr;
-  }
-
-  HCORENUM cor_enum = nullptr;
-  while (true) {
-    HRESULT hr;
-    array<mdGenericParam, 100> generic_param_defs;
-    ULONG max_size = 100;
-    ULONG generic_params_returned = 0;
-
-    hr = metadata_import_2->EnumGenericParams(
-        &cor_enum, class_token_, generic_param_defs.data(), max_size,
-        &generic_params_returned);
-
-    if (FAILED(hr)) {
-      WriteError("Failed to enumerate generic params.");
-      return hr;
-    }
-
-    if (generic_params_returned != 0) {
-      result += generic_params_returned;
-    } else {
-      break;
-    }
-  }
-
-  if (cor_enum) {
-    metadata_import_2->CloseEnum(cor_enum);
-  }
-
-  *count = result;
   return S_OK;
 }
 
@@ -465,20 +439,8 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
 HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
                                    ICorDebugClass *debug_class,
                                    IMetaDataImport *metadata_import) {
-  // Create a handle if it is a class so we won't lose the object.
-  CComPtr<ICorDebugHeapValue2> heap_value;
-  HRESULT hr = debug_value->QueryInterface(
-      __uuidof(ICorDebugHeapValue2), reinterpret_cast<void **>(&heap_value));
-  if (FAILED(hr)) {
-    WriteError("Failed to create heap value for object.");
-    return hr;
-  }
-
-  hr = heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG,
-                                &class_handle_);
-  if (FAILED(hr)) {
-    WriteError("Failed to create handle for ICorDebugValue.");
-  }
+  class_type_ = ClassType::DEFAULT;
+  HRESULT hr;
 
   CComPtr<ICorDebugObjectValue> debug_obj_value;
   hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
@@ -492,40 +454,6 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
     return S_OK;
   }
 
-  // This is a list.
-  if (kListClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
-    class_type_ = ClassType::LIST;
-    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                               kListSizeFieldName, kListItemsFieldName,
-                               string());
-    if (SUCCEEDED(hr)) {
-      // Makes sure we don't grab more items than we need (this can happen
-      // because if a list size is 2, the underlying items_ array can have 4
-      // items).
-      if (count_ < DbgObject::collection_size_) {
-        (reinterpret_cast<DbgArray *>(collection_items_.get()))
-            ->SetMaxArrayItemsToRetrieve(count_);
-      }
-    }
-    return hr;
-  }
-
-  // This is a hash set.
-  if (kHashSetClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
-    class_type_ = ClassType::SET;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kHashSetCountFieldName, kHashSetSlotsFieldName,
-                                 kHashSetLastIndexFieldName);
-  }
-
-  // This is a dictionary
-  if (kDictionaryClassName.compare(ConvertWCharPtrToString(class_name_)) == 0) {
-    class_type_ = ClassType::DICTIONARY;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kDictionaryCountFieldName,
-                                 kDictionaryItemsFieldName, string());
-  }
-
   // Populates the fields first before the properties in case
   // we have backing fields for properties.
   hr = ProcessFields(metadata_import, debug_obj_value, debug_class);
@@ -534,239 +462,64 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
     return hr;
   }
 
-  if (cor_type_ == ELEMENT_TYPE_CLASS) {
-    hr = ProcessProperties(metadata_import);
-    if (FAILED(hr)) {
-      WriteError("Failed to populate class properties.");
-      return hr;
-    }
+  hr = ProcessProperties(metadata_import);
+  if (FAILED(hr)) {
+    WriteError("Failed to populate class properties.");
+    return hr;
   }
 
   return hr;
 }
 
-HRESULT DbgClass::ProcessCollectionType(ICorDebugObjectValue *debug_obj_value,
-                                        ICorDebugClass *debug_class,
-                                        IMetaDataImport *metadata_import,
-                                        const std::string &count_field,
-                                        const std::string &entries_field,
-                                        const std::string &last_index_field) {
-  HRESULT hr;
-  // DbgObject representings the int that counts the size of the collection.
-  unique_ptr<DbgObject> collection_size;
-
-  // Extracts out the size of the collection.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import, count_field,
-                    &collection_size);
-  if (FAILED(hr)) {
-    WriteError(
-        "Failed to find field that represents the size of the collection.");
-    return hr;
-  }
-  count_ = reinterpret_cast<DbgPrimitive<int32_t> *>(collection_size.get())
-               ->GetValue();
-
-  // Extracts out the array that contains items in the collection.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    entries_field, &collection_items_);
-  if (FAILED(hr)) {
-    WriteError("Failed to get the items of the collection.");
-    return hr;
-  }
-
-  // If there is no last index field, then we don't need to extract it.
-  if (last_index_field.empty()) {
-    return hr;
-  }
-
-  // DbgObject representings the last index field of the hash set, see comments
-  // on hashset_last_index_ for more details.
-  unique_ptr<DbgObject> last_index;
-
-  // Extracts out the last index of the hash set.
-  hr = ExtractField(debug_obj_value, debug_class, metadata_import,
-                    last_index_field, &last_index);
-  if (FAILED(hr)) {
-    WriteError(
-        "Failed to find field that represents the last index of the hash set.");
-    return hr;
-  }
-
-  hashset_last_index_ =
-      reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
-
-  return hr;
-}
-
-HRESULT DbgClass::ProcessValueType(ICorDebugValue *debug_value,
-                                   ICorDebugClass *debug_class,
-                                   IMetaDataImport *metadata_import) {
-  CComPtr<ICorDebugType> debug_type;
-  HRESULT hr = ProcessPrimitiveType(debug_value);
-  if (SUCCEEDED(hr)) {
-    class_type_ = ClassType::PRIMITIVETYPE;
-    return hr;
-  }
-
-  // If we get E_NOTIMPL, check whether it is an enum.
-  if (hr == E_NOTIMPL) {
-    debug_type = GetDebugType();
-    if (!debug_type) {
-      WriteError("Failed to process value type.");
-    }
-
-    // If this is not an enum, simply populate the class fields.
-    if (kEnumClassName.compare(ConvertWCharPtrToString(base_class_name_)) !=
-        0) {
-      CComPtr<ICorDebugObjectValue> debug_obj_value;
-      hr = debug_value->QueryInterface(
-          __uuidof(ICorDebugObjectValue),
-          reinterpret_cast<void **>(&debug_obj_value));
-      if (FAILED(hr)) {
-        WriteError(
-            "Cannot extract ICorDebugObjectValue from ValueType object.");
-        return hr;
-      }
-
-      hr = ProcessFields(metadata_import, debug_obj_value, debug_class);
-      if (FAILED(hr)) {
-        WriteError("Failed to populate class fields.");
-        return hr;
-      }
-
-      return hr;
-    }
-
-    // This is an enum.
-    class_type_ = ClassType::ENUM;
-    hr = ProcessEnumType(debug_value, debug_class, metadata_import);
-    if (FAILED(hr)) {
-      WriteError("Failed to process enum type.");
-    }
-  } else if (FAILED(hr) && hr != E_NOTIMPL) {
-    WriteError("Failed to process value type.");
-  }
-
-  return hr;
-}
-
-HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value) {
-// TODO(quoct): Add more cases and make these variables static.
-#ifdef PAL_STDCPP_COMPAT
-  const WCHAR char_name[] = u"System.Char";
-  const WCHAR boolean_name[] = u"System.Boolean";
-  const WCHAR sbyte_name[] = u"System.SByte";
-  const WCHAR byte_name[] = u"System.Byte";
-  const WCHAR int16_name[] = u"System.Int16";
-  const WCHAR uint16_name[] = u"System.UInt16";
-  const WCHAR int32_name[] = u"System.Int32";
-  const WCHAR uint32_name[] = u"System.UInt32";
-  const WCHAR int64_name[] = u"System.Int64";
-  const WCHAR uint64_name[] = u"System.UInt64";
-  const WCHAR float_name[] = u"System.Single";
-  const WCHAR double_name[] = u"System.Double";
-  const WCHAR intptr_name[] = u"System.IntPtr";
-  const WCHAR uintptr_name[] = u"System.UIntPtr";
-#else
-  const WCHAR char_name[] = L"System.Char";
-  const WCHAR boolean_name[] = L"System.Boolean";
-  const WCHAR sbyte_name[] = L"System.SByte";
-  const WCHAR byte_name[] = L"System.Byte";
-  const WCHAR int16_name[] = L"System.Int16";
-  const WCHAR uint16_name[] = L"System.UInt16";
-  const WCHAR int32_name[] = L"System.Int32";
-  const WCHAR uint32_name[] = L"System.UInt32";
-  const WCHAR int64_name[] = L"System.Int64";
-  const WCHAR uint64_name[] = L"System.UInt64";
-  const WCHAR float_name[] = L"System.Single";
-  const WCHAR double_name[] = L"System.Double";
-  const WCHAR intptr_name[] = L"System.IntPtr";
-  const WCHAR uintptr_name[] = L"System.UIntPtr";
-#endif
-
-#define TYPENAMECOMPARISON(name)                        \
-  char_traits<WCHAR>::compare(name, class_name_.data(), \
-                              char_traits<WCHAR>::length(int32_name))
-
-  if (TYPENAMECOMPARISON(char_name) == 0) {
-    return ProcessValueTypeHelper<char>(debug_value);
-  } else if (TYPENAMECOMPARISON(boolean_name) == 0) {
-    return ProcessValueTypeHelper<bool>(debug_value);
-  } else if (TYPENAMECOMPARISON(sbyte_name) == 0) {
-    return ProcessValueTypeHelper<int8_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(byte_name) == 0) {
-    return ProcessValueTypeHelper<uint8_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(int16_name) == 0) {
-    return ProcessValueTypeHelper<int16_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(uint16_name) == 0) {
-    return ProcessValueTypeHelper<uint16_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(int32_name) == 0) {
-    return ProcessValueTypeHelper<int32_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(uint32_name) == 0) {
-    return ProcessValueTypeHelper<uint32_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(int64_name) == 0) {
-    return ProcessValueTypeHelper<int64_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(uint64_name) == 0) {
-    return ProcessValueTypeHelper<uint64_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(float_name) == 0) {
-    return ProcessValueTypeHelper<float>(debug_value);
-  } else if (TYPENAMECOMPARISON(double_name) == 0) {
-    return ProcessValueTypeHelper<double>(debug_value);
-  } else if (TYPENAMECOMPARISON(intptr_name) == 0) {
-    return ProcessValueTypeHelper<intptr_t>(debug_value);
-  } else if (TYPENAMECOMPARISON(uintptr_name) == 0) {
-    return ProcessValueTypeHelper<uintptr_t>(debug_value);
+HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value,
+                                       const std::string &class_name,
+                                       unique_ptr<DbgObject> *result_class_obj,
+                                       std::ostringstream *err_stream) {
+  if (kCharClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<char>(debug_value, result_class_obj,
+                                        err_stream);
+  } else if (kBooleanClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<bool>(debug_value, result_class_obj,
+                                        err_stream);
+  } else if (kSByteClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<int8_t>(debug_value, result_class_obj,
+                                          err_stream);
+  } else if (kByteClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<uint8_t>(debug_value, result_class_obj,
+                                           err_stream);
+  } else if (kInt16ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<int16_t>(debug_value, result_class_obj,
+                                           err_stream);
+  } else if (kUInt16ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<uint16_t>(debug_value, result_class_obj,
+                                            err_stream);
+  } else if (kInt32ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<int32_t>(debug_value, result_class_obj,
+                                           err_stream);
+  } else if (kUInt32ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<uint32_t>(debug_value, result_class_obj,
+                                            err_stream);
+  } else if (kInt64ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<int64_t>(debug_value, result_class_obj,
+                                           err_stream);
+  } else if (kUInt64ClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<uint64_t>(debug_value, result_class_obj,
+                                            err_stream);
+  } else if (kSingleClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<float>(debug_value, result_class_obj,
+                                         err_stream);
+  } else if (kDoubleClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<double>(debug_value, result_class_obj,
+                                          err_stream);
+  } else if (kIntPtrClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<intptr_t>(debug_value, result_class_obj,
+                                            err_stream);
+  } else if (kUIntPtrClassName.compare(class_name) == 0) {
+    return ProcessValueTypeHelper<uintptr_t>(debug_value, result_class_obj,
+                                             err_stream);
   }
 
   return E_NOTIMPL;
-}
-
-HRESULT DbgClass::ProcessEnumType(ICorDebugValue *debug_value,
-                                  ICorDebugClass *debug_class,
-                                  IMetaDataImport *metadata_import) {
-  CComPtr<ICorDebugGenericValue> generic_value;
-  HRESULT hr =
-      debug_value->QueryInterface(__uuidof(ICorDebugGenericValue),
-                                  reinterpret_cast<void **>(&generic_value));
-  if (FAILED(hr)) {
-    WriteError("Failed to extract ICorDebugGenericValue from value type.");
-    return hr;
-  }
-
-  ULONG32 value_size;
-  hr = generic_value->GetSize(&value_size);
-  if (FAILED(hr)) {
-    WriteError("Failed to get size of ICorDebugGenericValue.");
-    return hr;
-  }
-
-  enum_value_array_.resize(value_size);
-  hr = generic_value->GetValue(
-      reinterpret_cast<void *>(enum_value_array_.data()));
-  if (FAILED(hr)) {
-    WriteError("Failed to extract value out from ICorDebugGenericValue.");
-    return hr;
-  }
-
-  // To get the different enum values, we have to process the field
-  // of this class.
-  CComPtr<ICorDebugObjectValue> obj_value;
-  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-                                   reinterpret_cast<void **>(&obj_value));
-  if (FAILED(hr)) {
-    WriteError(
-        "Failed to get ICorDebugObjectValue from ICorDebugValue while "
-        "evaluating Enum.");
-    return hr;
-  }
-
-  hr = ProcessFields(metadata_import, obj_value, debug_class);
-  if (FAILED(hr)) {
-    WriteError("Failed to populate class fields while evaluating Enum.");
-    return hr;
-  }
-
-  return S_OK;
 }
 
 HRESULT DbgClass::ExtractField(ICorDebugObjectValue *debug_obj_value,
@@ -809,16 +562,29 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   debug_type = GetDebugType();
 
   if (debug_type) {
+    initialize_hr_ = ProcessParameterizedType();
+    if (FAILED(initialize_hr_)) {
+      WriteError("Fail to populate parameterized type.");
+      return;
+    }
+
     initialize_hr_ = debug_type->GetType(&cor_type_);
     if (FAILED(initialize_hr_)) {
       WriteError("Failed to get CorElementType from ICorDebugType.");
       return;
     }
-  }
 
-  initialize_hr_ = ProcessDefTokensAndClassMembers(debug_value);
-  if (FAILED(initialize_hr_)) {
-    WriteError("Failed to populate definition tokens.");
+    // Create a handle if it is a class so we won't lose the object.
+    if (cor_type_ != CorElementType::ELEMENT_TYPE_VALUETYPE) {
+      initialize_hr_ =
+          CreateStrongHandle(debug_value, &class_handle_, GetErrorStream());
+      // E_NOINTERFACE is returned if object is a value type. In that
+      // case, we don't need to create a handle.
+      if (FAILED(initialize_hr_)) {
+        WriteError("Failed to create strong handle for the class object.");
+        return;
+      }
+    }
   }
 }
 
@@ -830,89 +596,6 @@ BOOL DbgClass::HasMembers() {
 BOOL DbgClass::HasValue() {
   return class_type_ == ClassType::PRIMITIVETYPE ||
          class_type_ == ClassType::ENUM;
-}
-
-HRESULT DbgClass::PopulateValue(Variable *variable) {
-  if (!variable) {
-    return E_INVALIDARG;
-  }
-
-  if (FAILED(initialize_hr_)) {
-    return initialize_hr_;
-  }
-
-  if (!HasValue()) {
-    return E_FAIL;
-  }
-
-  if (class_type_ == ClassType::PRIMITIVETYPE) {
-    HRESULT hr = primitive_type_value_->PopulateValue(variable);
-    if (FAILED(hr)) {
-      WriteError(primitive_type_value_->GetErrorString());
-    }
-
-    return hr;
-  }
-
-  CorElementType enum_type;
-  bool enum_type_found = false;
-  // We have enum type.
-  // First, gets the underlying type. This is from the non-static field __value.
-  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
-    if (*it) {
-      if ((*it)->IsStatic()) {
-        continue;
-      }
-
-      if (kEnumValue.compare((*it)->GetFieldName()) != 0) {
-        continue;
-      }
-
-      PCCOR_SIGNATURE field_signature = (*it)->GetSignature();
-      enum_type = CorSigUncompressElementType(field_signature);
-      enum_type_found = true;
-      break;
-    }
-  }
-
-  if (!enum_type_found) {
-    WriteError("Cannot find the type of the enum.");
-    return E_FAIL;
-  }
-
-  string enum_string;
-  ULONG64 enum_value = ExtractEnumValue(enum_type, enum_value_array_.data());
-  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
-    if (*it) {
-      if ((*it)->IsStatic() || kEnumValue.compare((*it)->GetFieldName()) == 0) {
-        continue;
-      }
-
-      UVCP_CONSTANT raw_default_value = (*it)->GetDefaultValue();
-      ULONG64 const_value =
-          ExtractEnumValue(enum_type, (void *)raw_default_value);
-
-      // If enum_value is different from const_value, but const_value
-      // corresponds to bits in enum_value, then this const_value string is part
-      // of the enum_value string representation.
-      if (enum_value != const_value &&
-          (const_value == 0 || (const_value & enum_value) != const_value)) {
-        continue;
-      }
-
-      // Zero out the bits of const_value in enum_value;
-      enum_value = enum_value & (~const_value);
-
-      if (enum_string.empty()) {
-        enum_string.append((*it)->GetFieldName());
-      } else {
-        enum_string.append(" | " + (*it)->GetFieldName());
-      }
-    }
-  }
-
-  variable->set_value(enum_string);
-  return S_OK;
 }
 
 ULONG64 DbgClass::ExtractEnumValue(CorElementType enum_type, void *enum_value) {
@@ -969,20 +652,6 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
 
   HRESULT hr;
 
-  if (class_type_ == ClassType::LIST && collection_items_) {
-    // Sets the Count property of the list.
-    Variable *list_count = variable->add_members();
-    list_count->set_name("Count");
-    list_count->set_value(std::to_string(count_));
-    list_count->set_type("System.Int32");
-    return collection_items_->PopulateMembers(variable, eval_coordinator);
-  }
-
-  if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) &&
-      collection_items_) {
-    return PopulateHashSetOrDictionary(variable, eval_coordinator);
-  }
-
   int new_depth = GetEvaluationDepth() - 1;
 
   bool not_first = false;
@@ -997,7 +666,6 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
         class_field_var->clear_members();
         class_field_var->clear_value();
         SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
-        ResetErrorStream();
       }
     }
   }
@@ -1020,135 +688,10 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
         property_field_var->clear_members();
         property_field_var->clear_value();
         SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
-        ResetErrorStream();
       }
     }
   }
 
-  return S_OK;
-}
-
-HRESULT DbgClass::PopulateHashSetOrDictionary(
-    google::cloud::diagnostics::debug::Variable *variable,
-    IEvalCoordinator *eval_coordinator) {
-  HRESULT hr;
-  // Sets the Count property of the HashSet or Dictionary.
-  Variable *list_count = variable->add_members();
-  list_count->set_name("Count");
-  list_count->set_value(std::to_string(count_));
-  list_count->set_type("System.Int32");
-
-  // Now we start fetching items from the hash set or dictionary.
-  int32_t index = 0;
-  int32_t max_items_to_fetch = min(count_, DbgClass::collection_size_);
-  int32_t items_fetched_so_far = 0;
-  // Casts the collection_items_ to an array.
-  DbgArray *slots_array = reinterpret_cast<DbgArray *>(collection_items_.get());
-  // We get items from the _items array. If this is a hash set, we have to make
-  // sure we don't go beyond the hashset_last_index_ because items at this point
-  // onwards will either be invalid or out of bound of the array.
-  // If this is a dictionary, we just have to make sure we go until count_.
-  // We will only get items in the array that has hashCode greater or equal to
-  // 0.
-  int32_t max_index =
-      (class_type_ == ClassType::SET) ? hashset_last_index_ : count_;
-
-  for (int32_t index = 0; index < max_index; ++index) {
-    // Extracts out the item from the array.
-    CComPtr<ICorDebugValue> array_item;
-    hr = slots_array->GetArrayItem(index, &array_item);
-    if (FAILED(hr)) {
-      WriteError("Failed to get hash set item at index " +
-                 std::to_string(index));
-      return hr;
-    }
-
-    // Now creates a DbgObject that represents the Slot object from the
-    // array_item we got above. Each Slot has the form struct Slot { int
-    // hashCode; T value; int next; }
-    // If this is a dictionary, then we will have Entry object with
-    // the form Entry { int hashCode; TKey key; TValue value; int next; }
-    // So a dictionary entry is essentially the same as a set slot except
-    // that the dictionary entry has a key.
-    unique_ptr<DbgObject> slot_item_obj;
-    hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj,
-                         GetErrorStream());
-    if (FAILED(hr)) {
-      WriteError("Failed to create DbgObject for item at index " +
-                 std::to_string(index));
-      return hr;
-    }
-
-    // Casts the DbgObject to a class.
-    DbgClass *slot_item = reinterpret_cast<DbgClass *>(slot_item_obj.get());
-    // Try to find the hashCode field of the struct.
-    DbgObject *hash_code_obj = nullptr;
-    hr = slot_item->ExtractField(kHashSetAndDictHashCodeFieldName,
-                                 &hash_code_obj);
-    if (FAILED(hr)) {
-      WriteError("Failed to evaluate hash code for item at index " +
-                 std::to_string(index));
-      return hr;
-    }
-
-    // Since hashCode is an int, we cast it to a DbgPrimitive<int32_t>.
-    DbgPrimitive<int32_t> *hash_code_primitive_obj =
-        reinterpret_cast<DbgPrimitive<int32_t> *>(hash_code_obj);
-    int32_t hash_code_value = hash_code_primitive_obj->GetValue();
-    // Now the hashCode of the struct is actually processed in such a way that
-    // they can only be greater than or equal to 0. If they are -1, then this
-    // means this is not a valid item (probably removed), so we continue to the
-    // next index. This is true for both hash set and dictionary.
-    if (hash_code_value == -1) {
-      continue;
-    }
-
-    // Gets the underlying DbgObject that represents value field.
-    DbgObject *value_obj = nullptr;
-    hr = slot_item->ExtractField(kHashSetAndDictValueFieldName, &value_obj);
-    if (FAILED(hr)) {
-      WriteError("Failed to evaluate the value of item at index " +
-                 std::to_string(index));
-      return hr;
-    }
-
-    DbgObject *key_obj = nullptr;
-    // If this is a dictionary, we have to find the key field of the struct.
-    if (class_type_ == ClassType::DICTIONARY) {
-      hr = slot_item->ExtractField(kDictionaryKeyFieldName, &key_obj);
-      if (FAILED(hr)) {
-        WriteError("Failed to evaluate the value of the key at index " +
-                   std::to_string(index));
-        return hr;
-      }
-    }
-
-    // Now creates a member that represents this item.
-    Variable *item_proto = variable->add_members();
-    item_proto->set_name("[" + std::to_string(items_fetched_so_far) + "]");
-
-    // For hash set, just display item as [index]: value.
-    if (class_type_ == ClassType::SET) {
-      // We don't have to worry about error since PopulateVariableValue
-      // will automatically sets error in item_proto.
-      value_obj->PopulateVariableValue(item_proto, eval_coordinator);
-    } else {
-      // For dictionary, we also display the key. So an item would be
-      // [index]: { "key": Key, "value": Value }
-      Variable *key_proto = item_proto->add_members();
-      key_proto->set_name(kDictionaryKeyFieldName);
-      key_obj->PopulateVariableValue(key_proto, eval_coordinator);
-
-      Variable *value_proto = item_proto->add_members();
-      value_proto->set_name(kHashSetAndDictValueFieldName);
-      value_obj->PopulateVariableValue(value_proto, eval_coordinator);
-    }
-
-    items_fetched_so_far++;
-    if (items_fetched_so_far >= max_items_to_fetch) {
-      break;
-    }
-  }
   return S_OK;
 }
 
@@ -1166,14 +709,12 @@ HRESULT DbgClass::PopulateType(Variable *variable) {
     return E_FAIL;
   }
 
-  std::string class_name = (ConvertWCharPtrToString(class_name_));
-
   if (empty_generic_objects_.size() == 0) {
-    variable->set_type(class_name);
+    variable->set_type(class_name_);
     return S_OK;
   }
 
-  class_name += "<";
+  string class_name_with_generic = class_name_ + "<";
 
   unique_ptr<Variable> place_holder(new (std::nothrow) Variable());
 
@@ -1184,17 +725,17 @@ HRESULT DbgClass::PopulateType(Variable *variable) {
         WriteError("Failed to print generic type in class");
         return hr;
       }
-      class_name += place_holder->type();
+      class_name_with_generic += place_holder->type();
 
       if (empty_generic_objects_.size() > 1 &&
           i != empty_generic_objects_.size() - 1) {
-        class_name += ", ";
+        class_name_with_generic += ", ";
       }
     }
   }
 
-  class_name += ">";
-  variable->set_type(class_name);
+  class_name_with_generic += ">";
+  variable->set_type(class_name_with_generic);
 
   return S_OK;
 }

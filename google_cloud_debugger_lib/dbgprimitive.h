@@ -19,6 +19,7 @@
 #include <type_traits>
 
 #include "ccomptr.h"
+#include "class_names.h"
 #include "dbgobject.h"
 
 namespace google_cloud_debugger {
@@ -101,9 +102,9 @@ class DbgPrimitive : public DbgObject {
     }
 
     if (cor_element_type_ == ELEMENT_TYPE_I) {
-      variable->set_type("System.IntPtr");
+      variable->set_type(kIntPtrClassName);
     } else if (cor_element_type_ == ELEMENT_TYPE_U) {
-      variable->set_type("System.UIntPtr");
+      variable->set_type(kUIntPtrClassName);
     } else {
       SetTypeCore(variable, value_);
     }
@@ -113,51 +114,51 @@ class DbgPrimitive : public DbgObject {
  private:
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    char value) {
-    variable->set_type("System.Char");
+    variable->set_type(kCharClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    bool value) {
-    variable->set_type("System.Boolean");
+    variable->set_type(kBooleanClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::int8_t value) {
-    variable->set_type("System.SByte");
+    variable->set_type(kSByteClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::uint8_t value) {
-    variable->set_type("System.Byte");
+    variable->set_type(kByteClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::int16_t value) {
-    variable->set_type("System.Int16");
+    variable->set_type(kInt16ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::uint16_t) {
-    variable->set_type("System.UInt16");
+    variable->set_type(kUInt16ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::int32_t value) {
-    variable->set_type("System.Int32");
+    variable->set_type(kInt32ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::uint32_t) {
-    variable->set_type("System.UInt32");
+    variable->set_type(kUInt32ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::int64_t value) {
-    variable->set_type("System.Int64");
+    variable->set_type(kInt64ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::uint64_t value) {
-    variable->set_type("System.UInt64");
+    variable->set_type(kUInt64ClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::float_t value) {
-    variable->set_type("System.Single");
+    variable->set_type(kSingleClassName);
   }
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::double_t value) {
-    variable->set_type("System.Double");
+    variable->set_type(kDoubleClassName);
   }
 
   T value_;

@@ -179,6 +179,7 @@
     <ClInclude Include="breakpoint_client.h" />
     <ClInclude Include="breakpointcollection.h" />
     <ClInclude Include="ccomptr.h" />
+    <ClInclude Include="class_names.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="custombinaryreader.h" />
     <ClInclude Include="dbgarray.h" />
@@ -186,8 +187,10 @@
     <ClInclude Include="dbgclass.h" />
     <ClInclude Include="dbgclassfield.h" />
     <ClInclude Include="dbgclassproperty.h" />
+    <ClInclude Include="dbgenum.h" />
     <ClInclude Include="dbgstackframe.h" />
     <ClInclude Include="dbgstring.h" />
+    <ClInclude Include="dbg_builtin_collection.h" />
     <ClInclude Include="debugger.h" />
     <ClInclude Include="debuggercallback.h" />
     <ClInclude Include="dbgobject.h" />
@@ -218,8 +221,10 @@
     <ClCompile Include="dbgclass.cc" />
     <ClCompile Include="dbgclassfield.cc" />
     <ClCompile Include="dbgclassproperty.cc" />
+    <ClCompile Include="dbgenum.cc" />
     <ClCompile Include="dbgstackframe.cc" />
     <ClCompile Include="dbgstring.cc" />
+    <ClCompile Include="dbg_builtin_collection.cc" />
     <ClCompile Include="debugger.cc" />
     <ClCompile Include="debuggercallback.cc" />
     <ClCompile Include="dbgobject.cc" />

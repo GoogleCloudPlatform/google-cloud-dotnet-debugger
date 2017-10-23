@@ -10,7 +10,7 @@ DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} `pkg-config --cflags protobuf`
 
-DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o dbgstackframe.o
+DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o dbgstackframe.o dbgenum.o dbg_builtin_collection.o
 PDB_PARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
 BREAKPOINTS = dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o
 ALL_O_FILES = stackframecollection.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o icordebughelper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
@@ -36,6 +36,12 @@ dbgarray.o: dbgarray.h dbgarray.cc
 
 dbgclass.o: dbgclass.h dbgclass.cc
 	clang-3.5 dbgclass.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclass.o
+
+dbgenum.o: dbgenum.h dbgenum.cc
+	clang-3.5 dbgenum.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgenum.o
+
+dbg_builtin_collection.o: dbg_builtin_collection.h dbg_builtin_collection.cc
+	clang-3.5 dbg_builtin_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_builtin_collection.o
 
 dbgclassfield.o: dbgclassfield.h dbgclassfield.cc
 	clang-3.5 dbgclassfield.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassfield.o
