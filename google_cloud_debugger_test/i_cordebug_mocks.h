@@ -382,38 +382,15 @@ class ICorDebugAppDomainMock : public ICorDebugAppDomain {
   MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
 };
 
-class ICorDebugThreadMock : public ICorDebugThread {
+class ICorDebugThread3Mock : public ICorDebugThread3 {
  public:
   IUNKNOWN_MOCK
 
-  MOCK_METHOD1(GetProcess, HRESULT(ICorDebugProcess **ppProcess));
-  MOCK_METHOD1(GetID, HRESULT(DWORD *pdwThreadId));
-  MOCK_METHOD1(GetHandle, HRESULT(HTHREAD *phThreadHandle));
-  MOCK_METHOD1(GetAppDomain, HRESULT(ICorDebugAppDomain **ppAppDomain));
-  MOCK_METHOD1(SetDebugState, HRESULT(CorDebugThreadState state));
-  MOCK_METHOD1(GetDebugState, HRESULT(CorDebugThreadState *pState));
-  MOCK_METHOD1(GetUserState, HRESULT(CorDebugUserState *pState));
-  MOCK_METHOD1(GetCurrentException,
-               HRESULT(ICorDebugValue **ppExceptionObject));
-  MOCK_METHOD0(ClearCurrentException, HRESULT(void));
-  MOCK_METHOD1(CreateStepper, HRESULT(ICorDebugStepper **ppStepper));
-  MOCK_METHOD1(EnumerateChains, HRESULT(ICorDebugChainEnum **ppChains));
-  MOCK_METHOD1(GetActiveChain, HRESULT(ICorDebugChain **ppChain));
-  MOCK_METHOD1(GetActiveFrame, HRESULT(ICorDebugFrame **ppFrame));
-  MOCK_METHOD1(GetRegisterSet, HRESULT(ICorDebugRegisterSet **ppRegisters));
-  MOCK_METHOD1(CreateEval, HRESULT(ICorDebugEval **ppEval));
-  MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
+  MOCK_METHOD1(CreateStackWalk, HRESULT(ICorDebugStackWalk **ppStackWalk));
+  MOCK_METHOD3(GetActiveInternalFrames, HRESULT(ULONG32 cInternalFrames, ULONG32 *pcInternalFrames, ICorDebugInternalFrame2 *ppInternalFrames[]));
 };
 
-class ICorDebugBreakpointMock : ICorDebugBreakpoint {
- public:
-  IUNKNOWN_MOCK
-
-  MOCK_METHOD1(Activate, HRESULT(BOOL bActive));
-  MOCK_METHOD1(IsActive, HRESULT(BOOL *pbActive));
-};
-
-class ICorDebugFunctionBreakpointMock : ICorDebugFunctionBreakpoint {
+class ICorDebugFunctionBreakpointMock : public ICorDebugFunctionBreakpoint {
  public:
   IUNKNOWN_MOCK
 
