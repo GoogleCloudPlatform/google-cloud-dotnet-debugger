@@ -45,6 +45,8 @@ class DebuggerCallbackTest : public ::testing::Test {
  protected:
   // Sets up mock calls for QueryInterface calls.
   virtual void SetUp() {
+    callback = new DebuggerCallback();
+
     ON_CALL(debug_breakpoint_mock_, QueryInterface(_, _))
         .WillByDefault(
             DoAll(SetArgPointee<1>(&debug_breakpoint_mock_), Return(S_OK)));
@@ -87,6 +89,9 @@ class DebuggerCallbackTest : public ::testing::Test {
             DoAll(SetArgPointee<1>(&metadata_import_), Return(S_OK)));
   }
 
+  // The debugger callback object being tested.
+  CComPtr<DebuggerCallback> callback;
+
   // The app domain object used by callback functions.
   ICorDebugAppDomainMock app_domain_mock_;
 
@@ -109,21 +114,13 @@ class DebuggerCallbackTest : public ::testing::Test {
   IMetaDataImportMock metadata_import_;
 };
 
-// Tests Initialize function of DbgArray.
-TEST_F(DebuggerCallbackTest, Initialize) {
-  DebuggerCallback callback;
-  HRESULT hr = callback.Initialize();
-  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
-}
-
 // Tests Breakpoint callback function of DbgArray.
 TEST_F(DebuggerCallbackTest, Breakpoint) {
-  DebuggerCallback callback;
-  HRESULT hr = callback.Initialize();
+  HRESULT hr = callback->Initialize();
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   SetUpBreakpoint();
-  hr = callback.Breakpoint(&app_domain_mock_, &debug_thread_mock_,
+  hr = callback->Breakpoint(&app_domain_mock_, &debug_thread_mock_,
                            &debug_breakpoint_mock_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
@@ -131,8 +128,7 @@ TEST_F(DebuggerCallbackTest, Breakpoint) {
 // Tests Breakpoint callback function of DbgArray
 // when there is an error.
 TEST_F(DebuggerCallbackTest, BreakpointError) {
-  DebuggerCallback callback;
-  HRESULT hr = callback.Initialize();
+  HRESULT hr = callback->Initialize();
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Makes ICorDebugFunctionBreakpoint returns error when GetFunction is called.
@@ -144,7 +140,7 @@ TEST_F(DebuggerCallbackTest, BreakpointError) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(S_OK));
 
-  hr = callback.Breakpoint(&app_domain_mock_, &debug_thread_mock_,
+  hr = callback->Breakpoint(&app_domain_mock_, &debug_thread_mock_,
                            &debug_breakpoint_mock_);
   EXPECT_EQ(hr, CORDBG_E_FUNCTION_NOT_IL);
 }

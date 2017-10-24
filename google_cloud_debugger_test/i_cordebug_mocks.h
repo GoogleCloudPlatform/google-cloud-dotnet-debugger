@@ -379,7 +379,7 @@ class ICorDebugAppDomainMock : public ICorDebugAppDomain {
                HRESULT(ULONG32 cchName, ULONG32 *pcchName, WCHAR szName[]));
   MOCK_METHOD0(Attach, HRESULT(void));
   MOCK_METHOD1(GetID, HRESULT(ULONG32 *pId));
-  MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
+  MOCK_METHOD1(GetObject, HRESULT(ICorDebugValue **ppObject));
 };
 
 class ICorDebugThread3Mock : public ICorDebugThread3 {

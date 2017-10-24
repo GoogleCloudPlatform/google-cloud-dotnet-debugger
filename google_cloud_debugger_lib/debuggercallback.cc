@@ -128,10 +128,6 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
 
   // We will get the IL frame to enumerate and print out all local variables.
   HRESULT hr;
-  CComPtr<ICorDebugFrame> frame;
-  CComPtr<ICorDebugILFrame> il_frame;
-  CComPtr<ICorDebugValueEnum> variable_value_enum;
-  CComPtr<ICorDebugValueEnum> arg_value_enum;
   CComPtr<IMetaDataImport> metadata_import;
   CComPtr<ICorDebugThread3> debug_thread3;
   CComPtr<ICorDebugStackWalk> debug_stack_walk;
