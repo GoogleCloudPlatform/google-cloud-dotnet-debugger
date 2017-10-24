@@ -28,10 +28,15 @@ namespace google_cloud_debugger_test {
 // different string types because WCHAR defined on Linux is
 // different than WCHAR defined on Windows.
 #ifdef PAL_STDCPP_COMPAT
-#define WCHAR_STRING(string) u#string;
+#define WCHAR_STRING(string) u #string;
 #else
 #define WCHAR_STRING(string) L#string;
 #endif
+
+// SetArgPointee does not allow casting so we have to write our own action.
+ACTION_P2(SetArg3ToWcharArray, wchar_array, len) {
+  memcpy(const_cast<LPWSTR>(arg3), wchar_array, len * sizeof(WCHAR));
+}
 
 // SetArgPointee does not allow casting so we have to write our own action.
 ACTION_P2(SetArg2ToWcharArray, wchar_array, len) {
