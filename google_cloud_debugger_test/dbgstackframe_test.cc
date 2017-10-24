@@ -322,6 +322,48 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
             std::to_string(second_method_arg_.value_));
 }
 
+// Tests the PopulateStackFrame function of DbgStackFrame
+// when we don't have a variable's information.
+TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
+  DbgStackFrame stack_frame;
+  StackFrame proto_stack_frame;
+
+  SetUpLocalVariables();
+  SetUpMethodArguments();
+  SetUpMetaDataImport();
+
+  // Pops out a variable info so we won't get name
+  // for the second varaible.
+  local_variables_info_.pop_back();
+
+  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
+                                      method_token_, &metadata_import_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, &eval_coordinator_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  // Checks that the frame has the correct local variables.
+  EXPECT_EQ(proto_stack_frame.locals().size(), 2);
+  EXPECT_EQ(proto_stack_frame.locals(0).name(), first_local_var_.name_);
+  EXPECT_EQ(proto_stack_frame.locals(0).value(),
+            std::to_string(first_local_var_.value_));
+  // Name of the second variable should be variable_1 since
+  // there is no corresponding LocalVariableInfo for it.
+  EXPECT_EQ(proto_stack_frame.locals(1).name(), "variable_1");
+  EXPECT_EQ(proto_stack_frame.locals(1).value(),
+            std::to_string(second_local_var_.value_));
+
+  // Checks that the frame has the correct method arguments.
+  EXPECT_EQ(proto_stack_frame.arguments().size(), 2);
+  EXPECT_EQ(proto_stack_frame.arguments(0).name(), first_method_arg_.name_);
+  EXPECT_EQ(proto_stack_frame.arguments(0).value(),
+            std::to_string(first_method_arg_.value_));
+  EXPECT_EQ(proto_stack_frame.arguments(1).name(), second_method_arg_.name_);
+  EXPECT_EQ(proto_stack_frame.arguments(1).value(),
+            std::to_string(second_method_arg_.value_));
+}
+
 // Tests the error case of DbgStackFrame when arguments are null.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrameError) {
   DbgStackFrame stack_frame;

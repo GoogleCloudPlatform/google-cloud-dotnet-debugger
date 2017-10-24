@@ -60,7 +60,7 @@ HRESULT DbgStackFrame::Initialize(
   }
 
   // The populate methods will write errors
-  hr = ProcessLocalVariable(local_enum, variable_infos);
+  hr = ProcessLocalVariables(local_enum, variable_infos);
   if (FAILED(hr)) {
     return hr;
   }
@@ -80,7 +80,7 @@ HRESULT DbgStackFrame::Initialize(
   return S_OK;
 }
 
-HRESULT DbgStackFrame::ProcessLocalVariable(
+HRESULT DbgStackFrame::ProcessLocalVariables(
     ICorDebugValueEnum *local_enum,
     const vector<LocalVariableInfo> &variable_infos) {
   HRESULT hr;

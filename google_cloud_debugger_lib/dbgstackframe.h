@@ -115,7 +115,7 @@ class DbgStackFrame {
  private:
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
-  HRESULT ProcessLocalVariable(
+  HRESULT ProcessLocalVariables(
       ICorDebugValueEnum *local_enum,
       const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
           &variable_infos);
