@@ -343,6 +343,86 @@ class ICorDebugStackWalkMock : public ICorDebugStackWalk {
   MOCK_METHOD1(GetFrame, HRESULT(ICorDebugFrame **pFrame));
 };
 
+class ICorDebugAppDomainMock : public ICorDebugAppDomain {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(Stop, HRESULT(DWORD dwTimeoutIgnored));
+  MOCK_METHOD1(Continue, HRESULT(BOOL fIsOutOfBand));
+  MOCK_METHOD1(IsRunning, HRESULT(BOOL *pbRunning));
+  MOCK_METHOD2(HasQueuedCallbacks,
+               HRESULT(ICorDebugThread *pThread, BOOL *pbQueued));
+  MOCK_METHOD1(EnumerateThreads, HRESULT(ICorDebugThreadEnum **ppThreads));
+  MOCK_METHOD2(SetAllThreadsDebugState,
+               HRESULT(CorDebugThreadState state,
+                       ICorDebugThread *pExceptThisThread));
+  MOCK_METHOD0(Detach, HRESULT(void));
+  MOCK_METHOD1(Terminate, HRESULT(UINT exitCode));
+  MOCK_METHOD3(CanCommitChanges,
+               HRESULT(ULONG cSnapshots,
+                       ICorDebugEditAndContinueSnapshot *pSnapshots[],
+                       ICorDebugErrorInfoEnum **pError));
+  MOCK_METHOD3(CommitChanges,
+               HRESULT(ULONG cSnapshots,
+                       ICorDebugEditAndContinueSnapshot *pSnapshots[],
+                       ICorDebugErrorInfoEnum **pError));
+  MOCK_METHOD1(GetProcess, HRESULT(ICorDebugProcess **ppProcess));
+  MOCK_METHOD1(EnumerateAssemblies,
+               HRESULT(ICorDebugAssemblyEnum **ppAssemblies));
+  MOCK_METHOD2(GetModuleFromMetaDataInterface,
+               HRESULT(IUnknown *pIMetaData, ICorDebugModule **ppModule));
+  MOCK_METHOD1(EnumerateBreakpoints,
+               HRESULT(ICorDebugBreakpointEnum **ppBreakpoints));
+  MOCK_METHOD1(EnumerateSteppers, HRESULT(ICorDebugStepperEnum **ppSteppers));
+  MOCK_METHOD1(IsAttached, HRESULT(BOOL *pbAttached));
+  MOCK_METHOD3(GetName,
+               HRESULT(ULONG32 cchName, ULONG32 *pcchName, WCHAR szName[]));
+  MOCK_METHOD0(Attach, HRESULT(void));
+  MOCK_METHOD1(GetID, HRESULT(ULONG32 *pId));
+  MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
+};
+
+class ICorDebugThreadMock : public ICorDebugThread {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(GetProcess, HRESULT(ICorDebugProcess **ppProcess));
+  MOCK_METHOD1(GetID, HRESULT(DWORD *pdwThreadId));
+  MOCK_METHOD1(GetHandle, HRESULT(HTHREAD *phThreadHandle));
+  MOCK_METHOD1(GetAppDomain, HRESULT(ICorDebugAppDomain **ppAppDomain));
+  MOCK_METHOD1(SetDebugState, HRESULT(CorDebugThreadState state));
+  MOCK_METHOD1(GetDebugState, HRESULT(CorDebugThreadState *pState));
+  MOCK_METHOD1(GetUserState, HRESULT(CorDebugUserState *pState));
+  MOCK_METHOD1(GetCurrentException,
+               HRESULT(ICorDebugValue **ppExceptionObject));
+  MOCK_METHOD0(ClearCurrentException, HRESULT(void));
+  MOCK_METHOD1(CreateStepper, HRESULT(ICorDebugStepper **ppStepper));
+  MOCK_METHOD1(EnumerateChains, HRESULT(ICorDebugChainEnum **ppChains));
+  MOCK_METHOD1(GetActiveChain, HRESULT(ICorDebugChain **ppChain));
+  MOCK_METHOD1(GetActiveFrame, HRESULT(ICorDebugFrame **ppFrame));
+  MOCK_METHOD1(GetRegisterSet, HRESULT(ICorDebugRegisterSet **ppRegisters));
+  MOCK_METHOD1(CreateEval, HRESULT(ICorDebugEval **ppEval));
+  MOCK_METHOD1(GetObjectW, HRESULT(ICorDebugValue **ppObject));
+};
+
+class ICorDebugBreakpointMock : ICorDebugBreakpoint {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(Activate, HRESULT(BOOL bActive));
+  MOCK_METHOD1(IsActive, HRESULT(BOOL *pbActive));
+};
+
+class ICorDebugFunctionBreakpointMock : ICorDebugFunctionBreakpoint {
+ public:
+  IUNKNOWN_MOCK
+
+  MOCK_METHOD1(Activate, HRESULT(BOOL bActive));
+  MOCK_METHOD1(IsActive, HRESULT(BOOL *pbActive));
+  MOCK_METHOD1(GetFunction, HRESULT(ICorDebugFunction **ppFunction));
+  MOCK_METHOD1(GetOffset, HRESULT(ULONG32 *pnOffset));
+};
+
 // Mock class for ICorDebugType.
 class ICorDebugTypeMock : public ICorDebugType {
  public:

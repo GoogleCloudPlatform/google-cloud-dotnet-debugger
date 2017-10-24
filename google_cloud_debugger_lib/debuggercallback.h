@@ -175,13 +175,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     return portable_pdbs_;
   }
 
-  // Given an ICorDebugBreakpoint, gets the function token, IL offset
-  // and metadata of the function that the breakpoint is in.
-  HRESULT GetFunctionTokenAndILOffset(ICorDebugBreakpoint *debug_breakpoint,
-                                      mdMethodDef *function_token,
-                                      ULONG32 *il_offset,
-                                      IMetaDataImport **metadata_import);
-
   // Reads, parses and activates/deactivates incoming breakpoints.
   HRESULT SyncBreakpoints() {
     return breakpoint_collection_->SyncBreakpoints();
@@ -243,6 +236,13 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   }
 
  private:
+  // Given an ICorDebugBreakpoint, gets the function token, IL offset
+  // and metadata of the function that the breakpoint is in.
+  HRESULT GetFunctionTokenAndILOffset(ICorDebugBreakpoint *debug_breakpoint,
+                                      mdMethodDef *function_token,
+                                      ULONG32 *il_offset,
+                                      IMetaDataImport **metadata_import);
+
   // An EvalCoordinator is used to coordinate between DebuggerCallback object
   // and a StackFrame object when an evaluation is needed. See the
   // EvalCoordinator class for comments on how to use it.
