@@ -24,6 +24,7 @@ cp $ROOT_DIR/google_cloud_debugger/google_cloud_debugger $TEMP_DIR
 
 # Copy the needed so files.
 cp $ROOT_DIR/protobuf/src/.libs/libprotobuf.so.13.0.2 $TEMP_DIR/libprotobuf.so.13
+# TODO(talarico): Figure out which exactly which .so files we need.
 cp $ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug/*.so $TEMP_DIR
 
 # Package everyting into a tar. 
