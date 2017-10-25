@@ -39,7 +39,7 @@ using std::vector;
 
 namespace google_cloud_debugger_test {
 
-// Test Fixture for DbgArray.
+// Test Fixture for DebuggerCallback.
 // Contains various ICorDebug mock objects needed.
 class DebuggerCallbackTest : public ::testing::Test {
  protected:
