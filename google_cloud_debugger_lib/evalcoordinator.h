@@ -19,9 +19,6 @@
 
 namespace google_cloud_debugger {
 
-// TODO(quoct): Add a switch to turn off function evaluation by default.
-// Also, we have to investigate function evaluation for multi-threading case.
-//
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
 // and print out variables. It does so by creating a StackFrame on a new
 // thread and coordinates between the StackFrame and DebuggerCallback.

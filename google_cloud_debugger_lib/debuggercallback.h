@@ -246,8 +246,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // An EvalCoordinator is used to coordinate between DebuggerCallback object
   // and a StackFrame object when an evaluation is needed. See the
   // EvalCoordinator class for comments on how to use it.
-  // TODO(quoct): Handle multi thread case with eval coordinator?
-  // Also, this is just a temporary design and may be changed.
   std::unique_ptr<EvalCoordinator> eval_coordinator_;
 
   // This field is used for reference counting (AddRef and Release).

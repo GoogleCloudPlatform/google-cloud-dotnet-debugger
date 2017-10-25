@@ -26,10 +26,6 @@ class EvalCoordinator;
 
 // This class represents a .NET array object.
 // This includes multi-dimensional as well as jagged arrays.
-// TODO(quoct): Currently, we have a depth that we use to determine
-// how deep we will inspect a jagged array.
-// However, I'm not sure how we can use this depth in the case
-// of a multi-dimensional array?
 class DbgArray : public DbgObject {
  public:
   DbgArray(ICorDebugType *debug_type, int depth)

@@ -61,7 +61,6 @@ struct LocalVariableInfo {
 
 // Struct that represents constant in a method.
 struct LocalConstantInfo {
-  // TODO(quoct): Parse constant type and value information.
   std::string name;
 };
 
