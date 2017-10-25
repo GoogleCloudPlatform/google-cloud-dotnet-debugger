@@ -66,10 +66,6 @@ bool ParseFrom(CustomBinaryStream *binary_reader,
                           version_string_bytes.end());
   root_header->version_string = temp_vers_string;
 
-  // TODO(quoct): check this.
-  // Not sure why these values are being set. Removing them.
-  // header.version = header.version.Trim(new char[] { '\0' });
-
   // We have to advance to the next 4 byte boundary.
   uint32_t bytes_to_skipped = 4 - (root_header->version_string_length % 4);
   if (bytes_to_skipped != 4 &&

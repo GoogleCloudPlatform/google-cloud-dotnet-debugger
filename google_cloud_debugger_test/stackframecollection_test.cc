@@ -135,7 +135,6 @@ class FrameFixture {
 
     // Sets up the local variables and method arguments enum to return
     // no variables and method arguments to simplify the tests.
-    // TODO(quoct): Test those cases in a separate test file for DbgStackFrame.
     ON_CALL(il_frame_, EnumerateLocalVariables(_))
         .WillByDefault(DoAll(SetArgPointee<0>(&local_var_enum_), Return(S_OK)));
 

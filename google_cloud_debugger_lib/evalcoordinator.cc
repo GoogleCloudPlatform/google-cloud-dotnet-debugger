@@ -132,7 +132,6 @@ HRESULT EvalCoordinator::PrintBreakpoint(
          EvalCoordinator *eval_coordinator,
          BreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {
-        // TODO(quoct): Add logic to let the main thread know about this hr.
         Breakpoint proto_breakpoint;
         HRESULT hr = breakpoint->PopulateBreakpoint(
             &proto_breakpoint, stack_frames.get(), eval_coordinator);

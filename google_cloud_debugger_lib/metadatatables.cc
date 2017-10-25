@@ -131,7 +131,7 @@ bool ParseFrom(uint32_t starting_document, CustomBinaryStream *binary_reader,
   // method is housed entirely in the same document. Otherwise, it spans
   // multiple documents and we read the initial doc now. (And again in while
   // parsing subsequent document-record entries.)
-  // TODO(chrsmith): When does this happen in practice? Obviously some tests are
+  // TODO(quoct): When does this happen in practice? Obviously some tests are
   // needed.
   if (starting_document == 0) {
     uint32_t initial_doc;
