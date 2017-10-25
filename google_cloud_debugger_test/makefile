@@ -29,10 +29,10 @@ CORE_CLR_LIB = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/lib/
 CORE_CLR_LIB2 = $(ROOT_DIR)/../coreclr/bin/Product/Linux.x64.Debug/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
-INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ -ldbgshim `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
+INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
 
-TESTS = unit_test_main.o breakpoint_client_test.o dbgbreakpoint_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgclass_test.o dbgarray_test.o dbgstackframe_test.o stackframecollection_test.o custom_binary_stream_test.o common_action_mocks.o i_portablepdb_mocks.o
+TESTS = unit_test_main.o breakpoint_client_test.o dbgbreakpoint_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgclass_test.o dbgarray_test.o dbgstackframe_test.o debuggercallback_test.o stackframecollection_test.o custom_binary_stream_test.o common_action_mocks.o i_portablepdb_mocks.o
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.5 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
@@ -63,6 +63,9 @@ dbgarray_test.o: dbgarray_test.cc
 
 dbgstackframe_test.o: dbgstackframe_test.cc
 	clang-3.5 dbgstackframe_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstackframe_test.o
+
+debuggercallback_test.o: debuggercallback_test.cc
+	clang-3.5 debuggercallback_test.cc ${INCDIRS} ${CC_FLAGS} -c -o debuggercallback_test.o
 
 stackframecollection_test.o: stackframecollection_test.cc
 	clang-3.5 stackframecollection_test.cc ${INCDIRS} ${CC_FLAGS} -c -o stackframecollection_test.o
