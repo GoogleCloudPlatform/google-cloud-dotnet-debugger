@@ -27,7 +27,6 @@ class IEvalCoordinator;
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
 // function is called.
-// TODO(quoct): Investigate static property.
 class DbgClassProperty : public StringStreamWrapper {
  public:
   // Initialize the property name, metadata signature, attributes

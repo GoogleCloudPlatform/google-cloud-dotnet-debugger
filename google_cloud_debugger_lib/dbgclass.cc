@@ -662,9 +662,6 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       class_field_var->set_name((*it)->GetFieldName());
       hr = (*it)->PopulateVariableValue(class_field_var, eval_coordinator);
       if (FAILED(hr)) {
-        class_field_var->clear_type();
-        class_field_var->clear_members();
-        class_field_var->clear_value();
         SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
       }
     }
@@ -684,9 +681,6 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
                                         eval_coordinator, &generic_types_,
                                         new_depth);
       if (FAILED(hr)) {
-        property_field_var->clear_type();
-        property_field_var->clear_members();
-        property_field_var->clear_value();
         SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
       }
     }

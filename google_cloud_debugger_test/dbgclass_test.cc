@@ -255,6 +255,7 @@ class DbgClassTest : public ::testing::Test {
         .Times(2)
         .WillOnce(DoAll(
             SetArgPointee<4>(class_property_name_len),
+            SetArgPointee<6>(&property_sig_),
             Return(S_OK)))  // Sets the length of the class the first time.
         .WillOnce(
             DoAll(SetArg2ToWcharArray(wchar_class_property_.data(),
@@ -378,6 +379,9 @@ class DbgClassTest : public ::testing::Test {
   vector<WCHAR> wchar_class_property_;
 
   ICorDebugGenericValueMock property_;
+
+  // Signature of the property.
+  COR_SIGNATURE property_sig_ = (COR_SIGNATURE)0x20;
 
   int property_value_ = 600;
 
