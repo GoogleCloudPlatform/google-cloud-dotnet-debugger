@@ -73,7 +73,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
-            // TODO(talarico): Be sure to signal the debugger to detach.
             _process?.Dispose();
             _cts.Cancel();
         }

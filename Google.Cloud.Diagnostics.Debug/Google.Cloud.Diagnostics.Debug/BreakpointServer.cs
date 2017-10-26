@@ -101,17 +101,36 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="array">The array of bytes to look for a sequence in.</param>
         /// <param name="sequence">The sequence to search for.</param>
         /// <returns>The start index of the first sequence or -1 if none is found.</returns>
-        private int IndexOfSequence(byte[] array, byte[] sequence)
+        internal static int IndexOfSequence(byte[] array, byte[] sequence)
         {
-            for (int i = 0; i < array.Length; i++)
+            for (int i = 0; i < array.Length - sequence.Length + 1; i++)
             {
-                // TODO(talarico): This is horribly inefficient, re-write this.
-                if (array.Skip(i).Take(sequence.Length).SequenceEqual(sequence))
+                // This check could be slightly more efficient if we tracked
+                // looked for the start of the sequence inside the match.
+                // However given how small the sequence will be this should
+                // be sufficient. 
+                if (array[i] == sequence[0] && Match(array, i, sequence))
                 {
-                    return i;
+                   return i;
                 }
             }
             return -1;
+        }
+
+        /// <summary>
+        /// Checks if the sequence is at the index of the given array.
+        /// </summary>
+        /// <returns>True if the there is a match.</returns>
+        private static bool Match(byte[] array, int index, byte[] sequence)
+        {
+            for (int i = 0; i < sequence.Length; i++)
+            {
+                if (array[i + index] != sequence[i])
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <inheritdoc />
