@@ -24,13 +24,15 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         private readonly Mock<IBreakpointServer> _mockBreakpointServer;
         private readonly Mock<IDebuggerClient> _mockDebuggerClient;
         private readonly BreakpointReadActionServer _server;
+        private readonly BreakpointManager _breakpointManager;
 
         public BreakpointReadActionServerTests()
         {
             _mockBreakpointServer = new Mock<IBreakpointServer>();
             _mockDebuggerClient = new Mock<IDebuggerClient>();
+            _breakpointManager = new BreakpointManager();
             _server = new BreakpointReadActionServer(
-                _mockBreakpointServer.Object, _mockDebuggerClient.Object);
+                _mockBreakpointServer.Object, _mockDebuggerClient.Object, _breakpointManager);
         }
 
         [Fact]
@@ -39,6 +41,11 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             var breakpoint = new Breakpoint
             {
                 Id = "some-id",
+                Location = new SourceLocation
+                {
+                    Line = 1,
+                    Path = "some-path"
+                }
             };
             _mockBreakpointServer.Setup(s => s.ReadBreakpointAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(breakpoint));

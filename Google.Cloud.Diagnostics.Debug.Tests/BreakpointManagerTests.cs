@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Xunit;
 
@@ -23,6 +24,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 {
     public class BreakpointManagerTests
     {
+        private static readonly ImmutableList<StackdriverBreakpoint> _emptyList =
+            ImmutableList<StackdriverBreakpoint>.Empty;
         private readonly BreakpointManager _manager;
 
         public BreakpointManagerTests()
@@ -31,7 +34,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void AddNewBreakpoints()
+        public void UpdateBreakpoints_NewBreakpoints()
         {
             var breakpoints = CreateBreakpoints(2);
             var response = _manager.UpdateBreakpoints(breakpoints);
@@ -44,7 +47,19 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void IgnoreDuplicateBreakpoints()
+        public void UpdateBreakpoints_Duplicate()
+        {
+            var breakpoints = CreateBreakpoints(1).Concat(CreateBreakpoints(1)).ToList();
+            var response = _manager.UpdateBreakpoints(breakpoints);
+
+            Assert.Empty(response.Removed);
+            Assert.Single(response.New);
+
+            Assert.Equal(breakpoints[0], response.New.Single());
+        }
+
+        [Fact]
+        public void UpdateBreakpoints_IgnoreDuplicateBreakpoints()
         {
             var breakpoints = CreateBreakpoints(2);
             var response = _manager.UpdateBreakpoints(breakpoints);
@@ -58,7 +73,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void IgnoreDuplicateBreakpointsBySource()
+        public void UpdateBreakpoints_IgnoreDuplicateBreakpointsBySource()
         {
             var breakpoints = CreateBreakpoints(2);
             var response = _manager.UpdateBreakpoints(breakpoints);
@@ -77,7 +92,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void RemoveBreakpoints()
+        public void UpdateBreakpoints_RemoveBreakpoints()
         {
             var breakpoints = CreateBreakpoints(2);
             _manager.UpdateBreakpoints(breakpoints);
@@ -88,7 +103,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void AddAndRemoveBreakpoints()
+        public void UpdateBreakpoints_AddAndRemoveBreakpoints()
         {
             var breakpoints = CreateBreakpoints(10);
             var response = _manager.UpdateBreakpoints(breakpoints.GetRange(0, 6));
@@ -106,7 +121,47 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             response = _manager.UpdateBreakpoints(new List<StackdriverBreakpoint>());
             Assert.Empty(response.New);
             Assert.Equal(5, response.Removed.Count());
+        }
 
+        [Fact]
+        public void RemoveBreakpoint()
+        {
+            var breakpoints = CreateBreakpoints(1);
+            _manager.UpdateBreakpoints(breakpoints);
+            _manager.RemoveBreakpoint(breakpoints.Single());
+
+            var response = _manager.UpdateBreakpoints(_emptyList);
+            Assert.Empty(response.New);
+            Assert.Empty(response.Removed);
+        }
+
+        [Fact]
+        public void RemoveBreakpoint_NoEffect()
+        {
+            var breakpoints = CreateBreakpoints(2);
+            _manager.UpdateBreakpoints(breakpoints.GetRange(0, 1));
+            _manager.RemoveBreakpoint(breakpoints[1]);
+
+            var response = _manager.UpdateBreakpoints(_emptyList);
+            Assert.Empty(response.New);
+            Assert.Equal(breakpoints[0], response.Removed.Single());
+        }
+
+        [Fact]
+        public void GetBreakpointId()
+        {
+            var breakpoints = CreateBreakpoints(1);
+            _manager.UpdateBreakpoints(breakpoints);
+            var breakpoint = CreateBreakpoints(1).Single();
+            breakpoint.Id = "not-the-same-id";
+
+            Assert.Equal(breakpoints.Single().Id, _manager.GetBreakpointId(breakpoint));
+        }
+
+        [Fact]
+        public void GetBreakpointId_Null()
+        {
+            Assert.Null(_manager.GetBreakpointId(CreateBreakpoints(1).Single()));
         }
 
         /// <summary>

@@ -24,16 +24,19 @@ namespace Google.Cloud.Diagnostics.Debug
     public class BreakpointReadActionServer : BreakpointActionServer
     {
         private readonly IDebuggerClient _client;
+        private readonly BreakpointManager _breakpointManager;
 
         /// <summary>
         /// Create a new <see cref="BreakpointReadActionServer"/>.
         /// </summary>
         /// <param name="server">The breakpoint server to communicate with.</param>
         /// <param name="client">The debugger client to send updated breakpoints to.</param>
-        public BreakpointReadActionServer(
-            IBreakpointServer server, IDebuggerClient client) : base (server)
+        /// <param name="breakpointManager">A shared breakpoint manager.</param>
+        public BreakpointReadActionServer(IBreakpointServer server, IDebuggerClient client,
+            BreakpointManager breakpointManager) : base(server)
         {
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
+            _breakpointManager = GaxPreconditions.CheckNotNull(breakpointManager, nameof(breakpointManager));
         }
 
         /// <summary>
@@ -45,6 +48,8 @@ namespace Google.Cloud.Diagnostics.Debug
             Breakpoint readBreakpoint = _server.ReadBreakpointAsync().Result;
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
             breakpoint.IsFinalState = true;
+            breakpoint.Id = _breakpointManager.GetBreakpointId(breakpoint) ?? breakpoint.Id;
+            _breakpointManager.RemoveBreakpoint(breakpoint);
             _client.UpdateBreakpoint(breakpoint);
         }
     }
