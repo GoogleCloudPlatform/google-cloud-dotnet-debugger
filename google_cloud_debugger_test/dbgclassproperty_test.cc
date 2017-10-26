@@ -46,12 +46,8 @@ class DbgClassPropertyTest : public ::testing::Test {
   virtual void SetUpProperty(bool static_property=false) {
     uint32_t class_property_name_len = wchar_string_.size();
 
-    if (!static_property) {
-      property_signature_ = (COR_SIGNATURE)0x20;
-    }
-    else {
-      property_signature_ = (COR_SIGNATURE)0x01;
-    }
+    property_signature_ = static_property ? (COR_SIGNATURE)0x01
+        : (COR_SIGNATURE)DbgClassProperty::kNonStaticPropertyMask;
 
     // GetPropertyProps should be called twice.
     EXPECT_CALL(metadataimport_mock_,

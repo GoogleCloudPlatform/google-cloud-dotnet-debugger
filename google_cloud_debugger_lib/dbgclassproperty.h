@@ -54,6 +54,8 @@ class DbgClassProperty : public StringStreamWrapper {
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
 
+  static const int8_t kNonStaticPropertyMask = 0x20;
+
  private:
   // Helper function to set the value of variable to this property's value.
   HRESULT PopulateVariableValueHelper(

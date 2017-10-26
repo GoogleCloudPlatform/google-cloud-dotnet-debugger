@@ -153,8 +153,11 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   vector<ICorDebugValue *> arg_values;
-  // Add "this" if method is not static.
-  if ((*signature_metadata_ & 0x20) != 0) {
+  // If the property is non-static, the metadata will have a bit mask
+  // of 0x20. If the property is non-static, then when we call getter
+  // method, we have to supply "this" (reference to the current object)
+  // as a parameter.
+  if ((*signature_metadata_ & kNonStaticPropertyMask) != 0) {
     arg_values.push_back(reference_value);
   }
 
