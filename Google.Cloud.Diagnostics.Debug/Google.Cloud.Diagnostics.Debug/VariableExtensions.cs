@@ -34,7 +34,6 @@ namespace Google.Cloud.Diagnostics.Debug
                 Name = variable.Name,
                 Value = variable.Value,
                 Type = variable.Type,
-                // TODO(talarico): Look into making sure we don't have cycles
                 Members = { variable.Members?.Select(x => x.Convert()).ToList() },
                 Status = variable.Status == null ? null : Common.CreateStatusMessage(
                     variable.Status.Message, variable.Status.Iserror),

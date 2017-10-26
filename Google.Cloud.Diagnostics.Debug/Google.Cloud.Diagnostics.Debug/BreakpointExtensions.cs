@@ -53,7 +53,7 @@ namespace Google.Cloud.Diagnostics.Debug
             return new StackdriverBreakpoint
             {
                 CreateTime = breakpoint.CreateTime,
-                FinalTime = breakpoint.FinalTime, // TODO(talarico): Is this set properly before?
+                FinalTime = breakpoint.FinalTime,
                 Id = breakpoint.Id,
                 Location = new StackdriverSourceLocation
                 {

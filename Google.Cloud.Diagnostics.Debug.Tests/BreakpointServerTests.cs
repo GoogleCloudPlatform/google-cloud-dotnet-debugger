@@ -17,6 +17,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -175,6 +176,35 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _server.WriteBreakpointAsync(breakpoint, _cts.Token);
             _pipeMock.VerifyAll();
             _pipeMock.Verify(p => p.WriteAsync(It.IsAny<byte[]>(), _cts.Token), Times.Once());
+        }
+
+        [Fact]
+        public void IndexOfSequence()
+        {
+            var bytes = Encoding.ASCII.GetBytes("This is a message to find a part of.");
+            var seqFound = Encoding.ASCII.GetBytes("apple");
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                var newBytes = bytes.ToList();
+                newBytes.InsertRange(i, seqFound);
+                Assert.Equal(i, BreakpointServer.IndexOfSequence(newBytes.ToArray(), seqFound));
+            }
+        }
+
+        [Fact]
+        public void IndexOfSequence_NotFound()
+        {
+            var bytes = Encoding.ASCII.GetBytes("This is a message to find a part of.");
+            var seqFound = Encoding.ASCII.GetBytes("apple");
+            var seqNotFound = Encoding.ASCII.GetBytes("applez");
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                var newBytes = bytes.ToList();
+                newBytes.InsertRange(i, seqFound);
+                Assert.Equal(-1, BreakpointServer.IndexOfSequence(newBytes.ToArray(), seqNotFound));
+            }
         }
 
         private byte[] CreateBreakpointMessage(Breakpoint breakpoint)
