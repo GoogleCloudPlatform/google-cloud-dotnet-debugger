@@ -215,8 +215,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
 
     if (FAILED(hr)) {
       // Output the error on why we failed to print out.
-      SetErrorStatusMessage(member, GetErrorString());
-      ResetErrorStream();
+      SetErrorStatusMessage(member, this);
       continue;
     }
 
@@ -228,15 +227,13 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
         WriteError(result_object->GetErrorString());
       }
       // Output the error on why we failed to print out.
-      SetErrorStatusMessage(member, GetErrorString());
-      ResetErrorStream();
+      SetErrorStatusMessage(member, this);
       continue;
     }
 
     hr = result_object->PopulateVariableValue(member, eval_coordinator);
     if (FAILED(hr)) {
-      SetErrorStatusMessage(member, GetErrorString());
-      ResetErrorStream();
+      SetErrorStatusMessage(member, this);
       continue;
     }
   }
