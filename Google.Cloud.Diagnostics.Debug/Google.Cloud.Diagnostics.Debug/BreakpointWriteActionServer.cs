@@ -32,11 +32,12 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         /// <param name="server">The breakpoint server to communicate with.</param>
         /// <param name="client">The debugger client to send updated breakpoints to.</param>
-        public BreakpointWriteActionServer(
-            IBreakpointServer server, IDebuggerClient client) : base (server)
+        /// <param name="breakpointManager">A shared breakpoint manager.</param>
+        public BreakpointWriteActionServer(IBreakpointServer server, IDebuggerClient client, 
+            BreakpointManager breakpointManager) : base (server)
         {
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
-            _breakpointManager = new BreakpointManager();
+            _breakpointManager = GaxPreconditions.CheckNotNull(breakpointManager, nameof(breakpointManager));
         }
 
         /// <summary>
