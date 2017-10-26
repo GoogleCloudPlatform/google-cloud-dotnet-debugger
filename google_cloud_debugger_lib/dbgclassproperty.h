@@ -27,7 +27,6 @@ class IEvalCoordinator;
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
 // function is called.
-// TODO(quoct): Investigate static property.
 class DbgClassProperty : public StringStreamWrapper {
  public:
   // Initialize the property name, metadata signature, attributes
@@ -54,6 +53,8 @@ class DbgClassProperty : public StringStreamWrapper {
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
+
+  static const int8_t kNonStaticPropertyMask = 0x20;
 
  private:
   // Helper function to set the value of variable to this property's value.

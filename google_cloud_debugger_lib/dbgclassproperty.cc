@@ -56,7 +56,7 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 
   initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, wchar_property_name.data(),
-      property_name_.size(), &property_name_length, &property_attributes_,
+      wchar_property_name.size(), &property_name_length, &property_attributes_,
       &signature_metadata_, &sig_metadata_length_, &default_value_type_flags,
       &default_value_, &default_value_len_, &property_setter_function,
       &property_getter_function, other_methods_.data(), other_methods_.size(),
@@ -152,7 +152,15 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  vector<ICorDebugValue *> arg_values{reference_value};
+  vector<ICorDebugValue *> arg_values;
+  // If the property is non-static, the metadata will have a bit mask
+  // of 0x20. If the property is non-static, then when we call getter
+  // method, we have to supply "this" (reference to the current object)
+  // as a parameter.
+  if ((*signature_metadata_ & kNonStaticPropertyMask) != 0) {
+    arg_values.push_back(reference_value);
+  }
+
   vector<ICorDebugType *> local_generic_types;
   local_generic_types.reserve(generic_types->size());
 
@@ -208,7 +216,6 @@ HRESULT DbgClassProperty::PopulateVariableValueHelper(
     std::ostringstream stream_type;
     property_value_->PopulateType(variable);
     WriteError("throws exception " + variable->type());
-    variable->Clear();
     return E_FAIL;
   }
 

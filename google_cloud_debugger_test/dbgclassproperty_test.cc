@@ -43,8 +43,11 @@ class DbgClassPropertyTest : public ::testing::Test {
  protected:
   virtual void SetUp() {}
 
-  virtual void SetUpProperty() {
+  virtual void SetUpProperty(bool static_property=false) {
     uint32_t class_property_name_len = wchar_string_.size();
+
+    property_signature_ = static_property ? (COR_SIGNATURE)0x01
+        : (COR_SIGNATURE)DbgClassProperty::kNonStaticPropertyMask;
 
     // GetPropertyProps should be called twice.
     EXPECT_CALL(metadataimport_mock_,
@@ -52,10 +55,12 @@ class DbgClassPropertyTest : public ::testing::Test {
         .Times(2)
         .WillOnce(DoAll(
             SetArgPointee<4>(class_property_name_len),
+            SetArgPointee<6>(&property_signature_),
             Return(S_OK)))  // Sets the length of the class the first time.
         .WillOnce(DoAll(
             SetArg2ToWcharArray(wchar_string_.data(), class_property_name_len),
             SetArgPointee<4>(class_property_name_len),
+            SetArgPointee<6>(&property_signature_),
             Return(S_OK)));  // Sets the class' name the second time.
 
     EXPECT_CALL(metadataimport_mock_,
@@ -67,6 +72,51 @@ class DbgClassPropertyTest : public ::testing::Test {
 
     HRESULT hr = class_property_.GetInitializeHr();
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  }
+
+  virtual void SetUpPropertyValue() {
+    // Sets various expectation for PopulateVariableValue call.
+    EXPECT_CALL(reference_value_, Dereference(_))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
+
+    // ICorDebugReferenceValue should dereference to object value.
+    EXPECT_CALL(object_value_, QueryInterface(_, _))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
+
+    // From object_value, ICorDebugClass should be extracted.
+    EXPECT_CALL(object_value_, GetClass(_))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
+
+    // ICorDebugModule extracted from ICorDebugClass.
+    EXPECT_CALL(debug_class_, GetModule(_))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
+
+    // ICorDebugFunction extracted from Module.
+    EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
+
+    // ICorDebugEval created from eval_coordinator_mock.
+    EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
+
+    // ICorDebugEval2 extracted from ICorDebugEval.
+    EXPECT_CALL(debug_eval_, QueryInterface(_, _))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
+
+    // IEvalCoordinator returns a generic value.
+    // When GetValue is called from generic value, returns property_value_ as the value.
+    SetUpMockGenericValue(&generic_value_, property_value_);
+
+    EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, _, _))
+        .Times(2)
+        .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value_), Return(S_OK)));
   }
 
   // ICorDebugType for this field.
@@ -100,6 +150,9 @@ class DbgClassPropertyTest : public ::testing::Test {
   ICorDebugEvalMock debug_eval_;
   ICorDebugEval2Mock debug_eval2_;
 
+  // Metadata signature of the property.
+  COR_SIGNATURE property_signature_;
+
   // EvalCoordinator used to evaluate the property.
   IEvalCoordinatorMock eval_coordinator_mock_;
 
@@ -114,6 +167,9 @@ class DbgClassPropertyTest : public ::testing::Test {
   string class_property_name_ = "PropertyName";
 
   vector<WCHAR> wchar_string_ = ConvertStringToWCharPtr(class_property_name_);
+
+  // Value of the property.
+  int32_t property_value_ = 20;
 };
 
 // Tests the Initialize function of DbgClassProperty.
@@ -143,50 +199,7 @@ TEST_F(DbgClassPropertyTest, TestInitializeError) {
 // Tests the PopulateVariableValue function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
   SetUpProperty();
-
-  // Sets various expectation for PopulateVariableValue call.
-  EXPECT_CALL(reference_value_, Dereference(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
-
-  // ICorDebugReferenceValue should dereference to object value.
-  EXPECT_CALL(object_value_, QueryInterface(_, _))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
-
-  // From object_value, ICorDebugClass should be extracted.
-  EXPECT_CALL(object_value_, GetClass(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
-
-  // ICorDebugModule extracted from ICorDebugClass.
-  EXPECT_CALL(debug_class_, GetModule(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
-
-  // ICorDebugFunction extracted from Module.
-  EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
-
-  // ICorDebugEval created from eval_coordinator_mock.
-  EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
-
-  // ICorDebugEval2 extracted from ICorDebugEval.
-  EXPECT_CALL(debug_eval_, QueryInterface(_, _))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
-
-  // IEvalCoordinator returns a generic value.
-  // When GetValue is called from generic value, returns 20 as the value.
-  int32_t int32_value = 20;
-  SetUpMockGenericValue(&generic_value_, int32_value);
-
-  EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, _, _))
-      .Times(2)
-      .WillRepeatedly(DoAll(SetArgPointee<2>(&generic_value_), Return(S_OK)));
+  SetUpPropertyValue();
 
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;
@@ -204,7 +217,7 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
               S_OK);
 
     EXPECT_EQ(variable.type(), "System.Int32");
-    EXPECT_EQ(variable.value(), std::to_string(int32_value));
+    EXPECT_EQ(variable.value(), std::to_string(property_value_));
   }
 
   {
@@ -221,7 +234,50 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
               S_OK);
 
     EXPECT_EQ(variable.type(), "System.Int32");
-    EXPECT_EQ(variable.value(), std::to_string(int32_value));
+    EXPECT_EQ(variable.value(), std::to_string(property_value_));
+  }
+}
+
+// Tests the PopulateVariableValue function of DbgClassProperty
+// when the property is static.
+TEST_F(DbgClassPropertyTest, TestPopulateVariableValueStatic) {
+  SetUpProperty(true);
+  SetUpPropertyValue();
+
+  Variable variable;
+  vector<CComPtr<ICorDebugType>> generic_types;
+
+  {
+    // CallParameterizedFunction of ICorDebugEval2 is called
+    // with 0 arguments (since size of generic types passing in is 0).
+    EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, 0, _, 0, _))
+        .Times(1)
+        .WillRepeatedly(Return(S_OK));
+
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
+              S_OK);
+
+    EXPECT_EQ(variable.type(), "System.Int32");
+    EXPECT_EQ(variable.value(), std::to_string(property_value_));
+  }
+
+  {
+    generic_types.resize(2);
+    // CallParameterizedFunction of ICorDebugEval2 is called
+    // with 2 arguments (since size of generic types passing in is 0).
+    EXPECT_CALL(debug_eval2_, CallParameterizedFunction(_, 2, _, 0, _))
+        .Times(1)
+        .WillRepeatedly(Return(S_OK));
+
+    EXPECT_EQ(class_property_.PopulateVariableValue(
+                  &variable, &reference_value_, &eval_coordinator_mock_,
+                  &generic_types, 1),
+              S_OK);
+
+    EXPECT_EQ(variable.type(), "System.Int32");
+    EXPECT_EQ(variable.value(), std::to_string(property_value_));
   }
 }
 
