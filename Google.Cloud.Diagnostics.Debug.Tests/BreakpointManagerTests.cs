@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Xunit;
 
@@ -23,6 +24,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 {
     public class BreakpointManagerTests
     {
+        private static readonly ImmutableList<StackdriverBreakpoint> _emptyList =
+            ImmutableList<StackdriverBreakpoint>.Empty;
         private readonly BreakpointManager _manager;
 
         public BreakpointManagerTests()
@@ -127,7 +130,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _manager.UpdateBreakpoints(breakpoints);
             _manager.RemoveBreakpoint(breakpoints.Single());
 
-            var response = _manager.UpdateBreakpoints(CreateBreakpoints(0));
+            var response = _manager.UpdateBreakpoints(_emptyList);
             Assert.Empty(response.New);
             Assert.Empty(response.Removed);
         }
@@ -139,7 +142,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _manager.UpdateBreakpoints(breakpoints.GetRange(0, 1));
             _manager.RemoveBreakpoint(breakpoints[1]);
 
-            var response = _manager.UpdateBreakpoints(CreateBreakpoints(0));
+            var response = _manager.UpdateBreakpoints(_emptyList);
             Assert.Empty(response.New);
             Assert.Equal(breakpoints[0], response.Removed.Single());
         }
