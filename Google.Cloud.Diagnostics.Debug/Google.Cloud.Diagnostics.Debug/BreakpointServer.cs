@@ -103,31 +103,34 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>The start index of the first sequence or -1 if none is found.</returns>
         internal static int IndexOfSequence(byte[] array, byte[] sequence)
         {
-            // Checks if the seq is at the index of the given arr.
-            Func<byte[], int, byte[], bool> match = (arr, index, seq) =>
-            {
-                for (int i = 0; i < seq.Length; i++)
-                {
-                    if (arr[i + index] != seq[i])
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            };
-
             for (int i = 0; i < array.Length - sequence.Length + 1; i++)
             {
                 // This check could be slightly more efficient if we tracked
                 // looked for the start of the sequence inside the match.
                 // However given how small the sequence will be this should
                 // be sufficient. 
-                if (array[i] == sequence[0] && match(array, i, sequence))
+                if (array[i] == sequence[0] && Match(array, i, sequence))
                 {
                    return i;
                 }
             }
             return -1;
+        }
+
+        /// <summary>
+        /// Checks if the sequence is at the index of the given array.
+        /// </summary>
+        /// <returns>True if the there is a match.</returns>
+        private static bool Match(byte[] array, int index, byte[] sequence)
+        {
+            for (int i = 0; i < sequence.Length; i++)
+            {
+                if (array[i + index] != sequence[i])
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <inheritdoc />
