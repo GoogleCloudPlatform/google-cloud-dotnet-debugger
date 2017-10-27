@@ -10,10 +10,10 @@ DBGSHIM_INC = $(ROOT_DIR)/../third_party/coreclr-subset/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} `pkg-config --cflags protobuf`
 
-DBG_OBJECTS = dbgobject.o dbgstring.o dbgarray.o dbgclass.o dbgclassfield.o dbgclassproperty.o dbgstackframe.o dbgenum.o dbg_builtin_collection.o
-PDB_PARSERS = metadataheaders.o metadatatables.o documentindex.o custombinaryreader.o portablepdbfile.o
-BREAKPOINTS = dbgbreakpoint.o breakpointcollection.o breakpoint.o breakpoint_client.o
-ALL_O_FILES = stackframecollection.o evalcoordinator.o debuggercallback.o debugger.o  namedpiped.o icordebughelper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
+DBG_OBJECTS = dbg_object.o dbg_string.o dbg_array.o dbg_class.o dbg_class_field.o dbg_class_property.o dbg_stack_frame.o dbg_enum.o dbg_builtin_collection.o
+PDB_PARSERS = metadata_headers.o metadata_tables.o document_index.o custom_binary_reader.o portable_pdb_file.o
+BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o
+ALL_O_FILES = stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 namedpiped.o: named_pipe_client_unix.h named_pipe_client_unix.cc
@@ -25,68 +25,68 @@ breakpoint.o: breakpoint.pb.h breakpoint.pb.cc
 breakpoint_client.o: breakpoint_client.h breakpoint_client.cc
 	clang-3.5 breakpoint_client.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_client.o
 
-dbgobject.o: dbgobject.h dbgobject.cc
-	clang-3.5 dbgobject.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgobject.o
+dbg_object.o: dbg_object.h dbg_object.cc
+	clang-3.5 dbg_object.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_object.o
 
-dbgstring.o: dbgstring.h dbgstring.cc
-	clang-3.5 dbgstring.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstring.o
+dbg_string.o: dbg_string.h dbg_string.cc
+	clang-3.5 dbg_string.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_string.o
 
-dbgarray.o: dbgarray.h dbgarray.cc
-	clang-3.5 dbgarray.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgarray.o
+dbg_array.o: dbg_array.h dbg_array.cc
+	clang-3.5 dbg_array.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_array.o
 
-dbgclass.o: dbgclass.h dbgclass.cc
-	clang-3.5 dbgclass.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclass.o
+dbg_class.o: dbg_class.h dbg_class.cc
+	clang-3.5 dbg_class.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class.o
 
-dbgenum.o: dbgenum.h dbgenum.cc
-	clang-3.5 dbgenum.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgenum.o
+dbg_enum.o: dbg_enum.h dbg_enum.cc
+	clang-3.5 dbg_enum.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_enum.o
 
 dbg_builtin_collection.o: dbg_builtin_collection.h dbg_builtin_collection.cc
 	clang-3.5 dbg_builtin_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_builtin_collection.o
 
-dbgclassfield.o: dbgclassfield.h dbgclassfield.cc
-	clang-3.5 dbgclassfield.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassfield.o
+dbg_class_field.o: dbg_class_field.h dbg_class_field.cc
+	clang-3.5 dbg_class_field.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_field.o
 
-dbgclassproperty.o: dbgclassproperty.h dbgclassproperty.cc
-	clang-3.5 dbgclassproperty.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassproperty.o
+dbg_class_property.o: dbg_class_property.h dbg_class_property.cc
+	clang-3.5 dbg_class_property.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_property.o
 	
-dbgstackframe.o: dbgstackframe.h dbgstackframe.cc
-	clang-3.5 dbgstackframe.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstackframe.o
+dbg_stack_frame.o: dbg_stack_frame.h dbg_stack_frame.cc
+	clang-3.5 dbg_stack_frame.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_stack_frame.o
 
-evalcoordinator.o: i_evalcoordinator.h evalcoordinator.h evalcoordinator.cc
-	clang-3.5 evalcoordinator.cc ${INCDIRS} ${CC_FLAGS} -c -o evalcoordinator.o
+eval_coordinator.o: i_eval_coordinator.h eval_coordinator.h eval_coordinator.cc
+	clang-3.5 eval_coordinator.cc ${INCDIRS} ${CC_FLAGS} -c -o eval_coordinator.o
 
-stackframecollection.o: i_stackframecollection.h stackframecollection.h stackframecollection.cc
-	clang-3.5 stackframecollection.cc ${INCDIRS} ${CC_FLAGS} -c -o stackframecollection.o
+stack_frame_collection.o: i_stack_frame_collection.h stack_frame_collection.h stack_frame_collection.cc
+	clang-3.5 stack_frame_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o stack_frame_collection.o
 
-debuggercallback.o: debuggercallback.h debuggercallback.cc
-	clang-3.5 debuggercallback.cc ${INCDIRS} ${CC_FLAGS} -c -o debuggercallback.o
+debugger_callback.o: debugger_callback.h debugger_callback.cc
+	clang-3.5 debugger_callback.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger_callback.o
 
-dbgbreakpoint.o: dbgbreakpoint.h dbgbreakpoint.cc
-	clang-3.5 dbgbreakpoint.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgbreakpoint.o
+dbg_breakpoint.o: dbg_breakpoint.h dbg_breakpoint.cc
+	clang-3.5 dbg_breakpoint.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_breakpoint.o
 
-breakpointcollection.o: breakpointcollection.h breakpointcollection.cc
-	clang-3.5 breakpointcollection.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpointcollection.o
+breakpoint_collection.o: breakpoint_collection.h breakpoint_collection.cc
+	clang-3.5 breakpoint_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_collection.o
 
-icordebughelper.o: icordebughelper.h icordebughelper.cc
-	clang-3.5 icordebughelper.cc ${INCDIRS} ${CC_FLAGS} -c -o icordebughelper.o
+i_cor_debug_helper.o: i_cor_debug_helper.h i_cor_debug_helper.cc
+	clang-3.5 i_cor_debug_helper.cc ${INCDIRS} ${CC_FLAGS} -c -o i_cor_debug_helper.o
 
 debugger.o: debugger.h debugger.cc
 	clang-3.5 debugger.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger.o
 
-metadataheaders.o: metadataheaders.h metadataheaders.cc
-	clang-3.5 metadataheaders.cc ${INCDIRS} ${CC_FLAGS} -c -o metadataheaders.o
+metadata_headers.o: metadata_headers.h metadata_headers.cc
+	clang-3.5 metadata_headers.cc ${INCDIRS} ${CC_FLAGS} -c -o metadata_headers.o
 
-metadatatables.o: metadatatables.h metadatatables.cc
-	clang-3.5 metadatatables.cc ${INCDIRS} ${CC_FLAGS} -c -o metadatatables.o
+metadata_tables.o: metadata_tables.h metadata_tables.cc
+	clang-3.5 metadata_tables.cc ${INCDIRS} ${CC_FLAGS} -c -o metadata_tables.o
 
-documentindex.o: documentindex.h documentindex.cc
-	clang-3.5 documentindex.cc ${INCDIRS} ${CC_FLAGS} -c -o documentindex.o
+document_index.o: document_index.h document_index.cc
+	clang-3.5 document_index.cc ${INCDIRS} ${CC_FLAGS} -c -o document_index.o
 
-custombinaryreader.o: custombinaryreader.h custombinaryreader.cc
-	clang-3.5 custombinaryreader.cc ${INCDIRS} ${CC_FLAGS} -c -o custombinaryreader.o
+custom_binary_reader.o: custom_binary_reader.h custom_binary_reader.cc
+	clang-3.5 custom_binary_reader.cc ${INCDIRS} ${CC_FLAGS} -c -o custom_binary_reader.o
 
-portablepdbfile.o: i_portablepdbfile.h portablepdbfile.h portablepdbfile.cc
-	clang-3.5 portablepdbfile.cc ${INCDIRS} ${CC_FLAGS} -c -o portablepdbfile.o
+portable_pdb_file.o: i_portable_pdb_file.h portable_pdb_file.h portable_pdb_file.cc
+	clang-3.5 portable_pdb_file.cc ${INCDIRS} ${CC_FLAGS} -c -o portable_pdb_file.o
 
 google_cloud_debugger_lib: ${ALL_O_FILES}
 	ar rcs libgoogle_cloud_debugger_lib.a ${ALL_O_FILES}

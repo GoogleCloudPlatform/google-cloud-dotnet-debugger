@@ -18,7 +18,7 @@
 #include <string>
 
 #include "ccomptr.h"
-#include "debuggercallback.h"
+#include "debugger_callback.h"
 
 namespace google_cloud_debugger {
 

@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 
-#include "i_cordebug_mocks.h"
+#include "i_cor_debug_mocks.h"
 
 // This headers contains common actions that tests can use.
 namespace google_cloud_debugger_test {
