@@ -662,7 +662,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       class_field_var->set_name((*it)->GetFieldName());
       hr = (*it)->PopulateVariableValue(class_field_var, eval_coordinator);
       if (FAILED(hr)) {
-        SetErrorStatusMessage(class_field_var, (*it)->GetErrorString());
+        SetErrorStatusMessage(class_field_var, (*it).get());
       }
     }
   }
@@ -681,7 +681,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
                                         eval_coordinator, &generic_types_,
                                         new_depth);
       if (FAILED(hr)) {
-        SetErrorStatusMessage(property_field_var, (*it)->GetErrorString());
+        SetErrorStatusMessage(property_field_var, (*it).get());
       }
     }
   }

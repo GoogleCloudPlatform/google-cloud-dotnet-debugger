@@ -74,6 +74,11 @@ std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
 void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
                            const std::string &err_string);
 
+// Sets the Status field of variable using error string from string_stream
+// object. This will reset the error stream of string_stream afterwards.
+void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
+                           StringStreamWrapper *string_stream);
+
 class IEvalCoordinator;
 
 // This class represents a .NET object.

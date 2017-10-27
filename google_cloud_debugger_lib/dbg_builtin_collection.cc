@@ -180,7 +180,6 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
   }
 
   WriteError("Unknown collection.");
-  SetErrorStatusMessage(variable, GetErrorString());
 
   return E_NOTIMPL;
 }

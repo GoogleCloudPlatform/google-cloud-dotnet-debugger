@@ -472,8 +472,15 @@ void SetErrorStatusMessage(Variable *variable, const string &err_string) {
   unique_ptr<Status> status(new (std::nothrow) Status());
   status->set_message(err_string);
   status->set_iserror(true);
-
   variable->set_allocated_status(status.release());
+}
+
+void SetErrorStatusMessage(Variable *variable,
+    StringStreamWrapper *string_stream) {
+  assert(string_stream != nullptr);
+
+  SetErrorStatusMessage(variable, string_stream->GetErrorString());
+  string_stream->ResetErrorStream();
 }
 
 }  //  namespace google_cloud_debugger
