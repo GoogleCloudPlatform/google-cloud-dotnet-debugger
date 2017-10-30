@@ -28,4 +28,6 @@ cp $ROOT_DIR/protobuf/src/.libs/libprotobuf.so.13.0.2 $TEMP_DIR/libprotobuf.so.1
 cp $ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug/*.so $TEMP_DIR
 
 # Package everyting into a tar. 
-tar -czvf $TEMP_DIR.tar.gz $TEMP_DIR
+cd $TEMP_DIR
+tar -czvf $TEMP_DIR.tar.gz *
+mv $TEMP_DIR.tar.gz $ROOT_DIR
