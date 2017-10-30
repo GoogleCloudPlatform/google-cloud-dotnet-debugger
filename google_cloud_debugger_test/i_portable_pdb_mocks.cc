@@ -25,6 +25,8 @@ namespace google_cloud_debugger_test {
 
 void PortablePDBFileFixture::SetUpIPortablePDBFile(
     IPortablePdbFileMock *file_mock) {
+  ON_CALL(*file_mock, ParsePdbFile()).WillByDefault(Return(true));
+
   // Makes a vector with a Document Index mock
   unique_ptr<IDocumentIndexMock> first_doc_index(new (std::nothrow)
                                                      IDocumentIndexMock());
