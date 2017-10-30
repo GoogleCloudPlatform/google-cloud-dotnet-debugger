@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 
+#include "constants.h"
 #include "custom_binary_reader.h"
 #include "dbg_object.h"
 #include "i_cor_debug_helper.h"
@@ -27,6 +28,8 @@
 #include "metadata_tables.h"
 
 using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::kDllExtension;
+using google_cloud_debugger::kPdbExtension;
 using std::array;
 using std::streampos;
 using std::string;
@@ -64,8 +67,21 @@ bool PortablePdbFile::GetHeapString(uint32_t index, string *heap_string) const {
                                            string_heap_header_.offset + index);
 }
 
-bool PortablePdbFile::InitializeFromFile(const string &file_path) {
-  if (!pdb_file_binary_stream_.ConsumeFile(file_path)) {
+bool PortablePdbFile::ParsePdbFile() {
+  if (parsed) {
+    return true;
+  }
+
+  string module_name = GetModuleName();
+  size_t last_dll_extension_pos = module_name.rfind(kDllExtension);
+  if (last_dll_extension_pos != module_name.size() - kDllExtension.size()) {
+    return false;
+  }
+
+  module_name.replace(last_dll_extension_pos, kDllExtension.size(),
+                      kPdbExtension);
+
+  if (!pdb_file_binary_stream_.ConsumeFile(module_name)) {
     return false;
   }
 
@@ -104,6 +120,7 @@ bool PortablePdbFile::InitializeFromFile(const string &file_path) {
     }
   }
 
+  parsed = true;
   return true;
 }
 
@@ -368,7 +385,7 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   return true;
 }
 
-HRESULT PortablePdbFile::SetDebugModule(ICorDebugModule *debug_module) {
+HRESULT PortablePdbFile::Initialize(ICorDebugModule *debug_module) {
   if (!debug_module) {
     return E_INVALIDARG;
   }

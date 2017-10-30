@@ -144,6 +144,10 @@ HRESULT StackFrameCollection::Initialize(
     }
 
     for (auto &&pdb_file : pdb_files) {
+      if (!pdb_file->ParsePdbFile()) {
+        continue;
+      }
+
       // Gets the PDB file that has the same name as the module.
       CComPtr<ICorDebugModule> pdb_debug_module;
       // TODO(quoct): Possible performance improvement by caching the pdb_file
