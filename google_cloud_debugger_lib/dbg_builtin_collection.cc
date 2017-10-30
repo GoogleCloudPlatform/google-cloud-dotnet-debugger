@@ -20,9 +20,9 @@
 #include <iostream>
 
 #include "class_names.h"
-#include "dbgarray.h"
-#include "evalcoordinator.h"
-#include "icordebughelper.h"
+#include "dbg_array.h"
+#include "i_eval_coordinator.h"
+#include "i_cor_debug_helper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::min;

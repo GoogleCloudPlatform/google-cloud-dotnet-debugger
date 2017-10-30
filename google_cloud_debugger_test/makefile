@@ -32,43 +32,43 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} 
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
 
-TESTS = unit_test_main.o breakpoint_client_test.o dbgbreakpoint_test.o dbgstring_test.o dbgclassfield_test.o dbgclassproperty_test.o dbgclass_test.o dbgarray_test.o dbgstackframe_test.o debuggercallback_test.o stackframecollection_test.o custom_binary_stream_test.o common_action_mocks.o i_portablepdb_mocks.o
+TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o stack_frame_collection_test.o custom_binary_stream_test.o common_action_mocks.o i_portable_pdb_mocks.o
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.5 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
 
-i_portablepdb_mocks.o: i_portablepdb_mocks.h i_portablepdb_mocks.cc
-	clang-3.5 i_portablepdb_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o i_portablepdb_mocks.o
+i_portable_pdb_mocks.o: i_portable_pdb_mocks.h i_portable_pdb_mocks.cc
+	clang-3.5 i_portable_pdb_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o i_portable_pdb_mocks.o
 
 breakpoint_client_test.o: breakpoint_client_test.cc
 	clang-3.5 breakpoint_client_test.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_client_test.o
 
-dbgbreakpoint_test.o: dbgbreakpoint_test.cc
-	clang-3.5 dbgbreakpoint_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgbreakpoint_test.o
+dbg_breakpoint_test.o: dbg_breakpoint_test.cc
+	clang-3.5 dbg_breakpoint_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_breakpoint_test.o
 
-dbgstring_test.o: dbgstring_test.cc
-	clang-3.5 dbgstring_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstring_test.o
+dbg_string_test.o: dbg_string_test.cc
+	clang-3.5 dbg_string_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_string_test.o
 
-dbgclassfield_test.o: dbgclassfield_test.cc
-	clang-3.5 dbgclassfield_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassfield_test.o
+dbg_class_field_test.o: dbg_class_field_test.cc
+	clang-3.5 dbg_class_field_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_field_test.o
 
-dbgclassproperty_test.o: dbgclassproperty_test.cc
-	clang-3.5 dbgclassproperty_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclassproperty_test.o
+dbg_class_property_test.o: dbg_class_property_test.cc
+	clang-3.5 dbg_class_property_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_property_test.o
 
-dbgclass_test.o: dbgclass_test.cc
-	clang-3.5 dbgclass_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgclass_test.o
+dbg_class_test.o: dbg_class_test.cc
+	clang-3.5 dbg_class_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_test.o
 
-dbgarray_test.o: dbgarray_test.cc
-	clang-3.5 dbgarray_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgarray_test.o
+dbg_array_test.o: dbg_array_test.cc
+	clang-3.5 dbg_array_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_array_test.o
 
-dbgstackframe_test.o: dbgstackframe_test.cc
-	clang-3.5 dbgstackframe_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbgstackframe_test.o
+dbg_stack_frame_test.o: dbg_stack_frame_test.cc
+	clang-3.5 dbg_stack_frame_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_stack_frame_test.o
 
-debuggercallback_test.o: debuggercallback_test.cc
-	clang-3.5 debuggercallback_test.cc ${INCDIRS} ${CC_FLAGS} -c -o debuggercallback_test.o
+debugger_callback_test.o: debugger_callback_test.cc
+	clang-3.5 debugger_callback_test.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger_callback_test.o
 
-stackframecollection_test.o: stackframecollection_test.cc
-	clang-3.5 stackframecollection_test.cc ${INCDIRS} ${CC_FLAGS} -c -o stackframecollection_test.o
+stack_frame_collection_test.o: stack_frame_collection_test.cc
+	clang-3.5 stack_frame_collection_test.cc ${INCDIRS} ${CC_FLAGS} -c -o stack_frame_collection_test.o
 
 custom_binary_stream_test.o: custom_binary_stream_test.cc
 	clang-3.5 custom_binary_stream_test.cc ${INCDIRS} ${CC_FLAGS} -c -o custom_binary_stream_test.o
