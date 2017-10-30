@@ -15,6 +15,8 @@
 #ifndef EVAL_COORDINATOR_H_
 #define EVAL_COORDINATOR_H_
 
+#include <chrono>
+
 #include "i_eval_coordinator.h"
 
 namespace google_cloud_debugger {
@@ -112,6 +114,8 @@ class EvalCoordinator : public IEvalCoordinator {
   BOOL debuggercallback_can_continue_ = FALSE;
   BOOL eval_exception_occurred_ = FALSE;
   BOOL waiting_for_eval_ = FALSE;
+
+  static std::chrono::minutes one_minute;
 };
 
 }  //  namespace google_cloud_debugger
