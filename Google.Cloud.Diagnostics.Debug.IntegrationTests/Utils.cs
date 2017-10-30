@@ -46,7 +46,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             catch (InvalidOperationException)
             {
                 // TODO(talarico): Pull out netcoreapp1.1
-                return GetRootDirectory() + $"\\Google.Cloud.Diagnostics.Debug.TestApp\\bin\\{_mode}\\netcoreapp1.1\\publish\\Google.Cloud.Diagnostics.Debug.TestApp.dll";
+                return GetRootDirectory() + $"/Google.Cloud.Diagnostics.Debug.TestApp/bin/{_mode}/netcoreapp1.1/publish/Google.Cloud.Diagnostics.Debug.TestApp.dll";
+                //$"\\Google.Cloud.Diagnostics.Debug.TestApp\\bin\\{_mode}\\netcoreapp1.1\\publish\\Google.Cloud.Diagnostics.Debug.TestApp.dll";
             }
         }
 
@@ -62,7 +63,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
             catch (InvalidOperationException)
             {
-                return GetRootDirectory() + $"\\x64\\{_mode}\\google_cloud_debugger.exe";
+                return GetRootDirectory() + "/google_cloud_debugger/google_cloud_debugger";
+                //$"\\x64\\{_mode}\\google_cloud_debugger.exe";
             }
         }
 
@@ -83,6 +85,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// Gets the root directory of the solution this project is in.
         /// </summary>
         private static string GetRootDirectory() =>
-            Path.GetFullPath(Directory.GetCurrentDirectory() + "\\..\\..\\..\\..");
+            Path.GetFullPath(Directory.GetCurrentDirectory() + "/../../....");
     }
 }
