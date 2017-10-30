@@ -85,10 +85,21 @@ C++ Unit tests:
   ./google_cloud_debugger_test
   ```
 
-#### Integration and Performance Tests
+#### Integration Tests
+  ```
+  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
+  dotnet publish
+  cd ../Google.Cloud.Diagnostics.Debug.IntegrationTests/
+  dotnet test
+  ```
 
-Integration and Performance Tests are not currently supported on Linux.
-
+#### Performance Tests
+  ```
+  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
+  dotnet publish
+  cd ../Google.Cloud.Diagnostics.Debug.PerformanceTests/
+  dotnet test
+  ```
 
 
 ### Windows
