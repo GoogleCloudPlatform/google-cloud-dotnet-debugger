@@ -32,8 +32,8 @@ namespace google_cloud_debugger_portable_pdb {
 // implemenation could lock the file and generate the necessary structures
 // on-demand.
 //
-// To use this class, create a PortablePdbFile object and calls Initialize
-// with an ICorDebugModule object. Then, call the ParsePdb method to parse
+// To use this class, creates a PortablePdbFile object and calls Initialize
+// with an ICorDebugModule object. Then, calls the ParsePdb method to parse
 // the PDB file for the module.
 class PortablePdbFile : public IPortablePdbFile {
  public:
