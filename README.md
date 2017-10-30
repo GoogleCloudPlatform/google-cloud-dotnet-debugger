@@ -41,7 +41,7 @@ The repository is built with Visual Studio.  Open and build the solution `Google
 
 ## Running
 
-Once the repository and dependencies can be built you can run the debugger with:
+Once the repository and dependencies are built you can run the debugger with:
 
 ### Linux
   ```
@@ -66,7 +66,7 @@ Once the repository and dependencies can be built you can run the debugger with:
 
 ## Running Tests
 
-Once the repository and dependencies can be built you can run the tests with:
+Once the repository and dependencies are built you can run the tests with:
 
 
 ### Linux
