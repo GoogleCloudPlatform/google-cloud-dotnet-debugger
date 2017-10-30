@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "dbgobject.h"
+#include "dbg_object.h"
 #include "debugger.h"
 #include "optionparser.h"
 #include "winerror.h"

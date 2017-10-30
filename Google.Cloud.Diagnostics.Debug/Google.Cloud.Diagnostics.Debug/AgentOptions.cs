@@ -80,7 +80,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 else
                 {
                     return PropertyEvaluation ? $"{ApplicationPathOption}={ApplicationPath} {PropertyEvaluationOption}"
-                        : $"{ApplicationPathOption}={ApplicationId}";
+                        : $"{ApplicationPathOption}={ApplicationPath}";
                 }
             }
         }

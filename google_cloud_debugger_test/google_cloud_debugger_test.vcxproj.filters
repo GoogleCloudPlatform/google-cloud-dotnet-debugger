@@ -21,61 +21,70 @@
     <ClCompile Include="custom_binary_stream_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dbgstring_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dbgprimitive_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dbgclassproperty_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="i_cordebug_mocks.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dbgclassfield_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="breakpoint_client_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dbgbreakpoint_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="dbgarray_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="common_action_mocks.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dbgclass_test.cc">
+    <ClCompile Include="i_cor_debug_mocks.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_breakpoint_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stackframecollection_test.cc">
+    <ClCompile Include="dbg_array_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="i_portablepdb_mocks.cc">
+    <ClCompile Include="dbg_class_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_class_field_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_class_property_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_primitive_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_stack_frame_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_string_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debugger_callback_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="i_portable_pdb_mocks.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stack_frame_collection_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="i_evalcoordinator_mock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="i_metadataimport_mock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="common_action_mocks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_named_pipe_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="i_portablepdb_mocks.h">
+    <ClInclude Include="i_portable_pdb_mocks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="i_stackframecollection_mock.h">
+    <ClInclude Include="i_stack_frame_collection_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="i_eval_coordinator_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_metadata_import_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="makefile" />
   </ItemGroup>
 </Project>

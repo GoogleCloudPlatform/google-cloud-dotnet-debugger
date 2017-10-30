@@ -150,26 +150,31 @@
   <ItemGroup>
     <ClCompile Include="breakpoint_client_test.cc" />
     <ClCompile Include="common_action_mocks.cc" />
-    <ClCompile Include="dbgbreakpoint_test.cc" />
-    <ClCompile Include="dbgarray_test.cc" />
-    <ClCompile Include="dbgclassfield_test.cc" />
-    <ClCompile Include="dbgclass_test.cc" />
-    <ClCompile Include="i_cordebug_mocks.h" />
+    <ClCompile Include="dbg_breakpoint_test.cc" />
+    <ClCompile Include="dbg_array_test.cc" />
+    <ClCompile Include="dbg_class_field_test.cc" />
+    <ClCompile Include="dbg_class_test.cc" />
+    <ClCompile Include="dbg_stack_frame_test.cc" />
+    <ClCompile Include="debugger_callback_test.cc" />
+    <ClCompile Include="i_cor_debug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
-    <ClCompile Include="dbgclassproperty_test.cc" />
-    <ClCompile Include="dbgprimitive_test.cc" />
-    <ClCompile Include="dbgstring_test.cc" />
-    <ClCompile Include="i_portablepdb_mocks.cc" />
-    <ClCompile Include="stackframecollection_test.cc" />
+    <ClCompile Include="dbg_class_property_test.cc" />
+    <ClCompile Include="dbg_primitive_test.cc" />
+    <ClCompile Include="dbg_string_test.cc" />
+    <ClCompile Include="i_portable_pdb_mocks.cc" />
+    <ClCompile Include="stack_frame_collection_test.cc" />
     <ClCompile Include="unit_test_main.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h" />
-    <ClInclude Include="i_evalcoordinator_mock.h" />
-    <ClInclude Include="i_metadataimport_mock.h" />
+    <ClInclude Include="i_eval_coordinator_mock.h" />
+    <ClInclude Include="i_metadata_import_mock.h" />
     <ClInclude Include="i_named_pipe_mock.h" />
-    <ClInclude Include="i_portablepdb_mocks.h" />
-    <ClInclude Include="i_stackframecollection_mock.h" />
+    <ClInclude Include="i_portable_pdb_mocks.h" />
+    <ClInclude Include="i_stack_frame_collection_mock.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -24,7 +24,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// <summary>
     /// A server to read and write breakpoints with clients.
     /// </summary>
-    public class BreakpointServer : IDisposable
+    public class BreakpointServer : IBreakpointServer
     {
         /// <summary>A semaphore to protect the buffer.</summary>
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
@@ -41,16 +41,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="pipe">The named pipe to send and receive breakpoint messages with.</param>
         public BreakpointServer(INamedPipeServer pipe) =>_pipe = pipe;
 
-        /// <summary>
-        /// Waits for a client to connect.
-        /// </summary>
+        /// <inheritdoc />
         public Task WaitForConnectionAsync() => _pipe.WaitForConnectionAsync();
 
-        /// <summary>
-        /// Read a breakpoint from the client.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The breakpoint message.</returns>
+        /// <inheritdoc />
         public async Task<Breakpoint> ReadBreakpointAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -91,12 +85,7 @@ namespace Google.Cloud.Diagnostics.Debug
             }
         }
 
-        /// <summary>
-        /// Write a breakpoint to the client.
-        /// </summary>
-        /// <param name="breakpoint">The breakpoint to write.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <inheritdoc />
         public Task WriteBreakpointAsync(Breakpoint breakpoint, CancellationToken cancellationToken = default(CancellationToken))
         {
             List<byte> bytes = new List<byte>();
@@ -112,17 +101,36 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="array">The array of bytes to look for a sequence in.</param>
         /// <param name="sequence">The sequence to search for.</param>
         /// <returns>The start index of the first sequence or -1 if none is found.</returns>
-        private int IndexOfSequence(byte[] array, byte[] sequence)
+        internal static int IndexOfSequence(byte[] array, byte[] sequence)
         {
-            for (int i = 0; i < array.Length; i++)
+            for (int i = 0; i < array.Length - sequence.Length + 1; i++)
             {
-                // TODO(talarico): This is horribly inefficient, re-write this.
-                if (array.Skip(i).Take(sequence.Length).SequenceEqual(sequence))
+                // This check could be slightly more efficient if we tracked
+                // looked for the start of the sequence inside the match.
+                // However given how small the sequence will be this should
+                // be sufficient. 
+                if (array[i] == sequence[0] && Match(array, i, sequence))
                 {
-                    return i;
+                   return i;
                 }
             }
             return -1;
+        }
+
+        /// <summary>
+        /// Checks if the sequence is at the index of the given array.
+        /// </summary>
+        /// <returns>True if the there is a match.</returns>
+        private static bool Match(byte[] array, int index, byte[] sequence)
+        {
+            for (int i = 0; i < sequence.Length; i++)
+            {
+                if (array[i + index] != sequence[i])
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <inheritdoc />

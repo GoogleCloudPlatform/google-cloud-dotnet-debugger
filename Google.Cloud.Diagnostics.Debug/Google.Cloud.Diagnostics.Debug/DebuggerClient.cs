@@ -26,7 +26,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// A wrapper around a <see cref="Controller2Client"/> that manages the current agent and
     /// re-registering the agent if it deactivates due to inactivity.
     /// </summary>
-    internal class DebuggerClient
+    internal class DebuggerClient : IDebuggerClient
     {
         private readonly AgentOptions _options;
         private readonly Controller2Client _controlClient;
@@ -41,10 +41,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _options = GaxPreconditions.CheckNotNull(options, nameof(options));
         }
 
-        /// <summary>
-        /// Register the current debuggee.
-        /// </summary>
-        /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
+        /// <inheritdoc />
         public void Register()
         {
             var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
@@ -55,10 +52,7 @@ namespace Google.Cloud.Diagnostics.Debug
             }   
         }
 
-        /// <summary>
-        /// Get a list of active breakpoints.
-        /// </summary>
-        /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
+        /// <inheritdoc />
         public IEnumerable<StackdriverBreakpoint> ListBreakpoints()
         {
             if (_debuggee == null)
@@ -68,10 +62,7 @@ namespace Google.Cloud.Diagnostics.Debug
             return TryAction(() => _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints);
         }
 
-        /// <summary>
-        /// Update a <see cref="StackdriverBreakpoint"/>.
-        /// </summary>
-        /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
+        /// <inheritdoc />
         public IMessage UpdateBreakpoint(StackdriverBreakpoint breakpoint)
         {
             if (_debuggee == null)

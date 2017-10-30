@@ -54,8 +54,6 @@ class CComPtr {
     return assign_helper(ptr);
   }
 
-  // TODO(quoct): Add QueryInterface functionality.
-
  private:
   TInterface* ptr_ = nullptr;
 
