@@ -21,6 +21,7 @@
 #include <string>
 
 #include "ccomptr.h"
+#include "constants.h"
 #include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
 #include "portable_pdb_file.h"
@@ -34,9 +35,6 @@ using std::string;
 using std::vector;
 
 namespace google_cloud_debugger {
-
-const string DebuggerCallback::kDllExtension = ".dll";
-const string DebuggerCallback::kPdbExtension = ".pdb";
 
 HRESULT DebuggerCallback::Initialize() {
   if (initialized_success_) {
@@ -196,50 +194,6 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::EvalException(
 
 HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
                                      ICorDebugModule *debug_module) {
-  ULONG32 name_len = 0;
-  HRESULT hr;
-  hr = debug_module->GetName(0, &name_len, nullptr);
-  if (FAILED(hr)) {
-    cerr << "Failed to get module name with HRESULT" << std::hex << hr;
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
-  vector<WCHAR> my_name(name_len, 0);
-  hr = debug_module->GetName(name_len, &name_len, my_name.data());
-  if (FAILED(hr)) {
-    cerr << "Failed to get module name with HRESULT" << std::hex << hr;
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
-  // Removes extra null terminator. We do this so rfind does not include the
-  // null terminator.
-  if (my_name.back() == 0) {
-    my_name.pop_back();
-  }
-
-  std::string module_name(my_name.begin(), my_name.end());
-  size_t last_dll_extension_pos = module_name.rfind(kDllExtension);
-  // We are only interested in dll.
-  // Is there other possible extensions?
-  if (last_dll_extension_pos != module_name.size() - kDllExtension.size()) {
-    cerr << "Only Dlls are supported.";
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
-  module_name.replace(last_dll_extension_pos, kDllExtension.size(),
-                      kPdbExtension);
-
-  std::ifstream file(module_name);
-  // No PDB file for this module.
-  if (!file) {
-    cerr << "Cannot find PDB file for module " << module_name;
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
   std::unique_ptr<IPortablePdbFile> portable_pdb(new (std::nothrow)
                                                      PortablePdbFile());
   if (!portable_pdb) {
@@ -248,22 +202,9 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return E_OUTOFMEMORY;
   }
 
-  if (!portable_pdb->InitializeFromFile(module_name)) {
-    cerr << "Failed to parse pdb file for module " << module_name;
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
-  hr = portable_pdb->SetDebugModule(debug_module);
+  HRESULT hr = portable_pdb->Initialize(debug_module);
   if (FAILED(hr)) {
     cerr << "Failed set debug module for PortablePdbFile.";
-    return appdomain->Continue(FALSE);
-  }
-
-  // Initialize possible breakpoints with this pdb.
-  hr = breakpoint_collection_->InitializeBreakpoints(*portable_pdb);
-  if (FAILED(hr)) {
-    cerr << "Failed to update breakpoint.";
     return appdomain->Continue(FALSE);
   }
 

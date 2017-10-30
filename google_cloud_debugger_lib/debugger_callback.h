@@ -38,9 +38,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
                                ICorDebugManagedCallback2,
                                ICorDebugManagedCallback3 {
  public:
-  static const std::string kDllExtension;
-  static const std::string kPdbExtension;
-
   HRESULT Initialize();
 
   // IUnknown interface.

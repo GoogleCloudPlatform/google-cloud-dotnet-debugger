@@ -198,6 +198,10 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
     new_breakpoint->Initialize(breakpoint);
 
     for (auto &&pdb_file : debugger_callback_->GetPdbFiles()) {
+      if (!pdb_file->ParsePdbFile()) {
+        continue;
+      }
+
       if (!new_breakpoint->TrySetBreakpoint(*pdb_file)) {
         continue;
       }
