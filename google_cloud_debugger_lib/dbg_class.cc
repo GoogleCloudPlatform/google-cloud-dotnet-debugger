@@ -575,7 +575,7 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     }
 
     // Create a handle if it is a class so we won't lose the object.
-    if (cor_type_ != CorElementType::ELEMENT_TYPE_VALUETYPE) {
+    if (cor_type_ != CorElementType::ELEMENT_TYPE_VALUETYPE && !is_null) {
       initialize_hr_ =
           CreateStrongHandle(debug_value, &class_handle_, GetErrorStream());
       // E_NOINTERFACE is returned if object is a value type. In that
@@ -645,7 +645,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
     return S_OK;
   }
 
-  if (GetEvaluationDepth() == 0) {
+  if (GetEvaluationDepth() <= 0) {
     WriteError("... Object Inspection Depth Limit reached.");
     return E_FAIL;
   }

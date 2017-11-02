@@ -62,7 +62,9 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
          hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
     auto current = high_resolution_clock::now();
     if (current - start > one_minute) {
-      continue;
+      hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
+      cerr << "Timed out while trying to evaluate function.";
+      break;
     }
 
     hr = eval->GetResult(eval_result);
