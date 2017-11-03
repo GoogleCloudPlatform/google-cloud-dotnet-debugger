@@ -17,6 +17,7 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <chrono>
 
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
@@ -24,12 +25,16 @@
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using std::cerr;
+using std::chrono::high_resolution_clock;
+using std::chrono::minutes;
 using std::lock_guard;
 using std::mutex;
 using std::unique_lock;
 using std::unique_ptr;
 
 namespace google_cloud_debugger {
+
+minutes EvalCoordinator::one_minute = minutes(1);
 
 HRESULT EvalCoordinator::CreateEval(ICorDebugEval **eval) {
   lock_guard<mutex> lk(mutex_);
@@ -50,18 +55,25 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
   debuggercallback_can_continue_ = TRUE;
   eval_exception_occurred_ = FALSE;
   HRESULT hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
+  auto start = high_resolution_clock::now();
 
   // Wait until evaluation is done.
-  // TODO(quoct): Add a timeout.
   while (hr == CORDBG_E_FUNC_EVAL_NOT_COMPLETE ||
          hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
+    auto current = high_resolution_clock::now();
+    if (current - start > one_minute) {
+      hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
+      cerr << "Timed out while trying to evaluate function.";
+      break;
+    }
+
     hr = eval->GetResult(eval_result);
 
     if (hr == CORDBG_E_FUNC_EVAL_NOT_COMPLETE ||
         hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
       // Wake up the debugger thread to do the evaluation.
       debugger_callback_cv_.notify_one();
-      variable_threads_cv_.wait(lk);
+      variable_threads_cv_.wait_for(lk, one_minute);
     } else {
       break;
     }

@@ -187,7 +187,7 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  hr = DbgObject::CreateDbgObject(eval_result, depth - 1, &property_value_,
+  hr = DbgObject::CreateDbgObject(eval_result, depth, &property_value_,
                                   GetErrorStream());
   if (FAILED(hr)) {
     if (property_value_) {
