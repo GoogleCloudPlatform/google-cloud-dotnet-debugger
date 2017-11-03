@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <RuntimeIdentifier>debian.8-x64</RuntimeIdentifier>
     <TargetFramework>netcoreapp1.1</TargetFramework>
     <Version>1.0.0-alpha01</Version>
     <StartupObject />
-    <OutputTypeEx>Exe</OutputTypeEx>
-  </PropertyGroup>
+   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.1.1-beta" />
@@ -22,3 +22,4 @@
   </ItemGroup>
 
 </Project>
+
