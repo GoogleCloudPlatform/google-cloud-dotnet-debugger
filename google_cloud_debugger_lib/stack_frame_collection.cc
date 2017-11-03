@@ -19,8 +19,8 @@
 #include <string>
 
 #include "dbg_breakpoint.h"
-#include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -37,12 +37,22 @@ namespace google_cloud_debugger {
 
 HRESULT StackFrameCollection::Initialize(
     ICorDebugStackWalk *debug_stack_walk,
-    const std::vector<
+    const vector<
         std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   if (!debug_stack_walk) {
     cerr << "Debug stack walk is null.";
     return E_INVALIDARG;
+  }
+
+  // Index of the PDB files that are parsed successfully.
+  vector<uint32_t> parsed_pdb_indices;
+  uint32_t pdb_index = 0;
+  for (auto &&pdb_file : pdb_files) {
+    if (pdb_file->ParsePdbFile()) {
+      parsed_pdb_indices.push_back(pdb_index);
+    }
+    ++pdb_index;
   }
 
   CComPtr<ICorDebugFrame> frame;
@@ -143,23 +153,20 @@ HRESULT StackFrameCollection::Initialize(
       return hr;
     }
 
-    for (auto &&pdb_file : pdb_files) {
-      if (!pdb_file->ParsePdbFile()) {
-        continue;
-      }
-
+    for (auto index : parsed_pdb_indices) {
       // Gets the PDB file that has the same name as the module.
       CComPtr<ICorDebugModule> pdb_debug_module;
       // TODO(quoct): Possible performance improvement by caching the pdb_file
       // based on token.
-      string pdb_module_name = pdb_file->GetModuleName();
+      string pdb_module_name = pdb_files[index]->GetModuleName();
       if (pdb_module_name.compare(target_module_name) != 0) {
         continue;
       }
 
       // Tries to populate local variables and method arguments of this frame.
       hr = PopulateLocalVarsAndMethodArgs(target_function_token, &stack_frame,
-                                          il_frame, metadata_import, *pdb_file);
+                                          il_frame, metadata_import,
+                                          *pdb_files[index]);
       if (FAILED(hr)) {
         cerr << "Failed to populate stack frame information.";
         return hr;
