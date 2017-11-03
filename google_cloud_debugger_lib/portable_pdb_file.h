@@ -32,12 +32,19 @@ namespace google_cloud_debugger_portable_pdb {
 // implemenation could lock the file and generate the necessary structures
 // on-demand.
 //
-// To use this class, create a PortablePdbFile object and calls
-// InitializeFromFile with the path to the pdb file.
+// To use this class, creates a PortablePdbFile object and calls Initialize
+// with an ICorDebugModule object. Then, calls the ParsePdb method to parse
+// the PDB file for the module.
 class PortablePdbFile : public IPortablePdbFile {
  public:
-  // Parse the pdb file. This method initializes the class.
-  bool InitializeFromFile(const std::string &file_path);
+  // Populates the name, metadata import and debug module.
+  // This function will returns error if the name of the module
+  // does not end with ".dll".
+  HRESULT Initialize(ICorDebugModule *debug_module);
+
+  // Parses the pdb file. The name of the file will come from the
+  // ICorDebugModule object that is used to initialize this object.
+  bool ParsePdbFile();
 
   // Finds the stream header with a given name. Returns false if not found.
   // name is the name of the stream header.
@@ -98,9 +105,6 @@ class PortablePdbFile : public IPortablePdbFile {
   // Gets the name of the module of this PDB.
   const std::string &GetModuleName() const { return module_name_; }
 
-  // Sets the ICorDebugModule of the module of this PDB.
-  HRESULT SetDebugModule(ICorDebugModule *debug_module);
-
   // Gets the ICorDebugModule of the module of this PDB.
   HRESULT GetDebugModule(ICorDebugModule **debug_module) const;
 
@@ -108,7 +112,7 @@ class PortablePdbFile : public IPortablePdbFile {
   HRESULT GetMetaDataImport(IMetaDataImport **metadata_import) const;
 
  private:
-  // Name of the module that corresponds to this pdb.
+  // Name of the module that corresponds to this PDB.
   std::string module_name_;
 
   // Binary Stream contents of the PE file.
@@ -191,6 +195,9 @@ class PortablePdbFile : public IPortablePdbFile {
 
   // Parses the compressed metadata tables stream.
   bool ParseCompressedMetadataTableStream();
+
+  // True if ParsePdbFile method is already called.
+  bool parsed = false;
 };
 
 }  // namespace google_cloud_debugger_portable_pdb

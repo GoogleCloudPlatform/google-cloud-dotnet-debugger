@@ -40,6 +40,12 @@ static const std::string kStartBreakpointMessage = "START_DEBUG_MESSAGE";
 // The end of a breakpoint message.
 static const std::string kEndBreakpointMessage = "END_DEBUG_MESSAGE";
 
+// File extension for dll file.
+static const std::string kDllExtension = ".dll";
+
+// File extension for pdb file.
+static const std::string kPdbExtension = ".pdb";
+
 }  // namespace google_cloud_debugger
 
 #endif  //  CONSTANTS_H_

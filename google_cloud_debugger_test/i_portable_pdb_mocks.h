@@ -28,7 +28,8 @@ namespace google_cloud_debugger_test {
 class IPortablePdbFileMock
     : public google_cloud_debugger_portable_pdb::IPortablePdbFile {
  public:
-  MOCK_METHOD1(InitializeFromFile, bool(const std::string &file_path));
+  MOCK_METHOD1(Initialize, HRESULT(ICorDebugModule *debug_module));
+  MOCK_METHOD0(ParsePdbFile, bool());
   MOCK_CONST_METHOD2(
       GetStream,
       bool(const std::string &name,
@@ -69,7 +70,6 @@ class IPortablePdbFileMock
           std::unique_ptr<google_cloud_debugger_portable_pdb::IDocumentIndex>>
           &());
   MOCK_CONST_METHOD0(GetModuleName, const std::string &());
-  MOCK_METHOD1(SetDebugModule, HRESULT(ICorDebugModule *debug_module));
   MOCK_CONST_METHOD1(GetDebugModule, HRESULT(ICorDebugModule **debug_module));
   MOCK_CONST_METHOD1(GetMetaDataImport,
                      HRESULT(IMetaDataImport **metadata_import));

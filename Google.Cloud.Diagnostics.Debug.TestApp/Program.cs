@@ -33,6 +33,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
                .UseContentRoot(Directory.GetCurrentDirectory())
                .UseIISIntegration()
                .UseStartup<Startup>()
+               .UseUrls("http://localhost:8080/")
                .Build()
                .Run(_cts.Token);
         }

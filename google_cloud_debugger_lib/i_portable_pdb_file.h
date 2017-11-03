@@ -39,15 +39,20 @@ namespace google_cloud_debugger_portable_pdb {
 // implemenation could lock the file and generate the necessary structures
 // on-demand.
 //
-// To use this class, create a PortablePdbFile object and calls
-// InitializeFromFile with the path to the pdb file.
+// To use this class, creates a PortablePdbFile object and calls Initialize
+// with an ICorDebugModule object. Then, calls the ParsePdb method to parse
+// the PDB file for the module.
 class IPortablePdbFile {
  public:
   // Destructor.
   virtual ~IPortablePdbFile() = default;
 
-  // Parse the pdb file. This method initializes the class.
-  virtual bool InitializeFromFile(const std::string &file_path) = 0;
+  // Initializes the PDB, populates the name, metadata import and debug module.
+  virtual HRESULT Initialize(ICorDebugModule *debug_module) = 0;
+
+  // Parses the pdb file. The name of the file will come from the
+  // ICorDebugModule object that is used to initialize this object.
+  virtual bool ParsePdbFile() = 0;
 
   // Finds the stream header with a given name. Returns false if not found.
   // name is the name of the stream header.
@@ -101,9 +106,6 @@ class IPortablePdbFile {
 
   // Gets the name of the module of this PDB.
   virtual const std::string &GetModuleName() const = 0;
-
-  // Sets the ICorDebugModule of the module of this PDB.
-  virtual HRESULT SetDebugModule(ICorDebugModule *debug_module) = 0;
 
   // Gets the ICorDebugModule of the module of this PDB.
   virtual HRESULT GetDebugModule(ICorDebugModule **debug_module) const = 0;
