@@ -21,7 +21,7 @@
 #include "cor.h"
 #include "cordebug.h"
 #include "dbgshim.h"
-#include "debuggercallback.h"
+#include "debugger_callback.h"
 
 #ifdef PLATFORM_UNIX
 // PAL is Platform Adaptation Layer which provides an abstraction

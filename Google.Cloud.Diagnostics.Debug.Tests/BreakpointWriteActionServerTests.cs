@@ -29,13 +29,15 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         private readonly Mock<IBreakpointServer> _mockBreakpointServer;
         private readonly Mock<IDebuggerClient> _mockDebuggerClient;
         private readonly BreakpointWriteActionServer _server;
+        private readonly BreakpointManager _breakpointManager;
 
         public BreakpointWriteActionServerTests()
         {
             _mockBreakpointServer = new Mock<IBreakpointServer>();
             _mockDebuggerClient = new Mock<IDebuggerClient>();
+            _breakpointManager = new BreakpointManager();
             _server = new BreakpointWriteActionServer(
-                _mockBreakpointServer.Object, _mockDebuggerClient.Object);
+                _mockBreakpointServer.Object, _mockDebuggerClient.Object, _breakpointManager);
 
             _mockBreakpointServer.Setup(s => s.WriteBreakpointAsync(
                 It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()))

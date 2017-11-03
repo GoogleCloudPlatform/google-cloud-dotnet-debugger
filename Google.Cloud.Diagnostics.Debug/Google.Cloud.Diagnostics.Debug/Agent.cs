@@ -35,6 +35,7 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly DebuggerClient _client;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
+        private readonly BreakpointManager _breakpointManager;
 
         private Process _process;
 
@@ -47,6 +48,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _client = new DebuggerClient(options, controlClient);
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
+            _breakpointManager = new BreakpointManager();
         }
 
         /// <summary>
@@ -73,7 +75,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
-            // TODO(talarico): Be sure to signal the debugger to detach.
             _process?.Dispose();
             _cts.Cancel();
         }
@@ -90,7 +91,7 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer());
-                using (var server = new BreakpointWriteActionServer(breakpointServer, _client))
+                using (var server = new BreakpointWriteActionServer(breakpointServer, _client, _breakpointManager))
                 {
                     TryAction(() =>
                     {
@@ -115,7 +116,7 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer());
-                using (var server = new BreakpointReadActionServer(breakpointServer, _client))
+                using (var server = new BreakpointReadActionServer(breakpointServer, _client, _breakpointManager))
                 {
                     TryAction(() => 
                     { 

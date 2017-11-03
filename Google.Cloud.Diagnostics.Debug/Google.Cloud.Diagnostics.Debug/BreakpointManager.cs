@@ -56,10 +56,21 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             lock (_mutex)
             {
-                var identifiersToBreakpoint = new Dictionary<string, StackdriverBreakpoint>(
-                    activeBreakpoints.ToDictionary(b => b.GetLocationIdentifier(), b => b));
+                // We ignore duplicate breakpoints here as the debugger can only handle one
+                // breakpoint per file and line at a time.  The ignored breakpoint will be
+                // picked up again the next time the breakpoints are polled.
+                // TODO(talarico): We need to revist this logic we when we add conditional
+                // breakpoints or allow breakpoints in columns of lines. 
+                var identifiersToBreakpoint = new Dictionary<string, StackdriverBreakpoint>();
+                foreach (var breakpoint in activeBreakpoints)
+                {
+                    if (!identifiersToBreakpoint.ContainsKey(breakpoint.GetLocationIdentifier()))
+                    {
+                        identifiersToBreakpoint.Add(breakpoint.GetLocationIdentifier(), breakpoint);
+                    }
+                }
 
-                var newBreakpoints = activeBreakpoints.Where(b => !_breakpointDictionary.ContainsKey(b.GetLocationIdentifier())).ToList();
+                var newBreakpoints = identifiersToBreakpoint.Values.Where(b => !_breakpointDictionary.ContainsKey(b.GetLocationIdentifier())).ToList();
                 foreach (var newBreakpoint in newBreakpoints)
                 {
                     _breakpointDictionary[newBreakpoint.GetLocationIdentifier()] = newBreakpoint;
@@ -80,6 +91,33 @@ namespace Google.Cloud.Diagnostics.Debug
                     Removed = removedBreakpoints
                 };
             }
+        }
+
+        /// <summary>
+        /// Remove a breakpoint from the manager.
+        /// </summary>
+        /// <param name="breakpoint">The breakpoint to remove.</param>
+        public void RemoveBreakpoint(StackdriverBreakpoint breakpoint)
+        {
+            lock (_mutex)
+            {
+                _breakpointDictionary.Remove(breakpoint.GetLocationIdentifier());
+            }
+        }
+
+        /// <summary>
+        /// Gets the breakpoint id from the manager based on the breakpoint location.
+        /// If the list does not contain
+        /// Note: This is needed as the debugger does not pay attention to breakpoint ids
+        /// and must be managed here.
+        /// </summary>
+        /// <param name="breakpoint">The breakpoint to get the id of.</param>
+        /// <returns>The breakpoint id or null if none can be found.</returns>
+        public string GetBreakpointId(StackdriverBreakpoint breakpoint)
+        {
+            StackdriverBreakpoint bp;
+            return _breakpointDictionary.TryGetValue(
+                breakpoint.GetLocationIdentifier(), out bp) ? bp.Id : null;
         }
     }
 }

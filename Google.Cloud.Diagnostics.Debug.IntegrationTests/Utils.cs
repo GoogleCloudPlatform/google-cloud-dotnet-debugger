@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -27,6 +28,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 #else
         private const string _mode = "Release";
 #endif
+
+        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         /// <summary>
         /// Gets the Google Cloud Console project id to run the test as.
@@ -46,7 +49,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             catch (InvalidOperationException)
             {
                 // TODO(talarico): Pull out netcoreapp1.1
-                return GetRootDirectory() + $"\\Google.Cloud.Diagnostics.Debug.TestApp\\bin\\{_mode}\\netcoreapp1.1\\publish\\Google.Cloud.Diagnostics.Debug.TestApp.dll";
+                return Combine(GetRootDirectory(), 
+                    "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp1.1", 
+                    "publish", "Google.Cloud.Diagnostics.Debug.TestApp.dll");                
             }
         }
 
@@ -62,7 +67,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
             catch (InvalidOperationException)
             {
-                return GetRootDirectory() + $"\\x64\\{_mode}\\google_cloud_debugger.exe";
+
+                return IsWindows ?
+                    Combine(GetRootDirectory(), "x64", _mode, "google_cloud_debugger.exe") :
+                    Combine(GetRootDirectory(), "google_cloud_debugger", "google_cloud_debugger");
             }
         }
 
@@ -83,6 +91,19 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// Gets the root directory of the solution this project is in.
         /// </summary>
         private static string GetRootDirectory() =>
-            Path.GetFullPath(Directory.GetCurrentDirectory() + "\\..\\..\\..\\..");
+            Path.GetFullPath(Combine(Directory.GetCurrentDirectory(), "..", "..", "..", ".."));
+
+        /// <summary>
+        /// Combine any number of path parts with correct path separators. 
+        /// </summary>
+        private static string Combine(params string[] pathParts)
+        {
+            var path = "";
+            foreach (string part in pathParts)
+            {
+                path = Path.Combine(path, part);
+            }
+            return path;
+        }
     }
 }

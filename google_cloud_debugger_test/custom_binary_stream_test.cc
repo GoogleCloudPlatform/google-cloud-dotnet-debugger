@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <custombinaryreader.h>
 #include <gtest/gtest.h>
 
 #include <array>
 #include <string>
+
+#include "custom_binary_reader.h"
 
 using std::array;
 using std::string;
