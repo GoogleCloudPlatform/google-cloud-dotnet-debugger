@@ -125,7 +125,7 @@ TEST_F(EvalCoordinatorTest, TestPrintBreakpoint) {
   // PrintBreakpoint going to call a task that will call WriteBreakpoint
   // function of breakpoint_collection_ so we should give it some time to
   // complete.
-  std::this_thread::sleep_for(seconds(30));
+  std::this_thread::sleep_for(minutes(1));
 }
 
 }  // namespace google_cloud_debugger_test
