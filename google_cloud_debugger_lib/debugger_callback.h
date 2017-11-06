@@ -19,7 +19,7 @@
 #include <iostream>
 #include <memory>
 
-#include "breakpoint_collection.h"
+#include "i_breakpoint_collection.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "corsym.h"
@@ -258,7 +258,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   // The collection of breakpoint used by the callback to store and
   // manage breakpoints.
-  std::unique_ptr<BreakpointCollection> breakpoint_collection_;
+  std::unique_ptr<IBreakpointCollection> breakpoint_collection_;
 
   bool initialized_success_ = false;
 };

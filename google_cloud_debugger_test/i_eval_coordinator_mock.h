@@ -39,7 +39,7 @@ class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
       PrintBreakpoint,
       HRESULT(
           ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-          google_cloud_debugger::BreakpointCollection *breakpoint_collection,
+          google_cloud_debugger::IBreakpointCollection *breakpoint_collection,
           google_cloud_debugger::DbgBreakpoint *breakpoint,
           const std::vector<std::unique_ptr<
               google_cloud_debugger_portable_pdb::IPortablePdbFile>>

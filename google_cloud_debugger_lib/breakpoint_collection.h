@@ -19,9 +19,7 @@
 #include <mutex>
 #include <vector>
 
-#include "breakpoint.pb.h"
-#include "breakpoint_client.h"
-#include "dbg_breakpoint.h"
+#include "i_breakpoint_collection.h"
 
 namespace google_cloud_debugger {
 
@@ -29,7 +27,7 @@ class DebuggerCallback;
 class IEvalCoordinator;
 
 // Class for managing a collection of breakpoints.
-class BreakpointCollection {
+class BreakpointCollection : public IBreakpointCollection {
  public:
   // The character that is used to split up different parts
   // of a breakpoint string. For example, a breakpoint string is
@@ -44,7 +42,7 @@ class BreakpointCollection {
   // Given a Portable PDB file, try to activate all existing breakpoints.
   // Also set the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
-  HRESULT Initialize(DebuggerCallback *debugger_callback);
+  HRESULT Initialize(DebuggerCallback *debugger_callback) override;
 
   // Given a PortablePDBFile object, try to activate as many breakpoints
   // as possible in the collection.
@@ -54,7 +52,7 @@ class BreakpointCollection {
   // Subsequent update for breakpoints should be done with SyncBreakpoints
   // functions.
   HRESULT InitializeBreakpoints(
-      const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb);
+    const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) override;
 
   // Given a breakpoint, try to activate it or deactivate it (based on
   // the Activated() method of the breakpoint). We first do this by
@@ -63,33 +61,33 @@ class BreakpointCollection {
   // not and we need to activate it, we add this to the breakpoints collection
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
-  HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint);
+  HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) override;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.
   // This method will then try to activate or deactivate these breakpoints.
-  HRESULT SyncBreakpoints();
+  HRESULT SyncBreakpoints() override;
 
   // Cancel SyncBreakpoints operation (should be called from another thread).
-  HRESULT CancelSyncBreakpoints();
+  HRESULT CancelSyncBreakpoints() override;
 
-  // Writes a breakpoint to the named pipe server.
+    // Writes a breakpoint to the named pipe server.
   HRESULT WriteBreakpoint(
-      const google::cloud::diagnostics::debug::Breakpoint &breakpoint);
+    const google::cloud::diagnostics::debug::Breakpoint &breakpoint) override;
 
-  // Reads a breakpoint from the named pipe server.
-  HRESULT ReadBreakpoint(
-      google::cloud::diagnostics::debug::Breakpoint *breakpoint);
+    // Reads a breakpoint from the named pipe server.
+    HRESULT ReadBreakpoint(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint) override;
 
   // Evaluates and prints out the breakpoint in function with token
   // function_token at IL offset il_offset.
   HRESULT EvaluateAndPrintBreakpoint(
-      mdMethodDef function_token, ULONG32 il_offset,
-      IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
-      ICorDebugStackWalk *debug_stack_walk,
-      const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files);
+    mdMethodDef function_token, ULONG32 il_offset,
+    IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
+    ICorDebugStackWalk *debug_stack_walk,
+    const std::vector<
+    std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+    &pdb_files) override;
 
  private:
   // Reads an incoming breakpoint from the named pipe and populates

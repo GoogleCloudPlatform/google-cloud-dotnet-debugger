@@ -66,7 +66,7 @@ class EvalCoordinator : public IEvalCoordinator {
   // debug_stack_walk.
   HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
       const std::vector<
           std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files);

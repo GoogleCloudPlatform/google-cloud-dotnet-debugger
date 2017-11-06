@@ -109,7 +109,7 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 
 HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-    BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+    IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
     const std::vector<
         std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
@@ -142,7 +142,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
   std::thread local_thread = std::thread(
       [](unique_ptr<IStackFrameCollection> stack_frames,
          EvalCoordinator *eval_coordinator,
-         BreakpointCollection *breakpoint_collection,
+         IBreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {
         Breakpoint proto_breakpoint;
         HRESULT hr = breakpoint->PopulateBreakpoint(

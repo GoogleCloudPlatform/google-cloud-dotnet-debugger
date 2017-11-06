@@ -20,6 +20,7 @@
 #include <iostream>
 #include <string>
 
+#include "breakpoint_collection.h"
 #include "ccomptr.h"
 #include "constants.h"
 #include "dbg_stack_frame.h"
@@ -45,7 +46,7 @@ HRESULT DebuggerCallback::Initialize() {
   // make_unique. We should look into upgrading to C++14.
   eval_coordinator_ =
       std::unique_ptr<EvalCoordinator>(new (std::nothrow) EvalCoordinator);
-  breakpoint_collection_ = std::unique_ptr<BreakpointCollection>(
+  breakpoint_collection_ = std::unique_ptr<IBreakpointCollection>(
       new (std::nothrow) BreakpointCollection);
   if (!eval_coordinator_) {
     cerr << "Failed to create EvalCoordinator.";
