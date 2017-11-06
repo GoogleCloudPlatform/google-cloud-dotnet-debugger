@@ -18,34 +18,49 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "i_breakpoint_collection.h"
 #include "breakpoint.pb.h"
+#include "i_breakpoint_collection.h"
 
 namespace google_cloud_debugger {
-  class IPortablePdbFile;
-  class IEvalCoordinator;
-  class DbgBreakpoint;
-  class DebuggerCallback;
-};
+class IPortablePdbFile;
+class IEvalCoordinator;
+class DbgBreakpoint;
+class DebuggerCallback;
+};  // namespace google_cloud_debugger
 
 namespace google_cloud_debugger_test {
 
 // Mock class for named pipe.
-class IBreakpointCollectionMock : public google_cloud_debugger::IBreakpointCollection {
+class IBreakpointCollectionMock
+    : public google_cloud_debugger::IBreakpointCollection {
  public:
-  MOCK_METHOD1(Initialize,
+  MOCK_METHOD1(
+      Initialize,
       HRESULT(google_cloud_debugger::DebuggerCallback *debugger_callback));
-  MOCK_METHOD1(InitializeBreakpoints,
-      HRESULT(const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb));
-  MOCK_METHOD1(ActivateOrDeactivate, HRESULT(const google_cloud_debugger::DbgBreakpoint &breakpoint));
+  MOCK_METHOD1(
+      InitializeBreakpoints,
+      HRESULT(const google_cloud_debugger_portable_pdb::IPortablePdbFile
+                  &portable_pdb));
+  MOCK_METHOD1(ActivateOrDeactivate,
+               HRESULT(const google_cloud_debugger::DbgBreakpoint &breakpoint));
   MOCK_METHOD0(SyncBreakpoints, HRESULT());
   MOCK_METHOD0(CancelSyncBreakpoints, HRESULT());
-  MOCK_METHOD1(WriteBreakpoint,
+  MOCK_METHOD1(
+      WriteBreakpoint,
       HRESULT(const google::cloud::diagnostics::debug::Breakpoint &breakpoint));
-  MOCK_METHOD1(ReadBreakpoint,
-      HRESULT(google::cloud::diagnostics::debug::Breakpoint * breakpoint));
-  MOCK_METHOD6(EvaluateAndPrintBreakpoint,
-      HRESULT(mdMethodDef function_token, ULONG32 il_offset, google_cloud_debugger::IEvalCoordinator * eval_coordinator, ICorDebugThread * debug_thread, ICorDebugStackWalk * debug_stack_walk, const std::vector<std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>& pdb_files));};
+  MOCK_METHOD1(
+      ReadBreakpoint,
+      HRESULT(google::cloud::diagnostics::debug::Breakpoint *breakpoint));
+  MOCK_METHOD6(
+      EvaluateAndPrintBreakpoint,
+      HRESULT(mdMethodDef function_token, ULONG32 il_offset,
+              google_cloud_debugger::IEvalCoordinator *eval_coordinator,
+              ICorDebugThread *debug_thread,
+              ICorDebugStackWalk *debug_stack_walk,
+              const std::vector<std::unique_ptr<
+                  google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+                  &pdb_files));
+};
 
 }  // namespace google_cloud_debugger_test
 

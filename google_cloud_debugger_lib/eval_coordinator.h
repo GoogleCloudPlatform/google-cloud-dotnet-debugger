@@ -16,6 +16,7 @@
 #define EVAL_COORDINATOR_H_
 
 #include <chrono>
+#include <future>
 
 #include "i_eval_coordinator.h"
 
@@ -96,8 +97,8 @@ class EvalCoordinator : public IEvalCoordinator {
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
 
-  // The threads that we are enumerating and printing the stack frames from.
-  std::vector<std::thread> stack_frames_threads_;
+  // The tasks that help us enumerate and print out variables.
+  std::vector<std::future<void>> print_breakpoint_tasks_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
