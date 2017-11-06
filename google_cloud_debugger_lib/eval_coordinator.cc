@@ -141,6 +141,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
   unique_lock<mutex> lk(mutex_);
 
   std::future<void> print_breakpoint_task = std::async(
+      std::launch::async,
       [](unique_ptr<IStackFrameCollection> stack_frames,
          EvalCoordinator *eval_coordinator,
          IBreakpointCollection *breakpoint_collection,
