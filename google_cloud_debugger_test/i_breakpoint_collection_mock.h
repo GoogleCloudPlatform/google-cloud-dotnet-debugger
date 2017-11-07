@@ -35,12 +35,8 @@ class IBreakpointCollectionMock
     : public google_cloud_debugger::IBreakpointCollection {
  public:
   MOCK_METHOD1(
-      Initialize,
+      SetDebuggerCallback,
       HRESULT(google_cloud_debugger::DebuggerCallback *debugger_callback));
-  MOCK_METHOD1(
-      InitializeBreakpoints,
-      HRESULT(const google_cloud_debugger_portable_pdb::IPortablePdbFile
-                  &portable_pdb));
   MOCK_METHOD1(ActivateOrDeactivate,
                HRESULT(const google_cloud_debugger::DbgBreakpoint &breakpoint));
   MOCK_METHOD0(SyncBreakpoints, HRESULT());

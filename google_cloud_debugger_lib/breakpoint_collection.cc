@@ -35,7 +35,8 @@ namespace google_cloud_debugger {
 const std::string BreakpointCollection::kSplit = ":";
 const std::string BreakpointCollection::kDelimiter = ";";
 
-HRESULT BreakpointCollection::Initialize(DebuggerCallback *debugger_callback) {
+HRESULT BreakpointCollection::SetDebuggerCallback(
+    DebuggerCallback *debugger_callback) {
   if (!debugger_callback) {
     return E_INVALIDARG;
   }
@@ -146,27 +147,6 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
                          0);
   breakpoint->SetActivated(breakpoint_read.activated());
-
-  return S_OK;
-}
-
-HRESULT BreakpointCollection::InitializeBreakpoints(
-    const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) {
-  HRESULT hr;
-
-  std::lock_guard<std::mutex> lock(mutex_);
-  for (auto &&breakpoint : breakpoints_) {
-    if (!breakpoint->TrySetBreakpoint(portable_pdb)) {
-      // This may just means this breakpoint is not in this PDB.
-      continue;
-    }
-
-    hr = ActivateBreakpointHelper(breakpoint.get(), portable_pdb);
-    if (FAILED(hr)) {
-      cerr << "Failed to update breakpoint.";
-      return hr;
-    }
-  }
 
   return S_OK;
 }

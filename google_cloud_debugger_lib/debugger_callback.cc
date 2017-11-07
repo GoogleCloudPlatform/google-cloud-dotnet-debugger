@@ -53,7 +53,7 @@ HRESULT DebuggerCallback::Initialize() {
     return E_OUTOFMEMORY;
   }
 
-  HRESULT hr = breakpoint_collection_->Initialize(this);
+  HRESULT hr = breakpoint_collection_->SetDebuggerCallback(this);
   if (FAILED(hr)) {
     cerr << "Breakpoint collection failed to initialize.";
     return hr;

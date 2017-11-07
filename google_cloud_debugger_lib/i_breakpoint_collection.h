@@ -28,28 +28,15 @@ namespace google_cloud_debugger {
 class DebuggerCallback;
 class IEvalCoordinator;
 
-// Class for managing a collection of breakpoints.
+// Interface for managing a collection of breakpoints.
 class IBreakpointCollection {
  public:
   // Destructor.
   virtual ~IBreakpointCollection() = default;
 
-  // Given a breakpoint string, try to parse it and populate
-  // a list of breakpoints for this collection.
-  // Given a Portable PDB file, try to activate all existing breakpoints.
-  // Also set the Debugger Callback field, which is used to get a list of
+  // Sets the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
-  virtual HRESULT Initialize(DebuggerCallback *debugger_callback) = 0;
-
-  // Given a PortablePDBFile object, try to activate as many breakpoints
-  // as possible in the collection.
-  // When a breakpoint is activated, the Breakpoint function in
-  // DebuggerCallback will be invoked whenever the breakpoint is hit.
-  // This function should only be called once.
-  // Subsequent update for breakpoints should be done with SyncBreakpoints
-  // functions.
-  virtual HRESULT InitializeBreakpoints(
-      const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) = 0;
+  virtual HRESULT SetDebuggerCallback(DebuggerCallback *debugger_callback) = 0;
 
   // Given a breakpoint, try to activate it or deactivate it (based on
   // the Activated() method of the breakpoint). We first do this by
@@ -58,11 +45,15 @@ class IBreakpointCollection {
   // not and we need to activate it, we add this to the breakpoints collection
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
+  // This means duplicate breakpoints will be silently rejected.
   virtual HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) = 0;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.
   // This method will then try to activate or deactivate these breakpoints.
+  // This method will block and wait until a breakpoint arrives.
+  // It will only terminate if the connection to the named pipe server
+  // is cut off.
   virtual HRESULT SyncBreakpoints() = 0;
 
   // Cancel SyncBreakpoints operation (should be called from another thread).
@@ -76,8 +67,9 @@ class IBreakpointCollection {
   virtual HRESULT ReadBreakpoint(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint) = 0;
 
-  // Evaluates and prints out the breakpoint in function with token
-  // function_token at IL offset il_offset.
+  // Evaluates and prints out the breakpoint that corresponds to
+  // the IL offset il_offset inside the function with token
+  // function_token.
   virtual HRESULT EvaluateAndPrintBreakpoint(
       mdMethodDef function_token, ULONG32 il_offset,
       IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
