@@ -19,6 +19,9 @@
 #include <mutex>
 #include <vector>
 
+#include "breakpoint_client.h"
+#include "ccomptr.h"
+#include "dbg_breakpoint.h"
 #include "i_breakpoint_collection.h"
 
 namespace google_cloud_debugger {

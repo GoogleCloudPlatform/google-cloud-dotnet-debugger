@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;

@@ -20,11 +20,16 @@
 #include <vector>
 
 #include "breakpoint.pb.h"
-#include "breakpoint_client.h"
-#include "dbg_breakpoint.h"
+#include "cor.h"
+#include "cordebug.h"
+
+namespace google_cloud_debugger_portable_pdb {
+  class IPortablePdbFile;
+}
 
 namespace google_cloud_debugger {
 
+class DbgBreakpoint;
 class DebuggerCallback;
 class IEvalCoordinator;
 

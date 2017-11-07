@@ -17,8 +17,10 @@
 #include <algorithm>
 #include <cctype>
 
+#include "document_index.h"
 #include "i_eval_coordinator.h"
 #include "i_stack_frame_collection.h"
+#include "i_portable_pdb_file.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;

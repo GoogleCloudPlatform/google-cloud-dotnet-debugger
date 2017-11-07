@@ -21,7 +21,7 @@
 #include <mutex>
 #include <string>
 
-#include "breakpoint.pb.h"
+#include "dbg_breakpoint.h"
 #include "constants.h"
 #include "i_named_pipe.h"
 

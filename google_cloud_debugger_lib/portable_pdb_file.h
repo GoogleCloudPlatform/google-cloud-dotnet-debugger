@@ -19,7 +19,9 @@
 #include <string>
 #include <vector>
 
+#include "custom_binary_reader.h"
 #include "i_portable_pdb_file.h"
+#include "metadata_headers.h"
 
 namespace google_cloud_debugger_portable_pdb {
 

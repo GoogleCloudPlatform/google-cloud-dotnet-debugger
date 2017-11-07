@@ -22,6 +22,7 @@
 #include "metadata_tables.h"
 
 namespace google_cloud_debugger_portable_pdb {
+
 class IPortablePdbFile;
 
 // Struct that represents a sequence point in a method.

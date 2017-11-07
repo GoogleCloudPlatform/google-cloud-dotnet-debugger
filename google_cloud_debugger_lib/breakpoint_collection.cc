@@ -19,7 +19,9 @@
 #include <algorithm>
 #include <iostream>
 
+#include "dbg_object.h"
 #include "debugger_callback.h"
+#include "i_eval_coordinator.h"
 #include "named_pipe_client.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;

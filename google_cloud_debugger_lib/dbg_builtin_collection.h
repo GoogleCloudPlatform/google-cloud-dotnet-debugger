@@ -19,8 +19,6 @@
 #include <vector>
 
 #include "dbg_class.h"
-#include "dbg_class_field.h"
-#include "dbg_class_property.h"
 
 namespace google_cloud_debugger {
 

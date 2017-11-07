@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <string>
 
-#include "breakpoint.pb.h"
 #include "ccomptr.h"
 #include "common_action_mocks.h"
 #include "dbg_stack_frame.h"

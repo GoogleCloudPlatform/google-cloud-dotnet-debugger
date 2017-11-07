@@ -30,7 +30,6 @@ using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::DebuggerCallback;

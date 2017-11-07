@@ -20,6 +20,7 @@
 #include <string>
 #include <tuple>
 
+#include "breakpoint.pb.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "dbg_object.h"
@@ -33,7 +34,6 @@ typedef std::tuple<std::string, std::unique_ptr<DbgObject>,
 
 class DebuggerCallback;
 class IEvalCoordinator;
-class DbgBreakpoint;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments

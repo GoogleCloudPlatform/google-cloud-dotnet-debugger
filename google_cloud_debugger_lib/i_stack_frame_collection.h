@@ -20,10 +20,11 @@
 #include "breakpoint.pb.h"
 #include "cor.h"
 #include "cordebug.h"
-#include "i_eval_coordinator.h"
 #include "i_portable_pdb_file.h"
 
 namespace google_cloud_debugger {
+
+class IEvalCoordinator;
 
 class IStackFrameCollection {
  public:
