@@ -32,7 +32,9 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} 
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined
 
-TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o stack_frame_collection_test.o custom_binary_stream_test.o common_action_mocks.o i_portable_pdb_mocks.o
+TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o \
+dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o \
+stack_frame_collection_test.o custom_binary_stream_test.o eval_coordinator_test.o common_action_mocks.o i_portable_pdb_mocks.o
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.5 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
@@ -72,6 +74,9 @@ stack_frame_collection_test.o: stack_frame_collection_test.cc
 
 custom_binary_stream_test.o: custom_binary_stream_test.cc
 	clang-3.5 custom_binary_stream_test.cc ${INCDIRS} ${CC_FLAGS} -c -o custom_binary_stream_test.o
+
+eval_coordinator_test.o: eval_coordinator_test.cc
+	clang-3.5 eval_coordinator_test.cc ${INCDIRS} ${CC_FLAGS} -c -o eval_coordinator_test.o
 
 unit_test_main.o: unit_test_main.cc
 	clang-3.5 unit_test_main.cc ${INCDIRS} ${CC_FLAGS} -c -o unit_test_main.o

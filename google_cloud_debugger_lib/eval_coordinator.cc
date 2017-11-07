@@ -14,10 +14,11 @@
 
 #include "eval_coordinator.h"
 
+#include <chrono>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <thread>
-#include <chrono>
 
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
@@ -109,7 +110,7 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 
 HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-    BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+    IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
     const std::vector<
         std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
@@ -126,7 +127,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
   // Creates and initializes stack frame collection based on the
   // ICorDebugStackWalk object.
   unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
-                                                    StackFrameCollection);
+                                                     StackFrameCollection);
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
     return E_FAIL;
@@ -139,10 +140,11 @@ HRESULT EvalCoordinator::PrintBreakpoint(
 
   unique_lock<mutex> lk(mutex_);
 
-  std::thread local_thread = std::thread(
+  std::future<void> print_breakpoint_task = std::async(
+      std::launch::async,
       [](unique_ptr<IStackFrameCollection> stack_frames,
          EvalCoordinator *eval_coordinator,
-         BreakpointCollection *breakpoint_collection,
+         IBreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {
         Breakpoint proto_breakpoint;
         HRESULT hr = breakpoint->PopulateBreakpoint(
@@ -157,7 +159,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
         }
       },
       std::move(stack_frames), this, breakpoint_collection, breakpoint);
-  stack_frames_threads_.push_back(std::move(local_thread));
+  print_breakpoint_tasks_.push_back(std::move(print_breakpoint_task));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;

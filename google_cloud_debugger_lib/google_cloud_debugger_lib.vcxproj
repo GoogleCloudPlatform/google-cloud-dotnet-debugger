@@ -197,6 +197,7 @@
     <ClInclude Include="dbg_primitive.h" />
     <ClInclude Include="document_index.h" />
     <ClInclude Include="eval_coordinator.h" />
+    <ClInclude Include="i_breakpoint_collection.h" />
     <ClInclude Include="i_cor_debug_helper.h" />
     <ClInclude Include="i_eval_coordinator.h" />
     <ClInclude Include="i_named_pipe.h" />

@@ -218,6 +218,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
     hr = dbg_stack_frame.PopulateStackFrame(frame, eval_coordinator);
     if (FAILED(hr)) {
+      eval_coordinator->SignalFinishedPrintingVariable();
       return hr;
     }
   }

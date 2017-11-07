@@ -183,6 +183,9 @@
     <ClInclude Include="i_stack_frame_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="i_breakpoint_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
