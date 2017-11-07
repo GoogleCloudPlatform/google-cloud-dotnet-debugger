@@ -16,7 +16,6 @@
 
 #include <assert.h>
 #include <iostream>
-#include <sstream>
 
 #include "ccomptr.h"
 

@@ -16,6 +16,7 @@
 #define I_CORDEBUG_HELPER_H_
 
 #include <vector>
+#include <sstream>
 
 #include "cor.h"
 #include "cordebug.h"
