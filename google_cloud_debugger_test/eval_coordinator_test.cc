@@ -20,6 +20,7 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "dbg_breakpoint.h"
 #include "debugger_callback.h"
 #include "eval_coordinator.h"
 #include "i_breakpoint_collection_mock.h"
@@ -27,7 +28,6 @@
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
-using google::cloud::diagnostics::debug::Breakpoint;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::EvalCoordinator;
 using std::chrono::high_resolution_clock;

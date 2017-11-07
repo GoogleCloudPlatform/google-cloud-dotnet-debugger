@@ -22,6 +22,7 @@
 
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
+#include "dbg_breakpoint.h"
 #include "stack_frame_collection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;

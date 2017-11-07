@@ -18,6 +18,10 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
+
+#include "breakpoint.pb.h"
+#include "cor.h"
 
 namespace google_cloud_debugger {
 
@@ -55,6 +59,29 @@ class StringStreamWrapper {
       std::unique_ptr<std::ostringstream>(new (std::nothrow)
                                               std::ostringstream());
 };
+
+// Sets the Status field of variable using error string err_string.
+void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
+                           const std::string &err_string);
+
+// Sets the Status field of variable using error string from string_stream
+// object. This will reset the error stream of string_stream afterwards.
+void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
+                           StringStreamWrapper *string_stream);
+
+// Helper function to convert a string to null-terminated WCHAR vector.
+// If target_string is empty or if there are failures,
+// this function returns an empty vector.
+std::vector<WCHAR> ConvertStringToWCharPtr(const std::string &target_string);
+
+// Helper function to convert a null-terminated WCHAR array to string.
+// If wchar_string is null or if there are failures,
+// this function returns an empty string.
+std::string ConvertWCharPtrToString(const WCHAR *wchar_string);
+
+// ConvertWCharPtrToString functions that takes in a vector
+// instead of WCHAR array.
+std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
 
 }  // namespace google_cloud_debugger
 

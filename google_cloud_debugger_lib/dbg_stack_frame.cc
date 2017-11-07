@@ -17,9 +17,7 @@
 #include <iostream>
 #include <vector>
 
-#include "breakpoint.pb.h"
 #include "dbg_breakpoint.h"
-#include "dbg_object.h"
 #include "debugger_callback.h"
 #include "i_eval_coordinator.h"
 

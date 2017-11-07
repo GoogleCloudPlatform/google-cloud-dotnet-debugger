@@ -76,6 +76,9 @@
     <ClCompile Include="portable_pdb_file.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="string_stream_wrapper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">

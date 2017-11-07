@@ -23,6 +23,7 @@
 #include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
+
 class EvalCoordinator;
 
 // Class that represents a field in a .NET class.

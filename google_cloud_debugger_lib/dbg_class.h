@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "dbg_object.h"
 #include "dbg_class_field.h"
 #include "dbg_class_property.h"
 #include "dbg_primitive.h"

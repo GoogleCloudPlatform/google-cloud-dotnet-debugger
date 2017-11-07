@@ -18,7 +18,7 @@
 #include <iostream>
 #include <mutex>
 
-#include "dbg_object.h"
+#include "breakpoint.pb.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;

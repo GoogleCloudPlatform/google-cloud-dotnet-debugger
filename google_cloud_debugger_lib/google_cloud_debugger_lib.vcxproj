@@ -238,6 +238,7 @@
     <ClCompile Include="named_pipe_client_windows.cc" />
     <ClCompile Include="portable_pdb_file.cc" />
     <ClCompile Include="stack_frame_collection.cc" />
+    <ClCompile Include="string_stream_wrapper.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\proto\breakpoint.proto" />

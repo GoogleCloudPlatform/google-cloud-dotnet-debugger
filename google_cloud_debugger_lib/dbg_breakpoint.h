@@ -20,10 +20,14 @@
 #include <vector>
 
 #include "breakpoint.pb.h"
+#include "ccomptr.h"
 #include "cor.h"
-#include "document_index.h"
-#include "i_portable_pdb_file.h"
-#include "metadata_tables.h"
+#include "cordebug.h"
+
+namespace google_cloud_debugger_portable_pdb {
+  class IPortablePdbFile;
+  struct MethodInfo;
+};
 
 namespace google_cloud_debugger {
 
