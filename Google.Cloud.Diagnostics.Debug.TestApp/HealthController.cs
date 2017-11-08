@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
-    public class Startup
+    public class HealthController : Controller
     {
-        public void ConfigureServices(IServiceCollection services)
+        public string Check()
         {
-            services.AddMvc();
-        }
-
-        public void Configure(IApplicationBuilder app)
-        { 
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "health-check",
-                    template: "_ah/health",
-                    defaults: new { controller = "Health", action = "Check" });
-                routes.MapRoute("default", "{controller=Main}/{action=Hello}/{message?}");
-            });
+            return "OK!";
         }
     }
 }

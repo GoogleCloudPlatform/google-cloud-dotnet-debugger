@@ -12,20 +12,25 @@ ROOT_DIR=$(dirname "$SCRIPT")
 # Create 
 COMMIT_HASH=$(git rev-parse --short HEAD)
 TEMP_DIR=package-"$COMMIT_HASH"
+TEMP_AGENT_DIR=$TEMP_DIR/agent
+TEMP_DEBUGGER_DIR=$TEMP_DIR/debugger
 
 mkdir -p $TEMP_DIR
+mkdir -p $TEMP_AGENT_DIR
+mkdir -p $TEMP_DEBUGGER_DIR
 
 # Publish the agent.
-dotnet publish -c Release $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
-cp -r $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/bin/Release/netcoreapp1.1/publish/* $TEMP_DIR
+dotnet restore -r debian.8-x64 
+dotnet publish -c Debug -f netcoreapp2.0 -r debian.8-x64 $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
+cp -r $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp2.0/debian.8-x64/publish/* $TEMP_AGENT_DIR
 
 # Copy over the debugger.
-cp $ROOT_DIR/google_cloud_debugger/google_cloud_debugger $TEMP_DIR
+cp $ROOT_DIR/google_cloud_debugger/google_cloud_debugger $TEMP_DEBUGGER_DIR
 
 # Copy the needed so files.
-cp $ROOT_DIR/protobuf/src/.libs/libprotobuf.so.13.0.2 $TEMP_DIR/libprotobuf.so.13
+cp $ROOT_DIR/protobuf/src/.libs/libprotobuf.so.13.0.2 $TEMP_DEBUGGER_DIR/libprotobuf.so.13
 # TODO(talarico): Figure out which exactly which .so files we need.
-cp $ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug/*.so $TEMP_DIR
+cp $ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug/*.so $TEMP_DEBUGGER_DIR
 
 # Package everyting into a tar. 
 cd $TEMP_DIR
