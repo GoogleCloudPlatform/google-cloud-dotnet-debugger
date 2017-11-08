@@ -16,8 +16,9 @@ TEMP_DIR=package-"$COMMIT_HASH"
 mkdir -p $TEMP_DIR
 
 # Publish the agent.
-dotnet publish -c Release $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
-cp -r $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/bin/Release/netcoreapp1.1/publish/* $TEMP_DIR
+dotnet restore -r debian.8-x64
+dotnet publish -c Debug -f netcoreapp1.1 -r debian.8-x64 $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
+cp -r $ROOT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp1.1/debian.8-x64/publish/* $TEMP_DIR
 
 # Copy over the debugger.
 cp $ROOT_DIR/google_cloud_debugger/google_cloud_debugger $TEMP_DIR
