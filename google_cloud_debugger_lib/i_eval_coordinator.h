@@ -21,14 +21,13 @@
 #include <thread>
 #include <vector>
 
-#include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "i_portable_pdb_file.h"
 
 namespace google_cloud_debugger {
 
-class BreakpointCollection;
+class IBreakpointCollection;
 class DbgBreakpoint;
 
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
@@ -79,7 +78,7 @@ class IEvalCoordinator {
   // debug_stack_walk.
   virtual HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
       const std::vector<
           std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;

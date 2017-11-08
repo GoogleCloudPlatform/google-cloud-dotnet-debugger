@@ -72,8 +72,8 @@ bool CustomBinaryStream::ConsumeStream(std::istream *stream) {
 bool CustomBinaryStream::ConsumeFile(const string &file) {
   unique_ptr<std::ifstream> file_stream = unique_ptr<std::ifstream>(
       new (std::nothrow) ifstream(file, ios::in | ios::binary | ios::ate));
-  if (!file_stream && !file_stream->is_open()) {
-    cerr << "Failed to open file " << file;
+  // Let the caller throws the error.
+  if (!file_stream || !file_stream->is_open() || !file_stream->good()) {
     return false;
   }
 

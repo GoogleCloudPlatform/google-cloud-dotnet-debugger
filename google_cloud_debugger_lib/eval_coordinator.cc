@@ -14,22 +14,29 @@
 
 #include "eval_coordinator.h"
 
+#include <chrono>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <thread>
 
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
+#include "dbg_breakpoint.h"
 #include "stack_frame_collection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using std::cerr;
+using std::chrono::high_resolution_clock;
+using std::chrono::minutes;
 using std::lock_guard;
 using std::mutex;
 using std::unique_lock;
 using std::unique_ptr;
 
 namespace google_cloud_debugger {
+
+minutes EvalCoordinator::one_minute = minutes(1);
 
 HRESULT EvalCoordinator::CreateEval(ICorDebugEval **eval) {
   lock_guard<mutex> lk(mutex_);
@@ -50,18 +57,25 @@ HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
   debuggercallback_can_continue_ = TRUE;
   eval_exception_occurred_ = FALSE;
   HRESULT hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
+  auto start = high_resolution_clock::now();
 
   // Wait until evaluation is done.
-  // TODO(quoct): Add a timeout.
   while (hr == CORDBG_E_FUNC_EVAL_NOT_COMPLETE ||
          hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
+    auto current = high_resolution_clock::now();
+    if (current - start > one_minute) {
+      hr = CORDBG_E_FUNC_EVAL_NOT_COMPLETE;
+      cerr << "Timed out while trying to evaluate function.";
+      break;
+    }
+
     hr = eval->GetResult(eval_result);
 
     if (hr == CORDBG_E_FUNC_EVAL_NOT_COMPLETE ||
         hr == CORDBG_E_PROCESS_NOT_SYNCHRONIZED) {
       // Wake up the debugger thread to do the evaluation.
       debugger_callback_cv_.notify_one();
-      variable_threads_cv_.wait(lk);
+      variable_threads_cv_.wait_for(lk, one_minute);
     } else {
       break;
     }
@@ -97,7 +111,7 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 
 HRESULT EvalCoordinator::PrintBreakpoint(
     ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-    BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+    IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
     const std::vector<
         std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
@@ -114,7 +128,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
   // Creates and initializes stack frame collection based on the
   // ICorDebugStackWalk object.
   unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
-                                                    StackFrameCollection);
+                                                     StackFrameCollection);
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
     return E_FAIL;
@@ -127,10 +141,11 @@ HRESULT EvalCoordinator::PrintBreakpoint(
 
   unique_lock<mutex> lk(mutex_);
 
-  std::thread local_thread = std::thread(
+  std::future<void> print_breakpoint_task = std::async(
+      std::launch::async,
       [](unique_ptr<IStackFrameCollection> stack_frames,
          EvalCoordinator *eval_coordinator,
-         BreakpointCollection *breakpoint_collection,
+         IBreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {
         Breakpoint proto_breakpoint;
         HRESULT hr = breakpoint->PopulateBreakpoint(
@@ -145,7 +160,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
         }
       },
       std::move(stack_frames), this, breakpoint_collection, breakpoint);
-  stack_frames_threads_.push_back(std::move(local_thread));
+  print_breakpoint_tasks_.push_back(std::move(print_breakpoint_task));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;

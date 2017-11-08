@@ -23,12 +23,12 @@
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
-#include "custom_binary_reader.h"
 #include "document_index.h"
-#include "metadata_headers.h"
 #include "metadata_tables.h"
 
 namespace google_cloud_debugger_portable_pdb {
+
+struct StreamHeader;
 
 // PortablePDB file. Wraps all the gory details of PE headers and metadata
 // compression.

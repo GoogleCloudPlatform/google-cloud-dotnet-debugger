@@ -16,6 +16,8 @@
 
 #include <iostream>
 
+#include "i_cor_debug_helper.h"
+
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
 using std::unique_ptr;

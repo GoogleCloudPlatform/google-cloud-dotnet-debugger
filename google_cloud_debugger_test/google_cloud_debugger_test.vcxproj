@@ -156,6 +156,7 @@
     <ClCompile Include="dbg_class_test.cc" />
     <ClCompile Include="dbg_stack_frame_test.cc" />
     <ClCompile Include="debugger_callback_test.cc" />
+    <ClCompile Include="eval_coordinator_test.cc" />
     <ClCompile Include="i_cor_debug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
     <ClCompile Include="dbg_class_property_test.cc" />
@@ -167,6 +168,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h" />
+    <ClInclude Include="i_breakpoint_collection_mock.h" />
     <ClInclude Include="i_eval_coordinator_mock.h" />
     <ClInclude Include="i_metadata_import_mock.h" />
     <ClInclude Include="i_named_pipe_mock.h" />

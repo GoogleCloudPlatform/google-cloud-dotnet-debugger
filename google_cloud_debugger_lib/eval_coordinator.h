@@ -15,6 +15,9 @@
 #ifndef EVAL_COORDINATOR_H_
 #define EVAL_COORDINATOR_H_
 
+#include <chrono>
+#include <future>
+
 #include "i_eval_coordinator.h"
 
 namespace google_cloud_debugger {
@@ -64,7 +67,7 @@ class EvalCoordinator : public IEvalCoordinator {
   // debug_stack_walk.
   HRESULT PrintBreakpoint(
       ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      BreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
       const std::vector<
           std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files);
@@ -94,8 +97,8 @@ class EvalCoordinator : public IEvalCoordinator {
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
 
-  // The threads that we are enumerating and printing the stack frames from.
-  std::vector<std::thread> stack_frames_threads_;
+  // The tasks that help us enumerate and print out variables.
+  std::vector<std::future<void>> print_breakpoint_tasks_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
@@ -112,6 +115,8 @@ class EvalCoordinator : public IEvalCoordinator {
   BOOL debuggercallback_can_continue_ = FALSE;
   BOOL eval_exception_occurred_ = FALSE;
   BOOL waiting_for_eval_ = FALSE;
+
+  static std::chrono::minutes one_minute;
 };
 
 }  //  namespace google_cloud_debugger

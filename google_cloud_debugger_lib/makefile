@@ -13,7 +13,7 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -
 DBG_OBJECTS = dbg_object.o dbg_string.o dbg_array.o dbg_class.o dbg_class_field.o dbg_class_property.o dbg_stack_frame.o dbg_enum.o dbg_builtin_collection.o
 PDB_PARSERS = metadata_headers.o metadata_tables.o document_index.o custom_binary_reader.o portable_pdb_file.o
 BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o
-ALL_O_FILES = stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
+ALL_O_FILES = string_stream_wrapper.o stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g
 
 namedpiped.o: named_pipe_client_unix.h named_pipe_client_unix.cc
@@ -54,6 +54,9 @@ dbg_stack_frame.o: dbg_stack_frame.h dbg_stack_frame.cc
 
 eval_coordinator.o: i_eval_coordinator.h eval_coordinator.h eval_coordinator.cc
 	clang-3.5 eval_coordinator.cc ${INCDIRS} ${CC_FLAGS} -c -o eval_coordinator.o
+
+string_stream_wrapper.o: string_stream_wrapper.h string_stream_wrapper.h string_stream_wrapper.cc
+	clang-3.5 string_stream_wrapper.cc ${INCDIRS} ${CC_FLAGS} -c -o string_stream_wrapper.o
 
 stack_frame_collection.o: i_stack_frame_collection.h stack_frame_collection.h stack_frame_collection.cc
 	clang-3.5 stack_frame_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o stack_frame_collection.o

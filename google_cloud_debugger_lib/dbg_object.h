@@ -26,59 +26,6 @@
 
 namespace google_cloud_debugger {
 
-// Given an ICorDebugValue, keep trying to dereference it until we cannot
-// anymore. This function will set is_null to true if this is a null
-// reference. If debug_value is not a reference, this function will simply set
-// dereferenced_value to debug_value. dereferenced_value cannot be null.
-HRESULT Dereference(ICorDebugValue *debug_value,
-                    ICorDebugValue **dereferenced_value, BOOL *is_null,
-                    std::ostringstream *err_stream);
-
-// The depth at which we will stop dereferencing.
-const int kReferenceDepth = 10;
-
-// Given an ICorDebugValue, try to unbox it if possible.
-// If debug_value is not a boxed value, this function will simply set
-// unboxed_value to debug_value.
-HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
-              std::ostringstream *err_stream);
-
-// Given an ICorDebugValue, dereference and unbox it to get the underlying
-// object. Set is_null to true if the object is null.
-HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
-                            ICorDebugValue **dereferenced_and_unboxed_value,
-                            BOOL *is_null, std::ostringstream *err_stream);
-
-// Given an ICorDebugValue, creates a strong handle to the underlying
-// object. ICorDebugValue must represents an object type that can
-// be stored on the heap.
-HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
-                           ICorDebugHandleValue **handle,
-                           std::ostringstream *err_stream);
-
-// Helper function to convert a string to null-terminated WCHAR vector.
-// If target_string is empty or if there are failures,
-// this function returns an empty vector.
-std::vector<WCHAR> ConvertStringToWCharPtr(const std::string &target_string);
-
-// Helper function to convert a null-terminated WCHAR array to string.
-// If wchar_string is null or if there are failures,
-// this function returns an empty string.
-std::string ConvertWCharPtrToString(const WCHAR *wchar_string);
-
-// ConvertWCharPtrToString functions that takes in a vector
-// instead of WCHAR array.
-std::string ConvertWCharPtrToString(const std::vector<WCHAR> &wchar_vector);
-
-// Sets the Status field of variable using error string err_string.
-void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
-                           const std::string &err_string);
-
-// Sets the Status field of variable using error string from string_stream
-// object. This will reset the error stream of string_stream afterwards.
-void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
-                           StringStreamWrapper *string_stream);
-
 class IEvalCoordinator;
 
 // This class represents a .NET object.

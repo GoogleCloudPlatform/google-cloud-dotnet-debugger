@@ -16,7 +16,7 @@
 
 #include <iostream>
 
-#include "ccomptr.h"
+#include "breakpoint.pb.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
