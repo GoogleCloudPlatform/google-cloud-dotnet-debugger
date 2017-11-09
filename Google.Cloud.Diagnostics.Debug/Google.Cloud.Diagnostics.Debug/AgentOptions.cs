@@ -14,6 +14,7 @@
 
 using CommandLine;
 using Google.Api.Gax;
+using System;
 using System.IO;
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -23,6 +24,16 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class AgentOptions
     {
+        public static readonly string EnvironmentVariablePrefix = "SD_DEBUGGER";
+
+        public static readonly string ModuleEnvironmentVariable = $"{EnvironmentVariablePrefix}_MODULE";
+
+        public static readonly string VersionEnvironmentVariable = $"{EnvironmentVariablePrefix}_VERSION";
+
+        public static readonly string ProjectEnvironmentVariable = $"{EnvironmentVariablePrefix}_PROJECT";
+
+        public static readonly string DebuggerEnvironmentVariable = $"{EnvironmentVariablePrefix}_DEBUGGER";
+
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
@@ -94,10 +105,10 @@ namespace Google.Cloud.Diagnostics.Debug
             var options = new AgentOptions();
             result.WithParsed((o) => 
             {
-                GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));
-                GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
-                GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
-                GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? Common.Platform.ProjectId, nameof(o.ProjectId));
+                o.Module = GaxPreconditions.CheckNotNullOrEmpty(o.Module ?? GetModule(), nameof(o.Module));
+                o.Version = GaxPreconditions.CheckNotNullOrEmpty(o.Version ?? GetVersion(), nameof(o.Version));
+                o.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? GetProject(), nameof(o.ProjectId));
+                o.Debugger = GaxPreconditions.CheckNotNullOrEmpty(o.Debugger ?? GetDebugger(), nameof(o.Debugger));
                 GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
 
                 if (!File.Exists(o.Debugger))
@@ -108,7 +119,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 if ((string.IsNullOrWhiteSpace(o.ApplicationPath) && !o.ApplicationId.HasValue)
                     || (!string.IsNullOrWhiteSpace(o.ApplicationPath) && o.ApplicationId.HasValue))
                 {
-                    throw new System.ArgumentException("Please supply either the path to the .NET CORE application dll"
+                    throw new ArgumentException("Please supply either the path to the .NET CORE application dll"
                         + " or the process ID of a running application, NOT both.");
                 }
 
@@ -125,5 +136,37 @@ namespace Google.Cloud.Diagnostics.Debug
             });
             return options;
         }
+
+        internal static string GetModule(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            var module = Environment.GetEnvironmentVariable(ModuleEnvironmentVariable);
+            if (module == null && platform.Type == PlatformType.Gae)
+            {
+                return platform.GaeDetails.ServiceId;
+            }
+            return module;
+        }
+
+        internal static string GetVersion(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            var module = Environment.GetEnvironmentVariable(VersionEnvironmentVariable);
+            if (module == null && platform.Type == PlatformType.Gae)
+            {
+                return platform.GaeDetails.VersionId;
+            }
+            return module;
+        }
+
+        internal static string GetProject(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            return Environment.GetEnvironmentVariable(ProjectEnvironmentVariable) ?? platform.ProjectId;
+        }
+            
+
+        internal static string GetDebugger() =>
+            Environment.GetEnvironmentVariable(DebuggerEnvironmentVariable);
     }
 }
