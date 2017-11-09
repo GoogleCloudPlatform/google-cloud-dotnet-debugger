@@ -1,4 +1,4 @@
-FROM gcr.io/csharp-debugger-eap/aspnetcore:1.1.4-2017-11-08_10_44
+FROM gcr.io/csharp-debugger-eap/aspnetcore:1.1.4
 COPY . /app
 WORKDIR /app
 EXPOSE 8080
