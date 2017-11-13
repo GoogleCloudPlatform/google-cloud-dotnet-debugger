@@ -135,19 +135,28 @@ class DbgClass : public DbgObject {
   std::unique_ptr<DbgObject> primitive_type_value_;
 
  protected:
+  // Creates a key to the static cache from the module name and the class name.
   static std::string GetStaticCacheKey(const std::string &module_name, const std::string &class_name) {
     return module_name + "!" + class_name;
   }
 
+  // Stores the static field field_name of class class_name in module module_name
+  // with value object in the static cache.
   static void StoreStaticClassField(const std::string &module_name, const std::string &class_name,
      const std::string &field_name, std::shared_ptr<DbgClassField> object);
 
+  // Extracts the static field field_name of class class_name in module module_name
+  // in the static cache.
   std::shared_ptr<DbgClassField> GetStaticClassField(const std::string &module_name, const std::string &class_name,
     const std::string &field_name);
 
+  // Stores the static property property_name of class class_name in module module_name
+  // with value object in the static cache.
   static void StoreStaticClassProperty(const std::string &module_name, const std::string &class_name,
      const std::string &property_name, std::shared_ptr<DbgClassProperty> object);
 
+  // Extracts the static property property_name of class class_name in module module_name
+  // in the static cache.
   std::shared_ptr<DbgClassProperty> GetStaticClassProperty(const std::string &module_name, const std::string &class_name,
     const std::string &property_name);
 

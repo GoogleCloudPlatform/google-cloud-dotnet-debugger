@@ -462,14 +462,14 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
         }
 
         if (class_property->IsStatic()) {
-          // Checks whether we already have a shared pointer of this field
+          // Checks whether we already have a shared pointer of this property
           // in the cache. If not, moves the unique_ptr there.
           shared_ptr<DbgClassProperty> static_property_value =
             GetStaticClassProperty(module_name_, class_name_, class_property->GetPropertyName());
           if (!static_property_value) {
-            std::string field_name = class_property->GetPropertyName();
+            std::string property_name = class_property->GetPropertyName();
             static_property_value = shared_ptr<DbgClassProperty>(class_property.release());
-            StoreStaticClassProperty(module_name_, class_name_, field_name,
+            StoreStaticClassProperty(module_name_, class_name_, property_name,
               static_property_value);
           }
           class_properties_.emplace_back(static_property_value);

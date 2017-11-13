@@ -63,9 +63,6 @@ class DbgClassField : public StringStreamWrapper {
   // Gets the underlying DbgObject of this field's value.
   DbgObject *GetFieldValue() { return field_value_.get(); }
 
-  // Sets the evaluation depth of this field.
-  void SetEvaluationDepth(int new_depth) { depth_ = new_depth; }
-
  private:
   // Token for the class that the field belongs to.
   mdTypeDef class_token_ = 0;

@@ -148,15 +148,12 @@ HRESULT EvalCoordinator::PrintBreakpoint(
          IBreakpointCollection *breakpoint_collection,
          DbgBreakpoint *breakpoint) {
         Breakpoint proto_breakpoint;
-        auto start = high_resolution_clock::now();
         HRESULT hr = breakpoint->PopulateBreakpoint(
             &proto_breakpoint, stack_frames.get(), eval_coordinator);
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << std::hex << hr;
         }
 
-        auto end = high_resolution_clock::now();
-        auto int_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
         if (FAILED(hr)) {
           cerr << "Failed to write breakpoint: " << std::hex << hr;
