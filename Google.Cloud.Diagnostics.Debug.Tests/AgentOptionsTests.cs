@@ -37,5 +37,11 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         [Fact]
         public void GetDebugger_Null() => Assert.Null(AgentOptions.GetDebugger());
+
+
+        private void Test(Action action, string envVar, string envVal)
+        {
+
+        }
     }
 }
