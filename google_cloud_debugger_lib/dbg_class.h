@@ -15,6 +15,7 @@
 #ifndef DBG_CLASS_H_
 #define DBG_CLASS_H_
 
+#include <map>
 #include <memory>
 #include <unordered_set>
 #include <vector>
@@ -74,6 +75,9 @@ class DbgClass : public DbgObject {
                                       std::unique_ptr<DbgObject> *result_object,
                                       std::ostringstream *err_stream);
 
+  // Clear cache of static field and properties.
+  static void ClearStaticCache() { static_class_fields_.clear(); static_class_properties_.clear(); }
+
  private:
   // Processes the class name and stores the result in class_name.
   static HRESULT ProcessClassName(mdTypeDef class_token,
@@ -131,6 +135,22 @@ class DbgClass : public DbgObject {
   std::unique_ptr<DbgObject> primitive_type_value_;
 
  protected:
+  static std::string GetStaticCacheKey(const std::string &module_name, const std::string &class_name) {
+    return module_name + "!" + class_name;
+  }
+
+  static void StoreStaticClassField(const std::string &module_name, const std::string &class_name,
+     const std::string &field_name, std::shared_ptr<DbgClassField> object);
+
+  std::shared_ptr<DbgClassField> GetStaticClassField(const std::string &module_name, const std::string &class_name,
+    const std::string &field_name);
+
+  static void StoreStaticClassProperty(const std::string &module_name, const std::string &class_name,
+     const std::string &property_name, std::shared_ptr<DbgClassProperty> object);
+
+  std::shared_ptr<DbgClassProperty> GetStaticClassProperty(const std::string &module_name, const std::string &class_name,
+    const std::string &property_name);
+
   // Processes the class fields and stores the fields in class_fields_.
   HRESULT ProcessFields(IMetaDataImport *metadata_import,
                         ICorDebugObjectValue *debug_obj_value,
@@ -162,6 +182,9 @@ class DbgClass : public DbgObject {
   // A strong handle to the class object.
   CComPtr<ICorDebugHandleValue> class_handle_;
 
+  // String that represents the name of the module this class is in.
+  std::string module_name_;
+
   // String that represents the name of the class.
   std::string class_name_;
 
@@ -180,8 +203,8 @@ class DbgClass : public DbgObject {
   ClassType class_type_ = ClassType::DEFAULT;
 
   // Class fields and properties.
-  std::vector<std::unique_ptr<DbgClassField>> class_fields_;
-  std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
+  std::vector<std::shared_ptr<DbgClassField>> class_fields_;
+  std::vector<std::shared_ptr<DbgClassProperty>> class_properties_;
 
   // Sets of all the fields' names.
   std::unordered_set<std::string> class_backing_fields_names_;
@@ -192,6 +215,16 @@ class DbgClass : public DbgObject {
 
   // Token of the class.
   mdTypeDef class_token_;
+
+  // Cache of static class fields.
+  // First key is the module name and class name.
+  // Second key is the member name.
+  static std::map<std::string, std::map<std::string, std::shared_ptr<DbgClassField>>> static_class_fields_;
+
+  // Cache of static property fields.
+  // First key is the module name and class name.
+  // Second key is the member name.
+  static std::map<std::string, std::map<std::string, std::shared_ptr<DbgClassProperty>>> static_class_properties_;
 };
 
 }  //  namespace google_cloud_debugger

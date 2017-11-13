@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "breakpoint.pb.h"
+#include "constants.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -140,7 +141,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::PopulateVariableValue(
-    Variable *variable, IEvalCoordinator *eval_coordinator) {
+    Variable *variable, IEvalCoordinator *eval_coordinator, int depth) {
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }
@@ -151,7 +152,8 @@ HRESULT DbgClassField::PopulateVariableValue(
 
   HRESULT hr;
 
-  if (is_static_field_) {
+  if (is_static_field_ && !field_value_) {
+
     if (!class_type_) {
       WriteError("Cannot evaluate static field without ICorDebugClass.");
       return E_FAIL;
@@ -191,13 +193,14 @@ HRESULT DbgClassField::PopulateVariableValue(
     }
 
     // BUG: String that starts with @ cannot be retrieved.
-    hr = DbgObject::CreateDbgObject(debug_value, depth_, &field_value_,
-                                    GetErrorStream());
+    hr = DbgObject::CreateDbgObject(debug_value, kDefaultObjectEvalDepth,
+                                    &field_value_, GetErrorStream());
     if (FAILED(hr)) {
       if (field_value_) {
         WriteError(field_value_->GetErrorString());
       }
       WriteError("Failed to create DbgObject for static field value.");
+      field_value_.release();
       return hr;
     }
   }
@@ -207,6 +210,8 @@ HRESULT DbgClassField::PopulateVariableValue(
     return E_FAIL;
   }
 
+  // In case field_value_ is cached, sets the evaluation depth again.
+  field_value_->SetEvaluationDepth(depth);
   hr = field_value_->PopulateVariableValue(variable, eval_coordinator);
   if (FAILED(hr)) {
     WriteError(field_value_->GetErrorString());

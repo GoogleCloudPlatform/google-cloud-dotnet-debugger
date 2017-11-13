@@ -54,6 +54,13 @@ class DbgClassProperty : public StringStreamWrapper {
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialized_hr_; }
 
+  // Returns true if the property is static.
+  // If the property is static, the metadata won't have a bit mask
+  // at 0x20.
+  bool IsStatic() {
+    return (*signature_metadata_ & kNonStaticPropertyMask) == 0;
+  }
+
   static const int8_t kNonStaticPropertyMask = 0x20;
 
  private:

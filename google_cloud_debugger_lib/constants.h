@@ -34,6 +34,9 @@ static const int kConnectionWaitTimeoutMs = 60000;
 // The amount of time to wait between checks for a pipe connection in milliseconds.
 static const int kConnectionSleepTimeoutMs = 2000;
 
+// The default evaluation depth for an object.
+static const int kDefaultObjectEvalDepth = 5;
+
 // The start of a breakpoint message.
 static const std::string kStartBreakpointMessage = "START_DEBUG_MESSAGE";
 

@@ -29,11 +29,16 @@ using google::cloud::diagnostics::debug::Variable;
 using std::array;
 using std::char_traits;
 using std::min;
+using std::shared_ptr;
 using std::string;
 using std::unique_ptr;
 using std::vector;
 
 namespace google_cloud_debugger {
+
+std::map<std::string, std::map<std::string, std::shared_ptr<DbgClassField>>> DbgClass::static_class_fields_;
+std::map<std::string, std::map<std::string, std::shared_ptr<DbgClassProperty>>> DbgClass::static_class_properties_;
+
 HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
                                        ICorDebugValue *debug_value,
                                        BOOL is_null,
@@ -90,6 +95,15 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
     return hr;
   }
 
+  std::vector<WCHAR> wchar_module_name;
+  hr = GetModuleNameFromICorDebugModule(debug_module, &wchar_module_name);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get module name.";
+    return hr;
+  }
+
+  string module_name = ConvertWCharPtrToString(wchar_module_name);
+
   if (is_null) {
     unique_ptr<DbgClass> null_obj(new (std::nothrow)
                                       DbgClass(debug_type, depth));
@@ -97,6 +111,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
       *err_stream << "Ran out of memory to create null class object.";
       return E_OUTOFMEMORY;
     }
+    null_obj->module_name_ = module_name;
     null_obj->class_name_ = class_name;
     null_obj->class_token_ = class_token;
     *result_object = std::move(null_obj);
@@ -136,6 +151,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
       return E_OUTOFMEMORY;
     }
 
+    class_obj->module_name_ = module_name;
     class_obj->class_name_ = class_name;
     class_obj->class_token_ = class_token;
 
@@ -245,7 +261,7 @@ HRESULT DbgClass::ExtractField(const std::string &field_name,
   // Try to find the field field_name of this object.
   const auto &find_field = std::find_if(
       class_fields_.begin(), class_fields_.end(),
-      [&](std::unique_ptr<DbgClassField> &class_field) {
+      [&](std::shared_ptr<DbgClassField> &class_field) {
         return class_field->GetFieldName().compare(field_name) == 0;
       });
   if (find_field == class_fields_.end()) {
@@ -368,7 +384,28 @@ HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
           // for backing fields.
           class_backing_fields_names_.insert(class_field->GetFieldName());
         }
-        class_fields_.push_back(std::move(class_field));
+
+        // If this is a static field, we will just use the field from the cache.
+        // Note that the value of the static field does not get initialized
+        // until PopulateVariableValue is called anyway so we don't have to worry
+        // about the Initialize call above initialize the field value
+        // multiple times.
+        if (class_field->IsStatic()) {
+          // Checks whether we already have a shared pointer of this field
+          // in the cache. If not, moves the unique_ptr there.
+          shared_ptr<DbgClassField> static_field_value =
+            GetStaticClassField(module_name_, class_name_, class_field->GetFieldName());
+          if (!static_field_value) {
+            std::string field_name = class_field->GetFieldName();
+            static_field_value = shared_ptr<DbgClassField>(class_field.release());
+            StoreStaticClassField(module_name_, class_name_, field_name,
+              static_field_value);
+          }
+          class_fields_.emplace_back(static_field_value);
+        }
+        else {
+          class_fields_.push_back(std::move(class_field));
+        }
       }
     } else {
       break;
@@ -419,8 +456,25 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
         // MyProperty is in this set or not. If it is, then it is backed
         // by a field already, so don't add it to class_properties_.
         if (class_backing_fields_names_.find(
-                class_property->GetPropertyName()) ==
+                class_property->GetPropertyName()) !=
             class_backing_fields_names_.end()) {
+          continue;
+        }
+
+        if (class_property->IsStatic()) {
+          // Checks whether we already have a shared pointer of this field
+          // in the cache. If not, moves the unique_ptr there.
+          shared_ptr<DbgClassProperty> static_property_value =
+            GetStaticClassProperty(module_name_, class_name_, class_property->GetPropertyName());
+          if (!static_property_value) {
+            std::string field_name = class_property->GetPropertyName();
+            static_property_value = shared_ptr<DbgClassProperty>(class_property.release());
+            StoreStaticClassProperty(module_name_, class_name_, field_name,
+              static_property_value);
+          }
+          class_properties_.emplace_back(static_property_value);
+        }
+        else {
           class_properties_.push_back(std::move(class_property));
         }
       }
@@ -626,6 +680,50 @@ ULONG64 DbgClass::ExtractEnumValue(CorElementType enum_type, void *enum_value) {
   }
 }
 
+void DbgClass::StoreStaticClassField(
+  const string &module_name, const string &class_name, const string &field_name, shared_ptr<DbgClassField> object) {
+  string key = GetStaticCacheKey(module_name, class_name);
+  if (static_class_fields_.find(key) == static_class_fields_.end()) {
+    std::map<string, shared_ptr<DbgClassField>> new_map;
+    static_class_fields_[key] = std::map<string, shared_ptr<DbgClassField>>();
+  }
+
+  static_class_fields_[key][field_name] = object;
+}
+
+shared_ptr<DbgClassField> DbgClass::GetStaticClassField(
+  const string &module_name, const string &class_name, const string &field_name) {
+  string key = GetStaticCacheKey(module_name, class_name);
+  if (static_class_fields_.find(key) == static_class_fields_.end()
+    || static_class_fields_[key].find(field_name) == static_class_fields_[key].end()) {
+    return shared_ptr<DbgClassField>();
+  }
+
+  return static_class_fields_[key][field_name];
+}
+
+void DbgClass::StoreStaticClassProperty(
+  const string &module_name, const string &class_name, const string &property_name, shared_ptr<DbgClassProperty> object) {
+  string key = GetStaticCacheKey(module_name, class_name);
+  if (static_class_properties_.find(key) == static_class_properties_.end()) {
+    std::map<string, shared_ptr<DbgClassProperty>> new_map;
+    static_class_properties_[key] = std::map<string, shared_ptr<DbgClassProperty>>();
+  }
+
+  static_class_properties_[key][property_name] = object;
+}
+
+shared_ptr<DbgClassProperty> DbgClass::GetStaticClassProperty(
+  const string &module_name, const string &class_name, const string &property_name) {
+  string key = GetStaticCacheKey(module_name, class_name);
+  if (static_class_properties_.find(key) == static_class_properties_.end()
+    || static_class_properties_[key].find(property_name) == static_class_properties_[key].end()) {
+    return shared_ptr<DbgClassProperty>();
+  }
+
+  return static_class_properties_[key][property_name];
+}
+
 HRESULT DbgClass::PopulateMembers(Variable *variable,
                                   IEvalCoordinator *eval_coordinator) {
   if (!variable) {
@@ -660,7 +758,8 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       Variable *class_field_var = variable->add_members();
 
       class_field_var->set_name((*it)->GetFieldName());
-      hr = (*it)->PopulateVariableValue(class_field_var, eval_coordinator);
+      hr = (*it)->PopulateVariableValue(class_field_var, eval_coordinator,
+                                        new_depth);
       if (FAILED(hr)) {
         SetErrorStatusMessage(class_field_var, (*it).get());
       }

@@ -134,7 +134,7 @@ class DbgStackFrame {
   std::vector<VariableTuple> method_arguments_;
 
   // Determines how deep to inspect the object.
-  int object_depth_ = 5;
+  int object_depth_ = kDefaultObjectEvalDepth;
 
   // Name of the method the variables are in.
   std::string method_name_;

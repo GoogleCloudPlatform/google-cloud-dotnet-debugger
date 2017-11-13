@@ -36,10 +36,11 @@ class DbgClassField : public StringStreamWrapper {
                   ICorDebugClass *debug_class, ICorDebugType *class_type,
                   int depth);
 
-  // Sets the value of variable to the value of this field.
+  // Sets the value of variable to the value of this field to an
+  // evaluation depth of depth.
   HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator);
+      IEvalCoordinator *eval_coordinator, int depth);
 
   // Returns the field name.
   const std::string &GetFieldName() const { return field_name_; }
@@ -61,6 +62,9 @@ class DbgClassField : public StringStreamWrapper {
 
   // Gets the underlying DbgObject of this field's value.
   DbgObject *GetFieldValue() { return field_value_.get(); }
+
+  // Sets the evaluation depth of this field.
+  void SetEvaluationDepth(int new_depth) { depth_ = new_depth; }
 
  private:
   // Token for the class that the field belongs to.

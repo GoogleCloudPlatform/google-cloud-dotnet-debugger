@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include "breakpoint.pb.h"
+#include "constants.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -97,6 +98,12 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return initialized_hr_;
   }
 
+  // If this property is already evaluated, don't do it again.
+  if (property_value_) {
+    property_value_->SetEvaluationDepth(depth);
+    return PopulateVariableValueHelper(variable, eval_coordinator);
+  }
+
   CComPtr<ICorDebugValue> debug_value;
   CComPtr<ICorDebugObjectValue> debug_obj_value;
   CComPtr<ICorDebugClass> debug_class;
@@ -153,11 +160,10 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   vector<ICorDebugValue *> arg_values;
-  // If the property is non-static, the metadata will have a bit mask
-  // of 0x20. If the property is non-static, then when we call getter
+  // If the property is non-static, then when we call getter
   // method, we have to supply "this" (reference to the current object)
   // as a parameter.
-  if ((*signature_metadata_ & kNonStaticPropertyMask) != 0) {
+  if (!IsStatic()) {
     arg_values.push_back(reference_value);
   }
 
@@ -187,6 +193,9 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
+  if (IsStatic()) {
+    depth = kDefaultObjectEvalDepth;
+  }
   hr = DbgObject::CreateDbgObject(eval_result, depth, &property_value_,
                                   GetErrorStream());
   if (FAILED(hr)) {
