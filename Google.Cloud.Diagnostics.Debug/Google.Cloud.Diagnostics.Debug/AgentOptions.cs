@@ -24,7 +24,7 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class AgentOptions
     {
-        public static readonly string EnvironmentVariablePrefix = "SD_DEBUGGER";
+        public static readonly string EnvironmentVariablePrefix = "STACKDRIVER_DEBUGGER";
 
         public static readonly string ModuleEnvironmentVariable = $"{EnvironmentVariablePrefix}_MODULE";
 
