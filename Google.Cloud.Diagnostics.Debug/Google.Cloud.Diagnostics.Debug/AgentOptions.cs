@@ -24,14 +24,19 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class AgentOptions
     {
+        /// <summary>The prefix for environment variables.</summary>
         public static readonly string EnvironmentVariablePrefix = "STACKDRIVER_DEBUGGER";
 
+        /// <summary>An environment variable that can set the module.</summary>
         public static readonly string ModuleEnvironmentVariable = $"{EnvironmentVariablePrefix}_MODULE";
 
+        /// <summary>An environment variable that can set the version.</summary>
         public static readonly string VersionEnvironmentVariable = $"{EnvironmentVariablePrefix}_VERSION";
 
+        /// <summary>An environment variable that can set the project ID.</summary>
         public static readonly string ProjectEnvironmentVariable = $"{EnvironmentVariablePrefix}_PROJECT";
 
+        /// <summary>An environment variable that can set the debugger path.</summary>
         public static readonly string DebuggerEnvironmentVariable = $"{EnvironmentVariablePrefix}_DEBUGGER";
 
         // If given this option, the debugger will not perform property evaluation.
@@ -137,6 +142,14 @@ namespace Google.Cloud.Diagnostics.Debug
             return options;
         }
 
+        /// <summary>
+        /// Attempts to get the module from the environment. 
+        /// Will first try to get the module from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the module from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The module or null if none could be found.</returns>
         internal static string GetModule(Platform platform = null)
         {
             platform = platform ?? Common.Platform;
@@ -148,6 +161,14 @@ namespace Google.Cloud.Diagnostics.Debug
             return module;
         }
 
+        /// <summary>
+        /// Attempts to get the version from the environment. 
+        /// Will first try to get the version from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the version from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The version or null if none could be found.</returns>
         internal static string GetVersion(Platform platform = null)
         {
             platform = platform ?? Common.Platform;
@@ -159,13 +180,24 @@ namespace Google.Cloud.Diagnostics.Debug
             return module;
         }
 
+        /// <summary>
+        /// Attempts to get the project ID from the environment. 
+        /// Will first try to get the project ID from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the project ID from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The project ID or null if none could be found.</returns>
         internal static string GetProject(Platform platform = null)
         {
             platform = platform ?? Common.Platform;
             return Environment.GetEnvironmentVariable(ProjectEnvironmentVariable) ?? platform.ProjectId;
         }
-            
 
+        /// <summary>
+        /// Attempts to get the debugger from an environment variable. 
+        /// </summary>
+        /// <returns>The debugger or null if none could be found.</returns>
         internal static string GetDebugger() =>
             Environment.GetEnvironmentVariable(DebuggerEnvironmentVariable);
     }

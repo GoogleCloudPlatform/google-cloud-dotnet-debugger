@@ -81,7 +81,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         [Fact]
         public void GetDebugger_Env() =>
-            Test(() => AgentOptions.GetDebugger(), AgentOptions.DebuggerEnvironmentVariable, "some-path/to/a/debugger");
+            TestEnvVariable(() => AgentOptions.GetDebugger(), AgentOptions.DebuggerEnvironmentVariable, "some-path/to/a/debugger");
         
 
         [Fact]
@@ -93,7 +93,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         [Fact]
         public void GetProject_Env() => 
-            Test(() => AgentOptions.GetProject(), AgentOptions.ProjectEnvironmentVariable, "pid-2");
+            TestEnvVariable(() => AgentOptions.GetProject(), AgentOptions.ProjectEnvironmentVariable, "pid-2");
 
         [Fact]
         public void GetProject_Null() => Assert.Null(AgentOptions.GetProject());
@@ -104,7 +104,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         [Fact]
         public void GetModule_Env() =>
-            Test(() => AgentOptions.GetModule(), AgentOptions.ModuleEnvironmentVariable, "service-2");
+            TestEnvVariable(() => AgentOptions.GetModule(), AgentOptions.ModuleEnvironmentVariable, "service-2");
 
         [Fact]
         public void GetModule_Null() => Assert.Null(AgentOptions.GetModule());
@@ -115,18 +115,22 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         [Fact]
         public void GetVersion_Env() =>
-            Test(() => AgentOptions.GetVersion(), AgentOptions.VersionEnvironmentVariable, "version-2");
+            TestEnvVariable(() => AgentOptions.GetVersion(), AgentOptions.VersionEnvironmentVariable, "version-2");
 
         [Fact]
         public void GetVersion_Null() => Assert.Null(AgentOptions.GetVersion());
 
 
-        private void Test(Func<string> action, string envVar, string envVal)
+        /// <summary>
+        /// Sets the <paramref name="envVar"/> to <paramref name="envVal"/> and checks that
+        /// the <paramref name="func"/> returns the <paramref name="envVal"/>.
+        /// </summary>
+        private void TestEnvVariable(Func<string> func, string envVar, string envVal)
         {
             try
             {
                 Environment.SetEnvironmentVariable(envVar, envVal, EnvironmentVariableTarget.Process);
-                Assert.Equal(envVal, action());
+                Assert.Equal(envVal, func());
             }
             finally
             {
