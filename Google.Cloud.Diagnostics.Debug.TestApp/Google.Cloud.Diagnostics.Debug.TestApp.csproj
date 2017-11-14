@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="1.1.3" />
   </ItemGroup>
 
+  <Target Name="CopyDockerfileOnPublish" AfterTargets="Publish">
+    <Copy SourceFiles="Dockerfile" DestinationFolder="$(PublishDir)" />
+  </Target>
+
 </Project>
