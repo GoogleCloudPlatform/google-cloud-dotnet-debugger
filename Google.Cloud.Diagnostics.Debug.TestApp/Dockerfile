@@ -1,6 +1,5 @@
 FROM gcr.io/csharp-debugger-eap/aspnetcore:1.1.4
 COPY . /app
 WORKDIR /app
-EXPOSE 8080
-ENV ASPNETCORE_URLS=http://*:8080
+COPY ./source-context.json /usr/share/dotnet-debugger/agent/
 ENTRYPOINT ["/usr/share/dotnet-debugger/agent/Google.Cloud.Diagnostics.Debug", "--application-path=/app/Google.Cloud.Diagnostics.Debug.TestApp.dll", "--debugger=/usr/share/dotnet-debugger/debugger/google_cloud_debugger", "--module=standalone", "--version=3.0", "--project-id=csharp-debugger-eap"]
