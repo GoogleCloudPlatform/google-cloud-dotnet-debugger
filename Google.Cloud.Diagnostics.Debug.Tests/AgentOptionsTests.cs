@@ -40,6 +40,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         private static readonly GaePlatformDetails _gaeDetails = new GaePlatformDetails(
             _projectId, "instance", _module, _version);
         private static readonly Platform _gaePlatform = new Platform(_gaeDetails);
+        private static readonly Platform _unknownPlatform = new Platform();
 
         [Fact]
         public void Parse()
@@ -96,7 +97,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             TestEnvVariable(() => AgentOptions.GetProject(), AgentOptions.ProjectEnvironmentVariable, "pid-2");
 
         [Fact]
-        public void GetProject_Null() => Assert.Null(AgentOptions.GetProject());
+        public void GetProject_Null() => Assert.Null(AgentOptions.GetProject(_unknownPlatform));
 
         [Fact]
         public void GetModule_Platform() =>
@@ -107,7 +108,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             TestEnvVariable(() => AgentOptions.GetModule(), AgentOptions.ModuleEnvironmentVariable, "service-2");
 
         [Fact]
-        public void GetModule_Null() => Assert.Null(AgentOptions.GetModule());
+        public void GetModule_Null() => Assert.Null(AgentOptions.GetModule(_unknownPlatform));
 
         [Fact]
         public void GetVersion_Platform() =>
@@ -118,7 +119,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             TestEnvVariable(() => AgentOptions.GetVersion(), AgentOptions.VersionEnvironmentVariable, "version-2");
 
         [Fact]
-        public void GetVersion_Null() => Assert.Null(AgentOptions.GetVersion());
+        public void GetVersion_Null() => Assert.Null(AgentOptions.GetVersion(_unknownPlatform));
 
 
         /// <summary>
