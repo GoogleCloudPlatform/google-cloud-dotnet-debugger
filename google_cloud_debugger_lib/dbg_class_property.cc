@@ -27,7 +27,7 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-void DbgClassProperty::Initialize(mdProperty property_def,
+void DbgClassProperty::Initialize(mdToken property_def,
                                   IMetaDataImport *metadata_import) {
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
@@ -196,6 +196,7 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   if (IsStatic()) {
     depth = kDefaultObjectEvalDepth;
   }
+
   hr = DbgObject::CreateDbgObject(eval_result, depth, &property_value_,
                                   GetErrorStream());
   if (FAILED(hr)) {

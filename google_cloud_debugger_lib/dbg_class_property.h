@@ -19,19 +19,20 @@
 #include <vector>
 
 #include "dbg_object.h"
+#include "i_dbg_class_member.h"
 #include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
-class IEvalCoordinator;
 
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
 // function is called.
-class DbgClassProperty : public StringStreamWrapper {
+class DbgClassProperty : public IDbgClassMember {
  public:
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
-  void Initialize(mdProperty property_def, IMetaDataImport *metadata_import);
+  void Initialize(mdToken property_def,
+                  IMetaDataImport *metadata_import) override;
 
   // Evaluate the property and stores the value in property_value_
   // and also populate proto variable's fields.
@@ -49,15 +50,24 @@ class DbgClassProperty : public StringStreamWrapper {
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
 
-  const std::string &GetPropertyName() const { return property_name_; }
+  const std::string &GetMemberName() const override { return property_name_; }
+
+  // Gets the underlying DbgObject of this field's value.
+  DbgObject *GetMemberValue() override { return property_value_.get(); }
 
   // Returns the HRESULT when Initialize function is called.
-  HRESULT GetInitializeHr() const { return initialized_hr_; }
+  HRESULT GetInitializeHr() const override { return initialized_hr_; }
+
+  // Returns the signature of the field.
+  PCCOR_SIGNATURE GetSignature() const override { return signature_metadata_; }
+
+  // Returns the default value of the field (useful if the field is an enum).
+  UVCP_CONSTANT GetDefaultValue() const override { return default_value_; }
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
   // at 0x20.
-  bool IsStatic() {
+  bool IsStatic() const override {
     return (*signature_metadata_ & kNonStaticPropertyMask) == 0;
   }
 

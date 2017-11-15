@@ -21,6 +21,7 @@
 #include <tuple>
 
 #include "breakpoint.pb.h"
+#include "constants.h"
 #include "cor.h"
 #include "cordebug.h"
 #include "dbg_object.h"

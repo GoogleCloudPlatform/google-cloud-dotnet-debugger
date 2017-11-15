@@ -15,8 +15,8 @@
 #include "dbg_enum.h"
 
 #include "class_names.h"
-#include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::array;
@@ -58,7 +58,7 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
         continue;
       }
 
-      if (kEnumValue.compare((*it)->GetFieldName()) != 0) {
+      if (kEnumValue.compare((*it)->GetMemberName()) != 0) {
         continue;
       }
 
@@ -77,7 +77,8 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
   ULONG64 enum_value = ExtractEnumValue(enum_type, enum_value_array_.data());
   for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
     if (*it) {
-      if ((*it)->IsStatic() || kEnumValue.compare((*it)->GetFieldName()) == 0) {
+      if ((*it)->IsStatic() ||
+          kEnumValue.compare((*it)->GetMemberName()) == 0) {
         continue;
       }
 
@@ -97,9 +98,9 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
       enum_value = enum_value & (~const_value);
 
       if (enum_string_.empty()) {
-        enum_string_.append((*it)->GetFieldName());
+        enum_string_.append((*it)->GetMemberName());
       } else {
-        enum_string_.append(" | " + (*it)->GetFieldName());
+        enum_string_.append(" | " + (*it)->GetMemberName());
       }
     }
   }
