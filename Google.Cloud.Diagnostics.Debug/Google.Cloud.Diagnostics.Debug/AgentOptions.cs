@@ -14,6 +14,7 @@
 
 using CommandLine;
 using Google.Api.Gax;
+using System;
 using System.IO;
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -23,6 +24,21 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class AgentOptions
     {
+        /// <summary>The prefix for environment variables.</summary>
+        public static readonly string EnvironmentVariablePrefix = "STACKDRIVER_DEBUGGER";
+
+        /// <summary>An environment variable that can set the module.</summary>
+        public static readonly string ModuleEnvironmentVariable = $"{EnvironmentVariablePrefix}_MODULE";
+
+        /// <summary>An environment variable that can set the version.</summary>
+        public static readonly string VersionEnvironmentVariable = $"{EnvironmentVariablePrefix}_VERSION";
+
+        /// <summary>An environment variable that can set the project ID.</summary>
+        public static readonly string ProjectEnvironmentVariable = $"{EnvironmentVariablePrefix}_PROJECT";
+
+        /// <summary>An environment variable that can set the debugger path.</summary>
+        public static readonly string DebuggerEnvironmentVariable = $"{EnvironmentVariablePrefix}_DEBUGGER";
+
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
@@ -94,10 +110,10 @@ namespace Google.Cloud.Diagnostics.Debug
             var options = new AgentOptions();
             result.WithParsed((o) => 
             {
-                GaxPreconditions.CheckNotNullOrEmpty(o.Module, nameof(o.Module));
-                GaxPreconditions.CheckNotNullOrEmpty(o.Version, nameof(o.Version));
-                GaxPreconditions.CheckNotNullOrEmpty(o.Debugger, nameof(o.Debugger));
-                GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? Common.Platform.ProjectId, nameof(o.ProjectId));
+                o.Module = GaxPreconditions.CheckNotNullOrEmpty(o.Module ?? GetModule(), nameof(o.Module));
+                o.Version = GaxPreconditions.CheckNotNullOrEmpty(o.Version ?? GetVersion(), nameof(o.Version));
+                o.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? GetProject(), nameof(o.ProjectId));
+                o.Debugger = GaxPreconditions.CheckNotNullOrEmpty(o.Debugger ?? GetDebugger(), nameof(o.Debugger));
                 GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
 
                 if (!File.Exists(o.Debugger))
@@ -108,7 +124,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 if ((string.IsNullOrWhiteSpace(o.ApplicationPath) && !o.ApplicationId.HasValue)
                     || (!string.IsNullOrWhiteSpace(o.ApplicationPath) && o.ApplicationId.HasValue))
                 {
-                    throw new System.ArgumentException("Please supply either the path to the .NET CORE application dll"
+                    throw new ArgumentException("Please supply either the path to the .NET CORE application dll"
                         + " or the process ID of a running application, NOT both.");
                 }
 
@@ -125,5 +141,64 @@ namespace Google.Cloud.Diagnostics.Debug
             });
             return options;
         }
+
+        /// <summary>
+        /// Attempts to get the module from the environment. 
+        /// Will first try to get the module from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the module from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The module or null if none could be found.</returns>
+        internal static string GetModule(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            var module = Environment.GetEnvironmentVariable(ModuleEnvironmentVariable);
+            if (module == null && platform.Type == PlatformType.Gae)
+            {
+                return platform.GaeDetails.ServiceId;
+            }
+            return module;
+        }
+
+        /// <summary>
+        /// Attempts to get the version from the environment. 
+        /// Will first try to get the version from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the version from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The version or null if none could be found.</returns>
+        internal static string GetVersion(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            var module = Environment.GetEnvironmentVariable(VersionEnvironmentVariable);
+            if (module == null && platform.Type == PlatformType.Gae)
+            {
+                return platform.GaeDetails.VersionId;
+            }
+            return module;
+        }
+
+        /// <summary>
+        /// Attempts to get the project ID from the environment. 
+        /// Will first try to get the project ID from an environment variable, if the
+        /// environment variable does not exist it will attempt to get the project ID from
+        /// the platform.
+        /// </summary>
+        /// <param name="platform">The platform to use, if not set a default will be used.</param>
+        /// <returns>The project ID or null if none could be found.</returns>
+        internal static string GetProject(Platform platform = null)
+        {
+            platform = platform ?? Common.Platform;
+            return Environment.GetEnvironmentVariable(ProjectEnvironmentVariable) ?? platform.ProjectId;
+        }
+
+        /// <summary>
+        /// Attempts to get the debugger from an environment variable. 
+        /// </summary>
+        /// <returns>The debugger or null if none could be found.</returns>
+        internal static string GetDebugger() =>
+            Environment.GetEnvironmentVariable(DebuggerEnvironmentVariable);
     }
 }
