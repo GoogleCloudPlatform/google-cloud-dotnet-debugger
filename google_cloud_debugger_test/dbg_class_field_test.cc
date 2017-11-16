@@ -19,6 +19,7 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "constants.h"
 #include "dbg_class_field.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
@@ -151,14 +152,14 @@ class DbgClassFieldTest : public ::testing::Test {
 // Tests the Initialize function of DbgClassField for non-static field.
 TEST_F(DbgClassFieldTest, TestInitializeNonStatic) {
   SetUpField(TRUE, 20);
-  EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+  EXPECT_EQ(class_field_.GetMemberName(), class_field_name_);
   EXPECT_FALSE(class_field_.IsBackingField());
 }
 
 // Tests the Initialize function of DbgClassField for static field.
 TEST_F(DbgClassFieldTest, TestInitializeStatic) {
   SetUpField(FALSE, 20);
-  EXPECT_EQ(class_field_.GetFieldName(), class_field_name_);
+  EXPECT_EQ(class_field_.GetMemberName(), class_field_name_);
   EXPECT_FALSE(class_field_.IsBackingField());
 }
 
@@ -168,7 +169,7 @@ TEST_F(DbgClassFieldTest, TestInitializeBackingField) {
   string real_field_name = "BackingField";
   class_field_name_ = "<" + real_field_name + ">k__BackingField";
   SetUpField(FALSE, 20);
-  EXPECT_EQ(class_field_.GetFieldName(), real_field_name);
+  EXPECT_EQ(class_field_.GetMemberName(), real_field_name);
   EXPECT_TRUE(class_field_.IsBackingField());
 }
 
@@ -230,7 +231,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStatic) {
   SetUpField(TRUE, 20);
 
   Variable variable;
-  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+      google_cloud_debugger::kDefaultObjectEvalDepth),
             S_OK);
 
   EXPECT_EQ(variable.value(), std::to_string(field_value));
@@ -244,7 +246,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueStatic) {
 
   Variable variable;
 
-  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+      google_cloud_debugger::kDefaultObjectEvalDepth),
             S_OK);
 
   EXPECT_EQ(variable.value(), std::to_string(static_value));
@@ -272,7 +275,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
                             &debug_class_, nullptr, 1);
     EXPECT_EQ(class_field_.GetInitializeHr(), META_E_BADMETADATA);
 
-    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+        google_cloud_debugger::kDefaultObjectEvalDepth),
               META_E_BADMETADATA);
   }
 
@@ -282,9 +286,11 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
   SetUpField(TRUE, field_value);
 
   Variable variable;
-  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, nullptr),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, nullptr,
+      google_cloud_debugger::kDefaultObjectEvalDepth),
             E_INVALIDARG);
-  EXPECT_EQ(class_field_.PopulateVariableValue(nullptr, &eval_coordinator_),
+  EXPECT_EQ(class_field_.PopulateVariableValue(nullptr, &eval_coordinator_,
+      google_cloud_debugger::kDefaultObjectEvalDepth),
             E_INVALIDARG);
 }
 
@@ -306,7 +312,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
     EXPECT_CALL(eval_coordinator_, GetActiveDebugThread(_))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
-    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+        google_cloud_debugger::kDefaultObjectEvalDepth),
               E_ABORT);
   }
 
@@ -318,7 +325,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
     EXPECT_CALL(debug_thread_, GetActiveFrame(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_NON_NATIVE_FRAME));
-    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+    EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+        google_cloud_debugger::kDefaultObjectEvalDepth),
               CORDBG_E_NON_NATIVE_FRAME);
   }
 
@@ -330,7 +338,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueStaticError) {
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_AVAILABLE));
 
-  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_),
+  EXPECT_EQ(class_field_.PopulateVariableValue(&variable, &eval_coordinator_,
+      google_cloud_debugger::kDefaultObjectEvalDepth),
             CORDBG_E_FIELD_NOT_AVAILABLE);
 }
 

@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <string>
 
+#include "constants.h"
 #include "ccomptr.h"
 #include "common_action_mocks.h"
 #include "dbg_class_property.h"
@@ -68,7 +69,8 @@ class DbgClassPropertyTest : public ::testing::Test {
         .Times(2)
         .WillRepeatedly(DoAll(SetArgPointee<7>(1), Return(S_OK)));
 
-    class_property_.Initialize(property_def_, &metadataimport_mock_);
+    class_property_.Initialize(property_def_, &metadataimport_mock_,
+        google_cloud_debugger::kDefaultObjectEvalDepth);
 
     HRESULT hr = class_property_.GetInitializeHr();
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -175,12 +177,13 @@ class DbgClassPropertyTest : public ::testing::Test {
 // Tests the Initialize function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestInitialize) {
   SetUpProperty();
-  EXPECT_EQ(class_property_.GetPropertyName(), class_property_name_);
+  EXPECT_EQ(class_property_.GetMemberName(), class_property_name_);
 }
 
 // Tests error cases for the Initialize function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestInitializeError) {
-  class_property_.Initialize(property_def_, nullptr);
+  class_property_.Initialize(property_def_, nullptr,
+      google_cloud_debugger::kDefaultObjectEvalDepth);
   EXPECT_EQ(class_property_.GetInitializeHr(), E_INVALIDARG);
 
   EXPECT_CALL(metadataimport_mock_,
@@ -192,7 +195,8 @@ TEST_F(DbgClassPropertyTest, TestInitializeError) {
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
-  class_property_.Initialize(property_def_, &metadataimport_mock_);
+  class_property_.Initialize(property_def_, &metadataimport_mock_,
+      google_cloud_debugger::kDefaultObjectEvalDepth);
   EXPECT_EQ(class_property_.GetInitializeHr(), E_ACCESSDENIED);
 }
 
