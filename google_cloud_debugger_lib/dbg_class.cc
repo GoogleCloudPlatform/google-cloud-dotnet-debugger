@@ -350,7 +350,6 @@ HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
                                 ICorDebugClass *debug_class) {
   CComPtr<ICorDebugType> debug_type;
   HCORENUM cor_enum = nullptr;
-  int evaluation_depth = GetEvaluationDepth();
 
   debug_type = GetDebugType();
   while (true) {
@@ -377,7 +376,8 @@ HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
           return E_OUTOFMEMORY;
         }
 
-        class_field->Initialize(field_defs[i], metadata_import);
+        class_field->Initialize(field_defs[i], metadata_import, debug_obj_value,
+                                debug_class, debug_type, GetEvaluationDepth() - 1);
         if (class_field->IsBackingField()) {
           // Insert class names into set so we can use it to check later
           // for backing fields.
@@ -446,7 +446,8 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
           return E_OUTOFMEMORY;
         }
 
-        class_property->Initialize(property_defs[i], metadata_import);
+        class_property->Initialize(property_defs[i], metadata_import,
+            GetEvaluationDepth() - 1);
         // If property name is MyProperty, checks whether there is a backing
         // field with the name <MyProperty>k__BackingField. Note that we have
         // logic to process backing fields' names to strip out the "<" and
@@ -740,9 +741,9 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       Variable *class_field_var = variable->add_members();
 
       class_field_var->set_name((*it)->GetMemberName());
-      hr = (*it)->PopulateVariableValue(class_field_var, class_handle_,
-                                        eval_coordinator, &generic_types_,
-                                        new_depth);
+      DbgClassField *class_field = reinterpret_cast<DbgClassField *>((*it).get());
+      hr = class_field->PopulateVariableValue(class_field_var, eval_coordinator,
+        new_depth);
       if (FAILED(hr)) {
         SetErrorStatusMessage(class_field_var, (*it).get());
       }
@@ -759,7 +760,8 @@ HRESULT DbgClass::PopulateMembers(Variable *variable,
       Variable *property_field_var = variable->add_members();
 
       property_field_var->set_name((*it)->GetMemberName());
-      hr = (*it)->PopulateVariableValue(property_field_var, class_handle_,
+      DbgClassProperty *class_property = reinterpret_cast<DbgClassProperty *>((*it).get());
+      hr = class_property->PopulateVariableValue(property_field_var, class_handle_,
                                         eval_coordinator, &generic_types_,
                                         new_depth);
       if (FAILED(hr)) {

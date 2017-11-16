@@ -19,6 +19,7 @@
 #include <sstream>
 #include <vector>
 
+#include "constants.h"
 #include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
@@ -31,42 +32,59 @@ class IDbgClassMember : public StringStreamWrapper {
  public:
   virtual ~IDbgClassMember() = default;
 
-  // Initialize the member names, metadata signature, flags and values.
-  // HRESULT will be stored and returned through GetInitializedHr.
-  virtual void Initialize(mdToken fieldDef,
-                          IMetaDataImport *metadata_import) = 0;
-
-  // Evaluates the member and populates proto variable's fields.
-  // reference_value is a reference to the class object that this member
-  // belongs to.
-  // eval_coordinator is needed to perform the function evaluation if needed.
-  // generic_types is an array of the generic types that the class has.
-  // An example is if the class is Dictionary<string, int> then the generic
-  // type array is (string, int).
-  // Depth represents the level of inspection that we should perform on the
-  // member's object.
-  virtual HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types, int depth) = 0;
-
-  virtual HRESULT GetInitializeHr() const = 0;
-
-  // Gets the member name.
-  virtual const std::string &GetMemberName() const = 0;
-
-  // Gets the underlying value of the member.
-  virtual DbgObject *GetMemberValue() = 0;
-
   // Returns true if the member is static.
   virtual bool IsStatic() const = 0;
 
+  // Gets the member name.
+  const std::string &GetMemberName() const { return member_name_; }
+
   // Returns the signature of the member.
-  virtual PCCOR_SIGNATURE GetSignature() const = 0;
+  PCCOR_SIGNATURE GetSignature() const { return signature_metadata_; }
 
   // Returns the default value of the member.
-  virtual UVCP_CONSTANT GetDefaultValue() const = 0;
+  UVCP_CONSTANT GetDefaultValue() const { return default_value_; }
+
+  // Returns the HRESULT when Initialize function is called.
+  HRESULT GetInitializeHr() const { return initialized_hr_; }
+
+  // Gets the underlying DbgObject of this field's value.
+  DbgObject *GetMemberValue() { return member_value_.get(); }
+
+ protected:
+  // Token to the type that implements the member.
+  mdTypeDef parent_token_ = 0;
+  
+  // Attribute flags applied to the member.
+  DWORD member_attributes_ = 0;
+
+  // Pointer to metadata signature of the member.
+  PCCOR_SIGNATURE signature_metadata_ = 0;
+
+  // The number of bytes returned in signature_metadata_.
+  ULONG sig_metadata_length_ = 0;
+
+  // A flag specifying the type of the constant that is the default value of the
+  // member. This value is from the CorElementType enumeration.
+  DWORD default_value_type_flags_ = 0;
+
+  // A pointer to the bytes that store the default value of the member.
+  UVCP_CONSTANT default_value_ = 0;
+
+  // The size in wide characters of default_value_ if default_value_type_flags
+  // is ELEMENT_TYPE_STRING. Otherwise, it is not relevant.
+  ULONG default_value_len_ = 0;
+
+  // Name of the member.
+  std::string member_name_;
+
+  // Value of the member.
+  std::unique_ptr<DbgObject> member_value_;
+
+  // HRESULT when the Initialize function is called.
+  HRESULT initialized_hr_ = S_OK;
+
+  // Depth used when creating a DbgObject representing this member.
+  int creation_depth_ = kDefaultObjectEvalDepth;
 };
 
 }  //  namespace google_cloud_debugger

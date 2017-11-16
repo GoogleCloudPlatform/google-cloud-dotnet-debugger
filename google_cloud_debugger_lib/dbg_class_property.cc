@@ -27,8 +27,9 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-void DbgClassProperty::Initialize(mdToken property_def,
-                                  IMetaDataImport *metadata_import) {
+void DbgClassProperty::Initialize(mdProperty property_def,
+                                  IMetaDataImport *metadata_import,
+                                  int creation_depth) {
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
@@ -42,8 +43,8 @@ void DbgClassProperty::Initialize(mdToken property_def,
   // First call to get length of array and length of other methods.
   initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, nullptr, 0, &property_name_length,
-      &property_attributes_, &signature_metadata_, &sig_metadata_length_,
-      &default_value_type_flags, &default_value_, &default_value_len_,
+      &member_attributes_, &signature_metadata_, &sig_metadata_length_,
+      &default_value_type_flags_, &default_value_, &default_value_len_,
       &property_setter_function, &property_getter_function, nullptr, 0,
       &other_methods_length);
 
@@ -57,8 +58,8 @@ void DbgClassProperty::Initialize(mdToken property_def,
 
   initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, wchar_property_name.data(),
-      wchar_property_name.size(), &property_name_length, &property_attributes_,
-      &signature_metadata_, &sig_metadata_length_, &default_value_type_flags,
+      wchar_property_name.size(), &property_name_length, &member_attributes_,
+      &signature_metadata_, &sig_metadata_length_, &default_value_type_flags_,
       &default_value_, &default_value_len_, &property_setter_function,
       &property_getter_function, other_methods_.data(), other_methods_.size(),
       &other_methods_length);
@@ -67,7 +68,8 @@ void DbgClassProperty::Initialize(mdToken property_def,
     WriteError("Failed to get property metadata.");
   }
 
-  property_name_ = ConvertWCharPtrToString(wchar_property_name);
+  member_name_ = ConvertWCharPtrToString(wchar_property_name);
+  creation_depth_ = creation_depth;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValue(
@@ -99,8 +101,8 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   // If this property is already evaluated, don't do it again.
-  if (property_value_) {
-    property_value_->SetEvaluationDepth(depth);
+  if (member_value_) {
+    member_value_->SetEvaluationDepth(depth);
     return PopulateVariableValueHelper(variable, eval_coordinator);
   }
 
@@ -193,20 +195,17 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  if (IsStatic()) {
-    depth = kDefaultObjectEvalDepth;
-  }
-
-  hr = DbgObject::CreateDbgObject(eval_result, depth, &property_value_,
+  hr = DbgObject::CreateDbgObject(eval_result, creation_depth_, &member_value_,
                                   GetErrorStream());
   if (FAILED(hr)) {
-    if (property_value_) {
-      WriteError(property_value_->GetErrorString());
+    if (member_value_) {
+      WriteError(member_value_->GetErrorString());
     }
     WriteError("Failed to create class property object.");
     return hr;
   }
 
+  member_value_->SetEvaluationDepth(depth);
   return PopulateVariableValueHelper(variable, eval_coordinator);
 }
 
@@ -216,24 +215,19 @@ HRESULT DbgClassProperty::PopulateVariableValueHelper(
     return E_INVALIDARG;
   }
 
-  if (!property_value_) {
-    WriteError("Property value not initialized.");
-    return E_FAIL;
-  }
-
   if (exception_occurred_) {
     // If there is an exception, the property_value_ will be the exception.
     std::ostringstream stream_type;
-    property_value_->PopulateType(variable);
+    member_value_->PopulateType(variable);
     WriteError("throws exception " + variable->type());
     return E_FAIL;
   }
 
   HRESULT hr =
-      property_value_->PopulateVariableValue(variable, eval_coordinator);
+      member_value_->PopulateVariableValue(variable, eval_coordinator);
 
   if (FAILED(hr)) {
-    WriteError(property_value_->GetErrorString());
+    WriteError(member_value_->GetErrorString());
     return hr;
   }
 

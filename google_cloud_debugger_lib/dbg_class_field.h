@@ -20,7 +20,6 @@
 
 #include "dbg_object.h"
 #include "i_dbg_class_member.h"
-#include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
 
@@ -29,90 +28,39 @@ class DbgClassField : public IDbgClassMember {
  public:
   // Initialize the field names, metadata signature, flags and values.
   // HRESULT will be stored in initialized_hr_.
-  void Initialize(mdToken fieldDef, IMetaDataImport *metadata_import) override;
+  void Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
+                  ICorDebugObjectValue *debug_obj_value,
+                  ICorDebugClass *debug_class, ICorDebugType *class_type,
+                  int creation_depth);
 
-  // Sets the value of variable to the value of this field to an
-  // evaluation depth of depth. reference_value is a reference to
-  // the class that contains this field.
+  // Sets the value of variable to the value of this field.
+  // Evaluation_depth determines how many levels of the object
+  // will be written into variable proto.
   HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types, int depth) override;
-
-  // Returns the field name.
-  const std::string &GetMemberName() const override { return field_name_; }
+      IEvalCoordinator *eval_coordinator, int evaluation_depth);
 
   // Returns true if this is a backing field for a property.
   const bool IsBackingField() const { return is_backing_field_; }
 
-  // Returns the HRESULT when Initialize function is called.
-  HRESULT GetInitializeHr() const override { return initialized_hr_; }
-
   // Returns true if this is a static field.
-  bool IsStatic() const override { return IsFdStatic(field_attributes_); }
-
-  // Returns the signature of the field.
-  PCCOR_SIGNATURE GetSignature() const override { return signature_metadata_; }
-
-  // Returns the default value of the field (useful if the field is an enum).
-  UVCP_CONSTANT GetDefaultValue() const override { return default_value_; }
-
-  // Gets the underlying DbgObject of this field's value.
-  DbgObject *GetMemberValue() override { return field_value_.get(); }
+  bool IsStatic() const override { return IsFdStatic(member_attributes_); }
 
  private:
   // Extracts out static field value (with name field_name_) using the
   // ICorDebugValue class_value that represents the class object (may be null
   // since this is a static field). Depth of the static field object will
-  // be kDefaultObjectEvalDepth.
-  HRESULT ExtractStaticFieldValue(ICorDebugValue *class_value,
-                                  IEvalCoordinator *eval_coordinator);
-
-  // Extracts out non-static field value (with name field_name_) using
-  // ICorDebugValue class_value that represents the class object (must not be
-  // null since this is a non-static field). Depth of the non-static field
-  // object will be depth.
-  HRESULT ExtractNonStaticFieldValue(ICorDebugValue *class_value, int depth);
-
-  // Token for the class that the field belongs to.
-  mdTypeDef class_token_ = 0;
+  // be creation_depth_.
+  HRESULT ExtractStaticFieldValue(IEvalCoordinator *eval_coordinator);
 
   // Token that represents this field.
   mdFieldDef field_def_ = 0;
 
-  // Flags associated with the field's metadata.
-  DWORD field_attributes_ = 0;
-
-  // Pointer to signature meatdata value of the field.
-  PCCOR_SIGNATURE signature_metadata_ = 0;
-
-  // Size of signature_metadata_
-  ULONG signature_metadata_len_ = 0;
-
-  // A flag specifying the type of the constant that is the default value of the
-  // property. This value is from the CorElementType enumeration.
-  DWORD default_value_type_flags_ = 0;
-
-  // The size in wide characters of default_value_ if default_value_type_flags
-  // is ELEMENT_TYPE_STRING. Otherwise, it is not relevant.
-  UVCP_CONSTANT default_value_ = 0;
-
-  // The size in wide characters of default_value_ if default_value_type_flags
-  // is ELEMENT_TYPE_STRING. Otherwise, it is not relevant.
-  ULONG default_value_len_ = 0;
-
-  // Name of the field.
-  std::string field_name_;
-
   // True if this is a backing field for a property.
   bool is_backing_field_ = false;
 
-  // Value of the field.
-  std::unique_ptr<DbgObject> field_value_;
-
-  // The HRESULT of initialization.
-  HRESULT initialized_hr_ = S_OK;
+  // Debug type of the class that this field belongs to.
+  CComPtr<ICorDebugType> class_type_;
 };
 
 }  //  namespace google_cloud_debugger

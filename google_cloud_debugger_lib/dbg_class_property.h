@@ -20,7 +20,6 @@
 
 #include "dbg_object.h"
 #include "i_dbg_class_member.h"
-#include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
 
@@ -31,8 +30,8 @@ class DbgClassProperty : public IDbgClassMember {
  public:
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
-  void Initialize(mdToken property_def,
-                  IMetaDataImport *metadata_import) override;
+  void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
+      int creation_depth);
 
   // Evaluate the property and stores the value in property_value_
   // and also populate proto variable's fields.
@@ -48,21 +47,7 @@ class DbgClassProperty : public IDbgClassMember {
       google::cloud::diagnostics::debug::Variable *variable,
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types, int depth);
-
-  const std::string &GetMemberName() const override { return property_name_; }
-
-  // Gets the underlying DbgObject of this field's value.
-  DbgObject *GetMemberValue() override { return property_value_.get(); }
-
-  // Returns the HRESULT when Initialize function is called.
-  HRESULT GetInitializeHr() const override { return initialized_hr_; }
-
-  // Returns the signature of the field.
-  PCCOR_SIGNATURE GetSignature() const override { return signature_metadata_; }
-
-  // Returns the default value of the field (useful if the field is an enum).
-  UVCP_CONSTANT GetDefaultValue() const override { return default_value_; }
+      std::vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth);
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
@@ -75,29 +60,10 @@ class DbgClassProperty : public IDbgClassMember {
 
  private:
   // Helper function to set the value of variable to this property's value.
+  // This function assumes that member_value_ is not null.
   HRESULT PopulateVariableValueHelper(
       google::cloud::diagnostics::debug::Variable *variable,
       IEvalCoordinator *eval_coordinator);
-
-  // Attribute flags applied to the property.
-  DWORD property_attributes_ = 0;
-
-  // Pointer to metadata signature of the property.
-  PCCOR_SIGNATURE signature_metadata_ = 0;
-
-  // The number of bytes returned in signature_metadata_
-  ULONG sig_metadata_length_ = 0;
-
-  // A flag specifying the type of the constant that is the default value of the
-  // property. This value is from the CorElementType enumeration.
-  DWORD default_value_type_flags = 0;
-
-  // A pointer to the bytes that store the default value of the property.
-  UVCP_CONSTANT default_value_ = 0;
-
-  // The size in wide characters of default_value_ if default_value_type_flags
-  // is ELEMENT_TYPE_STRING. Otherwise, it is not relevant.
-  ULONG default_value_len_ = 0;
 
   // The token that represents the property getter.
   mdMethodDef property_getter_function = 0;
@@ -105,25 +71,14 @@ class DbgClassProperty : public IDbgClassMember {
   // The token that represents the property setter.
   mdMethodDef property_setter_function = 0;
 
-  // Token to the type that implements the property.
-  mdTypeDef parent_token_ = 0;
-
   // Token that represents the property.
   mdProperty property_def_ = 0;
 
   // True if an exception is thrown when trying to evaluate the property.
   BOOL exception_occurred_ = FALSE;
 
-  // Name of the property.
-  std::string property_name_;
-
   // Vector of tokens that represent other methods associated with the property.
   std::vector<mdMethodDef> other_methods_;
-
-  // Value of the property.
-  std::unique_ptr<DbgObject> property_value_;
-
-  HRESULT initialized_hr_ = S_OK;
 };
 
 }  //  namespace google_cloud_debugger
