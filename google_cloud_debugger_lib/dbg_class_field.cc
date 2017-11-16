@@ -155,6 +155,10 @@ HRESULT DbgClassField::PopulateVariableValue(
   // In case field_value_ is cached, sets the evaluation depth again.
   if (IsStatic() && !member_value_) {
     hr = ExtractStaticFieldValue(eval_coordinator);
+    if (FAILED(hr)) {
+      WriteError("Failed to extract static field.");
+      return hr;
+    }
   }
 
   if (!member_value_) {

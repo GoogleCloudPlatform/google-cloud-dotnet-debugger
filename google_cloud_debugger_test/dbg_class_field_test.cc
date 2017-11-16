@@ -49,15 +49,19 @@ class DbgClassFieldTest : public ::testing::Test {
     wchar_string_ = ConvertStringToWCharPtr(class_field_name_);
     uint32_t class_field_name_len = wchar_string_.size();
 
+    DWORD attribute = non_static_field ? 0 : CorFieldAttr::fdStatic;
+
     EXPECT_CALL(metadataimport_mock_,
                 GetFieldPropsFirst(field_def_, _, _, _, _, _))
         .Times(2)
         .WillOnce(DoAll(
             SetArgPointee<4>(class_field_name_len),
+            SetArgPointee<5>(attribute),
             Return(S_OK)))  // Sets the length of the class the first time.
         .WillOnce(DoAll(
             SetArg2ToWcharArray(wchar_string_.data(), class_field_name_len),
             SetArgPointee<4>(class_field_name_len),
+            SetArgPointee<5>(attribute),
             Return(S_OK)));  // Sets the class' name the second time.
 
     EXPECT_CALL(metadataimport_mock_,
@@ -67,11 +71,6 @@ class DbgClassFieldTest : public ::testing::Test {
 
     if (initialize_field_value) {
       InitializeFieldValue(non_static_field, field_value);
-    }
-
-    if (!non_static_field) {
-      ON_CALL(object_value_, GetFieldValue(&debug_class_, field_def_, _))
-          .WillByDefault(Return(CORDBG_E_FIELD_NOT_INSTANCE));
     }
 
     class_field_.Initialize(field_def_, &metadataimport_mock_, &object_value_,
@@ -161,6 +160,7 @@ TEST_F(DbgClassFieldTest, TestInitializeStatic) {
   SetUpField(FALSE, 20);
   EXPECT_EQ(class_field_.GetMemberName(), class_field_name_);
   EXPECT_FALSE(class_field_.IsBackingField());
+  EXPECT_TRUE(class_field_.IsStatic());
 }
 
 // Tests the Initialize function of DbgClassField for field that is
