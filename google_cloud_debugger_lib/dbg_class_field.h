@@ -28,6 +28,8 @@ class DbgClassField : public IDbgClassMember {
  public:
   // Initialize the field names, metadata signature, flags and values.
   // HRESULT will be stored in initialized_hr_.
+  // Creation_depth setes the depth used when creating a DbgObject
+  // representing this field.
   void Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
                   ICorDebugObjectValue *debug_obj_value,
                   ICorDebugClass *debug_class, ICorDebugType *class_type,
@@ -36,9 +38,13 @@ class DbgClassField : public IDbgClassMember {
   // Sets the value of variable to the value of this field.
   // Evaluation_depth determines how many levels of the object
   // will be written into variable proto.
+  // Reference_value and generic_types are ignored.
   HRESULT PopulateVariableValue(
       google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator, int evaluation_depth);
+      ICorDebugReferenceValue *reference_value,
+      IEvalCoordinator *eval_coordinator,
+      std::vector<CComPtr<ICorDebugType>> *generic_types,
+      int evaluation_depth) override;
 
   // Returns true if this is a backing field for a property.
   const bool IsBackingField() const { return is_backing_field_; }

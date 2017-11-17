@@ -141,7 +141,11 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::PopulateVariableValue(
-    Variable *variable, IEvalCoordinator *eval_coordinator, int evaluation_depth) {
+    Variable *variable,
+    ICorDebugReferenceValue *reference_value,
+    IEvalCoordinator *eval_coordinator,
+    std::vector<CComPtr<ICorDebugType>> *generic_types,
+    int evaluation_depth) {
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }
@@ -152,7 +156,7 @@ HRESULT DbgClassField::PopulateVariableValue(
 
   HRESULT hr;
 
-  // In case field_value_ is cached, sets the evaluation depth again.
+  // In case member_value_ is cached, sets the evaluation depth again.
   if (IsStatic() && !member_value_) {
     hr = ExtractStaticFieldValue(eval_coordinator);
     if (FAILED(hr)) {
@@ -166,7 +170,7 @@ HRESULT DbgClassField::PopulateVariableValue(
     return E_FAIL;
   }
 
-  // In case field_value_ is cached, sets the evaluation depth again.
+  // In case member_value_ is cached, sets the evaluation depth again.
   member_value_->SetEvaluationDepth(evaluation_depth);
   hr = member_value_->PopulateVariableValue(variable, eval_coordinator);
   if (FAILED(hr)) {
@@ -198,9 +202,8 @@ HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinato
     return hr;
   }
 
-  // This error should only be applicable to C++?
   if (hr == CORDBG_E_VARIABLE_IS_ACTUALLY_LITERAL) {
-    WriteError("Static variable is literal.");
+    WriteError("Static variable is literal optimized away.");
     return hr;
   }
 
@@ -209,7 +212,7 @@ HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinato
     return hr;
   }
 
-  // BUG: String that starts with @ cannot be retrieved.
+  // TODO(quoct): String that starts with @ cannot be retrieved.
   // For static field, use default evaluation depth.
   hr = DbgObject::CreateDbgObject(debug_value, kDefaultObjectEvalDepth,
                                   &member_value_, GetErrorStream());

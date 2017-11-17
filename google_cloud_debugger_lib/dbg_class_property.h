@@ -30,10 +30,12 @@ class DbgClassProperty : public IDbgClassMember {
  public:
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
+  // Creation_depth setes the depth used when creating a DbgObject
+  // representing this property.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
       int creation_depth);
 
-  // Evaluate the property and stores the value in property_value_
+  // Evaluate the property and stores the value in member_value_
   // and also populate proto variable's fields.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function

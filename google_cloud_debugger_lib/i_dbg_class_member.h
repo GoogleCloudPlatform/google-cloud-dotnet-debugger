@@ -32,6 +32,23 @@ class IDbgClassMember : public StringStreamWrapper {
  public:
   virtual ~IDbgClassMember() = default;
 
+  // Evaluates the member and stores the value in member_value_
+  // and also populate proto variable's fields.
+  // reference_value is a reference to the class object that this property
+  // belongs to. eval_coordinator is needed to perform the function
+  // evaluation (the getter property function).
+  // generic_types is an array of the generic types that the class has.
+  // An example is if the class is Dictionary<string, int> then the generic
+  // type array is (string, int).
+  // Depth represents the level of inspection that we should perform on the
+  // object we get back from the getter function.
+  virtual HRESULT PopulateVariableValue(
+      google::cloud::diagnostics::debug::Variable *variable,
+      ICorDebugReferenceValue *reference_value,
+      IEvalCoordinator *eval_coordinator,
+      std::vector<CComPtr<ICorDebugType>> *generic_types,
+      int evaluation_depth) = 0;
+
   // Returns true if the member is static.
   virtual bool IsStatic() const = 0;
 

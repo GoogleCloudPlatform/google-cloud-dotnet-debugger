@@ -141,14 +141,31 @@ class DbgClass : public DbgObject {
     return module_name + "!" + class_name;
   }
 
-  // Stores the static member field_name of class class_name in module
+  // Stores the static member member_name of class class_name in module
   // module_name with value object in the static cache.
   static void StoreStaticClassMember(const std::string &module_name,
                                      const std::string &class_name,
                                      const std::string &member_name,
                                      std::shared_ptr<IDbgClassMember> object);
 
-  // Extracts the static field field_name of class class_name in module
+  // Given a class_member with name member_name in this class,
+  // we check whether this class_member is in the cache.
+  // If it is in the cache, then we place a copy of the shared pointer
+  // in the cache in the member_vector.
+  // If not, we just place class_member into member_vector.
+  void AddStaticClassMemberToVector(
+    std::unique_ptr<IDbgClassMember> class_member,
+    std::vector<std::shared_ptr<IDbgClassMember>> *member_vector);
+
+  // Add class members to proto variable using vectors
+  // class_members. Eval_coordinator is used to evaluate
+  // the members if applicable.
+  void PopulateClassMembers(
+    google::cloud::diagnostics::debug::Variable *variable,
+    IEvalCoordinator *eval_coordinator,
+    std::vector<std::shared_ptr<IDbgClassMember>> *class_members);
+
+  // Extracts the static field member_name of class class_name in module
   // module_name in the static cache.
   std::shared_ptr<IDbgClassMember> GetStaticClassMember(
       const std::string &module_name, const std::string &class_name,

@@ -211,12 +211,12 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(
     Variable *variable, IEvalCoordinator *eval_coordinator) {
-  if (!variable) {
+  if (!variable || !member_value_) {
     return E_INVALIDARG;
   }
 
   if (exception_occurred_) {
-    // If there is an exception, the property_value_ will be the exception.
+    // If there is an exception, the member_value_ will be the exception.
     std::ostringstream stream_type;
     member_value_->PopulateType(variable);
     WriteError("throws exception " + variable->type());
