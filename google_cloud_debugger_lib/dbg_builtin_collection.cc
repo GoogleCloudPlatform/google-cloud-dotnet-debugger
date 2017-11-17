@@ -159,7 +159,7 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
     return S_OK;
   }
 
-  if (GetEvaluationDepth() == 0) {
+  if (GetEvaluationDepth() <= 0) {
     WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
   }

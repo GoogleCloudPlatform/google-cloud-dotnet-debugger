@@ -154,6 +154,11 @@ HRESULT DbgClassField::PopulateVariableValue(
     return E_INVALIDARG;
   }
 
+  if (evaluation_depth == 0) {
+    WriteError("Object inspection limit reached.");
+    return E_FAIL;
+  }
+
   HRESULT hr;
 
   // In case member_value_ is cached, sets the evaluation depth again.
@@ -171,8 +176,10 @@ HRESULT DbgClassField::PopulateVariableValue(
   }
 
   // In case member_value_ is cached, sets the evaluation depth again.
+  int previous_eval_depth = member_value_->GetEvaluationDepth();
   member_value_->SetEvaluationDepth(evaluation_depth);
   hr = member_value_->PopulateVariableValue(variable, eval_coordinator);
+  member_value_->SetEvaluationDepth(previous_eval_depth);
   if (FAILED(hr)) {
     WriteError(member_value_->GetErrorString());
   }
@@ -214,7 +221,7 @@ HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinato
 
   // TODO(quoct): String that starts with @ cannot be retrieved.
   // For static field, use default evaluation depth.
-  hr = DbgObject::CreateDbgObject(debug_value, kDefaultObjectEvalDepth,
+  hr = DbgObject::CreateDbgObject(debug_value, creation_depth_,
                                   &member_value_, GetErrorStream());
   if (FAILED(hr)) {
     if (member_value_) {

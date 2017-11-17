@@ -75,7 +75,8 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 HRESULT DbgClassProperty::PopulateVariableValue(
     Variable *variable, ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    vector<CComPtr<ICorDebugType>> *generic_types, int depth) {
+    vector<CComPtr<ICorDebugType>> *generic_types,
+    int evaluation_depth) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
@@ -100,10 +101,18 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return initialized_hr_;
   }
 
+  if (evaluation_depth == 0) {
+    WriteError("Object inspection limit reached.");
+    return E_FAIL;
+  }
+
   // If this property is already evaluated, don't do it again.
   if (member_value_) {
-    member_value_->SetEvaluationDepth(depth);
-    return PopulateVariableValueHelper(variable, eval_coordinator);
+    int previous_eval_depth = member_value_->GetEvaluationDepth();
+    member_value_->SetEvaluationDepth(evaluation_depth);
+    HRESULT hr = PopulateVariableValueHelper(variable, eval_coordinator);
+    member_value_->SetEvaluationDepth(previous_eval_depth);
+    return hr;
   }
 
   CComPtr<ICorDebugValue> debug_value;
@@ -186,7 +195,6 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   CComPtr<ICorDebugValue> eval_result;
-
   hr = eval_coordinator->WaitForEval(&exception_occurred_, debug_eval,
                                      &eval_result);
 
@@ -205,8 +213,11 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  member_value_->SetEvaluationDepth(depth);
-  return PopulateVariableValueHelper(variable, eval_coordinator);
+  int previous_eval_depth = member_value_->GetEvaluationDepth();
+  member_value_->SetEvaluationDepth(evaluation_depth);
+  hr = PopulateVariableValueHelper(variable, eval_coordinator);
+  member_value_->SetEvaluationDepth(previous_eval_depth);
+  return hr;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(
