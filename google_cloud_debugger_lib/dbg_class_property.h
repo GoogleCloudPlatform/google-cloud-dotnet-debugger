@@ -30,7 +30,9 @@ class DbgClassProperty : public IDbgClassMember {
  public:
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
-  // Creation_depth setes the depth used when creating a DbgObject
+  // property_def is the metadata token for the property.
+  // metadata_import is used to extract metadata from the property.
+  // Creation_depth sets the depth used when creating a DbgObject
   // representing this property.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
       int creation_depth);

@@ -28,7 +28,12 @@ class DbgClassField : public IDbgClassMember {
  public:
   // Initialize the field names, metadata signature, flags and values.
   // HRESULT will be stored in initialized_hr_.
-  // Creation_depth setes the depth used when creating a DbgObject
+  // fieldDef is the metadata token for the field.
+  // metadata_import is used to extract metadata from the field.
+  // debug_obj_value represents the class object.
+  // debug_class represents the class itself.
+  // class_type represents the type of the class.
+  // Creation_depth sets the depth used when creating a DbgObject
   // representing this field.
   void Initialize(mdFieldDef fieldDef, IMetaDataImport *metadata_import,
                   ICorDebugObjectValue *debug_obj_value,

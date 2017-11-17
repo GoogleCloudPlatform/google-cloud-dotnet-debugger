@@ -101,11 +101,6 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return initialized_hr_;
   }
 
-  if (evaluation_depth == 0) {
-    WriteError("Object inspection limit reached.");
-    return E_FAIL;
-  }
-
   // If this property is already evaluated, don't do it again.
   if (member_value_) {
     int previous_eval_depth = member_value_->GetEvaluationDepth();

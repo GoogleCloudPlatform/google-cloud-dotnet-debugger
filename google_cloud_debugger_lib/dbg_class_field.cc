@@ -154,11 +154,6 @@ HRESULT DbgClassField::PopulateVariableValue(
     return E_INVALIDARG;
   }
 
-  if (evaluation_depth == 0) {
-    WriteError("Object inspection limit reached.");
-    return E_FAIL;
-  }
-
   HRESULT hr;
 
   // In case member_value_ is cached, sets the evaluation depth again.

@@ -160,6 +160,8 @@ class DbgClass : public DbgObject {
   // Add class members to proto variable using vectors
   // class_members. Eval_coordinator is used to evaluate
   // the members if applicable.
+  // If there are errors, this function will also set the error
+  // status in variable.
   void PopulateClassMembers(
     google::cloud::diagnostics::debug::Variable *variable,
     IEvalCoordinator *eval_coordinator,
