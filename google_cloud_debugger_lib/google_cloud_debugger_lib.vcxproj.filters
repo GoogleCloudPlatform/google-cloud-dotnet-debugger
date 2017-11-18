@@ -189,6 +189,9 @@
     <ClInclude Include="i_breakpoint_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="i_dbg_class_member.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

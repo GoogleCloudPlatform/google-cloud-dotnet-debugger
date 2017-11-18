@@ -24,8 +24,8 @@ using std::ostringstream;
 
 namespace google_cloud_debugger {
 
-HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
-                                    IMetaDataImport **metadata_import) {
+HRESULT GetMetadataImportFromICorDebugModule(
+    ICorDebugModule *debug_module, IMetaDataImport **metadata_import) {
   if (!debug_module) {
     cerr << "ICorDebugModule cannot be null.";
     return E_INVALIDARG;
@@ -74,13 +74,31 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
   return hr;
 }
 
+HRESULT GetICorDebugType(ICorDebugValue *debug_value,
+                         ICorDebugType **debug_type) {
+  if (!debug_value || !debug_type) {
+    return E_INVALIDARG;
+  }
+
+  CComPtr<ICorDebugValue2> debug_value_2;
+  HRESULT hr = debug_value->QueryInterface(
+      __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
+
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return debug_value_2->GetExactType(debug_type);
+}
+
 HRESULT Dereference(ICorDebugValue *debug_value,
                     ICorDebugValue **dereferenced_value, BOOL *is_null,
                     ostringstream *err_stream) {
   assert(err_stream != nullptr);
 
-  if (!dereferenced_value) {
-    *err_stream << "dereferenced_value cannot be a null pointer.";
+  if (!debug_value || !dereferenced_value) {
+    *err_stream
+        << "debug_value and dereferenced_value cannot be a null pointer.";
     return E_INVALIDARG;
   }
 

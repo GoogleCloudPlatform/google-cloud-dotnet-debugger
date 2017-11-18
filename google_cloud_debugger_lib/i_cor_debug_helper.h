@@ -15,8 +15,8 @@
 #ifndef I_CORDEBUG_HELPER_H_
 #define I_CORDEBUG_HELPER_H_
 
-#include <vector>
 #include <sstream>
+#include <vector>
 
 #include "cor.h"
 #include "cordebug.h"
@@ -33,6 +33,10 @@ HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
 // Extracts module name from ICorDebugModule.
 HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
                                          std::vector<WCHAR> *module_name);
+
+// Extracts ICorDebugType from ICorDebug.
+HRESULT GetICorDebugType(ICorDebugValue *debug_value,
+                         ICorDebugType **debug_type);
 
 // Given an ICorDebugValue, keep trying to dereference it until we cannot
 // anymore. This function will set is_null to true if this is a null

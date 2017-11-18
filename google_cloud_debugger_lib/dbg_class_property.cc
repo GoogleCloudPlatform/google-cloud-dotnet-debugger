@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include "breakpoint.pb.h"
+#include "constants.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -27,7 +28,8 @@ using std::vector;
 namespace google_cloud_debugger {
 
 void DbgClassProperty::Initialize(mdProperty property_def,
-                                  IMetaDataImport *metadata_import) {
+                                  IMetaDataImport *metadata_import,
+                                  int creation_depth) {
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
@@ -41,8 +43,8 @@ void DbgClassProperty::Initialize(mdProperty property_def,
   // First call to get length of array and length of other methods.
   initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, nullptr, 0, &property_name_length,
-      &property_attributes_, &signature_metadata_, &sig_metadata_length_,
-      &default_value_type_flags, &default_value_, &default_value_len_,
+      &member_attributes_, &signature_metadata_, &sig_metadata_length_,
+      &default_value_type_flags_, &default_value_, &default_value_len_,
       &property_setter_function, &property_getter_function, nullptr, 0,
       &other_methods_length);
 
@@ -56,8 +58,8 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 
   initialized_hr_ = metadata_import->GetPropertyProps(
       property_def_, &parent_token_, wchar_property_name.data(),
-      wchar_property_name.size(), &property_name_length, &property_attributes_,
-      &signature_metadata_, &sig_metadata_length_, &default_value_type_flags,
+      wchar_property_name.size(), &property_name_length, &member_attributes_,
+      &signature_metadata_, &sig_metadata_length_, &default_value_type_flags_,
       &default_value_, &default_value_len_, &property_setter_function,
       &property_getter_function, other_methods_.data(), other_methods_.size(),
       &other_methods_length);
@@ -66,13 +68,15 @@ void DbgClassProperty::Initialize(mdProperty property_def,
     WriteError("Failed to get property metadata.");
   }
 
-  property_name_ = ConvertWCharPtrToString(wchar_property_name);
+  member_name_ = ConvertWCharPtrToString(wchar_property_name);
+  creation_depth_ = creation_depth;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValue(
     Variable *variable, ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    vector<CComPtr<ICorDebugType>> *generic_types, int depth) {
+    vector<CComPtr<ICorDebugType>> *generic_types,
+    int evaluation_depth) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
@@ -95,6 +99,15 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
+  }
+
+  // If this property is already evaluated, don't do it again.
+  if (member_value_) {
+    int previous_eval_depth = member_value_->GetEvaluationDepth();
+    member_value_->SetEvaluationDepth(evaluation_depth);
+    HRESULT hr = PopulateVariableValueHelper(variable, eval_coordinator);
+    member_value_->SetEvaluationDepth(previous_eval_depth);
+    return hr;
   }
 
   CComPtr<ICorDebugValue> debug_value;
@@ -153,11 +166,10 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   vector<ICorDebugValue *> arg_values;
-  // If the property is non-static, the metadata will have a bit mask
-  // of 0x20. If the property is non-static, then when we call getter
+  // If the property is non-static, then when we call getter
   // method, we have to supply "this" (reference to the current object)
   // as a parameter.
-  if ((*signature_metadata_ & kNonStaticPropertyMask) != 0) {
+  if (!IsStatic()) {
     arg_values.push_back(reference_value);
   }
 
@@ -178,7 +190,6 @@ HRESULT DbgClassProperty::PopulateVariableValue(
   }
 
   CComPtr<ICorDebugValue> eval_result;
-
   hr = eval_coordinator->WaitForEval(&exception_occurred_, debug_eval,
                                      &eval_result);
 
@@ -187,43 +198,42 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  hr = DbgObject::CreateDbgObject(eval_result, depth, &property_value_,
+  hr = DbgObject::CreateDbgObject(eval_result, creation_depth_, &member_value_,
                                   GetErrorStream());
   if (FAILED(hr)) {
-    if (property_value_) {
-      WriteError(property_value_->GetErrorString());
+    if (member_value_) {
+      WriteError(member_value_->GetErrorString());
     }
     WriteError("Failed to create class property object.");
     return hr;
   }
 
-  return PopulateVariableValueHelper(variable, eval_coordinator);
+  int previous_eval_depth = member_value_->GetEvaluationDepth();
+  member_value_->SetEvaluationDepth(evaluation_depth);
+  hr = PopulateVariableValueHelper(variable, eval_coordinator);
+  member_value_->SetEvaluationDepth(previous_eval_depth);
+  return hr;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(
     Variable *variable, IEvalCoordinator *eval_coordinator) {
-  if (!variable) {
+  if (!variable || !member_value_) {
     return E_INVALIDARG;
   }
 
-  if (!property_value_) {
-    WriteError("Property value not initialized.");
-    return E_FAIL;
-  }
-
   if (exception_occurred_) {
-    // If there is an exception, the property_value_ will be the exception.
+    // If there is an exception, the member_value_ will be the exception.
     std::ostringstream stream_type;
-    property_value_->PopulateType(variable);
+    member_value_->PopulateType(variable);
     WriteError("throws exception " + variable->type());
     return E_FAIL;
   }
 
   HRESULT hr =
-      property_value_->PopulateVariableValue(variable, eval_coordinator);
+      member_value_->PopulateVariableValue(variable, eval_coordinator);
 
   if (FAILED(hr)) {
-    WriteError(property_value_->GetErrorString());
+    WriteError(member_value_->GetErrorString());
     return hr;
   }
 

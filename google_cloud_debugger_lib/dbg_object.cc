@@ -11,8 +11,8 @@
 #include "dbg_class.h"
 #include "dbg_primitive.h"
 #include "dbg_string.h"
-#include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::ostringstream;
@@ -199,7 +199,6 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
   HRESULT hr;
   BOOL is_null = FALSE;
   CComPtr<ICorDebugValue> dereferenced_and_unboxed_value;
-  CComPtr<ICorDebugValue2> debug_value_2;
   CComPtr<ICorDebugType> debug_type;
   CorElementType cor_element_type;
 
@@ -210,19 +209,13 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
     return hr;
   }
 
-  hr = dereferenced_and_unboxed_value->QueryInterface(
-      __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
+  hr = GetICorDebugType(dereferenced_and_unboxed_value, &debug_type);
 
   if (SUCCEEDED(hr)) {
-    hr = debug_value_2->GetExactType(&debug_type);
-    if (SUCCEEDED(hr)) {
-      hr = debug_type->GetType(&cor_element_type);
-    }
+    hr = debug_type->GetType(&cor_element_type);
   } else if (hr == E_NOINTERFACE) {
     hr = debug_value->GetType(&cor_element_type);
-  }
-
-  if (FAILED(hr)) {
+  } else {
     // Nothing we can do here.
     *err_stream << "Failed to get type.";
     return hr;

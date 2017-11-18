@@ -23,16 +23,17 @@
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
 #include "dbg_breakpoint.h"
+#include "dbg_class.h"
 #include "stack_frame_collection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using std::cerr;
-using std::chrono::high_resolution_clock;
-using std::chrono::minutes;
 using std::lock_guard;
 using std::mutex;
 using std::unique_lock;
 using std::unique_ptr;
+using std::chrono::high_resolution_clock;
+using std::chrono::minutes;
 
 namespace google_cloud_debugger {
 
@@ -195,7 +196,7 @@ void EvalCoordinator::WaitForReadySignal() {
 void EvalCoordinator::SignalFinishedPrintingVariable() {
   {
     lock_guard<mutex> lk(mutex_);
-
+    DbgClass::ClearStaticCache();
     debuggercallback_can_continue_ = TRUE;
   }
   debugger_callback_cv_.notify_one();
