@@ -1,6 +1,11 @@
 # Directory that contains this makefile.
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
+ifeq ($(COVERAGE),true)
+  # TODO(talarico): Change this to -coverage when we switch to codecov
+  COVERAGE_ARG = -fprofile-instr-generate -fcoverage-mapping
+endif
+
 # Directories of Google Test and Google Mock.
 GTEST_DIR = $(ROOT_DIR)/../googletest/googletest/
 GMOCK_DIR = $(ROOT_DIR)/../googletest/googlemock/
@@ -37,7 +42,7 @@ dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test
 stack_frame_collection_test.o custom_binary_stream_test.o eval_coordinator_test.o common_action_mocks.o i_portable_pdb_mocks.o
 
 google_cloud_debugger_test: ${TESTS}
-	clang-3.9 -o google_cloud_debugger_test ${TESTS} ${INCDIRS} ${CC_FLAGS} -fprofile-instr-generate -fcoverage-mapping ${INCLIBS} -v
+	clang-3.9 -o google_cloud_debugger_test ${TESTS} ${INCDIRS} ${CC_FLAGS} ${COVERAGE_ARG} ${INCLIBS} -v
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.9 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
