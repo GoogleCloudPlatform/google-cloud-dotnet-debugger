@@ -15,13 +15,14 @@
 #ifndef DBG_CLASS_H_
 #define DBG_CLASS_H_
 
+#include <map>
 #include <memory>
 #include <unordered_set>
 #include <vector>
 
-#include "dbg_object.h"
 #include "dbg_class_field.h"
 #include "dbg_class_property.h"
+#include "dbg_object.h"
 #include "dbg_primitive.h"
 
 namespace google_cloud_debugger {
@@ -73,6 +74,9 @@ class DbgClass : public DbgObject {
                                       ICorDebugValue *debug_value, BOOL is_null,
                                       std::unique_ptr<DbgObject> *result_object,
                                       std::ostringstream *err_stream);
+
+  // Clear cache of static field and properties.
+  static void ClearStaticCache() { static_class_members_.clear(); }
 
  private:
   // Processes the class name and stores the result in class_name.
@@ -131,6 +135,44 @@ class DbgClass : public DbgObject {
   std::unique_ptr<DbgObject> primitive_type_value_;
 
  protected:
+  // Creates a key to the static cache from the module name and the class name.
+  static std::string GetStaticCacheKey(const std::string &module_name,
+                                       const std::string &class_name) {
+    return module_name + "!" + class_name;
+  }
+
+  // Stores the static member member_name of class class_name in module
+  // module_name with value object in the static cache.
+  static void StoreStaticClassMember(const std::string &module_name,
+                                     const std::string &class_name,
+                                     const std::string &member_name,
+                                     std::shared_ptr<IDbgClassMember> object);
+
+  // Given a class_member with name member_name in this class,
+  // we check whether this class_member is in the cache.
+  // If it is in the cache, then we place a copy of the shared pointer
+  // in the cache in the member_vector.
+  // If not, we just place class_member into member_vector.
+  void AddStaticClassMemberToVector(
+    std::unique_ptr<IDbgClassMember> class_member,
+    std::vector<std::shared_ptr<IDbgClassMember>> *member_vector);
+
+  // Add class members to proto variable using vectors
+  // class_members. Eval_coordinator is used to evaluate
+  // the members if applicable.
+  // If there are errors, this function will also set the error
+  // status in variable.
+  void PopulateClassMembers(
+    google::cloud::diagnostics::debug::Variable *variable,
+    IEvalCoordinator *eval_coordinator,
+    std::vector<std::shared_ptr<IDbgClassMember>> *class_members);
+
+  // Extracts the static field member_name of class class_name in module
+  // module_name in the static cache.
+  std::shared_ptr<IDbgClassMember> GetStaticClassMember(
+      const std::string &module_name, const std::string &class_name,
+      const std::string &member_name);
+
   // Processes the class fields and stores the fields in class_fields_.
   HRESULT ProcessFields(IMetaDataImport *metadata_import,
                         ICorDebugObjectValue *debug_obj_value,
@@ -162,6 +204,9 @@ class DbgClass : public DbgObject {
   // A strong handle to the class object.
   CComPtr<ICorDebugHandleValue> class_handle_;
 
+  // String that represents the name of the module this class is in.
+  std::string module_name_;
+
   // String that represents the name of the class.
   std::string class_name_;
 
@@ -180,8 +225,8 @@ class DbgClass : public DbgObject {
   ClassType class_type_ = ClassType::DEFAULT;
 
   // Class fields and properties.
-  std::vector<std::unique_ptr<DbgClassField>> class_fields_;
-  std::vector<std::unique_ptr<DbgClassProperty>> class_properties_;
+  std::vector<std::shared_ptr<IDbgClassMember>> class_fields_;
+  std::vector<std::shared_ptr<IDbgClassMember>> class_properties_;
 
   // Sets of all the fields' names.
   std::unordered_set<std::string> class_backing_fields_names_;
@@ -192,6 +237,13 @@ class DbgClass : public DbgObject {
 
   // Token of the class.
   mdTypeDef class_token_;
+
+  // Cache of static class members.
+  // First key is the module name and class name.
+  // Second key is the member name.
+  static std::map<std::string,
+                  std::map<std::string, std::shared_ptr<IDbgClassMember>>>
+      static_class_members_;
 };
 
 }  //  namespace google_cloud_debugger
