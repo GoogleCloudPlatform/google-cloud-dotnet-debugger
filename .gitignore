@@ -15,3 +15,4 @@ x64
 google_cloud_debugger
 google_cloud_debugger_test
 package-*
+coverage_report
