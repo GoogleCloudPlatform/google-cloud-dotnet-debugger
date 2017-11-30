@@ -34,7 +34,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
                .UseIISIntegration()
                .UseStartup<Startup>()
                .Build()
-               .Run(_cts.Token);
+               .RunAsync(_cts.Token).Wait();
         }
 
         public static void Shutdown() =>_cts.Cancel();
