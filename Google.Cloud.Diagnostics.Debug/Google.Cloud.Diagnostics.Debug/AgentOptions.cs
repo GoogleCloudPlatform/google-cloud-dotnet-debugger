@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using CommandLine;
+using CommandLine.Text;
 using Google.Api.Gax;
 using System;
 using System.IO;
@@ -75,9 +76,13 @@ namespace Google.Cloud.Diagnostics.Debug
             HelpText = "If set, the debugger will evaluate object's properties.")]
         public bool PropertyEvaluation { get; set; }
 
-        [Option("wait-time", Default = 2, 
+        [Option("wait-time", DefaultValue = 2, 
             HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
         public int WaitTime { get; set; }
+
+        [HelpOption]
+        public string Usage() => HelpText.AutoBuild(
+            this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));
 
         /// <summary>
         /// Returns the processed arguments to pass to the debugger.
@@ -106,39 +111,36 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public static AgentOptions Parse(string[] args)
         {
-            var result = Parser.Default.ParseArguments<AgentOptions>(args);
             var options = new AgentOptions();
-            result.WithParsed((o) => 
+            if (Parser.Default.ParseArgumentsStrict(args, options))
             {
-                o.Module = GaxPreconditions.CheckNotNullOrEmpty(o.Module ?? GetModule(), nameof(o.Module));
-                o.Version = GaxPreconditions.CheckNotNullOrEmpty(o.Version ?? GetVersion(), nameof(o.Version));
-                o.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(o.ProjectId ?? GetProject(), nameof(o.ProjectId));
-                o.Debugger = GaxPreconditions.CheckNotNullOrEmpty(o.Debugger ?? GetDebugger(), nameof(o.Debugger));
-                GaxPreconditions.CheckArgumentRange(o.WaitTime, nameof(o.WaitTime), 0, int.MaxValue);
+                options.Module = GaxPreconditions.CheckNotNullOrEmpty(options.Module ?? GetModule(), nameof(options.Module));
+                options.Version = GaxPreconditions.CheckNotNullOrEmpty(options.Version ?? GetVersion(), nameof(options.Version));
+                options.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(options.ProjectId ?? GetProject(), nameof(options.ProjectId));
+                options.Debugger = GaxPreconditions.CheckNotNullOrEmpty(options.Debugger ?? GetDebugger(), nameof(options.Debugger));
+                GaxPreconditions.CheckArgumentRange(options.WaitTime, nameof(options.WaitTime), 0, int.MaxValue);
 
-                if (!File.Exists(o.Debugger))
+                if (!File.Exists(options.Debugger))
                 {
-                    throw new FileNotFoundException($"Debugger file not found: '{o.Debugger}'");
+                    throw new FileNotFoundException($"Debugger file not found: '{options.Debugger}'");
                 }
 
-                if ((string.IsNullOrWhiteSpace(o.ApplicationPath) && !o.ApplicationId.HasValue)
-                    || (!string.IsNullOrWhiteSpace(o.ApplicationPath) && o.ApplicationId.HasValue))
+                if ((string.IsNullOrWhiteSpace(options.ApplicationPath) && !options.ApplicationId.HasValue)
+                    || (!string.IsNullOrWhiteSpace(options.ApplicationPath) && options.ApplicationId.HasValue))
                 {
                     throw new ArgumentException("Please supply either the path to the .NET CORE application dll"
                         + " or the process ID of a running application, NOT both.");
                 }
 
-                if (!string.IsNullOrWhiteSpace(o.ApplicationPath))
+                if (!string.IsNullOrWhiteSpace(options.ApplicationPath))
                 {
-                    o.ApplicationPath = Path.GetFullPath(o.ApplicationPath);
-                    if (!File.Exists(o.ApplicationPath))
+                    options.ApplicationPath = Path.GetFullPath(options.ApplicationPath);
+                    if (!File.Exists(options.ApplicationPath))
                     {
-                        throw new FileNotFoundException($"Application file not found: '{o.ApplicationPath}'");
+                        throw new FileNotFoundException($"Application file not found: '{options.ApplicationPath}'");
                     }
                 }
-
-                options = o;
-            });
+            }
             return options;
         }
 
