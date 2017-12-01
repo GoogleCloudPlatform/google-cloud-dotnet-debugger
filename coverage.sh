@@ -17,15 +17,15 @@ DEBUGGER_TEST="$DEBUGGER_TEST_DIR/google_cloud_debugger_test"
 
 mkdir -p $COVERAGE_REPORT_DIR
 
-#make clean -C $DEBUGGER_LIB_DIR
-#make clean -C $DEBUGGER_TEST_DIR
-#make clean -C $DEBUGGER_DIR
-#make -C $DEBUGGER_LIB_DIR COVERAGE=true
-#make -C $DEBUGGER_TEST_DIR COVERAGE=true
-#make -C $DEBUGGER_DIR COVERAGE=true
+make clean -C $DEBUGGER_LIB_DIR
+make clean -C $DEBUGGER_TEST_DIR
+make clean -C $DEBUGGER_DIR
+make -C $DEBUGGER_LIB_DIR COVERAGE=true
+make -C $DEBUGGER_TEST_DIR COVERAGE=true
+make -C $DEBUGGER_DIR COVERAGE=true
 
-#$DEBUGGER_TEST
-#$ROOT_DIR/run_integration_tests.sh
+$DEBUGGER_TEST
+$ROOT_DIR/run_integration_tests.sh
 
 # We pin to a given gcov tool to avoid versioning issues.
 lcov --no-external --capture --directory=$DEBUGGER_LIB_DIR --output-file=$INFO_FILE --gcov-tool=gcov-4.4
