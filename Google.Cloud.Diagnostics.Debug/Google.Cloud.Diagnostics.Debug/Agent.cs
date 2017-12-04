@@ -19,6 +19,17 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Win32.SafeHandles;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Security;
+using System.Text;
+using System.Threading;
+
+
 namespace Google.Cloud.Diagnostics.Debug
 {
     /// <summary>
@@ -75,9 +86,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
-            _process?.Dispose();
+            Interop.Sys.Kill(_process.Id, Interop.Sys.Signals.SIGKILL);
+            _process?.Kill();
+            _process?.Dispose();  
             _cts.Cancel();
-            Console.WriteLine("END Dispose");
+            Console.WriteLine("*********************END Dispose");
         }
 
         /// <summary>
@@ -161,9 +174,7 @@ namespace Google.Cloud.Diagnostics.Debug
             using (var agent = new Agent(options))
             {
                 agent.StartAndBlock();
-                Console.WriteLine("END StartAndBlock");
             }
-            Console.WriteLine("END Main");
         }
     }
 }

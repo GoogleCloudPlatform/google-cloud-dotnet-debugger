@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -32,6 +33,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             {
                 var debuggee = Polling.GetDebuggee(Module, Version);
                 var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 26);
+                Console.WriteLine(breakpoint);
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -44,7 +46,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Assert.True(newBp.IsFinalState);
             }           
         }
-
+/*
         /// <summary>
         /// Calls to the endpoint AppUrlEcho, and sets a breakpoint just
         /// before it returns. At this breakpoint, we can collect and examine
@@ -100,6 +102,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     }
                 }
             }
-        }
+        } */
     }
 }
