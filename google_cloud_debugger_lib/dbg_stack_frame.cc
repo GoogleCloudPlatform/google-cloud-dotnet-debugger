@@ -15,6 +15,7 @@
 #include "dbg_stack_frame.h"
 
 #include <iostream>
+#include <queue>
 #include <vector>
 
 #include "dbg_breakpoint.h"
@@ -28,6 +29,8 @@ using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
 using std::ostringstream;
+using std::queue;
+using std::shared_ptr;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -297,38 +300,83 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   location->set_line(line_number_);
   location->set_path(file_name_);
 
-  for (const auto &variable_tuple : variables_) {
-    Variable *variable = stack_frame->add_locals();
+  queue<VariableWrapper> bfs_queue;
 
-    variable->set_name(std::get<0>(variable_tuple));
-    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
+  for (const auto &variable_tuple : variables_) {
+    Variable *variable_proto = stack_frame->add_locals();
+
+    variable_proto->set_name(std::get<0>(variable_tuple));
+    const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
     const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable, err_stream->str());
+      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 
-    // The output will contain status error too so we don't have to
-    // worry about it.
-    variable_value->PopulateVariableValue(variable, eval_coordinator);
+    bfs_queue.push(VariableWrapper(variable_proto, variable_value));
   }
 
   for (const auto &variable_tuple : method_arguments_) {
-    Variable *variable = stack_frame->add_arguments();
+    Variable *variable_proto = stack_frame->add_arguments();
 
-    variable->set_name(std::get<0>(variable_tuple));
-    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
+    variable_proto->set_name(std::get<0>(variable_tuple));
+    const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
     const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable, err_stream->str());
+      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 
-    // The output will contain status error too so we don't have to
-    // worry about it.
-    variable_value->PopulateVariableValue(variable, eval_coordinator);
+    bfs_queue.push(VariableWrapper(variable_proto, variable_value));
+  }
+
+  HRESULT hr;
+  while (!bfs_queue.empty()) {
+    VariableWrapper current_variable = bfs_queue.front();
+    vector<VariableWrapper> variable_members;
+
+    // Populates the type of the variable into the variable proto.
+    hr = current_variable.variable_value_->PopulateType(current_variable.variable_proto_);
+
+    if (FAILED(hr)) {
+      SetErrorStatusMessage(current_variable.variable_proto_,
+        current_variable.variable_value_->GetErrorString());
+      bfs_queue.pop();
+      continue;
+    }
+
+    // If variable is null, moves on.
+    if (current_variable.variable_value_->GetIsNull()) {
+      bfs_queue.pop();
+      continue;
+    }
+
+    // Tries to see whether we can get any members from
+    // this variable.
+    hr = current_variable.variable_value_->PopulateMembers(
+        current_variable.variable_proto_, &variable_members,
+        eval_coordinator);
+
+    // If hr is S_FALSE then there are no members so we simply
+    // call PopulateValue.
+    if (hr == S_FALSE) {
+      hr = current_variable.variable_value_->PopulateValue(
+        current_variable.variable_proto_);
+    }
+    // Otherwise, process and put the members in the queue.
+    else if (SUCCEEDED(hr)) {
+      for (const auto &member_value : variable_members) {
+        bfs_queue.push(member_value);
+      }
+    }
+
+    if (FAILED(hr)) {
+      SetErrorStatusMessage(current_variable.variable_proto_,
+        current_variable.variable_value_->GetErrorString());
+    }
+    bfs_queue.pop();
   }
 
   return S_OK;

@@ -29,12 +29,21 @@
 
 namespace google_cloud_debugger {
 
-typedef std::tuple<std::string, std::unique_ptr<DbgObject>,
+typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
                    std::unique_ptr<std::ostringstream>>
     VariableTuple;
 
 class DebuggerCallback;
 class IEvalCoordinator;
+
+class VariableWrapper {
+ public:
+  VariableWrapper(google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::shared_ptr<DbgObject> variable_value) : variable_proto_(variable_proto), variable_value_(variable_value) {}
+
+  google::cloud::diagnostics::debug::Variable *variable_proto_;
+  std::shared_ptr<DbgObject> variable_value_;
+};
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments

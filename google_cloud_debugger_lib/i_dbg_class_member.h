@@ -32,8 +32,7 @@ class IDbgClassMember : public StringStreamWrapper {
  public:
   virtual ~IDbgClassMember() = default;
 
-  // Evaluates the member and stores the value in member_value_
-  // and also populate proto variable's fields.
+  // Evaluates the member and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function
   // evaluation (the getter property function).
@@ -43,7 +42,6 @@ class IDbgClassMember : public StringStreamWrapper {
   // Depth represents the level of inspection that we should perform on the
   // object we get back from the getter function.
   virtual HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types,
@@ -65,7 +63,7 @@ class IDbgClassMember : public StringStreamWrapper {
   HRESULT GetInitializeHr() const { return initialized_hr_; }
 
   // Gets the underlying DbgObject of this field's value.
-  DbgObject *GetMemberValue() { return member_value_.get(); }
+  std::shared_ptr<DbgObject> GetMemberValue() { return member_value_; }
 
  protected:
   // Token to the type that implements the member.
@@ -95,7 +93,7 @@ class IDbgClassMember : public StringStreamWrapper {
   std::string member_name_;
 
   // Value of the member.
-  std::unique_ptr<DbgObject> member_value_;
+  std::shared_ptr<DbgObject> member_value_;
 
   // HRESULT when the Initialize function is called.
   HRESULT initialized_hr_ = S_OK;

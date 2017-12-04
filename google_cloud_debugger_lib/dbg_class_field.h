@@ -45,7 +45,6 @@ class DbgClassField : public IDbgClassMember {
   // will be written into variable proto.
   // Reference_value and generic_types are ignored.
   HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types,

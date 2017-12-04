@@ -37,8 +37,7 @@ class DbgClassProperty : public IDbgClassMember {
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
       int creation_depth);
 
-  // Evaluate the property and stores the value in member_value_
-  // and also populate proto variable's fields.
+  // Evaluate the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function
   // evaluation (the getter property function).
@@ -48,7 +47,6 @@ class DbgClassProperty : public IDbgClassMember {
   // Depth represents the level of inspection that we should perform on the
   // object we get back from the getter function.
   HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth);
@@ -66,7 +64,6 @@ class DbgClassProperty : public IDbgClassMember {
   // Helper function to set the value of variable to this property's value.
   // This function assumes that member_value_ is not null.
   HRESULT PopulateVariableValueHelper(
-      google::cloud::diagnostics::debug::Variable *variable,
       IEvalCoordinator *eval_coordinator);
 
   // The token that represents the property getter.

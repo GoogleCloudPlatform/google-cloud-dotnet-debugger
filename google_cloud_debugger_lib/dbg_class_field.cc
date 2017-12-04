@@ -23,6 +23,7 @@
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
+using std::unique_ptr;
 
 namespace google_cloud_debugger {
 void DbgClassField::Initialize(mdFieldDef field_def,
@@ -129,19 +130,21 @@ void DbgClassField::Initialize(mdFieldDef field_def,
     return;
   }
 
+  unique_ptr<DbgObject> member_value;
   initialized_hr_ = DbgObject::CreateDbgObject(field_value, creation_depth_,
-                                               &member_value_, GetErrorStream());
+                                               &member_value, GetErrorStream());
 
   if (FAILED(initialized_hr_)) {
     WriteError("Failed to create DbgObject for field.");
-    if (member_value_) {
-      WriteError(member_value_->GetErrorString());
+    if (member_value) {
+      WriteError(member_value->GetErrorString());
     }
   }
+
+  member_value_ = std::move(member_value);
 }
 
 HRESULT DbgClassField::PopulateVariableValue(
-    Variable *variable,
     ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
     std::vector<CComPtr<ICorDebugType>> *generic_types,
@@ -150,7 +153,7 @@ HRESULT DbgClassField::PopulateVariableValue(
     return initialized_hr_;
   }
 
-  if (!variable || !eval_coordinator) {
+  if (!eval_coordinator) {
     return E_INVALIDARG;
   }
 
@@ -170,16 +173,7 @@ HRESULT DbgClassField::PopulateVariableValue(
     return E_FAIL;
   }
 
-  // In case member_value_ is cached, sets the evaluation depth again.
-  int previous_eval_depth = member_value_->GetEvaluationDepth();
-  member_value_->SetEvaluationDepth(evaluation_depth);
-  hr = member_value_->PopulateVariableValue(variable, eval_coordinator);
-  member_value_->SetEvaluationDepth(previous_eval_depth);
-  if (FAILED(hr)) {
-    WriteError(member_value_->GetErrorString());
-  }
-
-  return hr;
+  return S_OK;
 }
 
 HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinator) {
@@ -214,19 +208,21 @@ HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinato
     return hr;
   }
 
+  unique_ptr<DbgObject> member_value;
+
   // TODO(quoct): String that starts with @ cannot be retrieved.
   // For static field, use default evaluation depth.
   hr = DbgObject::CreateDbgObject(debug_value, creation_depth_,
-                                  &member_value_, GetErrorStream());
+                                  &member_value, GetErrorStream());
   if (FAILED(hr)) {
-    if (member_value_) {
-      WriteError(member_value_->GetErrorString());
+    if (member_value) {
+      WriteError(member_value->GetErrorString());
     }
     WriteError("Failed to create DbgObject for static field value.");
-    member_value_.release();
     return hr;
   }
 
+  member_value_ = std::move(member_value);
   return hr;
 }
 

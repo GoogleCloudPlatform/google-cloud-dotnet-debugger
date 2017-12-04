@@ -27,6 +27,7 @@
 namespace google_cloud_debugger {
 
 class IEvalCoordinator;
+class VariableWrapper;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)
@@ -54,29 +55,23 @@ class DbgObject : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Variable *variable) = 0;
 
   // Sets the value of proto variable to the value of this object.
+  // PopulateValue will return S_FALSE if this object has members.
   virtual HRESULT PopulateValue(
       google::cloud::diagnostics::debug::Variable *variable) {
     return S_OK;
   }
 
-  // Sets the members of proto variable to the members of this object,
-  // using eval_coordinator to perform any sort of evaluation if needed.
+  // Returns members of proto variable to the members.
+  // Returns S_FALSE by default (no members).
+  // Variable_proto is used to create children variable protos.
+  // These protos, combined with this object's members' values
+  // will be used to populate members vector.
   virtual HRESULT PopulateMembers(
-      google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator) {
-    return S_OK;
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
+    return S_FALSE;
   }
-
-  // Returns true if this object has members.
-  virtual BOOL HasMembers() { return false; }
-
-  // Returns true if this object has value.
-  virtual BOOL HasValue() { return true; }
-
-  // Populate variable proto with type, member and value from this object.
-  virtual HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator);
 
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,

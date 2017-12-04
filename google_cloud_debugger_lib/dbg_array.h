@@ -53,16 +53,14 @@ class DbgArray : public DbgObject {
   HRESULT GetArrayItem(int position, ICorDebugValue **array_item);
 
   // Sets the members of variable to the items in the array.
-  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
-                          IEvalCoordinator *eval_coordinator) override;
+  HRESULT PopulateMembers(
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) override;
 
   // Sets the type of variable to this array type.
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
-
-  BOOL HasMembers() override { return true; }
-
-  BOOL HasValue() override { return false; }
 
   // Sets the maximum amount of items that the array will retrieve
   // when PopulateMembers is called.

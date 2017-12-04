@@ -40,21 +40,20 @@ class DbgClass : public DbgObject {
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
 
   // Populates variable with fields and properties of this class.
-  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable,
+  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable_proto,
+                          std::vector<VariableWrapper> *members,
                           IEvalCoordinator *eval_coordinator) override;
 
   // Populates variable with type of this class.
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
 
-  BOOL HasMembers() override;
-  BOOL HasValue() override;
-
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
   // This function assumes that this DbgClass object has already been
   // initialized (so the class_fields_ vector are populated).
-  HRESULT ExtractField(const std::string &field_name, DbgObject **field_value);
+  HRESULT ExtractField(const std::string &field_name,
+    std::shared_ptr<DbgObject> *field_value);
 
   // Various .NET class types that we need to process differently
   // rather than just printing out fields and properties.
@@ -163,7 +162,8 @@ class DbgClass : public DbgObject {
   // If there are errors, this function will also set the error
   // status in variable.
   void PopulateClassMembers(
-    google::cloud::diagnostics::debug::Variable *variable,
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members,
     IEvalCoordinator *eval_coordinator,
     std::vector<std::shared_ptr<IDbgClassMember>> *class_members);
 

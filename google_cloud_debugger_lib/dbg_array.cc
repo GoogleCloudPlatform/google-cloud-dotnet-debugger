@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -134,13 +135,15 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
   return array_value->GetElementAtPosition(position, array_item);
 }
 
-HRESULT DbgArray::PopulateMembers(Variable *variable,
+HRESULT DbgArray::PopulateMembers(
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members,
     IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  if (!variable) {
+  if (!members) {
     return E_INVALIDARG;
   }
 
@@ -149,7 +152,6 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
   }
 
   if (GetIsNull()) {
-    variable->clear_members();
     return S_OK;
   }
 
@@ -208,7 +210,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
     }
 
     // Adds a member at this index.
-    Variable *member = variable->add_members();
+    Variable *member = variable_proto->add_members();
     member->set_name(name);
 
     CComPtr<ICorDebugValue> array_item;
@@ -233,11 +235,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
       continue;
     }
 
-    hr = result_object->PopulateVariableValue(member, eval_coordinator);
-    if (FAILED(hr)) {
-      SetErrorStatusMessage(member, this);
-      continue;
-    }
+    members->push_back(VariableWrapper(member, std::move(result_object)));
   }
 
   return S_OK;
