@@ -18,16 +18,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Microsoft.Win32.SafeHandles;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Globalization;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
-using System.Threading;
+using System.Management;
 
 
 namespace Google.Cloud.Diagnostics.Debug
