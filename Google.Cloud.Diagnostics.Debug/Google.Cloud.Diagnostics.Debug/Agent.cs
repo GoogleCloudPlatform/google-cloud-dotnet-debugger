@@ -77,6 +77,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             _process?.Dispose();
             _cts.Cancel();
+            Console.WriteLine("END Dispose");
         }
 
         /// <summary>
@@ -159,8 +160,10 @@ namespace Google.Cloud.Diagnostics.Debug
             var options = AgentOptions.Parse(args);
             using (var agent = new Agent(options))
             {
-                agent.StartAndBlock();                
+                agent.StartAndBlock();
+                Console.WriteLine("END StartAndBlock");
             }
+            Console.WriteLine("END Main");
         }
     }
 }
