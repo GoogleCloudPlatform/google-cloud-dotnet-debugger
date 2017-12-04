@@ -2,8 +2,7 @@
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 ifeq ($(COVERAGE),true)
-  # TODO(talarico): Change this to -coverage when we switch to codecov
-  COVERAGE_ARG = -fprofile-instr-generate -fcoverage-mapping
+  COVERAGE_ARG = -coverage
 endif
 
 # .NET Core headers.
