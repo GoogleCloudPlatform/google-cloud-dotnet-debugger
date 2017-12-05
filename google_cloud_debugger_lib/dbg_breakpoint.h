@@ -107,6 +107,12 @@ class DbgBreakpoint {
   // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
+  // Returns whether this breakpoint is activated or not.
+  bool GetKillServer() const { return kill_server_; }
+
+  // Returns whether this breakpoint is activated or not.
+  void SetKillServer(bool kill_server) { kill_server_ = kill_server; }
+
   // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
   // are used to evaluate and fill up the stack frames of the breakpoint.
@@ -157,6 +163,9 @@ class DbgBreakpoint {
 
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;
+
+  // Kill Server
+  bool kill_server_;
 };
 
 }  // namespace google_cloud_debugger

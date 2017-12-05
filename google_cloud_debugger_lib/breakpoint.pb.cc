@@ -71,6 +71,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, activated_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, create_time_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, final_time_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, kill_server_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StackFrame, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -108,10 +109,10 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
 
 static const ::google::protobuf::internal::MigrationSchema schemas[] = {
   { 0, -1, sizeof(Breakpoint)},
-  { 11, -1, sizeof(StackFrame)},
-  { 20, -1, sizeof(SourceLocation)},
-  { 27, -1, sizeof(Variable)},
-  { 37, -1, sizeof(Status)},
+  { 12, -1, sizeof(StackFrame)},
+  { 21, -1, sizeof(SourceLocation)},
+  { 28, -1, sizeof(Variable)},
+  { 38, -1, sizeof(Status)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -184,45 +185,47 @@ void InitDefaults() {
   static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
   ::google::protobuf::GoogleOnceInit(&once, &TableStruct::InitDefaultsImpl);
 }
+namespace {
 void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] = {
       "\n\020breakpoint.proto\022\036google.cloud.diagnos"
       "tics.debug\032\037google/protobuf/timestamp.pr"
-      "oto\"\220\002\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
+      "oto\"\245\002\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
       "on\030\002 \001(\0132..google.cloud.diagnostics.debu"
       "g.SourceLocation\022@\n\014stack_frames\030\003 \003(\0132*"
       ".google.cloud.diagnostics.debug.StackFra"
       "me\022\021\n\tactivated\030\004 \001(\010\022/\n\013create_time\030\005 \001"
       "(\0132\032.google.protobuf.Timestamp\022.\n\nfinal_"
-      "time\030\006 \001(\0132\032.google.protobuf.Timestamp\"\332"
-      "\001\n\nStackFrame\022\023\n\013method_name\030\001 \001(\t\022@\n\010lo"
-      "cation\030\002 \001(\0132..google.cloud.diagnostics."
-      "debug.SourceLocation\022;\n\targuments\030\003 \003(\0132"
+      "time\030\006 \001(\0132\032.google.protobuf.Timestamp\022\023"
+      "\n\013kill_server\030\007 \001(\010\"\332\001\n\nStackFrame\022\023\n\013me"
+      "thod_name\030\001 \001(\t\022@\n\010location\030\002 \001(\0132..goog"
+      "le.cloud.diagnostics.debug.SourceLocatio"
+      "n\022;\n\targuments\030\003 \003(\0132(.google.cloud.diag"
+      "nostics.debug.Variable\0228\n\006locals\030\004 \003(\0132("
+      ".google.cloud.diagnostics.debug.Variable"
+      "\",\n\016SourceLocation\022\014\n\004path\030\001 \001(\t\022\014\n\004line"
+      "\030\002 \001(\005\"\250\001\n\010Variable\022\014\n\004name\030\001 \001(\t\022\014\n\004typ"
+      "e\030\002 \001(\t\022\r\n\005value\030\003 \001(\t\0229\n\007members\030\004 \003(\0132"
       "(.google.cloud.diagnostics.debug.Variabl"
-      "e\0228\n\006locals\030\004 \003(\0132(.google.cloud.diagnos"
-      "tics.debug.Variable\",\n\016SourceLocation\022\014\n"
-      "\004path\030\001 \001(\t\022\014\n\004line\030\002 \001(\005\"\250\001\n\010Variable\022\014"
-      "\n\004name\030\001 \001(\t\022\014\n\004type\030\002 \001(\t\022\r\n\005value\030\003 \001("
-      "\t\0229\n\007members\030\004 \003(\0132(.google.cloud.diagno"
-      "stics.debug.Variable\0226\n\006status\030\005 \001(\0132&.g"
-      "oogle.cloud.diagnostics.debug.Status\"*\n\006"
-      "Status\022\017\n\007iserror\030\001 \001(\010\022\017\n\007message\030\002 \001(\t"
-      "b\006proto3"
+      "e\0226\n\006status\030\005 \001(\0132&.google.cloud.diagnos"
+      "tics.debug.Status\"*\n\006Status\022\017\n\007iserror\030\001"
+      " \001(\010\022\017\n\007message\030\002 \001(\tb\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 848);
+      descriptor, 869);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "breakpoint.proto", &protobuf_RegisterTypes);
   ::google::protobuf::protobuf_google_2fprotobuf_2ftimestamp_2eproto::AddDescriptors();
   ::google::protobuf::internal::OnShutdown(&TableStruct::Shutdown);
 }
+} // anonymous namespace
 
 void AddDescriptors() {
   static GOOGLE_PROTOBUF_DECLARE_ONCE(once);
   ::google::protobuf::GoogleOnceInit(&once, &AddDescriptorsImpl);
 }
-// Force AddDescriptors() to be called at static initialization time.
+// Force AddDescriptors() to be called at dynamic initialization time.
 struct StaticDescriptorInitializer {
   StaticDescriptorInitializer() {
     AddDescriptors();
@@ -241,6 +244,7 @@ const int Breakpoint::kStackFramesFieldNumber;
 const int Breakpoint::kActivatedFieldNumber;
 const int Breakpoint::kCreateTimeFieldNumber;
 const int Breakpoint::kFinalTimeFieldNumber;
+const int Breakpoint::kKillServerFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 Breakpoint::Breakpoint()
@@ -276,14 +280,17 @@ Breakpoint::Breakpoint(const Breakpoint& from)
   } else {
     final_time_ = NULL;
   }
-  activated_ = from.activated_;
+  ::memcpy(&activated_, &from.activated_,
+    static_cast<size_t>(reinterpret_cast<char*>(&kill_server_) -
+    reinterpret_cast<char*>(&activated_)) + sizeof(kill_server_));
   // @@protoc_insertion_point(copy_constructor:google.cloud.diagnostics.debug.Breakpoint)
 }
 
 void Breakpoint::SharedCtor() {
   id_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&location_, 0, reinterpret_cast<char*>(&activated_) -
-    reinterpret_cast<char*>(&location_) + sizeof(activated_));
+  ::memset(&location_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&kill_server_) -
+      reinterpret_cast<char*>(&location_)) + sizeof(kill_server_));
   _cached_size_ = 0;
 }
 
@@ -344,7 +351,9 @@ void Breakpoint::Clear() {
     delete final_time_;
   }
   final_time_ = NULL;
-  activated_ = false;
+  ::memset(&activated_, 0, static_cast<size_t>(
+      reinterpret_cast<char*>(&kill_server_) -
+      reinterpret_cast<char*>(&activated_)) + sizeof(kill_server_));
 }
 
 bool Breakpoint::MergePartialFromCodedStream(
@@ -364,7 +373,7 @@ bool Breakpoint::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_id()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->id().data(), this->id().length(),
+            this->id().data(), static_cast<int>(this->id().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.Breakpoint.id"));
         } else {
@@ -435,6 +444,20 @@ bool Breakpoint::MergePartialFromCodedStream(
         break;
       }
 
+      // bool kill_server = 7;
+      case 7: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(56u)) {
+
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &kill_server_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
       default: {
       handle_unusual:
         if (tag == 0 ||
@@ -465,7 +488,7 @@ void Breakpoint::SerializeWithCachedSizes(
   // string id = 1;
   if (this->id().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->id().data(), this->id().length(),
+      this->id().data(), static_cast<int>(this->id().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Breakpoint.id");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -479,9 +502,10 @@ void Breakpoint::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.StackFrame stack_frames = 3;
-  for (unsigned int i = 0, n = this->stack_frames_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->stack_frames_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->stack_frames(i), output);
+      3, this->stack_frames(static_cast<int>(i)), output);
   }
 
   // bool activated = 4;
@@ -501,11 +525,17 @@ void Breakpoint::SerializeWithCachedSizes(
       6, *this->final_time_, output);
   }
 
+  // bool kill_server = 7;
+  if (this->kill_server() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(7, this->kill_server(), output);
+  }
+
   // @@protoc_insertion_point(serialize_end:google.cloud.diagnostics.debug.Breakpoint)
 }
 
 ::google::protobuf::uint8* Breakpoint::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
   // @@protoc_insertion_point(serialize_to_array_start:google.cloud.diagnostics.debug.Breakpoint)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
@@ -513,7 +543,7 @@ void Breakpoint::SerializeWithCachedSizes(
   // string id = 1;
   if (this->id().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->id().data(), this->id().length(),
+      this->id().data(), static_cast<int>(this->id().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Breakpoint.id");
     target =
@@ -529,10 +559,11 @@ void Breakpoint::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.StackFrame stack_frames = 3;
-  for (unsigned int i = 0, n = this->stack_frames_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->stack_frames_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        3, this->stack_frames(i), deterministic, target);
+        3, this->stack_frames(static_cast<int>(i)), deterministic, target);
   }
 
   // bool activated = 4;
@@ -554,6 +585,11 @@ void Breakpoint::SerializeWithCachedSizes(
         6, *this->final_time_, deterministic, target);
   }
 
+  // bool kill_server = 7;
+  if (this->kill_server() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(7, this->kill_server(), target);
+  }
+
   // @@protoc_insertion_point(serialize_to_array_end:google.cloud.diagnostics.debug.Breakpoint)
   return target;
 }
@@ -564,12 +600,12 @@ size_t Breakpoint::ByteSizeLong() const {
 
   // repeated .google.cloud.diagnostics.debug.StackFrame stack_frames = 3;
   {
-    unsigned int count = this->stack_frames_size();
+    unsigned int count = static_cast<unsigned int>(this->stack_frames_size());
     total_size += 1UL * count;
     for (unsigned int i = 0; i < count; i++) {
       total_size +=
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->stack_frames(i));
+          this->stack_frames(static_cast<int>(i)));
     }
   }
 
@@ -603,6 +639,11 @@ size_t Breakpoint::ByteSizeLong() const {
 
   // bool activated = 4;
   if (this->activated() != 0) {
+    total_size += 1 + 1;
+  }
+
+  // bool kill_server = 7;
+  if (this->kill_server() != 0) {
     total_size += 1 + 1;
   }
 
@@ -652,6 +693,9 @@ void Breakpoint::MergeFrom(const Breakpoint& from) {
   if (from.activated() != 0) {
     set_activated(from.activated());
   }
+  if (from.kill_server() != 0) {
+    set_kill_server(from.kill_server());
+  }
 }
 
 void Breakpoint::CopyFrom(const ::google::protobuf::Message& from) {
@@ -683,6 +727,7 @@ void Breakpoint::InternalSwap(Breakpoint* other) {
   std::swap(create_time_, other->create_time_);
   std::swap(final_time_, other->final_time_);
   std::swap(activated_, other->activated_);
+  std::swap(kill_server_, other->kill_server_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
@@ -918,6 +963,20 @@ void Breakpoint::set_allocated_final_time(::google::protobuf::Timestamp* final_t
   // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.final_time)
 }
 
+// bool kill_server = 7;
+void Breakpoint::clear_kill_server() {
+  kill_server_ = false;
+}
+bool Breakpoint::kill_server() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.kill_server)
+  return kill_server_;
+}
+void Breakpoint::set_kill_server(bool value) {
+  
+  kill_server_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.kill_server)
+}
+
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // ===================================================================
@@ -1025,7 +1084,7 @@ bool StackFrame::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_method_name()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->method_name().data(), this->method_name().length(),
+            this->method_name().data(), static_cast<int>(this->method_name().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.StackFrame.method_name"));
         } else {
@@ -1100,7 +1159,7 @@ void StackFrame::SerializeWithCachedSizes(
   // string method_name = 1;
   if (this->method_name().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->method_name().data(), this->method_name().length(),
+      this->method_name().data(), static_cast<int>(this->method_name().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.StackFrame.method_name");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -1114,15 +1173,17 @@ void StackFrame::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable arguments = 3;
-  for (unsigned int i = 0, n = this->arguments_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->arguments_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      3, this->arguments(i), output);
+      3, this->arguments(static_cast<int>(i)), output);
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable locals = 4;
-  for (unsigned int i = 0, n = this->locals_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->locals_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      4, this->locals(i), output);
+      4, this->locals(static_cast<int>(i)), output);
   }
 
   // @@protoc_insertion_point(serialize_end:google.cloud.diagnostics.debug.StackFrame)
@@ -1130,6 +1191,7 @@ void StackFrame::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* StackFrame::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
   // @@protoc_insertion_point(serialize_to_array_start:google.cloud.diagnostics.debug.StackFrame)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1137,7 +1199,7 @@ void StackFrame::SerializeWithCachedSizes(
   // string method_name = 1;
   if (this->method_name().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->method_name().data(), this->method_name().length(),
+      this->method_name().data(), static_cast<int>(this->method_name().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.StackFrame.method_name");
     target =
@@ -1153,17 +1215,19 @@ void StackFrame::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable arguments = 3;
-  for (unsigned int i = 0, n = this->arguments_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->arguments_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        3, this->arguments(i), deterministic, target);
+        3, this->arguments(static_cast<int>(i)), deterministic, target);
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable locals = 4;
-  for (unsigned int i = 0, n = this->locals_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->locals_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        4, this->locals(i), deterministic, target);
+        4, this->locals(static_cast<int>(i)), deterministic, target);
   }
 
   // @@protoc_insertion_point(serialize_to_array_end:google.cloud.diagnostics.debug.StackFrame)
@@ -1176,23 +1240,23 @@ size_t StackFrame::ByteSizeLong() const {
 
   // repeated .google.cloud.diagnostics.debug.Variable arguments = 3;
   {
-    unsigned int count = this->arguments_size();
+    unsigned int count = static_cast<unsigned int>(this->arguments_size());
     total_size += 1UL * count;
     for (unsigned int i = 0; i < count; i++) {
       total_size +=
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->arguments(i));
+          this->arguments(static_cast<int>(i)));
     }
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable locals = 4;
   {
-    unsigned int count = this->locals_size();
+    unsigned int count = static_cast<unsigned int>(this->locals_size());
     total_size += 1UL * count;
     for (unsigned int i = 0; i < count; i++) {
       total_size +=
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->locals(i));
+          this->locals(static_cast<int>(i)));
     }
   }
 
@@ -1531,7 +1595,7 @@ bool SourceLocation::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_path()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->path().data(), this->path().length(),
+            this->path().data(), static_cast<int>(this->path().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.SourceLocation.path"));
         } else {
@@ -1584,7 +1648,7 @@ void SourceLocation::SerializeWithCachedSizes(
   // string path = 1;
   if (this->path().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->path().data(), this->path().length(),
+      this->path().data(), static_cast<int>(this->path().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.SourceLocation.path");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -1601,6 +1665,7 @@ void SourceLocation::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* SourceLocation::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
   // @@protoc_insertion_point(serialize_to_array_start:google.cloud.diagnostics.debug.SourceLocation)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
@@ -1608,7 +1673,7 @@ void SourceLocation::SerializeWithCachedSizes(
   // string path = 1;
   if (this->path().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->path().data(), this->path().length(),
+      this->path().data(), static_cast<int>(this->path().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.SourceLocation.path");
     target =
@@ -1904,7 +1969,7 @@ bool Variable::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_name()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->name().data(), this->name().length(),
+            this->name().data(), static_cast<int>(this->name().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.Variable.name"));
         } else {
@@ -1920,7 +1985,7 @@ bool Variable::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_type()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->type().data(), this->type().length(),
+            this->type().data(), static_cast<int>(this->type().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.Variable.type"));
         } else {
@@ -1936,7 +2001,7 @@ bool Variable::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_value()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->value().data(), this->value().length(),
+            this->value().data(), static_cast<int>(this->value().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.Variable.value"));
         } else {
@@ -1999,7 +2064,7 @@ void Variable::SerializeWithCachedSizes(
   // string name = 1;
   if (this->name().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->name().data(), this->name().length(),
+      this->name().data(), static_cast<int>(this->name().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.name");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -2009,7 +2074,7 @@ void Variable::SerializeWithCachedSizes(
   // string type = 2;
   if (this->type().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->type().data(), this->type().length(),
+      this->type().data(), static_cast<int>(this->type().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.type");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -2019,7 +2084,7 @@ void Variable::SerializeWithCachedSizes(
   // string value = 3;
   if (this->value().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->value().data(), this->value().length(),
+      this->value().data(), static_cast<int>(this->value().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.value");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -2027,9 +2092,10 @@ void Variable::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable members = 4;
-  for (unsigned int i = 0, n = this->members_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->members_size()); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      4, this->members(i), output);
+      4, this->members(static_cast<int>(i)), output);
   }
 
   // .google.cloud.diagnostics.debug.Status status = 5;
@@ -2043,6 +2109,7 @@ void Variable::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* Variable::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
   // @@protoc_insertion_point(serialize_to_array_start:google.cloud.diagnostics.debug.Variable)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2050,7 +2117,7 @@ void Variable::SerializeWithCachedSizes(
   // string name = 1;
   if (this->name().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->name().data(), this->name().length(),
+      this->name().data(), static_cast<int>(this->name().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.name");
     target =
@@ -2061,7 +2128,7 @@ void Variable::SerializeWithCachedSizes(
   // string type = 2;
   if (this->type().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->type().data(), this->type().length(),
+      this->type().data(), static_cast<int>(this->type().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.type");
     target =
@@ -2072,7 +2139,7 @@ void Variable::SerializeWithCachedSizes(
   // string value = 3;
   if (this->value().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->value().data(), this->value().length(),
+      this->value().data(), static_cast<int>(this->value().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Variable.value");
     target =
@@ -2081,10 +2148,11 @@ void Variable::SerializeWithCachedSizes(
   }
 
   // repeated .google.cloud.diagnostics.debug.Variable members = 4;
-  for (unsigned int i = 0, n = this->members_size(); i < n; i++) {
+  for (unsigned int i = 0,
+      n = static_cast<unsigned int>(this->members_size()); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        4, this->members(i), deterministic, target);
+        4, this->members(static_cast<int>(i)), deterministic, target);
   }
 
   // .google.cloud.diagnostics.debug.Status status = 5;
@@ -2104,12 +2172,12 @@ size_t Variable::ByteSizeLong() const {
 
   // repeated .google.cloud.diagnostics.debug.Variable members = 4;
   {
-    unsigned int count = this->members_size();
+    unsigned int count = static_cast<unsigned int>(this->members_size());
     total_size += 1UL * count;
     for (unsigned int i = 0; i < count; i++) {
       total_size +=
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->members(i));
+          this->members(static_cast<int>(i)));
     }
   }
 
@@ -2560,7 +2628,7 @@ bool Status::MergePartialFromCodedStream(
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_message()));
           DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->message().data(), this->message().length(),
+            this->message().data(), static_cast<int>(this->message().length()),
             ::google::protobuf::internal::WireFormatLite::PARSE,
             "google.cloud.diagnostics.debug.Status.message"));
         } else {
@@ -2604,7 +2672,7 @@ void Status::SerializeWithCachedSizes(
   // string message = 2;
   if (this->message().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->message().data(), this->message().length(),
+      this->message().data(), static_cast<int>(this->message().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Status.message");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
@@ -2616,6 +2684,7 @@ void Status::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* Status::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
+  (void)deterministic; // Unused
   // @@protoc_insertion_point(serialize_to_array_start:google.cloud.diagnostics.debug.Status)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
@@ -2628,7 +2697,7 @@ void Status::SerializeWithCachedSizes(
   // string message = 2;
   if (this->message().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->message().data(), this->message().length(),
+      this->message().data(), static_cast<int>(this->message().length()),
       ::google::protobuf::internal::WireFormatLite::SERIALIZE,
       "google.cloud.diagnostics.debug.Status.message");
     target =
