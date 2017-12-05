@@ -23,28 +23,29 @@ namespace Google.Cloud.Diagnostics.Debug {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBicmVha3BvaW50LnByb3RvEh5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3Mu",
-            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8ikAIKCkJy",
+            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8ipQIKCkJy",
             "ZWFrcG9pbnQSCgoCaWQYASABKAkSQAoIbG9jYXRpb24YAiABKAsyLi5nb29n",
             "bGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuU291cmNlTG9jYXRpb24SQAoM",
             "c3RhY2tfZnJhbWVzGAMgAygLMiouZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNz",
             "LmRlYnVnLlN0YWNrRnJhbWUSEQoJYWN0aXZhdGVkGAQgASgIEi8KC2NyZWF0",
             "ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpm",
-            "aW5hbF90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLa",
-            "AQoKU3RhY2tGcmFtZRITCgttZXRob2RfbmFtZRgBIAEoCRJACghsb2NhdGlv",
-            "bhgCIAEoCzIuLmdvb2dsZS5jbG91ZC5kaWFnbm9zdGljcy5kZWJ1Zy5Tb3Vy",
-            "Y2VMb2NhdGlvbhI7Cglhcmd1bWVudHMYAyADKAsyKC5nb29nbGUuY2xvdWQu",
-            "ZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFibGUSOAoGbG9jYWxzGAQgAygLMigu",
-            "Z29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlZhcmlhYmxlIiwKDlNv",
-            "dXJjZUxvY2F0aW9uEgwKBHBhdGgYASABKAkSDAoEbGluZRgCIAEoBSKoAQoI",
-            "VmFyaWFibGUSDAoEbmFtZRgBIAEoCRIMCgR0eXBlGAIgASgJEg0KBXZhbHVl",
-            "GAMgASgJEjkKB21lbWJlcnMYBCADKAsyKC5nb29nbGUuY2xvdWQuZGlhZ25v",
-            "c3RpY3MuZGVidWcuVmFyaWFibGUSNgoGc3RhdHVzGAUgASgLMiYuZ29vZ2xl",
-            "LmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlN0YXR1cyIqCgZTdGF0dXMSDwoH",
-            "aXNlcnJvchgBIAEoCBIPCgdtZXNzYWdlGAIgASgJYgZwcm90bzM="));
+            "aW5hbF90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIT",
+            "CgtraWxsX3NlcnZlchgHIAEoCCLaAQoKU3RhY2tGcmFtZRITCgttZXRob2Rf",
+            "bmFtZRgBIAEoCRJACghsb2NhdGlvbhgCIAEoCzIuLmdvb2dsZS5jbG91ZC5k",
+            "aWFnbm9zdGljcy5kZWJ1Zy5Tb3VyY2VMb2NhdGlvbhI7Cglhcmd1bWVudHMY",
+            "AyADKAsyKC5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFi",
+            "bGUSOAoGbG9jYWxzGAQgAygLMiguZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNz",
+            "LmRlYnVnLlZhcmlhYmxlIiwKDlNvdXJjZUxvY2F0aW9uEgwKBHBhdGgYASAB",
+            "KAkSDAoEbGluZRgCIAEoBSKoAQoIVmFyaWFibGUSDAoEbmFtZRgBIAEoCRIM",
+            "CgR0eXBlGAIgASgJEg0KBXZhbHVlGAMgASgJEjkKB21lbWJlcnMYBCADKAsy",
+            "KC5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFibGUSNgoG",
+            "c3RhdHVzGAUgASgLMiYuZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVn",
+            "LlN0YXR1cyIqCgZTdGF0dXMSDwoHaXNlcnJvchgBIAEoCBIPCgdtZXNzYWdl",
+            "GAIgASgJYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime", "KillServer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.StackFrame), global::Google.Cloud.Diagnostics.Debug.StackFrame.Parser, new[]{ "MethodName", "Location", "Arguments", "Locals" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.SourceLocation), global::Google.Cloud.Diagnostics.Debug.SourceLocation.Parser, new[]{ "Path", "Line" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Variable), global::Google.Cloud.Diagnostics.Debug.Variable.Parser, new[]{ "Name", "Type", "Value", "Members", "Status" }, null, null, null),
@@ -85,6 +86,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       activated_ = other.activated_;
       CreateTime = other.createTime_ != null ? other.CreateTime.Clone() : null;
       FinalTime = other.finalTime_ != null ? other.FinalTime.Clone() : null;
+      killServer_ = other.killServer_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -157,6 +159,17 @@ namespace Google.Cloud.Diagnostics.Debug {
       }
     }
 
+    /// <summary>Field number for the "kill_server" field.</summary>
+    public const int KillServerFieldNumber = 7;
+    private bool killServer_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool KillServer {
+      get { return killServer_; }
+      set {
+        killServer_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Breakpoint);
@@ -176,6 +189,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (Activated != other.Activated) return false;
       if (!object.Equals(CreateTime, other.CreateTime)) return false;
       if (!object.Equals(FinalTime, other.FinalTime)) return false;
+      if (KillServer != other.KillServer) return false;
       return true;
     }
 
@@ -188,6 +202,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (Activated != false) hash ^= Activated.GetHashCode();
       if (createTime_ != null) hash ^= CreateTime.GetHashCode();
       if (finalTime_ != null) hash ^= FinalTime.GetHashCode();
+      if (KillServer != false) hash ^= KillServer.GetHashCode();
       return hash;
     }
 
@@ -219,6 +234,10 @@ namespace Google.Cloud.Diagnostics.Debug {
         output.WriteRawTag(50);
         output.WriteMessage(FinalTime);
       }
+      if (KillServer != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(KillServer);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -239,6 +258,9 @@ namespace Google.Cloud.Diagnostics.Debug {
       }
       if (finalTime_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(FinalTime);
+      }
+      if (KillServer != false) {
+        size += 1 + 1;
       }
       return size;
     }
@@ -272,6 +294,9 @@ namespace Google.Cloud.Diagnostics.Debug {
           finalTime_ = new global::Google.Protobuf.WellKnownTypes.Timestamp();
         }
         FinalTime.MergeFrom(other.FinalTime);
+      }
+      if (other.KillServer != false) {
+        KillServer = other.KillServer;
       }
     }
 
@@ -314,6 +339,10 @@ namespace Google.Cloud.Diagnostics.Debug {
               finalTime_ = new global::Google.Protobuf.WellKnownTypes.Timestamp();
             }
             input.ReadMessage(finalTime_);
+            break;
+          }
+          case 56: {
+            KillServer = input.ReadBool();
             break;
           }
         }

@@ -48,9 +48,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
             catch (InvalidOperationException)
             {
-                // TODO(talarico): Pull out netcoreapp1.1
                 return Combine(GetRootDirectory(), 
-                    "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp1.1", 
+                    "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp2.0", 
                     "publish", "Google.Cloud.Diagnostics.Debug.TestApp.dll");                
             }
         }

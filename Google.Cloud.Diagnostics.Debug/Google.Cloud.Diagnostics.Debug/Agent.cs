@@ -99,6 +99,10 @@ namespace Google.Cloud.Diagnostics.Debug
                         tcs.SetResult(true);
                         server.StartActionLoop(TimeSpan.FromSeconds(_options.WaitTime), cancellationToken);
                     });
+
+                    // TODO(talarico): Temporary solution: This will ensure the debugger shuts down. See #146.
+                    var breakpoint = new Breakpoint { KillServer = true };
+                    breakpointServer.WriteBreakpointAsync(breakpoint).Wait();
                 }
             }).Start();
             return tcs.Task;
