@@ -146,13 +146,21 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         private class TestAppWrapper : IDisposable
         {
+            /// <summary>
+            /// Create a <see cref="TestAppWrapper"/> that will start the test
+            /// app with no debugger attached.
+            /// </summary>
             public static TestAppWrapper Create()
             {
                 var startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                     "dotnet", $"{Utils.GetApplication()}", null);
                 return new TestAppWrapper(Process.Start(startInfo));
             }
-            
+
+            /// <summary>
+            /// Create a <see cref="TestAppWrapper"/> that will start the test
+            /// app with a debugger attached.
+            /// </summary>
             public static TestAppWrapper CreateDebug(AgentOptions options)
             {
                 Agent agent = new Agent(options);
