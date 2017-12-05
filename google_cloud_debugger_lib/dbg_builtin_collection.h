@@ -29,9 +29,10 @@ class DbgBuiltinCollection : public DbgClass {
   DbgBuiltinCollection(ICorDebugType *debug_type, int depth)
       : DbgClass(debug_type, depth) {}
 
-  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable_proto,
-                          std::vector<VariableWrapper> *members,
-                          IEvalCoordinator *eval_coordinator) override;
+  HRESULT PopulateMembers(
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator) override;
 
  protected:
   // Stores the items in the collection depending on whether
@@ -43,9 +44,9 @@ class DbgBuiltinCollection : public DbgClass {
   // Populates variables with a field count (number of items in this hash set
   // or dictionary) and the members of this hash set or dictionary.
   HRESULT PopulateHashSetOrDictionary(
-    google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator);
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator);
 
  private:
   // Processes the case where the object is a collection (list, hash set

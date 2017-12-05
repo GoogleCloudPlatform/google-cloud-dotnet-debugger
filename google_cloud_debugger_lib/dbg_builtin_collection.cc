@@ -22,8 +22,8 @@
 #include "class_names.h"
 #include "dbg_array.h"
 #include "dbg_stack_frame.h"
-#include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::min;
@@ -92,12 +92,14 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
                         kHashSetLastIndexFieldName, &last_index);
       if (FAILED(hr)) {
         WriteError(
-            "Failed to find field that represents the last index of the hash set.");
+            "Failed to find field that represents the last index of the hash "
+            "set.");
         return hr;
       }
 
       hashset_last_index_ =
-          reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
+          reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())
+              ->GetValue();
     }
     return hr;
   }
@@ -106,7 +108,8 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
   if (kDictionaryClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::DICTIONARY;
     return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kDictionaryCountFieldName, kDictionaryItemsFieldName);
+                                 kDictionaryCountFieldName,
+                                 kDictionaryItemsFieldName);
   }
 
   return E_NOTIMPL;
@@ -143,9 +146,8 @@ HRESULT DbgBuiltinCollection::ProcessCollectionType(
 }
 
 HRESULT DbgBuiltinCollection::PopulateMembers(
-  Variable *variable_proto,
-  vector<VariableWrapper> *members,
-  IEvalCoordinator *eval_coordinator) {
+    Variable *variable_proto, vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
   if (!members) {
     return E_INVALIDARG;
   }
@@ -175,12 +177,14 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
   list_count->set_type(kInt32ClassName);
 
   if (class_type_ == ClassType::LIST && collection_items_) {
-    return collection_items_->PopulateMembers(variable_proto, members, eval_coordinator);
+    return collection_items_->PopulateMembers(variable_proto, members,
+                                              eval_coordinator);
   }
 
   if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) &&
       collection_items_) {
-    return PopulateHashSetOrDictionary(variable_proto, members, eval_coordinator);
+    return PopulateHashSetOrDictionary(variable_proto, members,
+                                       eval_coordinator);
   }
 
   WriteError("Unknown collection.");
@@ -190,8 +194,7 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
 
 HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     google::cloud::diagnostics::debug::Variable *variable_proto,
-    vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator) {
+    vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
   // Start fetching items from the hash set or dictionary.
   HRESULT hr;
   int32_t index = 0;

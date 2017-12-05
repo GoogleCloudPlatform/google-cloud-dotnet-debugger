@@ -137,8 +137,7 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
 
 HRESULT DbgArray::PopulateMembers(
     google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator) {
+    std::vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
@@ -200,7 +199,7 @@ HRESULT DbgArray::PopulateMembers(
         // Spill over the addition until we can't.
         ++dimensions_tracker[current_dimension_index];
         if (dimensions_tracker[current_dimension_index] ==
-          dimensions_[current_dimension_index]) {
+            dimensions_[current_dimension_index]) {
           dimensions_tracker[current_dimension_index] = 0;
           current_dimension_index -= 1;
         } else {

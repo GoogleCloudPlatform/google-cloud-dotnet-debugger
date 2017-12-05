@@ -36,15 +36,28 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
 class DebuggerCallback;
 class IEvalCoordinator;
 
+// This wrapper class contains pointers to a variable proto and
+// its underlying object. It also contains the BFS level,
+// which is used by PopulateStackFrame to stop the BFS when
+// it reaches kDefaultObjectEvalDepth.
 class VariableWrapper {
  public:
+  // Constructor that takes in variable proto, the underlying object
+  // and the BFS level (default to 1).
   VariableWrapper(google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::shared_ptr<DbgObject> variable_value, int bfs_level = 0) :
-    variable_proto_(variable_proto), variable_value_(variable_value), bfs_level_(bfs_level) {}
+                  std::shared_ptr<DbgObject> variable_value, int bfs_level = 1)
+      : variable_proto_(variable_proto),
+        variable_value_(variable_value),
+        bfs_level_(bfs_level) {}
 
+  // The proto for this variable.
   google::cloud::diagnostics::debug::Variable *variable_proto_;
+
+  // The underlying object that will be used to populate variable proto.
   std::shared_ptr<DbgObject> variable_value_;
-  std::int32_t bfs_level_ = 0;
+
+  // The BFS level that this variable is at.
+  std::int32_t bfs_level_ = 1;
 };
 
 // This class is represents a stack frame at a breakpoint.

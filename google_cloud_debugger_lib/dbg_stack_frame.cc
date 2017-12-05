@@ -302,6 +302,7 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
   queue<VariableWrapper> bfs_queue;
 
+  // Processes the local variables and put them into the BFS queue.
   for (const auto &variable_tuple : variables_) {
     Variable *variable_proto = stack_frame->add_locals();
 
@@ -317,6 +318,7 @@ HRESULT DbgStackFrame::PopulateStackFrame(
     bfs_queue.push(VariableWrapper(variable_proto, variable_value));
   }
 
+  // Processes the method arguments and put them into the BFS queue.
   for (const auto &variable_tuple : method_arguments_) {
     Variable *variable_proto = stack_frame->add_arguments();
 
@@ -333,21 +335,28 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   }
 
   HRESULT hr;
+  // Until the queue is empty, we:
+  //  1. Pop out an item X.
+  //  2.
+  //  3. Try to get members (children) of X.
+  //  4. If there are members, push them into the queue. We
+  // also set the BFS level of the members to be the BFS
+  // level of the node X + 1.
+  //  5. If not, call PopulateValue on X.
   while (!bfs_queue.empty()) {
     VariableWrapper current_variable = bfs_queue.front();
-    if (current_variable.bfs_level_ > kDefaultObjectEvalDepth) {
+    if (current_variable.bfs_level_ >= kDefaultObjectEvalDepth) {
       // We have reached a level that is more than the evaluation depth.
       return S_OK;
     }
 
-    vector<VariableWrapper> variable_members;
-
     // Populates the type of the variable into the variable proto.
-    hr = current_variable.variable_value_->PopulateType(current_variable.variable_proto_);
+    hr = current_variable.variable_value_->PopulateType(
+        current_variable.variable_proto_);
 
     if (FAILED(hr)) {
       SetErrorStatusMessage(current_variable.variable_proto_,
-        current_variable.variable_value_->GetErrorString());
+                            current_variable.variable_value_->GetErrorString());
       bfs_queue.pop();
       continue;
     }
@@ -358,17 +367,17 @@ HRESULT DbgStackFrame::PopulateStackFrame(
       continue;
     }
 
-    // Tries to see whether we can get any members from
+    // Tries to see whether we can get any members (children) from
     // this variable.
+    vector<VariableWrapper> variable_members;
     hr = current_variable.variable_value_->PopulateMembers(
-        current_variable.variable_proto_, &variable_members,
-        eval_coordinator);
+        current_variable.variable_proto_, &variable_members, eval_coordinator);
 
     // If hr is S_FALSE then there are no members so we simply
     // call PopulateValue.
     if (hr == S_FALSE) {
       hr = current_variable.variable_value_->PopulateValue(
-        current_variable.variable_proto_);
+          current_variable.variable_proto_);
     }
     // Otherwise, process and put the members in the queue.
     else if (SUCCEEDED(hr)) {
@@ -380,7 +389,7 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
     if (FAILED(hr)) {
       SetErrorStatusMessage(current_variable.variable_proto_,
-        current_variable.variable_value_->GetErrorString());
+                            current_variable.variable_value_->GetErrorString());
     }
     bfs_queue.pop();
   }

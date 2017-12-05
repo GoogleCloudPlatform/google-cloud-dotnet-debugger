@@ -75,8 +75,7 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 HRESULT DbgClassProperty::PopulateVariableValue(
     ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    vector<CComPtr<ICorDebugType>> *generic_types,
-    int evaluation_depth) {
+    vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;

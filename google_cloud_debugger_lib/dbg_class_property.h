@@ -35,7 +35,7 @@ class DbgClassProperty : public IDbgClassMember {
   // Creation_depth sets the depth used when creating a DbgObject
   // representing this property.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
-      int creation_depth);
+                  int creation_depth);
 
   // Evaluate the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
@@ -63,8 +63,7 @@ class DbgClassProperty : public IDbgClassMember {
  private:
   // Helper function to set the value of variable to this property's value.
   // This function assumes that member_value_ is not null.
-  HRESULT PopulateVariableValueHelper(
-      IEvalCoordinator *eval_coordinator);
+  HRESULT PopulateVariableValueHelper(IEvalCoordinator *eval_coordinator);
 
   // The token that represents the property getter.
   mdMethodDef property_getter_function = 0;

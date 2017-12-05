@@ -40,9 +40,10 @@ class DbgClass : public DbgObject {
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
 
   // Populates variable with fields and properties of this class.
-  HRESULT PopulateMembers(google::cloud::diagnostics::debug::Variable *variable_proto,
-                          std::vector<VariableWrapper> *members,
-                          IEvalCoordinator *eval_coordinator) override;
+  HRESULT PopulateMembers(
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator) override;
 
   // Populates variable with type of this class.
   HRESULT PopulateType(
@@ -53,7 +54,7 @@ class DbgClass : public DbgObject {
   // This function assumes that this DbgClass object has already been
   // initialized (so the class_fields_ vector are populated).
   HRESULT ExtractField(const std::string &field_name,
-    std::shared_ptr<DbgObject> *field_value);
+                       std::shared_ptr<DbgObject> *field_value);
 
   // Various .NET class types that we need to process differently
   // rather than just printing out fields and properties.
@@ -153,8 +154,8 @@ class DbgClass : public DbgObject {
   // in the cache in the member_vector.
   // If not, we just place class_member into member_vector.
   void AddStaticClassMemberToVector(
-    std::unique_ptr<IDbgClassMember> class_member,
-    std::vector<std::shared_ptr<IDbgClassMember>> *member_vector);
+      std::unique_ptr<IDbgClassMember> class_member,
+      std::vector<std::shared_ptr<IDbgClassMember>> *member_vector);
 
   // Add class members to proto variable using vectors
   // class_members. Eval_coordinator is used to evaluate
@@ -162,10 +163,9 @@ class DbgClass : public DbgObject {
   // If there are errors, this function will also set the error
   // status in variable.
   void PopulateClassMembers(
-    google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator,
-    std::vector<std::shared_ptr<IDbgClassMember>> *class_members);
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator,
+      std::vector<std::shared_ptr<IDbgClassMember>> *class_members);
 
   // Extracts the static field member_name of class class_name in module
   // module_name in the static cache.

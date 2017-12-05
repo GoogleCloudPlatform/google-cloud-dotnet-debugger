@@ -54,9 +54,9 @@ class DbgArray : public DbgObject {
 
   // Sets the members of variable to the items in the array.
   HRESULT PopulateMembers(
-    google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator) override;
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator) override;
 
   // Sets the type of variable to this array type.
   HRESULT PopulateType(
