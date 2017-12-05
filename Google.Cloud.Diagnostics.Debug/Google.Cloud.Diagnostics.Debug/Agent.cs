@@ -76,39 +76,10 @@ namespace Google.Cloud.Diagnostics.Debug
 
         /// <inheritdoc />
         public void Dispose()
-        {
-           var processes = Process.GetProcesses();
-           foreach (var process in processes)
-           {
-             //Console.WriteLine($"{process.ProcessName} {process.Id}");
-           }
-           
-            string queryText = string.Format("select processid from win32_process where parentprocessid = {0}", _process.Id);
-            using (var searcher = new ManagementObjectSearcher(queryText))
-            {
-            
-              foreach (var obj in searcher.Get())
-              {
-                  object data = obj.Properties["processid"].Value;
-                  if (data != null)
-                  {
-                      // retrieve the process
-                      var childId = Convert.ToInt32(data);
-                      var childProcess = Process.GetProcessById(childId);
-
-                      Console.WriteLine($"id: {childId}");
-                      // ensure the current process is still live
-                      //if (childProcess != null)
-                      //    results.Add(childProcess);
-                  }
-              }
-          
-            }
-            
-            _process?.Kill();
+        { 
+            //_process?.Kill();
             _process?.Dispose();  
             _cts.Cancel();
-            Console.WriteLine("*********************END Dispose");
         }
 
         /// <summary>

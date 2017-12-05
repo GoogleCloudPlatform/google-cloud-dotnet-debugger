@@ -116,7 +116,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <returns>A test application.</returns>
         public IDisposable StartTestApp(bool debugEnabled, bool waitForStart = true)
         { 
-            var app = debugEnabled ? (IDisposable)StartTestAppDebug() : StartTestApp();
+            var app = debugEnabled ? TestAppWrapper.CreateDebug(Options) : TestAppWrapper.Create();
 
             if (waitForStart)
             {
@@ -142,25 +142,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
-        /// Starts the test app with no debugger attached.
-        /// </summary>
-        private TestAppWrapper StartTestApp() => TestAppWrapper.Create();
-
-        /// <summary>
-        /// Starts the test app with the debugger attached.
-        /// </summary>
-        private Agent StartTestAppDebug(AgentOptions options = null)
-        {
-            Agent agent = new Agent(options ?? Options);
-            new Thread(() =>
-            {
-                agent.StartAndBlock();
-                Console.WriteLine("**************** END StartAndBlock");
-            }).Start();
-            return agent;
-        }
-
-        /// <summary>
         /// Private class to handle starting and shutting down of the test app.
         /// </summary>
         private class TestAppWrapper : IDisposable
@@ -171,12 +152,23 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     "dotnet", $"{Utils.GetApplication()}", null);
                 return new TestAppWrapper(Process.Start(startInfo));
             }
-
-            private readonly Process _proc;
-
-            private TestAppWrapper(Process proc)
+            
+            public static TestAppWrapper CreateDebug(AgentOptions options)
             {
-                _proc = proc;
+                Agent agent = new Agent(options);
+                new Thread(() =>
+                {
+                    agent.StartAndBlock();
+
+                }).Start();
+                return new TestAppWrapper(agent);
+            }
+
+            private readonly IDisposable _disposable;
+
+            private TestAppWrapper(IDisposable disposable)
+            {
+                _disposable = disposable;
             }
 
             /// <summary>
@@ -187,7 +179,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             /// </summary>
             public void Dispose()
             {
-                _proc.Dispose();
+                _disposable.Dispose();
                 using (HttpClient client = new HttpClient())
                 {
                     client.GetAsync(AppUrlShutdown).Wait();

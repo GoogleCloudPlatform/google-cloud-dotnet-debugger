@@ -46,7 +46,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Assert.True(newBp.IsFinalState);
             }           
         }
-/*
+
         /// <summary>
         /// Calls to the endpoint AppUrlEcho, and sets a breakpoint just
         /// before it returns. At this breakpoint, we can collect and examine
@@ -102,6 +102,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     }
                 }
             }
-        } */
+        }
     }
 }
