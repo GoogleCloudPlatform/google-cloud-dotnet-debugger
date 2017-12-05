@@ -37,7 +37,7 @@ class VariableWrapper;
 class DbgObject : public StringStreamWrapper {
  public:
   // Create a DbgObject with ICorDebugType debug_type.
-  // The object will only be evaluated to a depth of depth.
+  // The object will only be created to a depth of depth.
   DbgObject(ICorDebugType *debug_type, int depth);
   virtual ~DbgObject() {}
 
@@ -61,7 +61,7 @@ class DbgObject : public StringStreamWrapper {
     return S_OK;
   }
 
-  // Returns members of proto variable to the members.
+  // Populates the members vector using this object's members.
   // Returns S_FALSE by default (no members).
   // Variable_proto is used to create children variable protos.
   // These protos, combined with this object's members' values
@@ -93,11 +93,8 @@ class DbgObject : public StringStreamWrapper {
   // Returns true if this object is null.
   BOOL GetIsNull() const { return is_null_; }
 
-  // Returns the current evaluation depth of the object.
-  int GetEvaluationDepth() const { return depth_; }
-
-  // Sets the current evaluation depth of the object.
-  void SetEvaluationDepth(int depth) { depth_ = depth; }
+  // Returns the current creation depth of the object.
+  int GetCreationDepth() const { return depth_; }
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialize_hr_; }
@@ -117,7 +114,16 @@ class DbgObject : public StringStreamWrapper {
   BOOL is_null_ = FALSE;
 
   // The depth of evaluation for this object.
-  // Once this is 0, we don't evaluate the fields and properties of the object.
+  // Once this is 0, we don't create the fields and properties of the object.
+  // Note that even though we use BFS in dbg_stack_frame to control how deep
+  // down we evaluate an object, we will still need this for object creation
+  // for ValueType object and field. For example, if an object is a normal
+  // class, object creation is stopped once we create a reference to the class.
+  // But if the object is a ValueType, we will have to store the fields
+  // and properties of the object (since we can't create a reference to
+  // a ValueType). If the fields and properties are in turn ValueType,
+  // we will have to keep creating them. So we need this depth_ to
+  // prevent infinite recursion.
   int depth_;
 
  protected:

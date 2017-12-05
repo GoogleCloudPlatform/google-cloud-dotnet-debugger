@@ -39,7 +39,11 @@ class DbgClass : public DbgObject {
   // This function populates parameterized type of the class if needed.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
 
-  // Populates variable with fields and properties of this class.
+  // Populate members vector with fields and properties (members) of
+  // the class. Variable_proto will be used to create protos that
+  // represent members of the class. These protos, together with the
+  // DbgObjects representing members of the class will be used to
+  // populate the members vector.
   HRESULT PopulateMembers(
       google::cloud::diagnostics::debug::Variable *variable_proto,
       std::vector<VariableWrapper> *members,

@@ -378,7 +378,7 @@ HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
 
         class_field->Initialize(field_defs[i], metadata_import, debug_obj_value,
                                 debug_class, debug_type,
-                                GetEvaluationDepth() - 1);
+                                GetCreationDepth() - 1);
         if (class_field->IsBackingField()) {
           // Insert class names into set so we can use it to check later
           // for backing fields.
@@ -429,7 +429,7 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
         }
 
         class_property->Initialize(property_defs[i], metadata_import,
-                                   GetEvaluationDepth() - 1);
+                                   GetCreationDepth() - 1);
         // If property name is MyProperty, checks whether there is a backing
         // field with the name <MyProperty>k__BackingField. Note that we have
         // logic to process backing fields' names to strip out the "<" and
@@ -486,7 +486,7 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
     return hr;
   }
 
-  if (GetEvaluationDepth() == 0) {
+  if (GetCreationDepth() <= 0) {
     return S_OK;
   }
 
@@ -582,7 +582,7 @@ HRESULT DbgClass::ExtractField(ICorDebugObjectValue *debug_obj_value,
     return hr;
   }
 
-  hr = CreateDbgObject(debug_field_value, GetEvaluationDepth() - 1, field_value,
+  hr = CreateDbgObject(debug_field_value, GetCreationDepth() - 1, field_value,
                        GetErrorStream());
   if (FAILED(hr)) {
     WriteError("Failed to evaluate the items of the list.");
@@ -695,9 +695,8 @@ void DbgClass::PopulateClassMembers(
       Variable *class_member_var = variable_proto->add_members();
       class_member_var->set_name((*it)->GetMemberName());
 
-      HRESULT hr = (*it)->PopulateVariableValue(class_handle_, eval_coordinator,
-                                                &generic_types_,
-                                                GetEvaluationDepth() - 1);
+      HRESULT hr = (*it)->Evaluate(class_handle_, eval_coordinator,
+                                   &generic_types_);
       if (FAILED(hr)) {
         SetErrorStatusMessage(class_member_var, (*it).get());
         continue;
@@ -748,7 +747,7 @@ HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
     return S_OK;
   }
 
-  if (GetEvaluationDepth() <= 0) {
+  if (GetCreationDepth() <= 0) {
     WriteError("... Object Inspection Depth Limit reached.");
     return E_FAIL;
   }

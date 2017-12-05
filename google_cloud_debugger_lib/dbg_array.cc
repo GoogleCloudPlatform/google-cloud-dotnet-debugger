@@ -223,7 +223,7 @@ HRESULT DbgArray::PopulateMembers(
     }
 
     unique_ptr<DbgObject> result_object;
-    hr = DbgObject::CreateDbgObject(array_item, GetEvaluationDepth() - 1,
+    hr = DbgObject::CreateDbgObject(array_item, GetCreationDepth() - 1,
                                     &result_object, GetErrorStream());
     if (FAILED(hr)) {
       if (result_object) {

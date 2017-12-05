@@ -52,7 +52,11 @@ class DbgArray : public DbgObject {
   // and GetArrayItem(10, array_item) will return multi[1, 0].
   HRESULT GetArrayItem(int position, ICorDebugValue **array_item);
 
-  // Sets the members of variable to the items in the array.
+  // Populate members vector with items in the array.
+  // Variable_proto will be used to create protos that represent
+  // items in the array. These protos, together with the DbgObject
+  // representing items in the array will be used to populate the
+  // members vector.
   HRESULT PopulateMembers(
       google::cloud::diagnostics::debug::Variable *variable_proto,
       std::vector<VariableWrapper> *members,

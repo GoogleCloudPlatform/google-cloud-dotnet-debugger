@@ -165,7 +165,7 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
     return S_OK;
   }
 
-  if (GetEvaluationDepth() <= 0) {
+  if (GetCreationDepth() <= 0) {
     WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
   }
@@ -229,7 +229,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     // So a dictionary entry is essentially the same as a set slot except
     // that the dictionary entry has a key.
     unique_ptr<DbgObject> slot_item_obj;
-    hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj,
+    hr = CreateDbgObject(array_item, GetCreationDepth(), &slot_item_obj,
                          GetErrorStream());
     if (FAILED(hr)) {
       WriteError("Failed to create DbgObject for item at index " +

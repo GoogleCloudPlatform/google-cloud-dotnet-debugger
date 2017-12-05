@@ -72,10 +72,10 @@ void DbgClassProperty::Initialize(mdProperty property_def,
   creation_depth_ = creation_depth;
 }
 
-HRESULT DbgClassProperty::PopulateVariableValue(
+HRESULT DbgClassProperty::Evaluate(
     ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth) {
+    vector<CComPtr<ICorDebugType>> *generic_types) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
@@ -97,7 +97,7 @@ HRESULT DbgClassProperty::PopulateVariableValue(
 
   // If this property is already evaluated, don't do it again.
   if (member_value_) {
-    int previous_eval_depth = member_value_->GetEvaluationDepth();
+    int previous_eval_depth = member_value_->GetCreationDepth();
     return PopulateVariableValueHelper(eval_coordinator);
   }
 

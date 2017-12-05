@@ -37,19 +37,17 @@ class DbgClassProperty : public IDbgClassMember {
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
                   int creation_depth);
 
-  // Evaluate the property and stores the value in member_value_.
+  // Evaluates the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function
   // evaluation (the getter property function).
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  // Depth represents the level of inspection that we should perform on the
-  // object we get back from the getter function.
-  HRESULT PopulateVariableValue(
+  HRESULT Evaluate(
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth);
+      std::vector<CComPtr<ICorDebugType>> *generic_types);
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask

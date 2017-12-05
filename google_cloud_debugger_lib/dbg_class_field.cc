@@ -144,11 +144,10 @@ void DbgClassField::Initialize(mdFieldDef field_def,
   member_value_ = std::move(member_value);
 }
 
-HRESULT DbgClassField::PopulateVariableValue(
+HRESULT DbgClassField::Evaluate(
     ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    std::vector<CComPtr<ICorDebugType>> *generic_types,
-    int evaluation_depth) {
+    std::vector<CComPtr<ICorDebugType>> *generic_types) {
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }
@@ -158,8 +157,6 @@ HRESULT DbgClassField::PopulateVariableValue(
   }
 
   HRESULT hr;
-
-  // In case member_value_ is cached, sets the evaluation depth again.
   if (IsStatic() && !member_value_) {
     hr = ExtractStaticFieldValue(eval_coordinator);
     if (FAILED(hr)) {
