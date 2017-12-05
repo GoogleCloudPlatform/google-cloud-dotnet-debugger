@@ -1,11 +1,15 @@
-# This script generates coverage report for the code.
+# This script generates coverage report for the c++ code.
 # This script assumes that build-deps.sh has already been run.
 # A summary page will be printed and a webpage opened for finer grained details about coverage.
-#
-# TODO(talarico): Add coverage for C# unit and integration tests.
 
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
+
+if [[ "$OS" == "Windows_NT" ]]
+then
+  print "Script cannot be run on Windows."
+  echo
+fi
 
 build=true
 while (( "$#" )); do
