@@ -133,7 +133,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                         }
                         catch (AggregateException) when (i < 4)
                         {
-                            Thread.Sleep(TimeSpan.FromSeconds(5));
+                            Thread.Sleep(TimeSpan.FromSeconds(1));
                         }
                     }
                 }

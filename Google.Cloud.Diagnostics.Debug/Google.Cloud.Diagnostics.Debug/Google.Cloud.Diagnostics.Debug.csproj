@@ -16,7 +16,6 @@
     <PackageReference Include="Google.Cloud.DevTools.Common" Version="1.0.0" />
     <PackageReference Include="Google.Protobuf" Version="3.4.1" />
     <PackageReference Include="System.IO.Pipes" Version="4.3.0" />
-    <PackageReference Include="System.Management" Version="4.5.0-preview1-25914-04" />
   </ItemGroup>
 
   <ItemGroup>

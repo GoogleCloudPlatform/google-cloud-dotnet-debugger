@@ -107,10 +107,10 @@ class DbgBreakpoint {
   // Returns whether this breakpoint is activated or not.
   bool Activated() const { return activated_; }
 
-  // Returns whether this breakpoint is activated or not.
+  // Returns whether this breakpoint should kill the server.
   bool GetKillServer() const { return kill_server_; }
 
-  // Returns whether this breakpoint is activated or not.
+  // Sets whether this breakpoint should kill the server.
   void SetKillServer(bool kill_server) { kill_server_ = kill_server; }
 
   // Populate a Breakpoint proto using this breakpoint information.
@@ -164,7 +164,7 @@ class DbgBreakpoint {
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;
 
-  // Kill Server
+  // True if this breakpoint should kill the server it was sent to.
   bool kill_server_;
 };
 

@@ -18,7 +18,6 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Management;
 
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -76,9 +75,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
         /// <inheritdoc />
         public void Dispose()
-
         { 
-            //_process?.Kill();
             _process?.Dispose();  
             _cts.Cancel();
         }
@@ -103,10 +100,9 @@ namespace Google.Cloud.Diagnostics.Debug
                         tcs.SetResult(true);
                         server.StartActionLoop(TimeSpan.FromSeconds(_options.WaitTime), cancellationToken);
                     });
-                    Breakpoint breakpoint = new Breakpoint
-                    {
-                        KillServer = true
-                    };
+                    
+                    // TODO(talarico): Hacky solution to ensure the debugger shuts down.
+                    var breakpoint = new Breakpoint { KillServer = true };
                     breakpointServer.WriteBreakpointAsync(breakpoint).Wait();
                 }
             }).Start();

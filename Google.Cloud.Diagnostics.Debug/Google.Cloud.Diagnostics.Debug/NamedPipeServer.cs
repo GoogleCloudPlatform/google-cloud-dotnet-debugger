@@ -58,9 +58,7 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 _server.Disconnect();
             }
-            _server.Close();
             _server.Dispose();
-            _pipe.Dispose();
         }
     }
 }
