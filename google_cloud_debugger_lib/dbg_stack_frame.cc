@@ -335,6 +335,11 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   HRESULT hr;
   while (!bfs_queue.empty()) {
     VariableWrapper current_variable = bfs_queue.front();
+    if (current_variable.bfs_level_ > kDefaultObjectEvalDepth) {
+      // We have reached a level that is more than the evaluation depth.
+      return S_OK;
+    }
+
     vector<VariableWrapper> variable_members;
 
     // Populates the type of the variable into the variable proto.
@@ -367,7 +372,8 @@ HRESULT DbgStackFrame::PopulateStackFrame(
     }
     // Otherwise, process and put the members in the queue.
     else if (SUCCEEDED(hr)) {
-      for (const auto &member_value : variable_members) {
+      for (auto &member_value : variable_members) {
+        member_value.bfs_level_ = current_variable.bfs_level_ + 1;
         bfs_queue.push(member_value);
       }
     }

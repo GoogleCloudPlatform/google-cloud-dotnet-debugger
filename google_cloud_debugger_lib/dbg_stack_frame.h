@@ -39,10 +39,12 @@ class IEvalCoordinator;
 class VariableWrapper {
  public:
   VariableWrapper(google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::shared_ptr<DbgObject> variable_value) : variable_proto_(variable_proto), variable_value_(variable_value) {}
+    std::shared_ptr<DbgObject> variable_value, int bfs_level = 0) :
+    variable_proto_(variable_proto), variable_value_(variable_value), bfs_level_(bfs_level) {}
 
   google::cloud::diagnostics::debug::Variable *variable_proto_;
   std::shared_ptr<DbgObject> variable_value_;
+  std::int32_t bfs_level_ = 0;
 };
 
 // This class is represents a stack frame at a breakpoint.
