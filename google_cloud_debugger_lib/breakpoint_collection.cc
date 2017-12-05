@@ -216,7 +216,7 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
     }
 
 	if (breakpoint.GetKillServer()) {
-		return S_OK;
+	  return S_OK;
 	}
 
     hr = ActivateOrDeactivate(breakpoint);
