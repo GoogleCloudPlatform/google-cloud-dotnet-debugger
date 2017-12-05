@@ -149,7 +149,6 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
                          0);
   breakpoint->SetActivated(breakpoint_read.activated());
-
   breakpoint->SetKillServer(breakpoint_read.kill_server());
 
   return S_OK;
