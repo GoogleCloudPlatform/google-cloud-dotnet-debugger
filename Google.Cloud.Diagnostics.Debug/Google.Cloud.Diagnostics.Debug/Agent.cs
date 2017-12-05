@@ -77,7 +77,12 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
-            Interop.Sys.Kill(_process.Id, Interop.Sys.Signals.SIGKILL);
+            var processes = Process.GetProcesses();
+            foreach (var process in processes)
+            {
+            //    process.Get
+            }
+
             _process?.Kill();
             _process?.Dispose();  
             _cts.Cancel();
@@ -104,6 +109,11 @@ namespace Google.Cloud.Diagnostics.Debug
                         tcs.SetResult(true);
                         server.StartActionLoop(TimeSpan.FromSeconds(_options.WaitTime), cancellationToken);
                     });
+                    Breakpoint breakpoint = new Breakpoint
+                    {
+                        KillServer = true
+                    };
+                    breakpointServer.WriteBreakpointAsync(breakpoint).Wait();
                 }
             }).Start();
             return tcs.Task;

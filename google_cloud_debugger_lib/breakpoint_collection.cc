@@ -150,6 +150,8 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
                          0);
   breakpoint->SetActivated(breakpoint_read.activated());
 
+  breakpoint->SetKillServer(breakpoint_read.kill_server());
+
   return S_OK;
 }
 
@@ -213,6 +215,10 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
     if (FAILED(hr)) {
       return hr;
     }
+
+	if (breakpoint.GetKillServer()) {
+		return S_OK;
+	}
 
     hr = ActivateOrDeactivate(breakpoint);
     if (FAILED(hr)) {
