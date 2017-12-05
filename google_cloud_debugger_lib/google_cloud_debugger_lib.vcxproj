@@ -22,7 +22,7 @@
     <ProjectGuid>{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>google_cloud_debugger_lib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>google_cloud_debugger_lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
