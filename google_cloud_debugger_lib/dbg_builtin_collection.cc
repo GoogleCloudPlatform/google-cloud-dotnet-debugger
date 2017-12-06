@@ -47,9 +47,13 @@ const string DbgBuiltinCollection::kHashSetAndDictHashCodeFieldName =
     "hashCode";
 const string DbgBuiltinCollection::kCountProtoFieldName = "Count";
 
-HRESULT DbgBuiltinCollection::ProcessClassType(
+HRESULT DbgBuiltinCollection::ProcessClassMembersHelper(
     ICorDebugValue *debug_value, ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import) {
+  if (processed_) {
+    return S_OK;
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugObjectValue> debug_obj_value;
   hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
@@ -72,6 +76,7 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
         (reinterpret_cast<DbgArray *>(collection_items_.get()))
             ->SetMaxArrayItemsToRetrieve(count_);
       }
+      processed_ = true;
     }
     return hr;
   }
@@ -100,16 +105,24 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
       hashset_last_index_ =
           reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())
               ->GetValue();
+      processed_ = true;
     }
     return hr;
   }
 
-  // This is a dictionary
+  // This is a dictionary.
   if (kDictionaryClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::DICTIONARY;
-    return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kDictionaryCountFieldName,
-                                 kDictionaryItemsFieldName);
+    hr = ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
+                               kDictionaryCountFieldName,
+                               kDictionaryItemsFieldName);
+    if (FAILED(hr)) {
+      WriteError("Failed to process dictionary.");
+      return hr;
+    }
+
+    processed_ = true;
+    return hr;
   }
 
   return E_NOTIMPL;
@@ -168,6 +181,12 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
   if (GetCreationDepth() <= 0) {
     WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
+  }
+
+  HRESULT hr = ProcessClassMembers();
+  if (FAILED(hr)) {
+    WriteError("Failed to process class members.");
+    return hr;
   }
 
   // Sets the Count property of the collection.
