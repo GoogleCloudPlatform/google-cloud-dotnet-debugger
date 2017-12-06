@@ -724,7 +724,7 @@ shared_ptr<IDbgClassMember> DbgClass::GetStaticClassMember(
 HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
                                   std::vector<VariableWrapper> *members,
                                   IEvalCoordinator *eval_coordinator) {
-  if (!members) {
+  if (!members || !variable_proto) {
     return E_INVALIDARG;
   }
 

@@ -55,8 +55,8 @@ class DbgArray : public DbgObject {
   // Populate members vector with items in the array.
   // Variable_proto will be used to create protos that represent
   // items in the array. These protos, together with the DbgObject
-  // representing items in the array will be used to populate the
-  // members vector.
+  // (which represents the underlying objects in the array) will
+  // be used to populate the members vector.
   HRESULT PopulateMembers(
       google::cloud::diagnostics::debug::Variable *variable_proto,
       std::vector<VariableWrapper> *members,

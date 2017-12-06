@@ -94,6 +94,7 @@ class DbgObject : public StringStreamWrapper {
   BOOL GetIsNull() const { return is_null_; }
 
   // Returns the current creation depth of the object.
+  // See comments on depth_ field for more information.
   int GetCreationDepth() const { return depth_; }
 
   // Returns the HRESULT when Initialize function is called.
@@ -113,7 +114,7 @@ class DbgObject : public StringStreamWrapper {
   // True if the object is null.
   BOOL is_null_ = FALSE;
 
-  // The depth of evaluation for this object.
+  // The depth of creation for this object.
   // Once this is 0, we don't create the fields and properties of the object.
   // Note that even though we use BFS in dbg_stack_frame to control how deep
   // down we evaluate an object, we will still need this for object creation

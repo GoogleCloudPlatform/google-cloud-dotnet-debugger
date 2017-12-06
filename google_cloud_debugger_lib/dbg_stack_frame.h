@@ -16,6 +16,7 @@
 #define STACK_FRAME_
 
 #include <memory>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -50,6 +51,23 @@ class VariableWrapper {
         variable_value_(variable_value),
         bfs_level_(bfs_level) {}
 
+  // This method is used to process all VariableWrapper in the
+  // queue by populating their variable_proto_ with the underlying
+  // object variable_value_.
+  // Until the queue is empty, this method:
+  //  1. Pops out an item X.
+  //  2. If X is null, continues with the loop.
+  //  3. If the BFS level of X is kDefaultObjectEvalDepth,
+  // sets an error status on X saying that we cannot evaluate
+  // its children and continues with the loop.
+  //  4. Otherwise, tries to get members (children) of X.
+  //  5. If there are members, pushes them into the queue. We
+  // also set the BFS level of the members to be the BFS
+  // level of the node X + 1. If not, call PopulateValue on X.
+  static HRESULT PerformBFS(std::queue<VariableWrapper> *bfs_queue,
+                            IEvalCoordinator *eval_coordinator);
+
+ private:
   // The proto for this variable.
   google::cloud::diagnostics::debug::Variable *variable_proto_;
 

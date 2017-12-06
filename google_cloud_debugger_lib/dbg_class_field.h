@@ -40,7 +40,8 @@ class DbgClassField : public IDbgClassMember {
                   ICorDebugClass *debug_class, ICorDebugType *class_type,
                   int creation_depth);
 
-  // Evaluates and sets member_value_ to the value of this field.
+  // Evaluates and sets member_value_ to the value of the field
+  // that is represented by this class.
   // Reference_value and generic_types are ignored.
   HRESULT Evaluate(
       ICorDebugReferenceValue *reference_value,

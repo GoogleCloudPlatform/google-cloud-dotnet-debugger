@@ -142,11 +142,7 @@ HRESULT DbgArray::PopulateMembers(
     return initialize_hr_;
   }
 
-  if (!members) {
-    return E_INVALIDARG;
-  }
-
-  if (!eval_coordinator) {
+  if (!members || !variable_proto || !eval_coordinator) {
     return E_INVALIDARG;
   }
 

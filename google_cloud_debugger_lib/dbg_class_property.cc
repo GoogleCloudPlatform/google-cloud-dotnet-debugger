@@ -97,7 +97,6 @@ HRESULT DbgClassProperty::Evaluate(
 
   // If this property is already evaluated, don't do it again.
   if (member_value_) {
-    int previous_eval_depth = member_value_->GetCreationDepth();
     return PopulateVariableValueHelper(eval_coordinator);
   }
 
