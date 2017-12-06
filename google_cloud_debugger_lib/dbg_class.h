@@ -185,17 +185,21 @@ class DbgClass : public DbgObject {
   // Processes the class properties and stores the fields in class_fields_.
   HRESULT ProcessProperties(IMetaDataImport *metadata_import);
 
-  // Processes the object based on whether it is an Enum, a collection
-  // type (list, dictionary, hashset) or a simple class.
+  // Processes members of this class, creating DbgObject
+  // for each of them.
+  HRESULT ProcessClassMembers();
+
+  // Helper method to process the members of this class.
+  // If not overriden, this method will process this object as if
+  // it is a simple class (extracting out fields and properties).
   // Debug_value is the ICorDebugValue represents this
   // class object, metadata_import is the IMetaDataImport from this
   // class' module and debug_class is the ICorDebugClass representing
   // this class.
-  // If not overriden, this method will process this object as if
-  // it is a simple class (extracting out fields and properties).
-  virtual HRESULT ProcessClassType(ICorDebugValue *debug_value,
-                                   ICorDebugClass *debug_class,
-                                   IMetaDataImport *metadata_import);
+  virtual HRESULT ProcessClassMembersHelper(
+      ICorDebugValue *debug_value,
+      ICorDebugClass *debug_class,
+      IMetaDataImport *metadata_import);
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
@@ -241,6 +245,9 @@ class DbgClass : public DbgObject {
 
   // Token of the class.
   mdTypeDef class_token_;
+
+  // True if ProcessClassType is called.
+  bool processed_ = false;
 
   // Cache of static class members.
   // First key is the module name and class name.
