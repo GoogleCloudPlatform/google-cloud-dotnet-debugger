@@ -16,8 +16,8 @@
 
 #include <iostream>
 
-#include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
@@ -214,7 +214,7 @@ HRESULT DbgArray::PopulateMembers(
 
     if (FAILED(hr)) {
       // Output the error on why we failed to print out.
-      SetErrorStatusMessage(member, this);
+      members->push_back(VariableWrapper(member, nullptr));
       continue;
     }
 
@@ -226,7 +226,7 @@ HRESULT DbgArray::PopulateMembers(
         WriteError(result_object->GetErrorString());
       }
       // Output the error on why we failed to print out.
-      SetErrorStatusMessage(member, this);
+      members->push_back(VariableWrapper(member, nullptr));
       continue;
     }
 

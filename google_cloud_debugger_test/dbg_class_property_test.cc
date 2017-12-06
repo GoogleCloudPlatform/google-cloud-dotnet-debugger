@@ -77,7 +77,7 @@ class DbgClassPropertyTest : public ::testing::Test {
   }
 
   virtual void SetUpPropertyValue() {
-    // Sets various expectation for PopulateVariableValue call.
+    // Sets various expectation for Evaluate call.
     EXPECT_CALL(reference_value_, Dereference(_))
         .Times(1)
         .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
@@ -214,10 +214,16 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.PopulateVariableValue(
-                &variable, &reference_value_, &eval_coordinator_mock_,
-                &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                     &eval_coordinator_mock_,
+                                     &generic_types),
             S_OK);
+
+  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -239,10 +245,16 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueGeneric) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.PopulateVariableValue(
-                &variable, &reference_value_, &eval_coordinator_mock_,
-                &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(
+                &reference_value_, &eval_coordinator_mock_,
+                &generic_types),
             S_OK);
+
+  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -263,10 +275,16 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueStatic) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.PopulateVariableValue(
-                &variable, &reference_value_, &eval_coordinator_mock_,
-                &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(
+                &reference_value_, &eval_coordinator_mock_,
+                &generic_types),
             S_OK);
+
+  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -288,10 +306,16 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueStaticGeneric) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.PopulateVariableValue(
-                &variable, &reference_value_, &eval_coordinator_mock_,
-                &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(
+                &reference_value_, &eval_coordinator_mock_,
+                &generic_types),
             S_OK);
+
+  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(
+      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -305,20 +329,18 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
   vector<CComPtr<ICorDebugType>> generic_types;
 
   // Checks null argument error.
-  EXPECT_EQ(class_property_.PopulateVariableValue(nullptr, &reference_value_,
-                                                  &eval_coordinator_mock_,
-                                                  &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(nullptr,
+                                     &eval_coordinator_mock_,
+                                     &generic_types),
             E_INVALIDARG);
-  EXPECT_EQ(class_property_.PopulateVariableValue(
-                &variable, nullptr, &eval_coordinator_mock_, &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                     nullptr,
+                                     &generic_types),
             E_INVALIDARG);
-  EXPECT_EQ(class_property_.PopulateVariableValue(&variable, &reference_value_,
-                                                  nullptr, &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                     &eval_coordinator_mock_,
+                                     nullptr),
             E_INVALIDARG);
-  EXPECT_EQ(
-      class_property_.PopulateVariableValue(
-          &variable, &reference_value_, &eval_coordinator_mock_, nullptr, 1),
-      E_INVALIDARG);
 
   {
     // Errors out if dereference fails.
@@ -326,9 +348,9 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                       &eval_coordinator_mock_,
+                                       &generic_types),
               CORDBG_E_BAD_REFERENCE_VALUE);
   }
 
@@ -342,9 +364,9 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(E_NOINTERFACE));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                       &eval_coordinator_mock_,
+                                       &generic_types),
               E_NOINTERFACE);
   }
 
@@ -357,9 +379,9 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
+                                       &eval_coordinator_mock_,
+                                       &generic_types),
               CORDBG_E_PROCESS_TERMINATED);
   }
 
@@ -373,9 +395,9 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(&reference_value_, 
+                                       &eval_coordinator_mock_, 
+                                       &generic_types),
               CORDBG_E_MODULE_NOT_LOADED);
   }
 
@@ -389,9 +411,9 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORPROF_E_FUNCTION_NOT_COMPILED));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(&reference_value_, 
+                                       &eval_coordinator_mock_,
+                                       &generic_types),
               CORPROF_E_FUNCTION_NOT_COMPILED);
   }
 
@@ -405,9 +427,8 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_BAD_START_POINT));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(
+                  &reference_value_, &eval_coordinator_mock_, &generic_types),
               CORDBG_E_FUNC_EVAL_BAD_START_POINT);
   }
 
@@ -421,9 +442,8 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(E_NOINTERFACE));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(
+                  &reference_value_, &eval_coordinator_mock_, &generic_types),
               E_NOINTERFACE);
   }
 
@@ -437,9 +457,8 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
 
-    EXPECT_EQ(class_property_.PopulateVariableValue(
-                  &variable, &reference_value_, &eval_coordinator_mock_,
-                  &generic_types, 1),
+    EXPECT_EQ(class_property_.Evaluate(
+                  &reference_value_, &eval_coordinator_mock_, &generic_types),
               E_ABORT);
   }
 
@@ -451,9 +470,8 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_NOT_COMPLETE));
 
-  EXPECT_EQ(class_property_.PopulateVariableValue(&variable, &reference_value_,
-                                                  &eval_coordinator_mock_,
-                                                  &generic_types, 1),
+  EXPECT_EQ(class_property_.Evaluate(
+                  &reference_value_, &eval_coordinator_mock_, &generic_types),
             CORDBG_E_FUNC_EVAL_NOT_COMPLETE);
 }
 

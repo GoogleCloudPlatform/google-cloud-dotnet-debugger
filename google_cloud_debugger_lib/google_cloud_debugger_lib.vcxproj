@@ -212,6 +212,7 @@
     <ClInclude Include="metadata_headers.h" />
     <ClInclude Include="metadata_tables.h" />
     <ClInclude Include="portable_pdb_file.h" />
+    <ClInclude Include="variable_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="breakpoint.pb.cc" />
@@ -240,6 +241,7 @@
     <ClCompile Include="portable_pdb_file.cc" />
     <ClCompile Include="stack_frame_collection.cc" />
     <ClCompile Include="string_stream_wrapper.cc" />
+    <ClCompile Include="variable_wrapper.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\proto\breakpoint.proto" />

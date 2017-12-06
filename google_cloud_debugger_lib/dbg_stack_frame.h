@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STACK_FRAME_
-#define STACK_FRAME_
+#ifndef DBG_STACK_FRAME_H_
+#define DBG_STACK_FRAME_H_
 
 #include <memory>
 #include <queue>
@@ -36,47 +36,6 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
 
 class DebuggerCallback;
 class IEvalCoordinator;
-
-// This wrapper class contains pointers to a variable proto and
-// its underlying object. It also contains the BFS level,
-// which is used by PopulateStackFrame to stop the BFS when
-// it reaches kDefaultObjectEvalDepth.
-class VariableWrapper {
- public:
-  // Constructor that takes in variable proto, the underlying object
-  // and the BFS level (default to 1).
-  VariableWrapper(google::cloud::diagnostics::debug::Variable *variable_proto,
-                  std::shared_ptr<DbgObject> variable_value, int bfs_level = 1)
-      : variable_proto_(variable_proto),
-        variable_value_(variable_value),
-        bfs_level_(bfs_level) {}
-
-  // This method is used to process all VariableWrapper in the
-  // queue by populating their variable_proto_ with the underlying
-  // object variable_value_.
-  // Until the queue is empty, this method:
-  //  1. Pops out an item X.
-  //  2. If X is null, continues with the loop.
-  //  3. If the BFS level of X is kDefaultObjectEvalDepth,
-  // sets an error status on X saying that we cannot evaluate
-  // its children and continues with the loop.
-  //  4. Otherwise, tries to get members (children) of X.
-  //  5. If there are members, pushes them into the queue. We
-  // also set the BFS level of the members to be the BFS
-  // level of the node X + 1. If not, call PopulateValue on X.
-  static HRESULT PerformBFS(std::queue<VariableWrapper> *bfs_queue,
-                            IEvalCoordinator *eval_coordinator);
-
- private:
-  // The proto for this variable.
-  google::cloud::diagnostics::debug::Variable *variable_proto_;
-
-  // The underlying object that will be used to populate variable proto.
-  std::shared_ptr<DbgObject> variable_value_;
-
-  // The BFS level that this variable is at.
-  std::int32_t bfs_level_ = 1;
-};
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
@@ -203,4 +162,4 @@ class DbgStackFrame {
 
 }  //  namespace google_cloud_debugger
 
-#endif  //  VARIABLE_MANAGER_H_
+#endif  //  DBG_STACK_FRAME_H_

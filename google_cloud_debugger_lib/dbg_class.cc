@@ -22,9 +22,9 @@
 #include "dbg_array.h"
 #include "dbg_builtin_collection.h"
 #include "dbg_enum.h"
-#include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::array;
