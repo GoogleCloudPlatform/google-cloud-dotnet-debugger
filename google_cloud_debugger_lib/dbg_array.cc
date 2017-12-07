@@ -214,7 +214,7 @@ HRESULT DbgArray::PopulateMembers(
 
     if (FAILED(hr)) {
       // Output the error on why we failed to print out.
-      members->push_back(VariableWrapper(member, nullptr));
+      SetErrorStatusMessage(member, this);
       continue;
     }
 
@@ -226,7 +226,7 @@ HRESULT DbgArray::PopulateMembers(
         WriteError(result_object->GetErrorString());
       }
       // Output the error on why we failed to print out.
-      members->push_back(VariableWrapper(member, nullptr));
+      SetErrorStatusMessage(member, this);
       continue;
     }
 
