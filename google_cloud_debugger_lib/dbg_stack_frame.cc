@@ -15,11 +15,13 @@
 #include "dbg_stack_frame.h"
 
 #include <iostream>
+#include <queue>
 #include <vector>
 
 #include "dbg_breakpoint.h"
 #include "debugger_callback.h"
 #include "i_eval_coordinator.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
@@ -28,6 +30,8 @@ using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
 using std::ostringstream;
+using std::queue;
+using std::shared_ptr;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -297,41 +301,41 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   location->set_line(line_number_);
   location->set_path(file_name_);
 
+  queue<VariableWrapper> bfs_queue;
+
+  // Processes the local variables and put them into the BFS queue.
   for (const auto &variable_tuple : variables_) {
-    Variable *variable = stack_frame->add_locals();
+    Variable *variable_proto = stack_frame->add_locals();
 
-    variable->set_name(std::get<0>(variable_tuple));
-    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
+    variable_proto->set_name(std::get<0>(variable_tuple));
+    const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
     const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable, err_stream->str());
+      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 
-    // The output will contain status error too so we don't have to
-    // worry about it.
-    variable_value->PopulateVariableValue(variable, eval_coordinator);
+    bfs_queue.push(VariableWrapper(variable_proto, variable_value));
   }
 
+  // Processes the method arguments and put them into the BFS queue.
   for (const auto &variable_tuple : method_arguments_) {
-    Variable *variable = stack_frame->add_arguments();
+    Variable *variable_proto = stack_frame->add_arguments();
 
-    variable->set_name(std::get<0>(variable_tuple));
-    const unique_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
+    variable_proto->set_name(std::get<0>(variable_tuple));
+    const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
     const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable, err_stream->str());
+      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 
-    // The output will contain status error too so we don't have to
-    // worry about it.
-    variable_value->PopulateVariableValue(variable, eval_coordinator);
+    bfs_queue.push(VariableWrapper(variable_proto, variable_value));
   }
 
-  return S_OK;
+  return VariableWrapper::PerformBFS(&bfs_queue, eval_coordinator);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {

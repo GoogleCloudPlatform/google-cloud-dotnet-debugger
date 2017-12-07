@@ -25,6 +25,7 @@
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
+#include "variable_wrapper.h"
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -37,6 +38,7 @@ using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::DbgClass;
 using google_cloud_debugger::DbgObject;
+using google_cloud_debugger::VariableWrapper;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -48,6 +50,8 @@ namespace google_cloud_debugger_test {
 class DbgClassTest : public ::testing::Test {
  protected:
   virtual void SetUp() {}
+
+  virtual void TearDown() { DbgClass::ClearStaticCache(); }
 
   // Sets up class with element type as ELEMENT_TYPE_CLASS by default.
   void SetUpDbgClass(
@@ -184,6 +188,7 @@ class DbgClassTest : public ::testing::Test {
             DoAll(SetArg2ToWcharArray(wchar_class_first_field_.data(),
                                       class_first_field_len),
                   SetArgPointee<4>(class_first_field_len),
+                  SetArgPointee<5>(first_field_attr_),
                   Return(S_OK)));  // Sets the class' name the second time.
 
     EXPECT_CALL(metadata_import_,
@@ -214,6 +219,7 @@ class DbgClassTest : public ::testing::Test {
             DoAll(SetArg2ToWcharArray(wchar_class_second_field_.data(),
                                       class_second_field_len),
                   SetArgPointee<4>(class_second_field_len),
+                  SetArgPointee<5>(second_field_attr_),
                   Return(S_OK)));  // Sets the class' name the second time.
 
     EXPECT_CALL(metadata_import_,
@@ -358,6 +364,9 @@ class DbgClassTest : public ::testing::Test {
   // Signature of the first field.
   PCCOR_SIGNATURE first_field_sig_;
 
+  // Attribute of the first field.
+  ULONG first_field_attr_;
+
   // Name of this class's second field.
   string class_second_field_ = "Field2";
 
@@ -372,6 +381,9 @@ class DbgClassTest : public ::testing::Test {
 
   // Signature of the second field.
   PCCOR_SIGNATURE second_field_sig_;
+
+  // Attribute of the first field.
+  ULONG second_field_attr_;
 
   // Name of this class's property.
   string class_property_ = "Property";
@@ -580,10 +592,11 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   SetUpClassProperty();
 
   Variable variable;
+  vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
   HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+    FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -593,30 +606,39 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   // Now we set up appropriate mock calls to evaluate the property.
   // Debug module should returns the correct property getter function.
   EXPECT_CALL(debug_module_, GetFunctionFromToken(property_getter_def_, _))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&property_getter_), Return(S_OK)));
+    .Times(1)
+    .WillRepeatedly(DoAll(SetArgPointee<1>(&property_getter_), Return(S_OK)));
 
   // ICorDebugEval created from eval_coordinator_mock.
   EXPECT_CALL(eval_coordinator_, CreateEval(_))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
+    .Times(1)
+    .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
 
   // ICorDebugEval2 extracted from ICorDebugEval.
   EXPECT_CALL(debug_eval_, QueryInterface(_, _))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
+    .Times(1)
+    .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
 
   // IEvalCoordinator returns a generic value.
   // When GetValue is called from generic value, returns 20 as the value.
   SetUpMockGenericValue(&property_, property_value_);
 
   EXPECT_CALL(eval_coordinator_, WaitForEval(_, _, _))
-      .Times(1)
-      .WillRepeatedly(DoAll(SetArgPointee<2>(&property_), Return(S_OK)));
+    .Times(1)
+    .WillRepeatedly(DoAll(SetArgPointee<2>(&property_), Return(S_OK)));
 
-  hr = dbgclass->PopulateMembers(&variable, &eval_coordinator_);
+  hr = dbgclass->PopulateMembers(&variable, &variable_wrappers,
+    &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
+  EXPECT_EQ(variable_wrappers.size(), 3);
+  EXPECT_EQ(variable_wrappers[0].GetVariableProto(), &(variable.members(0)));
+  EXPECT_EQ(variable_wrappers[1].GetVariableProto(), &(variable.members(1)));
+  EXPECT_EQ(variable_wrappers[2].GetVariableProto(), &(variable.members(2)));
+
+  PopulateTypeAndValue(variable_wrappers);
+
+  // Checks type and value.
   EXPECT_EQ(variable.members_size(), 3);
   EXPECT_EQ(variable.members(0).type(), "System.Int32");
   EXPECT_EQ(variable.members(1).type(), "System.Int32");
@@ -626,6 +648,7 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   EXPECT_EQ(variable.members(1).value(), std::to_string(second_field_value_));
   EXPECT_EQ(variable.members(2).value(), std::to_string(property_value_));
 }
+
 
 // Test PopulateMembers function when there is a property with backing field.
 TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
@@ -638,6 +661,7 @@ TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
   SetUpClassProperty();
 
   Variable variable;
+  vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
   HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
@@ -650,8 +674,15 @@ TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
 
   // Nothing should be evaluated since we have the backing field.
   EXPECT_CALL(eval_coordinator_, CreateEval(_)).Times(0);
-  hr = dbgclass->PopulateMembers(&variable, &eval_coordinator_);
+  hr = dbgclass->PopulateMembers(&variable, &variable_wrappers,
+                                 &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  EXPECT_EQ(variable_wrappers.size(), 2);
+  EXPECT_EQ(variable_wrappers[0].GetVariableProto(), &(variable.members(0)));
+  EXPECT_EQ(variable_wrappers[1].GetVariableProto(), &(variable.members(1)));
+
+  PopulateTypeAndValue(variable_wrappers);
 
   EXPECT_EQ(variable.members_size(), 2);
   EXPECT_EQ(variable.members(0).type(), "System.Int32");
@@ -670,6 +701,7 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   SetUpClassProperty();
 
   Variable variable;
+  vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
   HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
@@ -681,8 +713,12 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Null check.
-  EXPECT_EQ(dbgclass->PopulateMembers(&variable, nullptr), E_INVALIDARG);
-  EXPECT_EQ(dbgclass->PopulateMembers(nullptr, &eval_coordinator_),
+  EXPECT_EQ(dbgclass->PopulateMembers(&variable, &variable_wrappers, nullptr),
+            E_INVALIDARG);
+  EXPECT_EQ(dbgclass->PopulateMembers(&variable, nullptr, nullptr),
+            E_INVALIDARG);
+  EXPECT_EQ(dbgclass->PopulateMembers(nullptr, &variable_wrappers,
+                                      &eval_coordinator_),
             E_INVALIDARG);
 
   // Debug module should return the correct property getter function.
@@ -696,7 +732,17 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
       .WillRepeatedly(Return(CORDBG_E_PROCESS_NOT_SYNCHRONIZED));
 
   // This should still return S_OK (but the property value not populated).
-  EXPECT_EQ(dbgclass->PopulateMembers(&variable, &eval_coordinator_), S_OK);
+  EXPECT_EQ(dbgclass->PopulateMembers(&variable, &variable_wrappers,
+                                      &eval_coordinator_),
+            S_OK);
+
+  // Only 2 VariableWrapper should be returned as the third one is an error.
+  // The third result, however, will still appear as a child of variable proto.
+  EXPECT_EQ(variable_wrappers.size(), 2);
+  EXPECT_EQ(variable_wrappers[0].GetVariableProto(), &(variable.members(0)));
+  EXPECT_EQ(variable_wrappers[1].GetVariableProto(), &(variable.members(1)));
+
+  PopulateTypeAndValue(variable_wrappers);
 
   EXPECT_EQ(variable.members_size(), 3);
   EXPECT_EQ(variable.members(0).type(), "System.Int32");
@@ -728,6 +774,9 @@ TEST_F(DbgClassTest, TestEnum) {
   // the same as the enum value. This means that this enum
   // object should have value class_second_field_.
   second_field_default_value_ = &enum_value_;
+
+  // Makes sure the second field is static.
+  second_field_attr_ = fdStatic;
 
   SetUpDbgClass(CorElementType::ELEMENT_TYPE_VALUETYPE);
   SetUpBaseClass();

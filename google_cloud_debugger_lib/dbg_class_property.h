@@ -35,23 +35,19 @@ class DbgClassProperty : public IDbgClassMember {
   // Creation_depth sets the depth used when creating a DbgObject
   // representing this property.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
-      int creation_depth);
+                  int creation_depth);
 
-  // Evaluate the property and stores the value in member_value_
-  // and also populate proto variable's fields.
+  // Evaluates the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
   // belongs to. eval_coordinator is needed to perform the function
   // evaluation (the getter property function).
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  // Depth represents the level of inspection that we should perform on the
-  // object we get back from the getter function.
-  HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
+  HRESULT Evaluate(
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types, int evaluation_depth);
+      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
@@ -65,9 +61,7 @@ class DbgClassProperty : public IDbgClassMember {
  private:
   // Helper function to set the value of variable to this property's value.
   // This function assumes that member_value_ is not null.
-  HRESULT PopulateVariableValueHelper(
-      google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator);
+  HRESULT PopulateVariableValueHelper(IEvalCoordinator *eval_coordinator);
 
   // The token that represents the property getter.
   mdMethodDef property_getter_function = 0;

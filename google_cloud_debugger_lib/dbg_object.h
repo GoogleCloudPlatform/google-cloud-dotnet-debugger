@@ -27,6 +27,7 @@
 namespace google_cloud_debugger {
 
 class IEvalCoordinator;
+class VariableWrapper;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)
@@ -36,7 +37,7 @@ class IEvalCoordinator;
 class DbgObject : public StringStreamWrapper {
  public:
   // Create a DbgObject with ICorDebugType debug_type.
-  // The object will only be evaluated to a depth of depth.
+  // The object will only be created to a depth of depth.
   DbgObject(ICorDebugType *debug_type, int depth);
   virtual ~DbgObject() {}
 
@@ -54,29 +55,23 @@ class DbgObject : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Variable *variable) = 0;
 
   // Sets the value of proto variable to the value of this object.
+  // PopulateValue will return S_FALSE if this object has members.
   virtual HRESULT PopulateValue(
       google::cloud::diagnostics::debug::Variable *variable) {
     return S_OK;
   }
 
-  // Sets the members of proto variable to the members of this object,
-  // using eval_coordinator to perform any sort of evaluation if needed.
+  // Populates the members vector using this object's members.
+  // Returns S_FALSE by default (no members).
+  // Variable_proto is used to create children variable protos.
+  // These protos, combined with this object's members' values
+  // will be used to populate members vector.
   virtual HRESULT PopulateMembers(
-      google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator) {
-    return S_OK;
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
+    return S_FALSE;
   }
-
-  // Returns true if this object has members.
-  virtual BOOL HasMembers() { return false; }
-
-  // Returns true if this object has value.
-  virtual BOOL HasValue() { return true; }
-
-  // Populate variable proto with type, member and value from this object.
-  virtual HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
-      IEvalCoordinator *eval_coordinator);
 
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
@@ -98,11 +93,9 @@ class DbgObject : public StringStreamWrapper {
   // Returns true if this object is null.
   BOOL GetIsNull() const { return is_null_; }
 
-  // Returns the current evaluation depth of the object.
-  int GetEvaluationDepth() const { return depth_; }
-
-  // Sets the current evaluation depth of the object.
-  void SetEvaluationDepth(int depth) { depth_ = depth; }
+  // Returns the current creation depth of the object.
+  // See comments on depth_ field for more information.
+  int GetCreationDepth() const { return depth_; }
 
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialize_hr_; }
@@ -121,8 +114,17 @@ class DbgObject : public StringStreamWrapper {
   // True if the object is null.
   BOOL is_null_ = FALSE;
 
-  // The depth of evaluation for this object.
-  // Once this is 0, we don't evaluate the fields and properties of the object.
+  // The depth of creation for this object.
+  // Once this is 0, we don't create the fields and properties of the object.
+  // Note that even though we use BFS in dbg_stack_frame to control how deep
+  // down we evaluate an object, we will still need this for object creation
+  // for ValueType object and field. For example, if an object is a normal
+  // class, object creation is stopped once we create a reference to the class.
+  // But if the object is a ValueType, we will have to store the fields
+  // and properties of the object (since we can't create a reference to
+  // a ValueType). If the fields and properties are in turn ValueType,
+  // we will have to keep creating them. So we need this depth_ to
+  // prevent infinite recursion.
   int depth_;
 
  protected:

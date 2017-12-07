@@ -40,16 +40,13 @@ class DbgClassField : public IDbgClassMember {
                   ICorDebugClass *debug_class, ICorDebugType *class_type,
                   int creation_depth);
 
-  // Sets the value of variable to the value of this field.
-  // Evaluation_depth determines how many levels of the object
-  // will be written into variable proto.
+  // Evaluates and sets member_value_ to the value of the field
+  // that is represented by this class.
   // Reference_value and generic_types are ignored.
-  HRESULT PopulateVariableValue(
-      google::cloud::diagnostics::debug::Variable *variable,
+  HRESULT Evaluate(
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types,
-      int evaluation_depth) override;
+      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Returns true if this is a backing field for a property.
   const bool IsBackingField() const { return is_backing_field_; }

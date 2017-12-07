@@ -111,7 +111,7 @@ TEST_F(EvalCoordinatorTest, TestWaitForEvalTimeOut) {
   EXPECT_EQ(hr, CORDBG_E_FUNC_EVAL_NOT_COMPLETE);
 }
 
-// Tests that PritnBreakpoint will return.
+// Tests that PrintBreakpoint will return.
 TEST_F(EvalCoordinatorTest, TestPrintBreakpoint) {
   EXPECT_CALL(debug_stack_walk_, GetFrame(_)).WillRepeatedly(Return(S_FALSE));
   // WriteBreakpoint method should get called.

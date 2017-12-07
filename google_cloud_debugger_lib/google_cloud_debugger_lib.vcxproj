@@ -22,7 +22,7 @@
     <ProjectGuid>{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>google_cloud_debugger_lib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>google_cloud_debugger_lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -212,6 +212,7 @@
     <ClInclude Include="metadata_headers.h" />
     <ClInclude Include="metadata_tables.h" />
     <ClInclude Include="portable_pdb_file.h" />
+    <ClInclude Include="variable_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="breakpoint.pb.cc" />
@@ -240,6 +241,7 @@
     <ClCompile Include="portable_pdb_file.cc" />
     <ClCompile Include="stack_frame_collection.cc" />
     <ClCompile Include="string_stream_wrapper.cc" />
+    <ClCompile Include="variable_wrapper.cc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\proto\breakpoint.proto" />

@@ -21,6 +21,7 @@
 #include "dbg_array.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
+#include "variable_wrapper.h"
 
 using ::testing::DoAll;
 using ::testing::Return;
@@ -30,7 +31,9 @@ using ::testing::_;
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::DbgArray;
+using google_cloud_debugger::VariableWrapper;
 using std::string;
+using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -285,17 +288,21 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
   // If array is null, then variables should have 0 members.
   {
     Variable variable;
+    vector<VariableWrapper> variable_wrappers;
     DbgArray dbgarray(&array_type_, 1);
 
     // Initialize to a null array.
     dbgarray.Initialize(&array_value_, TRUE);
-    HRESULT hr = dbgarray.PopulateMembers(&variable, &eval_coordinator_);
+    HRESULT hr = dbgarray.PopulateMembers(&variable, &variable_wrappers,
+                                          &eval_coordinator_);
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
     EXPECT_EQ(variable.members_size(), 0);
+    EXPECT_EQ(variable_wrappers.size(), 0);
   }
 
   Variable variable;
+  vector<VariableWrapper> variable_wrappers;
   DbgArray dbgarray(&array_type_, 1);
 
   dbgarray.Initialize(&array_value_, FALSE);
@@ -318,8 +325,21 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
       .Times(1)
       .WillRepeatedly(DoAll(SetArgPointee<1>(&item1), Return(S_OK)));
 
-  HRESULT hr = dbgarray.PopulateMembers(&variable, &eval_coordinator_);
+  HRESULT hr = dbgarray.PopulateMembers(&variable, &variable_wrappers,
+                                        &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  // Checks that the variable proto in the wrapper is children
+  // of the proto we passed in to PopulateMembers.
+  EXPECT_EQ(variable_wrappers.size(), 2);
+  EXPECT_EQ(variable_wrappers[0].GetVariableProto(), &(variable.members(0)));
+  EXPECT_EQ(variable_wrappers[1].GetVariableProto(), &(variable.members(1)));
+
+  PopulateTypeAndValue(variable_wrappers);
+
+  // Checks type and value.
+  EXPECT_EQ(variable.members(0).type(), "System.Int32");
+  EXPECT_EQ(variable.members(1).type(), "System.Int32");
 
   EXPECT_EQ(variable.members(0).value(), std::to_string(value0));
   EXPECT_EQ(variable.members(1).value(), std::to_string(value1));
@@ -329,7 +349,7 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
 TEST_F(DbgArrayTest, TestPopulateMembersError) {
   SetUpArray();
 
-  // If Initialize is not called
+  // If Initialize is not called.
   {
     // Since the type given is null, Initialize function will return
     // E_INVALIDARG.
@@ -340,20 +360,29 @@ TEST_F(DbgArrayTest, TestPopulateMembersError) {
     // function fails.
     EXPECT_EQ(dbgarray.GetInitializeHr(), E_INVALIDARG);
     Variable variable;
+    vector<VariableWrapper> variable_wrappers;
     EXPECT_EQ(dbgarray.GetInitializeHr(),
-              dbgarray.PopulateMembers(&variable, &eval_coordinator_));
+              dbgarray.PopulateMembers(&variable, &variable_wrappers,
+                                       &eval_coordinator_));
   }
 
   DbgArray dbgarray(&array_type_, 1);
   dbgarray.Initialize(&array_value_, FALSE);
 
   // Should throws error for null variable.
-  EXPECT_EQ(dbgarray.PopulateMembers(nullptr, &eval_coordinator_),
+  vector<VariableWrapper> variable_wrappers;
+  EXPECT_EQ(dbgarray.PopulateMembers(nullptr, &variable_wrappers,
+                                     &eval_coordinator_),
             E_INVALIDARG);
 
   Variable variable;
-  // Should throws error for null EvalCoordinator.
-  EXPECT_EQ(dbgarray.PopulateMembers(&variable, nullptr), E_INVALIDARG);
+  // Should throws error for null variable wrappers vector.
+  EXPECT_EQ(dbgarray.PopulateMembers(&variable, nullptr, &eval_coordinator_),
+            E_INVALIDARG);
+
+  // Should throws error for null eval coordinator.
+  EXPECT_EQ(dbgarray.PopulateMembers(&variable, &variable_wrappers, nullptr),
+            E_INVALIDARG);
 }
 
 }  // namespace google_cloud_debugger_test

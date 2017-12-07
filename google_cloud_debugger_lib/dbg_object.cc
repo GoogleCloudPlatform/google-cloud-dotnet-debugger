@@ -150,47 +150,6 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
                                           TRUE, 0, result_object, err_stream);
 }
 
-HRESULT DbgObject::PopulateVariableValue(Variable *variable,
-                                         IEvalCoordinator *eval_coordinator) {
-  if (!variable || !eval_coordinator) {
-    return E_INVALIDARG;
-  }
-
-  HRESULT hr;
-
-  hr = PopulateType(variable);
-
-  if (FAILED(hr)) {
-    variable->clear_type();
-    SetErrorStatusMessage(variable, GetErrorString());
-    return hr;
-  }
-
-  if (GetIsNull()) {
-    return S_OK;
-  }
-
-  if (HasValue()) {
-    hr = PopulateValue(variable);
-    if (FAILED(hr)) {
-      variable->clear_value();
-      SetErrorStatusMessage(variable, GetErrorString());
-      return hr;
-    }
-  }
-
-  if (HasMembers()) {
-    hr = PopulateMembers(variable, eval_coordinator);
-    if (FAILED(hr)) {
-      variable->clear_members();
-      SetErrorStatusMessage(variable, GetErrorString());
-      return hr;
-    }
-  }
-
-  return S_OK;
-}
-
 HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
                                    unique_ptr<DbgObject> *result_object,
                                    ostringstream *err_stream) {
