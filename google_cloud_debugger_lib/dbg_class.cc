@@ -44,7 +44,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
                                        ICorDebugValue *debug_value,
                                        BOOL is_null,
                                        unique_ptr<DbgObject> *result_object,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
   if (!debug_type) {
@@ -137,6 +137,8 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
     if (kEnumClassName.compare(base_class_name) == 0) {
       unique_ptr<DbgEnum> enum_obj =
           unique_ptr<DbgEnum>(new (std::nothrow) DbgEnum(debug_type, depth));
+      // We need the class token to process the enum.
+      enum_obj->class_token_ = class_token;
       // Only process class type for enum (since it is ValueType and we don't
       // store reference to the class object). Delay processing fields and properties
       // of non-ValueType class until we need them.
@@ -176,7 +178,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
 HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
                                    IMetaDataImport *metadata_import,
                                    std::string *class_name,
-                                   std::ostringstream *err_stream) {
+                                   std::ostream *err_stream) {
   if (!class_name || !metadata_import || !err_stream) {
     return E_INVALIDARG;
   }
@@ -213,7 +215,7 @@ HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
 
 HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
                                        std::string *base_class_name,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   if (!debug_type || !base_class_name || !err_stream) {
     return E_INVALIDARG;
   }
@@ -518,7 +520,7 @@ HRESULT DbgClass::ProcessClassMembers() {
   hr = ProcessClassMembersHelper(debug_value, debug_class,
                                  metadata_import);
   if (FAILED(hr)) {
-    WriteError("Failed to process built-in collection.");
+    WriteError("Failed to process class members.");
     return hr;
   }
 
@@ -530,10 +532,6 @@ HRESULT DbgClass::ProcessClassMembersHelper(
     ICorDebugValue *debug_value,
     ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import) {
-  if (processed_) {
-    return S_OK;
-  }
-
   class_type_ = ClassType::DEFAULT;
   HRESULT hr;
 
@@ -546,7 +544,6 @@ HRESULT DbgClass::ProcessClassMembersHelper(
   }
 
   if (GetCreationDepth() <= 0) {
-    processed_ = true;
     return S_OK;
   }
 
@@ -564,14 +561,13 @@ HRESULT DbgClass::ProcessClassMembersHelper(
     return hr;
   }
 
-  processed_ = true;
   return hr;
 }
 
 HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value,
                                        const std::string &class_name,
                                        unique_ptr<DbgObject> *result_class_obj,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   if (kCharClassName.compare(class_name) == 0) {
     return ProcessValueTypeHelper<char>(debug_value, result_class_obj,
                                         err_stream);

@@ -111,7 +111,11 @@ HRESULT GetICorDebugType(ICorDebugValue *debug_value,
     return hr;
   }
 
-  return debug_value_2->GetExactType(debug_type);
+  hr = debug_value_2->GetExactType(debug_type);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get exact type from ICorDebugValue2.";
+    return hr;
+  }
 }
 
 HRESULT Dereference(ICorDebugValue *debug_value,
