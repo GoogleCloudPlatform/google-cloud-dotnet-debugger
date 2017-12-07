@@ -125,14 +125,15 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 {
                     // Allow the app a chance to start up as it may not start
                     // right away.
-                    for (int i = 0; i < 10; i++)
+                    int attempts = 10;
+                    for (int i = 0; i < attempts; i++)
                     {
                         try
                         {
                             client.GetAsync(AppUrlBase).Wait();
                             break;
                         }
-                        catch (AggregateException) when (i < 9)
+                        catch (AggregateException) when (i < attempts - 1)
                         {
                             Thread.Sleep(TimeSpan.FromSeconds(1));
                         }
