@@ -51,6 +51,8 @@ class DbgClassTest : public ::testing::Test {
  protected:
   virtual void SetUp() {}
 
+  virtual void TearDown() { DbgClass::ClearStaticCache(); }
+
   // Sets up class with element type as ELEMENT_TYPE_CLASS by default.
   void SetUpDbgClass(
       CorElementType element_type = CorElementType::ELEMENT_TYPE_CLASS) {
@@ -795,8 +797,6 @@ TEST_F(DbgClassTest, TestEnum) {
   Variable variable;
   EXPECT_EQ(dbgclass->PopulateValue(&variable), S_OK);
   EXPECT_EQ(variable.value(), class_second_field_);
-
-  DbgClass::ClearStaticCache();
 }
 
 // Tests the error case where the object is an enum.
