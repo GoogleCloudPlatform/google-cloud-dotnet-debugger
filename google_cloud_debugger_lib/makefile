@@ -17,7 +17,7 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -
 
 DBG_OBJECTS = dbg_object.o dbg_string.o dbg_array.o dbg_class.o dbg_class_field.o dbg_class_property.o dbg_stack_frame.o dbg_enum.o dbg_builtin_collection.o
 PDB_PARSERS = metadata_headers.o metadata_tables.o document_index.o custom_binary_reader.o portable_pdb_file.o
-BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o
+BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o variable_wrapper.o
 ALL_O_FILES = string_stream_wrapper.o stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -Wignored-attributes -g ${COVERAGE_ARG}
 
@@ -98,6 +98,9 @@ custom_binary_reader.o: custom_binary_reader.h custom_binary_reader.cc
 
 portable_pdb_file.o: i_portable_pdb_file.h portable_pdb_file.h portable_pdb_file.cc
 	clang-3.9 portable_pdb_file.cc ${INCDIRS} ${CC_FLAGS} -c -o portable_pdb_file.o
+
+variable_wrapper.o: variable_wrapper.h portable_pdb_file.cc
+	clang-3.9 variable_wrapper.cc ${INCDIRS} ${CC_FLAGS} -c -o variable_wrapper.o
 
 clean:
 	rm -f *.o *.a *.g*

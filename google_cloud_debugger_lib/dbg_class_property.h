@@ -47,7 +47,7 @@ class DbgClassProperty : public IDbgClassMember {
   HRESULT Evaluate(
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types);
+      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
