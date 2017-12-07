@@ -319,10 +319,10 @@ TEST_F(VariableWrapperTest, TestBFSTwoLevels) {
   EXPECT_EQ(member_object_2_proto_.type(), member_object_2_type_);
 
   // The other children should have errors set.
-  EXPECT_TRUE(value_object_2_proto_.status().iserror(), true);
+  EXPECT_TRUE(value_object_2_proto_.status().iserror());
   EXPECT_EQ(value_object_2_proto_.status().message(),
       "Object evaluation limit reached");
-  EXPECT_TRUE(value_object_3_proto_.status().iserror(), true);
+  EXPECT_TRUE(value_object_3_proto_.status().iserror());
   EXPECT_EQ(value_object_3_proto_.status().message(),
       "Object evaluation limit reached");
 }
