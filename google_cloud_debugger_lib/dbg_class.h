@@ -77,7 +77,7 @@ class DbgClass : public DbgObject {
   static HRESULT CreateDbgClassObject(ICorDebugType *debug_type, int depth,
                                       ICorDebugValue *debug_value, BOOL is_null,
                                       std::unique_ptr<DbgObject> *result_object,
-                                      std::ostringstream *err_stream);
+                                      std::ostream *err_stream);
 
   // Clear cache of static field and properties.
   static void ClearStaticCache() { static_class_members_.clear(); }
@@ -87,12 +87,12 @@ class DbgClass : public DbgObject {
   static HRESULT ProcessClassName(mdTypeDef class_token,
                                   IMetaDataImport *metadata_import,
                                   std::string *class_name,
-                                  std::ostringstream *err_stream);
+                                  std::ostream *err_stream);
 
   // Processes the base class' name and stores the result in base_class_name.
   static HRESULT ProcessBaseClassName(ICorDebugType *debug_type,
                                       std::string *base_class_name,
-                                      std::ostringstream *err_stream);
+                                      std::ostream *err_stream);
 
   // Processes the generic parameters of the class.
   HRESULT ProcessParameterizedType();
@@ -103,7 +103,7 @@ class DbgClass : public DbgObject {
   static HRESULT ProcessPrimitiveType(
       ICorDebugValue *debug_value, const std::string &class_name,
       std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostringstream *err_stream);
+      std::ostream *err_stream);
 
   // Template functions to help create different primitive ValueType.
   // Supported types are char, bool, int8_t, uint8_t,
@@ -112,7 +112,7 @@ class DbgClass : public DbgObject {
   template <typename T>
   static HRESULT ProcessValueTypeHelper(
       ICorDebugValue *debug_value, std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostringstream *err_stream) {
+      std::ostream *err_stream) {
     HRESULT hr;
     std::unique_ptr<DbgPrimitive<T>> primitive_value(
         new (std::nothrow) DbgPrimitive<T>(nullptr));
@@ -246,7 +246,7 @@ class DbgClass : public DbgObject {
   // Token of the class.
   mdTypeDef class_token_;
 
-  // True if ProcessClassType is called.
+  // True if ProcessClassMembers are called.
   bool processed_ = false;
 
   // Cache of static class members.
