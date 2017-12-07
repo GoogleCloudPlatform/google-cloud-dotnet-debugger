@@ -795,6 +795,8 @@ TEST_F(DbgClassTest, TestEnum) {
   Variable variable;
   EXPECT_EQ(dbgclass->PopulateValue(&variable), S_OK);
   EXPECT_EQ(variable.value(), class_second_field_);
+
+  DbgClass::ClearStaticCache();
 }
 
 // Tests the error case where the object is an enum.
