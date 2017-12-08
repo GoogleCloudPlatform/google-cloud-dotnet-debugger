@@ -168,7 +168,8 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
     return hr;
   }
 
-  hr = GetICorDebugType(dereferenced_and_unboxed_value, &debug_type);
+  hr = GetICorDebugType(dereferenced_and_unboxed_value,
+                        &debug_type, err_stream);
 
   if (SUCCEEDED(hr)) {
     hr = debug_type->GetType(&cor_element_type);
@@ -176,7 +177,6 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
     hr = debug_value->GetType(&cor_element_type);
   } else {
     // Nothing we can do here.
-    *err_stream << "Failed to get type.";
     return hr;
   }
 

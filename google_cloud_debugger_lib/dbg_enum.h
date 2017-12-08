@@ -32,16 +32,11 @@ class DbgEnum : public DbgClass {
   HRESULT PopulateValue(
       google::cloud::diagnostics::debug::Variable *variable) override;
 
-  // Enum only has value and no members when being displayed.
-  BOOL HasMembers() { return FALSE; }
-  BOOL HasValue() { return TRUE; }
-
- protected:
   // Extracts out the enum value of this Enum class and processes
   // the fields of this enum.
-  HRESULT ProcessClassType(ICorDebugValue *debug_value,
-                           ICorDebugClass *debug_class,
-                           IMetaDataImport *metadata_import) override;
+  HRESULT ProcessEnum(ICorDebugValue *debug_value,
+                      ICorDebugClass *debug_class,
+                      IMetaDataImport *metadata_import);
 
  private:
   // Given a void pointer and type of the enum, extract out the enum

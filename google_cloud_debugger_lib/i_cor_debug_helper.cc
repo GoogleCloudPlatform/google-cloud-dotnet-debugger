@@ -20,14 +20,34 @@
 #include "ccomptr.h"
 
 using std::cerr;
-using std::ostringstream;
+using std::ostream;
 
 namespace google_cloud_debugger {
 
+HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
+    IMetaDataImport **metadata_import,
+    ostream *err_stream) {
+  if (!debug_class) {
+    *err_stream << "ICorDebugClass cannot be null.";
+    return E_INVALIDARG;
+  }
+
+  CComPtr<ICorDebugModule> debug_module;
+  HRESULT hr = debug_class->GetModule(&debug_module);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to extract ICorDebugModule from ICorDebugClass.";
+    return hr;
+  }
+
+  return GetMetadataImportFromICorDebugModule(debug_module, metadata_import,
+                                              err_stream);
+}
+
 HRESULT GetMetadataImportFromICorDebugModule(
-    ICorDebugModule *debug_module, IMetaDataImport **metadata_import) {
+    ICorDebugModule *debug_module, IMetaDataImport **metadata_import,
+    ostream *err_stream) {
   if (!debug_module) {
-    cerr << "ICorDebugModule cannot be null.";
+    *err_stream << "ICorDebugModule cannot be null.";
     return E_INVALIDARG;
   }
 
@@ -37,14 +57,14 @@ HRESULT GetMetadataImportFromICorDebugModule(
   hr = debug_module->GetMetaDataInterface(IID_IMetaDataImport, &temp_import);
 
   if (FAILED(hr)) {
-    cerr << "Failed to get metadata import.";
+    *err_stream << "Failed to get metadata import.";
     return hr;
   }
 
   hr = temp_import->QueryInterface(IID_IMetaDataImport,
                                    reinterpret_cast<void **>(metadata_import));
   if (FAILED(hr)) {
-    cerr << "Failed to import metadata from module";
+    *err_stream << "Failed to import metadata from module";
     return hr;
   }
 
@@ -52,7 +72,8 @@ HRESULT GetMetadataImportFromICorDebugModule(
 }
 
 HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
-                                         std::vector<WCHAR> *module_name) {
+                                         std::vector<WCHAR> *module_name,
+                                         ostream *err_stream) {
   if (!module_name || !debug_module) {
     return E_INVALIDARG;
   }
@@ -60,7 +81,7 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
   ULONG32 module_name_len = 0;
   HRESULT hr = debug_module->GetName(0, &module_name_len, nullptr);
   if (FAILED(hr)) {
-    cerr << "Failed to get length of the module name.";
+    *err_stream << "Failed to get length of the module name.";
     return hr;
   }
 
@@ -68,14 +89,15 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
   hr = debug_module->GetName(module_name->size(), &module_name_len,
                              module_name->data());
   if (FAILED(hr)) {
-    cerr << "Failed to get module name";
+    *err_stream << "Failed to get module name.";
   }
 
   return hr;
 }
 
 HRESULT GetICorDebugType(ICorDebugValue *debug_value,
-                         ICorDebugType **debug_type) {
+                         ICorDebugType **debug_type,
+                         ostream *err_stream) {
   if (!debug_value || !debug_type) {
     return E_INVALIDARG;
   }
@@ -85,15 +107,20 @@ HRESULT GetICorDebugType(ICorDebugValue *debug_value,
       __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
 
   if (FAILED(hr)) {
+    *err_stream << "Failed to query ICorDebugValue2 from ICorDebugValue.";
     return hr;
   }
 
-  return debug_value_2->GetExactType(debug_type);
+  hr = debug_value_2->GetExactType(debug_type);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get exact type from ICorDebugValue2.";
+    return hr;
+  }
 }
 
 HRESULT Dereference(ICorDebugValue *debug_value,
                     ICorDebugValue **dereferenced_value, BOOL *is_null,
-                    ostringstream *err_stream) {
+                    ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!debug_value || !dereferenced_value) {
@@ -158,7 +185,7 @@ HRESULT Dereference(ICorDebugValue *debug_value,
 }
 
 HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
-              ostringstream *err_stream) {
+              ostream *err_stream) {
   if (!unboxed_value) {
     *err_stream << "dereferenced_value cannot be a null pointer.";
     return E_INVALIDARG;
@@ -195,7 +222,7 @@ HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
 
 HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
                             ICorDebugValue **dereferenced_and_unboxed_value,
-                            BOOL *isNull, ostringstream *err_stream) {
+                            BOOL *isNull, ostream *err_stream) {
   assert(err_stream != nullptr);
 
   HRESULT hr;
@@ -221,7 +248,7 @@ HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
 
 HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
                            ICorDebugHandleValue **handle,
-                           ostringstream *err_stream) {
+                           ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!debug_value) {
