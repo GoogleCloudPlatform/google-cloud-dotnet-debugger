@@ -46,8 +46,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>The Google CLoud Console project id to test with.</summary>
         public readonly string ProjectId = Utils.GetProjectIdFromEnvironment();
 
+        /// <summary>The port to run the application on.</summary>
         private readonly int _port = Utils.GetNextPort();
 
+        /// <summary>The underlying application.</summary>
         private readonly IDisposable _app;
 
         /// <summary>
