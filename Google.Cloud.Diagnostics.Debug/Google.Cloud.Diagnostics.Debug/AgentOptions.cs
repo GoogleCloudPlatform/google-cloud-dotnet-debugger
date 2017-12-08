@@ -43,7 +43,7 @@ namespace Google.Cloud.Diagnostics.Debug
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
-        // If given this option, the command the debugger will use  to start the application to debug.
+        // If given this option, the debugger will use this command to start the application to debug.
         public const string ApplicationStartCommandOption = "--application-start-command";
 
         // If given this option, the debugger will attach to a running application using this process ID.
@@ -128,7 +128,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 if ((string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && !options.ApplicationId.HasValue)
                     || (!string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && options.ApplicationId.HasValue))
                 {
-                    throw new ArgumentException("Please supply either the a command to start a .NET CORE application"
+                    throw new ArgumentException("Please supply either a command to start a .NET CORE application"
                         + " or the process ID of a running application, NOT both.");
                 }
             }
