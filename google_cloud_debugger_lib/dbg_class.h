@@ -57,8 +57,8 @@ class DbgClass : public DbgObject {
 
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
-  // This function assumes that this DbgClass object has already been
-  // initialized (so the class_fields_ vector are populated).
+  // This function assumes that the class_fields_ and class_property_
+  // vector are populated.
   HRESULT ExtractField(const std::string &field_name,
                        std::shared_ptr<DbgObject> *field_value);
 
