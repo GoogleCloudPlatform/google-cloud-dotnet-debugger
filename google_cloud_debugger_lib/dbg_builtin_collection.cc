@@ -21,11 +21,13 @@
 
 #include "class_names.h"
 #include "dbg_array.h"
-#include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::min;
+using std::shared_ptr;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -90,12 +92,14 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
                         kHashSetLastIndexFieldName, &last_index);
       if (FAILED(hr)) {
         WriteError(
-            "Failed to find field that represents the last index of the hash set.");
+            "Failed to find field that represents the last index of the hash "
+            "set.");
         return hr;
       }
 
       hashset_last_index_ =
-          reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())->GetValue();
+          reinterpret_cast<DbgPrimitive<int32_t> *>(last_index.get())
+              ->GetValue();
     }
     return hr;
   }
@@ -104,7 +108,8 @@ HRESULT DbgBuiltinCollection::ProcessClassType(
   if (kDictionaryClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::DICTIONARY;
     return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
-                                 kDictionaryCountFieldName, kDictionaryItemsFieldName);
+                                 kDictionaryCountFieldName,
+                                 kDictionaryItemsFieldName);
   }
 
   return E_NOTIMPL;
@@ -141,8 +146,9 @@ HRESULT DbgBuiltinCollection::ProcessCollectionType(
 }
 
 HRESULT DbgBuiltinCollection::PopulateMembers(
-    Variable *variable, IEvalCoordinator *eval_coordinator) {
-  if (!variable) {
+    Variable *variable_proto, vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
+  if (!members) {
     return E_INVALIDARG;
   }
 
@@ -159,24 +165,26 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
     return S_OK;
   }
 
-  if (GetEvaluationDepth() <= 0) {
+  if (GetCreationDepth() <= 0) {
     WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
   }
 
   // Sets the Count property of the collection.
-  Variable *list_count = variable->add_members();
+  Variable *list_count = variable_proto->add_members();
   list_count->set_name(kCountProtoFieldName);
   list_count->set_value(std::to_string(count_));
   list_count->set_type(kInt32ClassName);
 
   if (class_type_ == ClassType::LIST && collection_items_) {
-    return collection_items_->PopulateMembers(variable, eval_coordinator);
+    return collection_items_->PopulateMembers(variable_proto, members,
+                                              eval_coordinator);
   }
 
   if ((class_type_ == ClassType::SET || class_type_ == ClassType::DICTIONARY) &&
       collection_items_) {
-    return PopulateHashSetOrDictionary(variable, eval_coordinator);
+    return PopulateHashSetOrDictionary(variable_proto, members,
+                                       eval_coordinator);
   }
 
   WriteError("Unknown collection.");
@@ -185,8 +193,8 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
 }
 
 HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
-    google::cloud::diagnostics::debug::Variable *variable,
-    IEvalCoordinator *eval_coordinator) {
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
   // Start fetching items from the hash set or dictionary.
   HRESULT hr;
   int32_t index = 0;
@@ -221,7 +229,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     // So a dictionary entry is essentially the same as a set slot except
     // that the dictionary entry has a key.
     unique_ptr<DbgObject> slot_item_obj;
-    hr = CreateDbgObject(array_item, GetEvaluationDepth(), &slot_item_obj,
+    hr = CreateDbgObject(array_item, GetCreationDepth(), &slot_item_obj,
                          GetErrorStream());
     if (FAILED(hr)) {
       WriteError("Failed to create DbgObject for item at index " +
@@ -232,7 +240,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     // Casts the DbgObject to a class.
     DbgClass *slot_item = reinterpret_cast<DbgClass *>(slot_item_obj.get());
     // Try to find the hashCode field of the struct.
-    DbgObject *hash_code_obj = nullptr;
+    shared_ptr<DbgObject> hash_code_obj = nullptr;
     hr = slot_item->ExtractField(kHashSetAndDictHashCodeFieldName,
                                  &hash_code_obj);
     if (FAILED(hr)) {
@@ -243,7 +251,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
 
     // Since hashCode is an int, we cast it to a DbgPrimitive<int32_t>.
     DbgPrimitive<int32_t> *hash_code_primitive_obj =
-        reinterpret_cast<DbgPrimitive<int32_t> *>(hash_code_obj);
+        reinterpret_cast<DbgPrimitive<int32_t> *>(hash_code_obj.get());
     int32_t hash_code_value = hash_code_primitive_obj->GetValue();
     // Now the hashCode of the struct is actually processed in such a way that
     // they can only be greater than or equal to 0. If they are -1, then this
@@ -254,7 +262,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     }
 
     // Gets the underlying DbgObject that represents value field.
-    DbgObject *value_obj = nullptr;
+    shared_ptr<DbgObject> value_obj = nullptr;
     hr = slot_item->ExtractField(kHashSetAndDictValueFieldName, &value_obj);
     if (FAILED(hr)) {
       WriteError("Failed to evaluate the value of item at index " +
@@ -262,7 +270,7 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
       return hr;
     }
 
-    DbgObject *key_obj = nullptr;
+    shared_ptr<DbgObject> key_obj = nullptr;
     // If this is a dictionary, we have to find the key field of the struct.
     if (class_type_ == ClassType::DICTIONARY) {
       hr = slot_item->ExtractField(kDictionaryKeyFieldName, &key_obj);
@@ -274,24 +282,24 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     }
 
     // Now creates a member that represents this item.
-    Variable *item_proto = variable->add_members();
+    Variable *item_proto = variable_proto->add_members();
     item_proto->set_name("[" + std::to_string(items_fetched_so_far) + "]");
 
     // For hash set, just display item as [index]: value.
     if (class_type_ == ClassType::SET) {
       // We don't have to worry about errors since PopulateVariableValue
       // will automatically sets error in item_proto.
-      value_obj->PopulateVariableValue(item_proto, eval_coordinator);
+      members->push_back(VariableWrapper(item_proto, value_obj));
     } else {
       // For dictionary, we also display the key. So an item would be
       // [index]: { "key": Key, "value": Value }
       Variable *key_proto = item_proto->add_members();
       key_proto->set_name(kDictionaryKeyFieldName);
-      key_obj->PopulateVariableValue(key_proto, eval_coordinator);
+      members->push_back(VariableWrapper(key_proto, key_obj));
 
       Variable *value_proto = item_proto->add_members();
       value_proto->set_name(kHashSetAndDictValueFieldName);
-      value_obj->PopulateVariableValue(value_proto, eval_coordinator);
+      members->push_back(VariableWrapper(value_proto, value_obj));
     }
 
     items_fetched_so_far++;

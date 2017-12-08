@@ -79,6 +79,9 @@
     <ClCompile Include="string_stream_wrapper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="variable_wrapper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -190,6 +193,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_dbg_class_member.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="variable_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

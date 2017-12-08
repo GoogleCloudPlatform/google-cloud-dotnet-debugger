@@ -77,7 +77,7 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
   ULONG64 enum_value = ExtractEnumValue(enum_type, enum_value_array_.data());
   for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
     if (*it) {
-      if ((*it)->IsStatic() ||
+      if (!(*it)->IsStatic() ||
           kEnumValue.compare((*it)->GetMemberName()) == 0) {
         continue;
       }

@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "i_cor_debug_helper.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
@@ -134,22 +135,18 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
   return array_value->GetElementAtPosition(position, array_item);
 }
 
-HRESULT DbgArray::PopulateMembers(Variable *variable,
-    IEvalCoordinator *eval_coordinator) {
+HRESULT DbgArray::PopulateMembers(
+    google::cloud::diagnostics::debug::Variable *variable_proto,
+    std::vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  if (!variable) {
-    return E_INVALIDARG;
-  }
-
-  if (!eval_coordinator) {
+  if (!members || !variable_proto || !eval_coordinator) {
     return E_INVALIDARG;
   }
 
   if (GetIsNull()) {
-    variable->clear_members();
     return S_OK;
   }
 
@@ -198,7 +195,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
         // Spill over the addition until we can't.
         ++dimensions_tracker[current_dimension_index];
         if (dimensions_tracker[current_dimension_index] ==
-          dimensions_[current_dimension_index]) {
+            dimensions_[current_dimension_index]) {
           dimensions_tracker[current_dimension_index] = 0;
           current_dimension_index -= 1;
         } else {
@@ -208,7 +205,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
     }
 
     // Adds a member at this index.
-    Variable *member = variable->add_members();
+    Variable *member = variable_proto->add_members();
     member->set_name(name);
 
     CComPtr<ICorDebugValue> array_item;
@@ -222,7 +219,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
     }
 
     unique_ptr<DbgObject> result_object;
-    hr = DbgObject::CreateDbgObject(array_item, GetEvaluationDepth() - 1,
+    hr = DbgObject::CreateDbgObject(array_item, GetCreationDepth() - 1,
                                     &result_object, GetErrorStream());
     if (FAILED(hr)) {
       if (result_object) {
@@ -233,11 +230,7 @@ HRESULT DbgArray::PopulateMembers(Variable *variable,
       continue;
     }
 
-    hr = result_object->PopulateVariableValue(member, eval_coordinator);
-    if (FAILED(hr)) {
-      SetErrorStatusMessage(member, this);
-      continue;
-    }
+    members->push_back(VariableWrapper(member, std::move(result_object)));
   }
 
   return S_OK;

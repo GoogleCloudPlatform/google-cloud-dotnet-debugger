@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "i_cor_debug_mocks.h"
+#include "variable_wrapper.h"
 
 // This headers contains common actions that tests can use.
 namespace google_cloud_debugger_test {
@@ -66,6 +67,11 @@ ACTION_P(ReadFromStringVectorToArg0, string_vector) {
 
 void SetUpMockGenericValue(ICorDebugGenericValueMock *generic_value,
                            std::int32_t value);
+
+// Loops through the items in variable_wrappers and populates
+// their protos with the respective types and values.
+void PopulateTypeAndValue(
+    std::vector<google_cloud_debugger::VariableWrapper> &variable_wrappers);
 
 }  // namespace google_cloud_debugger_test
 

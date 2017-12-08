@@ -72,11 +72,10 @@ void DbgClassProperty::Initialize(mdProperty property_def,
   creation_depth_ = creation_depth;
 }
 
-HRESULT DbgClassProperty::PopulateVariableValue(
-    Variable *variable, ICorDebugReferenceValue *reference_value,
+HRESULT DbgClassProperty::Evaluate(
+    ICorDebugReferenceValue *reference_value,
     IEvalCoordinator *eval_coordinator,
-    vector<CComPtr<ICorDebugType>> *generic_types,
-    int evaluation_depth) {
+    vector<CComPtr<ICorDebugType>> *generic_types) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
@@ -92,22 +91,13 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return E_INVALIDARG;
   }
 
-  if (!variable) {
-    WriteError("Variable proto cannot be null.");
-    return E_INVALIDARG;
-  }
-
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }
 
   // If this property is already evaluated, don't do it again.
   if (member_value_) {
-    int previous_eval_depth = member_value_->GetEvaluationDepth();
-    member_value_->SetEvaluationDepth(evaluation_depth);
-    HRESULT hr = PopulateVariableValueHelper(variable, eval_coordinator);
-    member_value_->SetEvaluationDepth(previous_eval_depth);
-    return hr;
+    return PopulateVariableValueHelper(eval_coordinator);
   }
 
   CComPtr<ICorDebugValue> debug_value;
@@ -198,46 +188,38 @@ HRESULT DbgClassProperty::PopulateVariableValue(
     return hr;
   }
 
-  hr = DbgObject::CreateDbgObject(eval_result, creation_depth_, &member_value_,
+  std::unique_ptr<DbgObject> member_value;
+  hr = DbgObject::CreateDbgObject(eval_result, creation_depth_, &member_value,
                                   GetErrorStream());
   if (FAILED(hr)) {
-    if (member_value_) {
-      WriteError(member_value_->GetErrorString());
+    if (member_value) {
+      WriteError(member_value->GetErrorString());
     }
     WriteError("Failed to create class property object.");
     return hr;
   }
 
-  int previous_eval_depth = member_value_->GetEvaluationDepth();
-  member_value_->SetEvaluationDepth(evaluation_depth);
-  hr = PopulateVariableValueHelper(variable, eval_coordinator);
-  member_value_->SetEvaluationDepth(previous_eval_depth);
-  return hr;
+  member_value_ = std::move(member_value);
+
+  return PopulateVariableValueHelper(eval_coordinator);
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(
-    Variable *variable, IEvalCoordinator *eval_coordinator) {
-  if (!variable || !member_value_) {
+    IEvalCoordinator *eval_coordinator) {
+  if (!member_value_) {
     return E_INVALIDARG;
   }
 
   if (exception_occurred_) {
     // If there is an exception, the member_value_ will be the exception.
     std::ostringstream stream_type;
-    member_value_->PopulateType(variable);
-    WriteError("throws exception " + variable->type());
+    Variable variable;
+    member_value_->PopulateType(&variable);
+    WriteError("throws exception " + variable.type());
     return E_FAIL;
   }
 
-  HRESULT hr =
-      member_value_->PopulateVariableValue(variable, eval_coordinator);
-
-  if (FAILED(hr)) {
-    WriteError(member_value_->GetErrorString());
-    return hr;
-  }
-
-  return hr;
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger

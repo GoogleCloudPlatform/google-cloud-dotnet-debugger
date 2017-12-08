@@ -20,6 +20,8 @@ using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::_;
+using google_cloud_debugger::VariableWrapper;
+using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -41,6 +43,13 @@ void SetUpMockGenericValue(
   // When GetValue is called from generic value, returns value as the value.
   EXPECT_CALL(*generic_value, GetValue(_))
       .WillRepeatedly(DoAll(SetArg0ToInt32Value(value), Return(S_OK)));
+}
+
+void PopulateTypeAndValue(vector<VariableWrapper> &variable_wrappers) {
+  for (auto &wrapper : variable_wrappers) {
+    EXPECT_EQ(wrapper.PopulateType(), S_OK);
+    EXPECT_EQ(wrapper.PopulateValue(), S_OK);
+  }
 }
 
 }  // namespace google_cloud_debugger_test

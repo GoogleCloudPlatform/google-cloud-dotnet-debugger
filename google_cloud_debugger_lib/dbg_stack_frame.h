@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STACK_FRAME_
-#define STACK_FRAME_
+#ifndef DBG_STACK_FRAME_H_
+#define DBG_STACK_FRAME_H_
 
 #include <memory>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -29,7 +30,7 @@
 
 namespace google_cloud_debugger {
 
-typedef std::tuple<std::string, std::unique_ptr<DbgObject>,
+typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
                    std::unique_ptr<std::ostringstream>>
     VariableTuple;
 
@@ -161,4 +162,4 @@ class DbgStackFrame {
 
 }  //  namespace google_cloud_debugger
 
-#endif  //  VARIABLE_MANAGER_H_
+#endif  //  DBG_STACK_FRAME_H_
