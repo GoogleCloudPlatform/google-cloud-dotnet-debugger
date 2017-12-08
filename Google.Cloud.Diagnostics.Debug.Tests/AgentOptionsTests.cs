@@ -34,7 +34,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             $"--version={_version}",
             $"--project-id={_projectId}",
             $"--debugger={_debugger}",
-            $"--application-path={_application}",
+            $"--application-start-cmd={_application}",
         };
 
         private static readonly GaePlatformDetails _gaeDetails = new GaePlatformDetails(
@@ -49,7 +49,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(_module, options.Module);
             Assert.Equal(_version, options.Version);
             Assert.Equal(_debugger, options.Debugger);
-            Assert.Equal(_application, options.ApplicationPath);
+            Assert.Equal(_application, options.ApplicationStartCmd);
             Assert.Equal(_projectId, options.ProjectId);
             Assert.Null(options.ApplicationId);
             Assert.False(options.PropertyEvaluation);
@@ -68,7 +68,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         public void Parse_Missing_Application_File()
         {
             var args = new List<string>(_args);
-            args[4] = "--application-path=invalid";
+            args[4] = "--application-start-cmd=invalid";
             Assert.Throws<FileNotFoundException>(() => AgentOptions.Parse(args.ToArray()));
         }
             

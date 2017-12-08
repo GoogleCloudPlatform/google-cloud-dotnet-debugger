@@ -69,7 +69,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Version = Version,
                 ProjectId = ProjectId,
                 Debugger = Utils.GetDebugger(),
-                ApplicationPath = Utils.GetApplication(),
+                ApplicationStartCmd = "dotnet " + Utils.GetApplication(),
                 WaitTime = 0,
             };
         }

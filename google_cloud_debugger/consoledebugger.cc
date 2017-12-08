@@ -26,7 +26,7 @@ const string kEvaluationOption = "property-evaluation";
 
 // If given this option, the debugger will start the application using this
 // path.
-const string kApplicationPathOption = "application-path";
+const string kApplicationStartCmdOption = "application-start-cmd";
 
 // If given this option, the debugger will attach to the running application
 // with this process ID.
@@ -34,7 +34,7 @@ const string kApplicationIDOption = "application-id";
 
 enum optionIndex {
   UNKNOWN,
-  APPLICATIONPATH,
+  APPLICATIONSTARTCMD,
   APPLICATIONID,
   PROPERTYEVALUATION
 };
@@ -46,10 +46,10 @@ const option::Descriptor usage[] = {
     {UNKNOWN, 0, "", "", option::Arg::None,
      "USAGE: example [options]\n\n"
      "Options:"},
-    {APPLICATIONPATH, 0, "", kApplicationPathOption.c_str(),
+    {APPLICATIONSTARTCMD, 0, "", kApplicationStartCmdOption.c_str(),
      option::Arg::Optional,
-     "  --application-path  \tPath to the application. If used, the debugger "
-     "will start the application using this path."},
+     "  --application-start-cmd  \tCommand to the application. If used, the debugger "
+     "will start the application using this command."},
     {APPLICATIONID, 0, "", kApplicationIDOption.c_str(), option::Arg::Optional,
      "  --application-id  \tProcess ID of the application to be debugged. If "
      "used, the debugger will attach to the running application using this "
@@ -90,8 +90,8 @@ int main(int argc, char *argv[]) {
   bool property_evaluation = options[PROPERTYEVALUATION].count();
 
   // Has to supply either path or ID, not both.
-  if ((options[APPLICATIONPATH].count() && options[APPLICATIONID].count()) ||
-      (!options[APPLICATIONPATH].count() && !options[APPLICATIONID].count())) {
+  if ((options[APPLICATIONSTARTCMD].count() && options[APPLICATIONID].count()) ||
+      (!options[APPLICATIONSTARTCMD].count() && !options[APPLICATIONID].count())) {
     cerr << "The debugger can only take in either the application path or the "
             "process ID of the running application, not both.";
     return -1;
@@ -100,9 +100,8 @@ int main(int argc, char *argv[]) {
   Debugger debugger;
   HRESULT hr;
 
-  if (options[APPLICATIONPATH].count()) {
-    string app_path = string(options[APPLICATIONPATH].arg);
-    string command_line = "dotnet " + app_path;
+  if (options[APPLICATIONSTARTCMD].count()) {
+    string command_line = string(options[APPLICATIONSTARTCMD].arg);
     std::vector<WCHAR> wchar_command_line =
         ConvertStringToWCharPtr(command_line);
 
