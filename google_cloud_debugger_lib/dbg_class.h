@@ -31,6 +31,8 @@ namespace google_cloud_debugger {
 // (including integral types like boolean, int, etc. and struct
 // but NOT Enum). For Enum and built-in collection like List,
 // HashSet and Dictionary, see DbgEnum and DbgBuiltinCollection class.
+// IMPORTANT: This class is not thread-safe and is only supposed
+// to be used in 1 thread.
 class DbgClass : public DbgObject {
  public:
   DbgClass(ICorDebugType *debug_type, int depth)

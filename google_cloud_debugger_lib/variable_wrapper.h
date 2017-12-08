@@ -83,6 +83,11 @@ public:
     return variable_value_;
   }
 
+  // Sets BFS level.
+  void SetBFSLevel(std::int32_t level) {
+    bfs_level_ = level;
+  }
+
 private:
   // The proto for this variable.
   google::cloud::diagnostics::debug::Variable *variable_proto_;
