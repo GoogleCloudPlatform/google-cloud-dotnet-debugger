@@ -43,8 +43,8 @@ namespace Google.Cloud.Diagnostics.Debug
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
-        // If given this option, the debugger will start and debug an application using this path.
-        public const string ApplicationPathOption = "--application-path";
+        // If given this option, the debugger will use this command to start the application to debug.
+        public const string ApplicationStartCommandOption = "--application-start-command";
 
         // If given this option, the debugger will attach to a running application using this process ID.
         public const string ApplicationIdOption = "--application-id";
@@ -58,11 +58,11 @@ namespace Google.Cloud.Diagnostics.Debug
         [Option("debugger", Required = true, HelpText = "A path to the debugger to use.")]
         public string Debugger { get; set; }
 
-        [Option("application-path",
-            HelpText = "A path to the .NET CORE application dll to be debugged." +
+        [Option("application-start-command",
+            HelpText = "A command to start a .NET CORE application to be debugged." +
             " This will delay the start up of the application as the debugger needs" +
             " to be set up to ensure that startup code will be debugged.")]
-        public string ApplicationPath { get; set; }
+        public string ApplicationStartCommand { get; set; }
 
         [Option("application-id",
             HelpText = "Process ID of a running .NET CORE application to be debugged.")]
@@ -86,7 +86,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
         /// <summary>
         /// Returns the processed arguments to pass to the debugger.
-        /// It will either be "application-path path (-property-evaluation)"
+        /// It will either be "application-start-command path (-property-evaluation)"
         /// or "application-id id (-property-evaluation).
         /// </summary>
         public string DebuggerArguments
@@ -100,8 +100,8 @@ namespace Google.Cloud.Diagnostics.Debug
                 }
                 else
                 {
-                    return PropertyEvaluation ? $"{ApplicationPathOption}={ApplicationPath} {PropertyEvaluationOption}"
-                        : $"{ApplicationPathOption}={ApplicationPath}";
+                    return PropertyEvaluation ? $"{ApplicationStartCommandOption}=\"{ApplicationStartCommand}\" {PropertyEvaluationOption}"
+                        : $"{ApplicationStartCommandOption}=\"{ApplicationStartCommand}\"";
                 }
             }
         }
@@ -125,20 +125,11 @@ namespace Google.Cloud.Diagnostics.Debug
                     throw new FileNotFoundException($"Debugger file not found: '{options.Debugger}'");
                 }
 
-                if ((string.IsNullOrWhiteSpace(options.ApplicationPath) && !options.ApplicationId.HasValue)
-                    || (!string.IsNullOrWhiteSpace(options.ApplicationPath) && options.ApplicationId.HasValue))
+                if ((string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && !options.ApplicationId.HasValue)
+                    || (!string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && options.ApplicationId.HasValue))
                 {
-                    throw new ArgumentException("Please supply either the path to the .NET CORE application dll"
+                    throw new ArgumentException("Please supply either a command to start a .NET CORE application"
                         + " or the process ID of a running application, NOT both.");
-                }
-
-                if (!string.IsNullOrWhiteSpace(options.ApplicationPath))
-                {
-                    options.ApplicationPath = Path.GetFullPath(options.ApplicationPath);
-                    if (!File.Exists(options.ApplicationPath))
-                    {
-                        throw new FileNotFoundException($"Application file not found: '{options.ApplicationPath}'");
-                    }
                 }
             }
             return options;
