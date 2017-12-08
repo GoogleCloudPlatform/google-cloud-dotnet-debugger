@@ -92,13 +92,7 @@ class DbgClassTest : public ::testing::Test {
     ON_CALL(object_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
         .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
 
-    ON_CALL(object_value_, QueryInterface(__uuidof(ICorDebugReferenceValue), _))
-        .WillByDefault(Return(E_NOINTERFACE));
-
     ON_CALL(heap_value_, CreateHandle(_, _))
-        .WillByDefault(DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
-
-    ON_CALL(handle_value_, QueryInterface(__uuidof(ICorDebugReferenceValue), _))
         .WillByDefault(DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
 
     ON_CALL(handle_value_, Dereference(_))
@@ -426,7 +420,7 @@ class DbgClassTest : public ::testing::Test {
   uint8_t enum_value_ = 4;
 };
 
-// Tests CreateDbgClassObject function when class' object is null.
+// Test CreateDbgClassObject function when class' object is null.
 // This test does not initialize any fields or properties in the class.
 TEST_F(DbgClassTest, TestCreateDbgClassObjectNull) {
   SetUpDbgClass();
@@ -448,9 +442,8 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNull) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
-// Tests CreateDbgClassObject function when class' object is not null.
-// This test sets creation depth to -1 so no fields or properties
-// are created.
+// Test CreateDbgClassObject function when class' object is not null.
+// This test does not initialize any fields or properties in the class.
 TEST_F(DbgClassTest, TestCreateDbgClassObjectNonNull) {
   SetUpDbgClass();
   SetUpBaseClass();
@@ -471,12 +464,14 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNonNull) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
-// Tests CreateDbgClassObject function when creation depth is not -1.
-// Fields and properties also should not be created.
+// Test CreateDbgClassObject function when fields and properties
+// are also initialized.
 TEST_F(DbgClassTest, TestCreateDbgClassWithFieldAndProperty) {
   SetUpDbgClass();
   SetUpBaseClass();
   SetUpMetaDataImport();
+  SetUpClassField();
+  SetUpClassProperty();
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
@@ -489,7 +484,7 @@ TEST_F(DbgClassTest, TestCreateDbgClassWithFieldAndProperty) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
-// Tests error cases for CreateDbgClassObject function
+// Test error cases for CreateDbgClassObject function
 // when debug type returns error.
 TEST_F(DbgClassTest, TestCreateDbgClassObjectError) {
   // Makes GetType of debug_type_ returns error.
@@ -505,7 +500,7 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectError) {
   EXPECT_EQ(hr, CORDBG_E_TYPE_NOT_FOUND);
 }
 
-// Tests error cases for CreateDbgClassObject function
+// Test error cases for CreateDbgClassObject function
 // when we cannot get MetaData.
 TEST_F(DbgClassTest, TestCreateDbgClassObjectMetaDataError) {
   SetUpDbgClass();
@@ -523,11 +518,54 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectMetaDataError) {
   EXPECT_EQ(hr, CORDBG_E_MISSING_METADATA);
 }
 
-// Tests PopulateType function.
+// Test error cases for CreateDbgClassObject function
+// when we cannot get fields.
+TEST_F(DbgClassTest, TestCreateDbgClassObjectFieldError) {
+  SetUpDbgClass();
+  SetUpBaseClass();
+  SetUpMetaDataImport();
+
+  // Makes EnumFields returns error when trying to get the fields.
+  EXPECT_CALL(metadata_import_, EnumFields(_, class_token_, _, _, _))
+      .Times(1)
+      .WillRepeatedly(
+          DoAll(SetArgPointee<4>(0), Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
+
+  unique_ptr<DbgObject> dbgclass;
+  std::ostringstream err_stream;
+  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
+                                              FALSE, &dbgclass, &err_stream);
+
+  EXPECT_EQ(hr, CORDBG_E_FIELD_NOT_AVAILABLE);
+}
+
+// Test error cases for CreateDbgClassObject function
+// when we cannot get properties.
+TEST_F(DbgClassTest, TestCreateDbgClassObjectPropertyError) {
+  SetUpDbgClass();
+  SetUpBaseClass();
+  SetUpMetaDataImport();
+  SetUpClassField();
+
+  // Makes  returns error when trying to get the properties.
+  EXPECT_CALL(metadata_import_, EnumProperties(_, class_token_, _, _, _))
+      .WillOnce(Return(CORDBG_E_BAD_THREAD_STATE));
+
+  unique_ptr<DbgObject> dbgclass;
+  std::ostringstream err_stream;
+  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
+                                              FALSE, &dbgclass, &err_stream);
+
+  EXPECT_EQ(hr, CORDBG_E_BAD_THREAD_STATE);
+}
+
+// Test PopulateType function.
 TEST_F(DbgClassTest, TestPopulateType) {
   SetUpDbgClass();
   SetUpBaseClass();
   SetUpMetaDataImport();
+  SetUpClassField();
+  SetUpClassProperty();
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
@@ -545,7 +583,7 @@ TEST_F(DbgClassTest, TestPopulateType) {
   EXPECT_EQ(variable.type(), class_name_);
 }
 
-// Tests PopulateMembers function.
+// Test PopulateMembers function.
 TEST_F(DbgClassTest, TestPopulateMembers) {
   SetUpDbgClass();
   SetUpBaseClass();
@@ -612,7 +650,7 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
 }
 
 
-// Tests PopulateMembers function when there is a property with backing field.
+// Test PopulateMembers function when there is a property with backing field.
 TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
   // Makes the second field the backing field of the class property.
   class_second_field_ = "<" + class_property_ + ">k__BackingField";

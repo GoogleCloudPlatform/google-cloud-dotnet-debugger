@@ -31,8 +31,6 @@ namespace google_cloud_debugger {
 // (including integral types like boolean, int, etc. and struct
 // but NOT Enum). For Enum and built-in collection like List,
 // HashSet and Dictionary, see DbgEnum and DbgBuiltinCollection class.
-// IMPORTANT: This class is not thread-safe and is only supposed
-// to be used in 1 thread.
 class DbgClass : public DbgObject {
  public:
   DbgClass(ICorDebugType *debug_type, int depth)
@@ -79,7 +77,7 @@ class DbgClass : public DbgObject {
   static HRESULT CreateDbgClassObject(ICorDebugType *debug_type, int depth,
                                       ICorDebugValue *debug_value, BOOL is_null,
                                       std::unique_ptr<DbgObject> *result_object,
-                                      std::ostream *err_stream);
+                                      std::ostringstream *err_stream);
 
   // Clear cache of static field and properties.
   static void ClearStaticCache() { static_class_members_.clear(); }
@@ -89,12 +87,12 @@ class DbgClass : public DbgObject {
   static HRESULT ProcessClassName(mdTypeDef class_token,
                                   IMetaDataImport *metadata_import,
                                   std::string *class_name,
-                                  std::ostream *err_stream);
+                                  std::ostringstream *err_stream);
 
   // Processes the base class' name and stores the result in base_class_name.
   static HRESULT ProcessBaseClassName(ICorDebugType *debug_type,
                                       std::string *base_class_name,
-                                      std::ostream *err_stream);
+                                      std::ostringstream *err_stream);
 
   // Processes the generic parameters of the class.
   HRESULT ProcessParameterizedType();
@@ -105,7 +103,7 @@ class DbgClass : public DbgObject {
   static HRESULT ProcessPrimitiveType(
       ICorDebugValue *debug_value, const std::string &class_name,
       std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostream *err_stream);
+      std::ostringstream *err_stream);
 
   // Template functions to help create different primitive ValueType.
   // Supported types are char, bool, int8_t, uint8_t,
@@ -114,7 +112,7 @@ class DbgClass : public DbgObject {
   template <typename T>
   static HRESULT ProcessValueTypeHelper(
       ICorDebugValue *debug_value, std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostream *err_stream) {
+      std::ostringstream *err_stream) {
     HRESULT hr;
     std::unique_ptr<DbgPrimitive<T>> primitive_value(
         new (std::nothrow) DbgPrimitive<T>(nullptr));
@@ -187,21 +185,17 @@ class DbgClass : public DbgObject {
   // Processes the class properties and stores the fields in class_fields_.
   HRESULT ProcessProperties(IMetaDataImport *metadata_import);
 
-  // Processes members of this class, creating DbgObject
-  // for each of them.
-  HRESULT ProcessClassMembers();
-
-  // Helper method to process the members of this class.
-  // If not overriden, this method will process this object as if
-  // it is a simple class (extracting out fields and properties).
+  // Processes the object based on whether it is an Enum, a collection
+  // type (list, dictionary, hashset) or a simple class.
   // Debug_value is the ICorDebugValue represents this
   // class object, metadata_import is the IMetaDataImport from this
   // class' module and debug_class is the ICorDebugClass representing
   // this class.
-  virtual HRESULT ProcessClassMembersHelper(
-      ICorDebugValue *debug_value,
-      ICorDebugClass *debug_class,
-      IMetaDataImport *metadata_import);
+  // If not overriden, this method will process this object as if
+  // it is a simple class (extracting out fields and properties).
+  virtual HRESULT ProcessClassType(ICorDebugValue *debug_value,
+                                   ICorDebugClass *debug_class,
+                                   IMetaDataImport *metadata_import);
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
@@ -247,9 +241,6 @@ class DbgClass : public DbgObject {
 
   // Token of the class.
   mdTypeDef class_token_;
-
-  // True if ProcessClassMembers are called.
-  bool processed_ = false;
 
   // Cache of static class members.
   // First key is the module name and class name.

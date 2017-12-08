@@ -37,10 +37,9 @@ class DbgBuiltinCollection : public DbgClass {
  protected:
   // Stores the items in the collection depending on whether
   // this is a list, set or dictionary.
-  HRESULT ProcessClassMembersHelper(
-      ICorDebugValue *debug_value,
-      ICorDebugClass *debug_class,
-      IMetaDataImport *metadata_import) override;
+  HRESULT ProcessClassType(ICorDebugValue *debug_value,
+                           ICorDebugClass *debug_class,
+                           IMetaDataImport *metadata_import) override;
 
   // Populates variables with a field count (number of items in this hash set
   // or dictionary) and the members of this hash set or dictionary.
