@@ -391,15 +391,14 @@ HRESULT PortablePdbFile::Initialize(ICorDebugModule *debug_module) {
   }
 
   HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
-      debug_module, &metadata_import_, &std::cerr);
+      debug_module, &metadata_import_);
   if (FAILED(hr)) {
     return hr;
   }
 
   vector<WCHAR> module_name;
   hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(debug_module,
-                                                               &module_name,
-                                                               &std::cerr);
+                                                               &module_name);
   if (FAILED(hr)) {
     return hr;
   }

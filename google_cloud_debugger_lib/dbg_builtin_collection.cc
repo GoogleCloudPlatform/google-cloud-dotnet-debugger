@@ -47,7 +47,7 @@ const string DbgBuiltinCollection::kHashSetAndDictHashCodeFieldName =
     "hashCode";
 const string DbgBuiltinCollection::kCountProtoFieldName = "Count";
 
-HRESULT DbgBuiltinCollection::ProcessClassMembersHelper(
+HRESULT DbgBuiltinCollection::ProcessClassType(
     ICorDebugValue *debug_value, ICorDebugClass *debug_class,
     IMetaDataImport *metadata_import) {
   HRESULT hr;
@@ -104,7 +104,7 @@ HRESULT DbgBuiltinCollection::ProcessClassMembersHelper(
     return hr;
   }
 
-  // This is a dictionary.
+  // This is a dictionary
   if (kDictionaryClassName.compare(class_name_) == 0) {
     class_type_ = ClassType::DICTIONARY;
     return ProcessCollectionType(debug_obj_value, debug_class, metadata_import,
@@ -168,11 +168,6 @@ HRESULT DbgBuiltinCollection::PopulateMembers(
   if (GetCreationDepth() <= 0) {
     WriteError("Object Inspection Depth Limit reached.");
     return E_FAIL;
-  }
-
-  HRESULT hr = ProcessClassMembers();
-  if (FAILED(hr)) {
-    return hr;
   }
 
   // Sets the Count property of the collection.

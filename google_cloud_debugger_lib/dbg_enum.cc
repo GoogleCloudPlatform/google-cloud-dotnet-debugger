@@ -38,6 +38,10 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
     return initialize_hr_;
   }
 
+  if (!HasValue()) {
+    return E_FAIL;
+  }
+
   // Checks whether we already cache it in enum_string_.
   if (!enum_string_.empty()) {
     variable->set_value(enum_string_);
@@ -105,9 +109,9 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
   return S_OK;
 }
 
-HRESULT DbgEnum::ProcessEnum(ICorDebugValue *debug_value,
-                             ICorDebugClass *debug_class,
-                             IMetaDataImport *metadata_import) {
+HRESULT DbgEnum::ProcessClassType(ICorDebugValue *debug_value,
+                                  ICorDebugClass *debug_class,
+                                  IMetaDataImport *metadata_import) {
   class_type_ = ClassType::ENUM;
   CComPtr<ICorDebugGenericValue> generic_value;
   HRESULT hr =

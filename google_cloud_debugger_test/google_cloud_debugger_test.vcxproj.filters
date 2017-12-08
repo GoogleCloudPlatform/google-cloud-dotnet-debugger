@@ -66,9 +66,6 @@
     <ClCompile Include="eval_coordinator_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="variable_wrapper_test.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">

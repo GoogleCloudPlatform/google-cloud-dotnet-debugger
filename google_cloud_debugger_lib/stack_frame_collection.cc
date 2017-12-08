@@ -109,8 +109,9 @@ HRESULT StackFrameCollection::Initialize(
     }
 
     vector<WCHAR> module_name;
-    hr = GetModuleNameFromICorDebugModule(frame_module, &module_name, &cerr);
+    hr = GetModuleNameFromICorDebugModule(frame_module, &module_name);
     if (FAILED(hr)) {
+      cerr << "Failed to get module name";
       return hr;
     }
 
@@ -119,9 +120,9 @@ HRESULT StackFrameCollection::Initialize(
     string target_module_name = stack_frame.GetModule();
 
     CComPtr<IMetaDataImport> metadata_import;
-    hr = GetMetadataImportFromICorDebugModule(frame_module, &metadata_import,
-                                              &cerr);
+    hr = GetMetadataImportFromICorDebugModule(frame_module, &metadata_import);
     if (FAILED(hr)) {
+      cerr << "Failed to get MetaDataImport from frame module.";
       return hr;
     }
 
@@ -131,6 +132,8 @@ HRESULT StackFrameCollection::Initialize(
     hr = PopulateModuleClassAndFunctionName(&stack_frame, target_function_token,
                                             metadata_import);
     if (FAILED(hr)) {
+      cerr << "Failed to populate module, class and function name of the stack "
+              "frame.";
       return hr;
     }
 
