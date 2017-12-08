@@ -42,8 +42,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// breakpoint is set
         /// </summary>
         [Fact]
-        public void DebuggerAttached_NoBreakpointsSet() =>
-            RunCpuTestAsync(AddedCpuWhenDebuggingPercent);
+        public async Task DebuggerAttached_NoBreakpointsSet() =>
+            await RunCpuTestAsync(AddedCpuWhenDebuggingPercent);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 0.1% of
@@ -51,8 +51,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// breakpoint is set (but not hit).
         /// </summary>
         [Fact]
-        public void DebuggerAttached_BreakpointsSet() =>
-            RunCpuTestAsync(AddedCpuWhenEvaluatingPercent, setBreakpoint: true);
+        public async Task DebuggerAttached_BreakpointsSet() =>
+            await RunCpuTestAsync(AddedCpuWhenEvaluatingPercent, setBreakpoint: true);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 1% of
@@ -60,8 +60,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// breakpoint is hit.
         /// </summary>
         [Fact]
-        public void DebuggerAttached_BreakpointHit() => 
-            RunCpuTestAsync(
+        public async Task DebuggerAttached_BreakpointHit() => 
+            await RunCpuTestAsync(
                 AddedCpuWhenDebuggingPercent, setBreakpoint: true, hitBreakpoint: true);
 
         /// <summary>
@@ -75,10 +75,10 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
         /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
         ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
-        private void RunCpuTestAsync(double acceptableCpuIncrease, bool setBreakpoint = false, bool hitBreakpoint = false)
+        private async Task RunCpuTestAsync(double acceptableCpuIncrease, bool setBreakpoint = false, bool hitBreakpoint = false)
         {
-            double noDebugAvgPercentCpu = GetAverageCpuPercentAsync(debugEnabled: false);
-            double debugAvgPercentCpu = GetAverageCpuPercentAsync(debugEnabled: true,
+            double noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: false);
+            double debugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: true,
                 setBreakpoint: setBreakpoint, hitBreakpoint: hitBreakpoint);
 
             Console.WriteLine($"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}");
@@ -102,12 +102,12 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
         ///     Defaults to false.</param>
         /// <returns>The average CPU percentage during requests.</returns>
-        private double GetAverageCpuPercentAsync(
+        private async Task<double> GetAverageCpuPercentAsync(
             bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
         {
             using (StartTestApp(debugEnabled: debugEnabled))
             {
-                var processId = GetProcessId().Result;
+                var processId = await GetProcessId();
                 var process = Process.GetProcessById(processId);
                 var debuggee = debugEnabled ? Polling.GetDebuggee(Module, Version) : null;
 
@@ -128,7 +128,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
 
                         Stopwatch watch = Stopwatch.StartNew();
                         var startingCpu = process.TotalProcessorTime;
-                        HttpResponseMessage result = client.GetAsync($"{AppUrlEcho}/{i}").Result;
+                        HttpResponseMessage result = await client.GetAsync($"{AppUrlEcho}/{i}");
                         totalCpuTime += process.TotalProcessorTime - startingCpu;
                         totalTime += watch.Elapsed;
 
