@@ -14,10 +14,8 @@
 
 using Google.Cloud.Debugger.V2;
 using System;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -27,57 +25,22 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
     /// </summary>
     public class DebuggerTestBase
     {
-        /// <summary>The base url for the test application.</summary>
-        public static readonly string AppUrlBase = "http://localhost:5000";
-
-        /// <summary>The url to forcibly shutdown the test application.</summary>
-        public static readonly string AppUrlShutdown = $"{AppUrlBase}/Main/Shutdown";
-
-        /// <summary>The url to echo the last piece of the path from the test application.</summary>
-        public static readonly string AppUrlEcho = $"{AppUrlBase}/Main/Echo";
-
-        /// <summary>The url to get the process id from the test application.</summary>
-        public static readonly string AppUrlProcessId = $"{AppUrlBase}/Main/ProcessId";
-
         /// <summary>The number of requests to test against. </summary>
-        public static readonly int NumberOfRequest = 100;
-
-        /// <summary>The module of the a debuggee.</summary>
-        public readonly string Module;
-
-        /// <summary>The version of the a debuggee.</summary>
-        public readonly string Version;
-
-        /// <summary>The Google CLoud Console project id to test with.</summary>
-        public readonly string ProjectId;
-
-        /// <summary>A default set of debugger options.</summary>
-        public readonly AgentOptions Options;
+        public readonly int NumberOfRequest = 100;
 
         /// <summary>A helper to get elements from the debugger api.</summary>
         public readonly DebuggerPolling Polling;
 
         public DebuggerTestBase()
         {
-            Module = nameof(DebuggerTestBase);
             Polling = new DebuggerPolling();
-            Version = Guid.NewGuid().ToString();
-            ProjectId = Utils.GetProjectIdFromEnvironment();
-            Options = new AgentOptions
-            {
-                Module = Module,
-                Version = Version,
-                ProjectId = ProjectId,
-                Debugger = Utils.GetDebugger(),
-                ApplicationStartCommand = "dotnet " + Utils.GetApplication(),
-                WaitTime = 0,
-            };
         }
 
         /// <summary>
-        /// Set a breakpoint at a file and line for a given debuggee.
+        /// Set a breakpoint at a file and line for a given debuggee and then waits 1 second.
+        /// The wait will ensure the breakpoint is picked up by the agent.
         /// </summary>
-        public Debugger.V2.Breakpoint SetBreakpoint(string debuggeeId, string path, int line)
+        public Debugger.V2.Breakpoint SetBreakpointAndSleep(string debuggeeId, string path, int line)
         {
             SetBreakpointRequest request = new SetBreakpointRequest
             {
@@ -91,20 +54,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     }
                 }
             };
-            return Polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
-        }
-
-        /// <summary>
-        /// Gets the process id for the running test application.
-        /// </summary>
-        public async Task<int> GetProcessId()
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                HttpResponseMessage result = await client.GetAsync(AppUrlProcessId);
-                var resultStr = await result.Content.ReadAsStringAsync();
-                return Int32.Parse(resultStr);
-            }
+            var breakpoint = Polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+            return breakpoint;
         }
 
         /// <summary>
@@ -115,9 +67,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <param name="waitForStart">Optional. True if this method should block until the
         ///     application is started and can be queried.  Defaults to true.</param>
         /// <returns>A test application.</returns>
-        public IDisposable StartTestApp(bool debugEnabled, bool waitForStart = true)
+        public TestApplication StartTestApp(bool debugEnabled, bool waitForStart = true)
         { 
-            var app = debugEnabled ? TestAppWrapper.CreateDebug(Options) : TestAppWrapper.Create();
+            var app = new TestApplication(debugEnabled);
 
             if (waitForStart)
             {
@@ -130,7 +82,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     {
                         try
                         {
-                            client.GetAsync(AppUrlBase).Wait();
+                            client.GetAsync(app.AppUrlBase).Wait();
                             break;
                         }
                         catch (AggregateException) when (i < attempts - 1)
@@ -141,64 +93,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 }
             }
             return app;
-        }
-
-        /// <summary>
-        /// Private class to handle starting and shutting down of the test app.
-        /// </summary>
-        private class TestAppWrapper : IDisposable
-        {
-            /// <summary>
-            /// Create a <see cref="TestAppWrapper"/> that will start the test
-            /// app with no debugger attached.
-            /// </summary>
-            public static TestAppWrapper Create()
-            {
-                var startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
-                    "dotnet", $"{Utils.GetApplication()}", null);
-                return new TestAppWrapper(Process.Start(startInfo));
-            }
-
-            /// <summary>
-            /// Create a <see cref="TestAppWrapper"/> that will start the test
-            /// app with a debugger attached.
-            /// </summary>
-            public static TestAppWrapper CreateDebug(AgentOptions options)
-            {
-                Agent agent = new Agent(options);
-                new Thread(() =>
-                {
-                    agent.StartAndBlock();
-
-                }).Start();
-                return new TestAppWrapper(agent);
-            }
-
-            private readonly IDisposable _disposable;
-
-            private TestAppWrapper(IDisposable disposable)
-            {
-                _disposable = disposable;
-            }
-
-            /// <summary>
-            /// Shuts down a running instance of the test app.
-            /// This is done via a build in url that will kill the app when hit.
-            /// When starting an app with the 'dotnet' command it will spawn a new process. This
-            /// was more simple than trying to grab the child process id.
-            /// </summary>
-            public void Dispose()
-            {
-                _disposable.Dispose();
-                using (HttpClient client = new HttpClient())
-                {
-                    try
-                    {
-                        client.GetAsync(AppUrlShutdown).Wait();
-                    }
-                    catch (AggregateException) { }
-                }
-            }
         }
     }
 }

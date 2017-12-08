@@ -17,7 +17,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Xunit;
 using DebuggerVariable = Google.Cloud.Debugger.V2.Variable;
-using DebuggerStackFrame = Google.Cloud.Debugger.V2.StackFrame;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -28,14 +27,14 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         [Fact]
         public async Task BreakpointHit()
         {
-            using (StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true))
             {
-                var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 26);
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", 26);
 
                 using (HttpClient client = new HttpClient())
                 {
-                    await client.GetAsync(AppUrlBase);
+                    await client.GetAsync(app.AppUrlBase);
                 }
 
                 var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
@@ -56,15 +55,15 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         [InlineData("Dictionary")]
         public async Task TestCollection(string collectionName)
         {
-            using (StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true))
             {
-                var debuggee = Polling.GetDebuggee(Module, Version);
-                var breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", 42);
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", 42);
                 string collectionKey = "RandomKey";
 
                 using (HttpClient client = new HttpClient())
                 {
-                    await client.GetAsync($"{AppUrlEcho}/{collectionKey}");
+                    await client.GetAsync($"{app.AppUrlEcho}/{collectionKey}");
                 }
 
                 var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
