@@ -167,6 +167,26 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
     class_obj->class_name_ = class_name;
     class_obj->class_token_ = class_token;
 
+    // If this is a ValueType class, we have to process its members
+    // because we can't store the reference to this class.
+    CorElementType element_type;
+    hr = debug_value->GetType(&element_type);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to extract CorElementType.";
+      return hr;
+    }
+
+    if (element_type == CorElementType::ELEMENT_TYPE_VALUETYPE
+        && kEnumClassName.compare(base_class_name) != 0) {
+      hr = class_obj->ProcessClassMembersHelper(debug_value, debug_class,
+                                                metadata_import);
+      if (FAILED(hr)) {
+        *err_stream << "Failed to process class members for ValueType.";
+        return hr;
+      }
+      class_obj->processed_ = true;
+    }
+
     *result_object = std::move(class_obj);
     return hr;
   } else {
