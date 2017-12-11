@@ -57,16 +57,23 @@ HRESULT StackFrameCollection::Initialize(
 
   CComPtr<ICorDebugFrame> frame;
   int il_frame_parsed_so_far = 0;
+  int frame_parsed_so_far = 0;
   HRESULT hr = S_OK;
 
   // Walks through the stack and populates stack_frames_ vector.
   while (SUCCEEDED(hr)) {
+    // Don't parse too many stack frames.
+    if (frame_parsed_so_far >= kMaximumStackFrame) {
+      return S_OK;
+    }
+
     hr = debug_stack_walk->GetFrame(&frame);
     // No more stacks.
     if (hr == S_FALSE) {
       return S_OK;
     }
 
+    ++frame_parsed_so_far;
     if (FAILED(hr)) {
       cerr << "Failed to get active frame.";
       return hr;
@@ -153,7 +160,7 @@ HRESULT StackFrameCollection::Initialize(
 
     // If we have populate local variables for 4 frames,
     // don't do it for the rest.
-    if (il_frame_parsed_so_far >= 4) {
+    if (il_frame_parsed_so_far >= kMaximumStackFrameWithVariables) {
       ++il_frame_parsed_so_far;
       stack_frames_.push_back(std::move(stack_frame));
       hr = debug_stack_walk->Next();

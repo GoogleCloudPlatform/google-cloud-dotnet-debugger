@@ -58,6 +58,12 @@ class StackFrameCollection : public IStackFrameCollection {
 
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;
+
+  // Maximum number of stack frames to be parsed.
+  static const std::uint32_t kMaximumStackFrame = 20;
+
+  // Maximum number of stack frames with populated variables to be parsed.
+  static const std::uint32_t kMaximumStackFrameWithVariables = 4;
 };
 
 }  //  namespace google_cloud_debugger
