@@ -249,7 +249,7 @@ class DbgClass : public DbgObject {
   mdTypeDef class_token_;
 
   // True if a call to ProcessClassMembers has finished.
-  // We need this in case ProcessClassMembers are called more than once
+  // We need this in case ProcessClassMembers is called more than once
   // on this DbgObject. For example, if this is a cached DbgObject,
   // PopulateMembers may be called more than once and this will call
   // ProcessClassMembers multiple times.
