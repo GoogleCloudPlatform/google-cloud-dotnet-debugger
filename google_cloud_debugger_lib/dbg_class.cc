@@ -44,7 +44,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
                                        ICorDebugValue *debug_value,
                                        BOOL is_null,
                                        unique_ptr<DbgObject> *result_object,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   HRESULT hr;
   CComPtr<ICorDebugClass> debug_class;
   if (!debug_type) {
@@ -83,7 +83,8 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromICorDebugModule(debug_module, &metadata_import);
+  hr = GetMetadataImportFromICorDebugModule(debug_module, &metadata_import,
+                                            err_stream);
   if (FAILED(hr)) {
     *err_stream << "Failed to get metadata";
     return hr;
@@ -92,14 +93,13 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
   string class_name;
   hr = ProcessClassName(class_token, metadata_import, &class_name, err_stream);
   if (FAILED(hr)) {
-    *err_stream << "Failed to get class name.";
     return hr;
   }
 
   std::vector<WCHAR> wchar_module_name;
-  hr = GetModuleNameFromICorDebugModule(debug_module, &wchar_module_name);
+  hr = GetModuleNameFromICorDebugModule(debug_module, &wchar_module_name,
+                                        err_stream);
   if (FAILED(hr)) {
-    *err_stream << "Failed to get module name.";
     return hr;
   }
 
@@ -135,8 +135,19 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
     unique_ptr<DbgClass> class_obj;
 
     if (kEnumClassName.compare(base_class_name) == 0) {
-      class_obj =
+      unique_ptr<DbgEnum> enum_obj =
           unique_ptr<DbgEnum>(new (std::nothrow) DbgEnum(debug_type, depth));
+      // We need the class token to process the enum.
+      enum_obj->class_token_ = class_token;
+      // Only process class type for enum (since it is ValueType and we don't
+      // store reference to the class object). Delay processing fields and properties
+      // of non-ValueType class until we need them.
+      hr = enum_obj->ProcessEnum(debug_value, debug_class, metadata_import);
+      if (FAILED(hr)) {
+        *err_stream << "Failed to process class based on their types.";
+        return hr;
+      }
+      class_obj = std::move(enum_obj);
     } else if (kListClassName.compare(class_name) == 0 ||
                kHashSetClassName.compare(class_name) == 0 ||
                kDictionaryClassName.compare(class_name) == 0) {
@@ -156,10 +167,24 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
     class_obj->class_name_ = class_name;
     class_obj->class_token_ = class_token;
 
-    hr = class_obj->ProcessClassType(debug_value, debug_class, metadata_import);
+    // If this is a ValueType class, we have to process its members
+    // because we can't store the reference to this class.
+    CorElementType element_type;
+    hr = debug_value->GetType(&element_type);
     if (FAILED(hr)) {
-      *err_stream << "Failed to process class based on their types.";
+      *err_stream << "Failed to extract CorElementType.";
       return hr;
+    }
+
+    if (element_type == CorElementType::ELEMENT_TYPE_VALUETYPE
+        && kEnumClassName.compare(base_class_name) != 0) {
+      hr = class_obj->ProcessClassMembersHelper(debug_value, debug_class,
+                                                metadata_import);
+      if (FAILED(hr)) {
+        *err_stream << "Failed to process class members for ValueType.";
+        return hr;
+      }
+      class_obj->processed_ = true;
     }
 
     *result_object = std::move(class_obj);
@@ -173,7 +198,7 @@ HRESULT DbgClass::CreateDbgClassObject(ICorDebugType *debug_type, int depth,
 HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
                                    IMetaDataImport *metadata_import,
                                    std::string *class_name,
-                                   std::ostringstream *err_stream) {
+                                   std::ostream *err_stream) {
   if (!class_name || !metadata_import || !err_stream) {
     return E_INVALIDARG;
   }
@@ -210,7 +235,7 @@ HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
 
 HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
                                        std::string *base_class_name,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   if (!debug_type || !base_class_name || !err_stream) {
     return E_INVALIDARG;
   }
@@ -247,9 +272,9 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
 
   CComPtr<IMetaDataImport> metadata_import;
   hr =
-      GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import);
+      GetMetadataImportFromICorDebugModule(base_debug_module, &metadata_import,
+                                           err_stream);
   if (FAILED(hr)) {
-    *err_stream << "Failed to get metadata for base class.";
     return hr;
   }
 
@@ -472,9 +497,61 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
   return S_OK;
 }
 
-HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
-                                   ICorDebugClass *debug_class,
-                                   IMetaDataImport *metadata_import) {
+HRESULT DbgClass::ProcessClassMembers() {
+  if (processed_) {
+    return S_OK;
+  }
+
+  BOOL is_null = FALSE;
+  CComPtr<ICorDebugValue> debug_value;
+  HRESULT hr = Dereference(class_handle_, &debug_value, 
+                            &is_null, GetErrorStream());
+  // Error already written into the error stream.
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (is_null) {
+    return S_FALSE;
+  }
+
+  CComPtr<ICorDebugObjectValue> object_value;
+  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
+      reinterpret_cast<void **>(&object_value));
+  if (FAILED(hr)) {
+    WriteError("Failed to cast to ICorDebugObjectValue.");
+    return hr;
+  }
+
+  CComPtr<ICorDebugClass> debug_class;
+  hr = object_value->GetClass(&debug_class);
+  if (FAILED(hr)) {
+    WriteError("Failed to get ICorDebugClass.");
+    return hr;
+  }
+
+  CComPtr<IMetaDataImport> metadata_import;
+  hr = GetMetadataImportFromICorDebugClass(debug_class,
+      &metadata_import, GetErrorStream());
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = ProcessClassMembersHelper(debug_value, debug_class,
+                                 metadata_import);
+  if (FAILED(hr)) {
+    WriteError("Failed to process class members.");
+    return hr;
+  }
+
+  processed_ = true;
+  return S_OK;
+}
+
+HRESULT DbgClass::ProcessClassMembersHelper(
+    ICorDebugValue *debug_value,
+    ICorDebugClass *debug_class,
+    IMetaDataImport *metadata_import) {
   class_type_ = ClassType::DEFAULT;
   HRESULT hr;
 
@@ -510,7 +587,7 @@ HRESULT DbgClass::ProcessClassType(ICorDebugValue *debug_value,
 HRESULT DbgClass::ProcessPrimitiveType(ICorDebugValue *debug_value,
                                        const std::string &class_name,
                                        unique_ptr<DbgObject> *result_class_obj,
-                                       std::ostringstream *err_stream) {
+                                       std::ostream *err_stream) {
   if (kCharClassName.compare(class_name) == 0) {
     return ProcessValueTypeHelper<char>(debug_value, result_class_obj,
                                         err_stream);
@@ -750,6 +827,12 @@ HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
   if (GetCreationDepth() <= 0) {
     WriteError("... Object Inspection Depth Limit reached.");
     return E_FAIL;
+  }
+
+  HRESULT hr = ProcessClassMembers();
+  if (FAILED(hr)) {
+    WriteError("Failed to process class members.");
+    return hr;
   }
 
   PopulateClassMembers(variable_proto, members, eval_coordinator,

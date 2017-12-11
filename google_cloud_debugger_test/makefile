@@ -37,7 +37,7 @@ INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LI
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined 
 
 TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o \
-dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o \
+dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o variable_wrapper_test.o \
 stack_frame_collection_test.o custom_binary_stream_test.o eval_coordinator_test.o common_action_mocks.o i_portable_pdb_mocks.o
 
 google_cloud_debugger_test: ${TESTS}
@@ -75,6 +75,9 @@ dbg_stack_frame_test.o: dbg_stack_frame_test.cc
 
 debugger_callback_test.o: debugger_callback_test.cc
 	clang-3.9 debugger_callback_test.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger_callback_test.o
+
+variable_wrapper_test.o: variable_wrapper_test.cc
+	clang-3.9 variable_wrapper_test.cc ${INCDIRS} ${CC_FLAGS} -c -o variable_wrapper_test.o
 
 stack_frame_collection_test.o: stack_frame_collection_test.cc
 	clang-3.9 stack_frame_collection_test.cc ${INCDIRS} ${CC_FLAGS} -c -o stack_frame_collection_test.o
