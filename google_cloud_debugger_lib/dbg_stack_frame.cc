@@ -335,7 +335,16 @@ HRESULT DbgStackFrame::PopulateStackFrame(
     bfs_queue.push(VariableWrapper(variable_proto, variable_value));
   }
 
-  return VariableWrapper::PerformBFS(&bfs_queue, eval_coordinator);
+  if (bfs_queue.size() != 0) {
+    return VariableWrapper::PerformBFS(&bfs_queue,
+        [stack_frame]() { 
+          // Terminates the BFS if stack frame reaches the maximum size.
+          return stack_frame->ByteSize() > kStackFrameSize;
+        },
+        eval_coordinator);
+  }
+
+  return S_OK;
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {

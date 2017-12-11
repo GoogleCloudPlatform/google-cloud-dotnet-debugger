@@ -158,6 +158,9 @@ class DbgStackFrame {
 
   // True if this is an empty frame with no information.
   bool empty_ = false;
+
+  // Maximum size of a stack frame proto.
+  static const std::uint32_t kStackFrameSize = 15360;
 };
 
 }  //  namespace google_cloud_debugger

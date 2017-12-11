@@ -21,6 +21,7 @@
 #include "string_stream_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
+using std::function;
 using std::queue;
 using std::shared_ptr;
 using std::string;
@@ -30,6 +31,7 @@ using std::vector;
 namespace google_cloud_debugger {
 
 HRESULT VariableWrapper::PerformBFS(queue<VariableWrapper>* bfs_queue,
+                                    const function<bool()> &terminate_condition,
                                     IEvalCoordinator *eval_coordinator) {
   if (!bfs_queue) {
     return E_INVALIDARG;
@@ -47,6 +49,10 @@ HRESULT VariableWrapper::PerformBFS(queue<VariableWrapper>* bfs_queue,
   // also set the BFS level of the members to be the BFS
   // level of the node X + 1. If not, call PopulateValue on X.
   while (!bfs_queue->empty()) {
+    if (terminate_condition()) {
+      return S_OK;
+    }
+
     VariableWrapper current_variable = bfs_queue->front();
     // Populates the type of the variable into the variable proto.
     hr = current_variable.PopulateType();
