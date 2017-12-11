@@ -40,15 +40,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>An environment variable that can set the debugger path.</summary>
         public static readonly string DebuggerEnvironmentVariable = $"{EnvironmentVariablePrefix}_DEBUGGER";
 
-        // If given this option, the debugger will not perform property evaluation.
-        public const string PropertyEvaluationOption = "--property-evaluation";
-
-        // If given this option, the debugger will use this command to start the application to debug.
-        public const string ApplicationStartCommandOption = "--application-start-command";
-
-        // If given this option, the debugger will attach to a running application using this process ID.
-        public const string ApplicationIdOption = "--application-id";
-
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
 
@@ -83,28 +74,6 @@ namespace Google.Cloud.Diagnostics.Debug
         [HelpOption]
         public string Usage() => HelpText.AutoBuild(
             this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));
-
-        /// <summary>
-        /// Returns the processed arguments to pass to the debugger.
-        /// It will either be "application-start-command path (-property-evaluation)"
-        /// or "application-id id (-property-evaluation).
-        /// </summary>
-        public string DebuggerArguments
-        {
-            get
-            {
-                if (ApplicationId.HasValue)
-                {
-                    return PropertyEvaluation ? $"{ApplicationIdOption}={ApplicationId} {PropertyEvaluationOption}"
-                        : $"{ApplicationIdOption}={ApplicationId}";
-                }
-                else
-                {
-                    return PropertyEvaluation ? $"{ApplicationStartCommandOption}=\"{ApplicationStartCommand}\" {PropertyEvaluationOption}"
-                        : $"{ApplicationStartCommandOption}=\"{ApplicationStartCommand}\"";
-                }
-            }
-        }
 
         /// <summary>
         /// Parse a <see cref="AgentOptions"/> from command line arguments.
