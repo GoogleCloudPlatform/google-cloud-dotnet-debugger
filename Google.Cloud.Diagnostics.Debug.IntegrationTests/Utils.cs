@@ -15,6 +15,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -28,8 +29,14 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 #else
         private const string _mode = "Release";
 #endif
+        /// <summary>Backing port for <see cref="GetNextPort"/>.</summary>
+        private static int _port = 4999;
 
+        /// <summary>True if the OS is Windows.</summary>
         private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+        /// <summary>Gets the next port to use for a local test.</summary>
+        public static int GetNextPort() => Interlocked.Increment(ref _port);
 
         /// <summary>
         /// Gets the Google Cloud Console project id to run the test as.

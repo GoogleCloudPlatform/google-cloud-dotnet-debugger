@@ -105,11 +105,11 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         private async Task<double> GetAverageCpuPercentAsync(
             bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
         {
-            using (StartTestApp(debugEnabled: debugEnabled))
+            using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
-                var processId = await GetProcessId();
+                var processId = await app.GetProcessId();
                 var process = Process.GetProcessById(processId);
-                var debuggee = debugEnabled ? Polling.GetDebuggee(Module, Version) : null;
+                var debuggee = debugEnabled ? Polling.GetDebuggee(app.Module, app.Version) : null;
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -122,13 +122,13 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                         {
                             var line = hitBreakpoint ? 32 : 26;
                             // Set a breakpoint and wait to ensure the debuggee picks it up.
-                            breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", line);
+                            breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", line);
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
                         Stopwatch watch = Stopwatch.StartNew();
                         var startingCpu = process.TotalProcessorTime;
-                        HttpResponseMessage result = await client.GetAsync($"{AppUrlEcho}/{i}");
+                        HttpResponseMessage result = await client.GetAsync($"{app.AppUrlEcho}/{i}");
                         totalCpuTime += process.TotalProcessorTime - startingCpu;
                         totalTime += watch.Elapsed;
 

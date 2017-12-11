@@ -73,7 +73,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                 using (HttpClient client = new HttpClient())
                 {
                     Stopwatch watch = Stopwatch.StartNew();
-                    using (StartTestApp(debugEnabled: debugEnabled))
+                    using (var app = StartTestApp(debugEnabled: debugEnabled))
                     {
                         // Allow for retries, this may happen if the app is
                         // taking a very long time to start.
@@ -81,7 +81,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                         {
                             try
                             {
-                                await client.GetAsync($"{AppUrlEcho}/{i}");
+                                await client.GetAsync($"{app.AppUrlEcho}/{i}");
                                 break;
                             }
                             catch (HttpRequestException) { }

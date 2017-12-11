@@ -98,12 +98,12 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         public async Task<double> GetAverageMemoryUsageMBAsync(
             bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
         {
-            using (StartTestApp(debugEnabled: debugEnabled))
+            using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
-                var processId = await GetProcessId();
+                var processId = await app.GetProcessId();
                 var process = Process.GetProcessById(processId);
 
-                var debuggee = debugEnabled ? Polling.GetDebuggee(Module, Version) : null;
+                var debuggee = debugEnabled ? Polling.GetDebuggee(app.Module, app.Version) : null;
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -115,13 +115,13 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                         {
                             var line = hitBreakpoint ? 32 : 26;
                             // Set a breakpoint and wait to ensure the debuggee picks it up.
-                            breakpoint = SetBreakpoint(debuggee.Id, "MainController.cs", line);
+                            breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", line);
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
                         int counter = 0;
                         long memory = 0;
-                        Task<HttpResponseMessage> task = client.GetAsync($"{AppUrlEcho}/{i}");
+                        Task<HttpResponseMessage> task = client.GetAsync($"{app.AppUrlEcho}/{i}");
                         // TODO(talarico): Can we do better?
                         while (!task.IsCompleted)
                         {
