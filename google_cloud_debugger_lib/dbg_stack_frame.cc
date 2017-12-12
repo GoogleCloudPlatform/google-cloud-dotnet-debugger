@@ -286,7 +286,8 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
 }
 
 HRESULT DbgStackFrame::PopulateStackFrame(
-    StackFrame *stack_frame, IEvalCoordinator *eval_coordinator) const {
+    StackFrame *stack_frame, int stack_frame_size,
+    IEvalCoordinator *eval_coordinator) const {
   if (!stack_frame || !eval_coordinator) {
     return E_INVALIDARG;
   }
@@ -337,9 +338,10 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
   if (bfs_queue.size() != 0) {
     return VariableWrapper::PerformBFS(&bfs_queue,
-        [stack_frame]() { 
+        [stack_frame, stack_frame_size]() { 
           // Terminates the BFS if stack frame reaches the maximum size.
-          return stack_frame->ByteSize() > kStackFrameSize;
+          int byte_size = stack_frame->ByteSize();
+          return stack_frame->ByteSize() > stack_frame_size;
         },
         eval_coordinator);
   }

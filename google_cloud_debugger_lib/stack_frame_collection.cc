@@ -211,6 +211,9 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   HRESULT hr = S_OK;
   eval_coordinator->WaitForReadySignal();
 
+  // Gives the first frame half available kb in the breakpoint.
+  int frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+
   for (auto &&dbg_stack_frame : stack_frames_) {
     StackFrame *frame = breakpoint->add_stack_frames();
     // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
@@ -231,11 +234,19 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     frame_location->set_line(dbg_stack_frame.GetLineNumber());
     frame_location->set_path(dbg_stack_frame.GetFile());
 
-    hr = dbg_stack_frame.PopulateStackFrame(frame, eval_coordinator);
+    hr = dbg_stack_frame.PopulateStackFrame(frame, frame_max_size,
+                                            eval_coordinator);
     if (FAILED(hr)) {
       eval_coordinator->SignalFinishedPrintingVariable();
       return hr;
     }
+
+    // Updates frame_max_size to half of whatever is left.
+    if (breakpoint->ByteSize() > kMaximumBreakpointSize) {
+      break;
+    }
+
+    frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 
   eval_coordinator->SignalFinishedPrintingVariable();

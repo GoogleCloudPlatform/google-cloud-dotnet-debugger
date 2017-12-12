@@ -299,7 +299,8 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, &eval_coordinator_);
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
+      2000, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the frame has the correct local variables.
@@ -321,6 +322,42 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
             std::to_string(second_method_arg_.value_));
 }
 
+// Tests the PopulateStackFrame function of DbgStackFrame when we restrict
+// the amount of information that can be populated into the proto.
+TEST_F(DbgStackFrameTest, TestPopulateStackFrameRestricted) {
+  DbgStackFrame stack_frame;
+  StackFrame proto_stack_frame;
+
+  SetUpLocalVariables();
+  SetUpMethodArguments();
+  SetUpMetaDataImport();
+
+  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
+                                      method_token_, &metadata_import_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
+      100, &eval_coordinator_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  // Checks that the frame has the correct local variables.
+  EXPECT_EQ(proto_stack_frame.locals().size(), 2);
+  EXPECT_EQ(proto_stack_frame.locals(0).name(), first_local_var_.name_);
+  EXPECT_EQ(proto_stack_frame.locals(0).value(),
+            std::to_string(first_local_var_.value_));
+  EXPECT_EQ(proto_stack_frame.locals(1).name(), second_local_var_.name_);
+  EXPECT_EQ(proto_stack_frame.locals(1).value(),
+            std::to_string(second_local_var_.value_));
+
+  // The methods arguments should be empty since we restrict the size
+  // to 100.
+  EXPECT_EQ(proto_stack_frame.arguments().size(), 2);
+  EXPECT_EQ(proto_stack_frame.arguments(0).name(), first_method_arg_.name_);
+  EXPECT_EQ(proto_stack_frame.arguments(0).value(), "");
+  EXPECT_EQ(proto_stack_frame.arguments(1).name(), second_method_arg_.name_);
+  EXPECT_EQ(proto_stack_frame.arguments(1).value(), "");
+}
+
 // Tests the PopulateStackFrame function of DbgStackFrame
 // when we don't have a variable's information.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
@@ -339,7 +376,8 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, &eval_coordinator_);
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
+      2000, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the frame has the correct local variables.
@@ -376,9 +414,9 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameError) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  EXPECT_EQ(stack_frame.PopulateStackFrame(nullptr, &eval_coordinator_),
+  EXPECT_EQ(stack_frame.PopulateStackFrame(nullptr, 2000, &eval_coordinator_),
             E_INVALIDARG);
-  EXPECT_EQ(stack_frame.PopulateStackFrame(&proto_stack_frame, nullptr),
+  EXPECT_EQ(stack_frame.PopulateStackFrame(&proto_stack_frame, 2000, nullptr),
             E_INVALIDARG);
 }
 

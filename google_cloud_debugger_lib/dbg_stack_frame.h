@@ -55,8 +55,11 @@ class DbgStackFrame {
   // Populates the StackFrame object with local variables, method arguments,
   // method name, class name, file name and line number.
   // This method may perform function evaluation using eval_coordinator.
+  // This method should not fill up the proto stack_frame with more kbs of
+  // information than stack_frame_size.
   HRESULT PopulateStackFrame(
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
+      int stack_frame_size,
       IEvalCoordinator *eval_coordinator) const;
 
   // Sets how deep an object will be inspected.
@@ -158,12 +161,6 @@ class DbgStackFrame {
 
   // True if this is an empty frame with no information.
   bool empty_ = false;
-
-  // Maximum size of a stack frame proto in bytes (15360 bytes = 15kb).
-  // For a breakpoint, we process a maximum of 4 stack frames with variables,
-  // and the overall maximum size of a breakpoint is 64kb. So we give
-  // each stack frame 15kb.
-  static const std::uint32_t kStackFrameSize = 15360;
 };
 
 }  //  namespace google_cloud_debugger
