@@ -34,10 +34,8 @@ The repository and dependencies can be built with the following:
 The dependencies can be built with the following:
   ```
   .\build-deps.cmd
+  .\build.sh
   ``` 
-
-The repository is built with Visual Studio.  Open and build the solution `GoogleCloudDebugger.sln`. 
-
 
 ## Running
 
