@@ -38,7 +38,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
                                ICorDebugManagedCallback2,
                                ICorDebugManagedCallback3 {
  public:
-  HRESULT Initialize();
+	 DebuggerCallback(std::string pipe_name) : pipe_name_(pipe_name) {} 
+
+	 HRESULT Initialize();
 
   // IUnknown interface.
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **object) override;
@@ -230,7 +232,10 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     }
 
     return S_OK;
+
   }
+
+  std::string pipe_name_;
 
  private:
   // Given an ICorDebugBreakpoint, gets the function token, IL offset

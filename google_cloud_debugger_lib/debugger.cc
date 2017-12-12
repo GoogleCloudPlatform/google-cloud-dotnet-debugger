@@ -100,7 +100,7 @@ HRESULT Debugger::StartDebugging(DWORD process_id, bool kill_proc) {
   HRESULT hr;
 
   if (!debugger_callback_) {
-    debugger_callback_ = new (std::nothrow) DebuggerCallback();
+    debugger_callback_ = new (std::nothrow) DebuggerCallback(pipe_name_);
   }
 
   if (!debugger_callback_) {

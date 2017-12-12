@@ -47,7 +47,7 @@ HRESULT DebuggerCallback::Initialize() {
   eval_coordinator_ =
       std::unique_ptr<EvalCoordinator>(new (std::nothrow) EvalCoordinator);
   breakpoint_collection_ = std::unique_ptr<IBreakpointCollection>(
-      new (std::nothrow) BreakpointCollection);
+	  new (std::nothrow) BreakpointCollection());
   if (!eval_coordinator_) {
     cerr << "Failed to create EvalCoordinator.";
     return E_OUTOFMEMORY;

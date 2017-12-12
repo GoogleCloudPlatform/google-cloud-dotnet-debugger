@@ -30,6 +30,7 @@ namespace google_cloud_debugger {
 // when the registration is done.
 class Debugger final {
  public:
+  Debugger(std::string pipe_name) : pipe_name_(pipe_name) {}
   ~Debugger();
 
   // Given a process ID, run RegisterForRuntimeStartup
@@ -61,6 +62,8 @@ class Debugger final {
   }
 
  private:
+  std::string pipe_name_;
+
   // The unregister token that is used in the callback function to
   // unregister for runtime startup.
   void *unregister_token_;
