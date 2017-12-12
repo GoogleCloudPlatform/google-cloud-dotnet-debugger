@@ -92,10 +92,7 @@ C++ Unit tests:
 
 #### Performance Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.PerformanceTests/
-  dotnet test
+  ./run_integration_tests.sh --performance-tests
   ```
 
 
@@ -121,8 +118,5 @@ C++ Unit tests:
 
 #### Performance Tests
   ```
-  cd .\Google.Cloud.Diagnostics.Debug.TestApp\
-  dotnet publish
-  cd ..\Google.Cloud.Diagnostics.Debug.PerformanceTests\
-  dotnet test
+  .\run_integration_tests.sh --performance-tests
   ```
