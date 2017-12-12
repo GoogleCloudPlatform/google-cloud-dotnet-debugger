@@ -85,18 +85,12 @@ C++ Unit tests:
 
 #### Integration Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.IntegrationTests/
-  dotnet test
+  ./run_integration_tests.sh
   ```
 
 #### Performance Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.PerformanceTests/
-  dotnet test
+  ./run_integration_tests.sh --performance-tests
   ```
 
 
@@ -117,16 +111,10 @@ C++ Unit tests:
 
 #### Integration Tests
   ```
-  cd .\Google.Cloud.Diagnostics.Debug.TestApp\
-  dotnet publish
-  cd ..\Google.Cloud.Diagnostics.Debug.IntegrationTests\
-  dotnet test
+  .\run_integration_tests.sh
   ```
 
 #### Performance Tests
   ```
-  cd .\Google.Cloud.Diagnostics.Debug.TestApp\
-  dotnet publish
-  cd ..\Google.Cloud.Diagnostics.Debug.PerformanceTests\
-  dotnet test
+  .\run_integration_tests.sh --performance-tests
   ```
