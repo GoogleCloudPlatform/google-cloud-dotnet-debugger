@@ -62,7 +62,7 @@ const option::Descriptor usage[] = {
      "  --property-evaluation  \tIf used, the debugger will attempt to "
      "evaluate property of classes. This may modify the state of the "
      "application"},
-	{ PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::None,
+	{ PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
 	 "  --pipe-name  \tThe name of the pipe the debugger will connect to " },
     {0, 0, 0, 0, 0, 0}  // Needs this, otherwise the parser throws error.
 };

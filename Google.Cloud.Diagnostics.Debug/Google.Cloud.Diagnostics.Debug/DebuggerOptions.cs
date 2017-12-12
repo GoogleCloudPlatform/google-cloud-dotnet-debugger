@@ -68,7 +68,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public override string ToString()
         {
-            string options = $"{PipeNameOption}={PipeName}";
+            string options = $"{PipeNameOption}={PipeName} ";
             if (ApplicationId.HasValue)
             {
                 options += $"{ApplicationIdOption}={ApplicationId} ";
