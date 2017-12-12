@@ -159,7 +159,10 @@ class DbgStackFrame {
   // True if this is an empty frame with no information.
   bool empty_ = false;
 
-  // Maximum byte size of a stack frame proto.
+  // Maximum size of a stack frame proto in bytes (15360 bytes = 15kb).
+  // For a breakpoint, we process a maximum of 4 stack frames with variables,
+  // and the overall maximum size of a breakpoint is 64kb. So we give
+  // each stack frame 15kb.
   static const std::uint32_t kStackFrameSize = 15360;
 };
 
