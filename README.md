@@ -88,9 +88,6 @@ C++ Unit tests:
 #### Integration Tests
   ```
   ./run_integration_tests.sh
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.IntegrationTests/
-  dotnet test
   ```
 
 #### Performance Tests
