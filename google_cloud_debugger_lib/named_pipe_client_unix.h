@@ -37,8 +37,7 @@ class NamedPipeClient : public INamedPipe {
 
  private:
   // The name of the pipe.
-  const std::string pipe_name_ =
-      std::string("/tmp/CoreFxPipe_") + std::string(kPipeName);
+  std::string pipe_name_;
 
   // The socket descriptor for the pipe.
   int pipe_ = -1;
