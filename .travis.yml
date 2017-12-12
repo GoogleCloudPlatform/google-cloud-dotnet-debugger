@@ -9,6 +9,8 @@ before_install:
   - sudo apt-get install autoconf automake libtool curl make g++ unzip
   # Needed for coreclr
   - sudo apt-get install cmake llvm-3.5 clang-3.5 lldb-3.6 lldb-3.6-dev libunwind8 libunwind8-dev gettext libicu-dev liblttng-ust-dev libcurl4-openssl-dev libssl-dev uuid-dev libkrb5-dev
+  # Needed for our bits
+  - sudo apt-get install llvm-3.9 clang-3.9
 
 # Install the .NET Core 1.0 runtime as that's what we test against
 addons:
