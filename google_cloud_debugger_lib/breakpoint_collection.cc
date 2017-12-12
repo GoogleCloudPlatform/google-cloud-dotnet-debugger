@@ -99,8 +99,8 @@ HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
 
 HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   if (!breakpoint_client_read_) {
-    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_read_,
-      debugger_callback_->GetPipeName());
+    HRESULT hr = CreateAndInitializeBreakpointClient(
+		&breakpoint_client_read_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for reading breakpoints.";
       return hr;

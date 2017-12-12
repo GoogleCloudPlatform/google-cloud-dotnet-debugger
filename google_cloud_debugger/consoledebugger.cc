@@ -104,8 +104,8 @@ int main(int argc, char *argv[]) {
   }
 
   if (!options[PIPENAME].count()) {
-	  cerr << "The debugger must be given a pipe name to connect to.";
-	  return -1;
+    cerr << "The debugger must be given a pipe name to connect to.";
+    return -1;
   }
 
   string pipe_name = string(options[PIPENAME].arg);
