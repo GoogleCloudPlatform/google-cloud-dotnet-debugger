@@ -112,7 +112,7 @@ class BreakpointCollection : public IBreakpointCollection {
 
   // Helper function to create and initialize a breakpoint client.
   static HRESULT CreateAndInitializeBreakpointClient(
-      std::unique_ptr<BreakpointClient> *client);
+      std::unique_ptr<BreakpointClient> *client, std::string pipe_name);
 
   // COM Pointer to the DebuggerCallback that this breakpoint collection
   // is associated with. This is used to get the list of Portable PDB Files

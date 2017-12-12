@@ -20,6 +20,7 @@
 #include <windef.h>
 #include <iostream>
 #include <string>
+#include <codecvt>
 
 #include "constants.h"
 #include "i_named_pipe.h"
@@ -29,6 +30,7 @@ namespace google_cloud_debugger {
 // A named pipe client for windows.
 class NamedPipeClient : public INamedPipe {
  public:
+  NamedPipeClient(std::string pipe_name);
   ~NamedPipeClient();
   HRESULT Initialize() override;
   HRESULT WaitForConnection() override;
@@ -38,8 +40,7 @@ class NamedPipeClient : public INamedPipe {
 
  private:
   // The name of the pipe.
-  const std::wstring pipe_name_ =
-      std::wstring(L"\\\\.\\pipe\\") + std::wstring(kPipeNameW);
+  std::wstring pipe_name_;
 
   // A handle to the open pipe.
   HANDLE pipe_ = INVALID_HANDLE_VALUE;

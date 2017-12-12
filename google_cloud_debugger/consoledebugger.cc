@@ -32,11 +32,15 @@ const string kApplicationStartCommandOption = "application-start-command";
 // with this process ID.
 const string kApplicationIDOption = "application-id";
 
+// The name of the pipe the debugger will use to communicate with the agent.
+const string kPipeNameOption = "pipe-name";
+
 enum optionIndex {
   UNKNOWN,
   APPLICATIONSTARTCOMMAND,
   APPLICATIONID,
-  PROPERTYEVALUATION
+  PROPERTYEVALUATION,
+  PIPENAME
 };
 const option::Descriptor usage[] = {
     // The first dummy Descriptor is used for unknown options,
@@ -57,6 +61,9 @@ const option::Descriptor usage[] = {
      "  --property-evaluation  \tIf used, the debugger will attempt to "
      "evaluate property of classes. This may modify the state of the "
      "application"},
+	{ PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
+	 "  --pipe-name  \tThe name of the pipe the debugger will use to"
+	 "communicate with the agent" },
     {0, 0, 0, 0, 0, 0}  // Needs this, otherwise the parser throws error.
 };
 
@@ -96,9 +103,15 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  Debugger debugger;
-  HRESULT hr;
+  if (!options[PIPENAME].count()) {
+    cerr << "The debugger must be given a pipe name to connect to.";
+    return -1;
+  }
 
+  string pipe_name = string(options[PIPENAME].arg);
+  Debugger debugger(pipe_name);
+  HRESULT hr;
+  
   if (options[APPLICATIONSTARTCOMMAND].count()) {
     string command_line = string(options[APPLICATIONSTARTCOMMAND].arg);
     std::vector<WCHAR> wchar_command_line =

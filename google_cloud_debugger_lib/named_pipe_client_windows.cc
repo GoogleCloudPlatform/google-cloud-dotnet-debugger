@@ -22,6 +22,13 @@ using std::string;
 
 namespace google_cloud_debugger {
 
+NamedPipeClient::NamedPipeClient(std::string pipe_name)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring pipe_name_wide_ = converter.from_bytes(pipe_name);
+    pipe_name_ = std::wstring(L"\\\\.\\pipe\\") + pipe_name_wide_;
+}
+
 NamedPipeClient::~NamedPipeClient() {
   if (pipe_ == INVALID_HANDLE_VALUE) {
     return;

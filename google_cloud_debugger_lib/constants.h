@@ -19,12 +19,6 @@
 
 namespace google_cloud_debugger {
 
-// The name of the named pipe.
-static const std::string kPipeName = "dotnet-debugger";
-
-// The name of the named pipe as a wide string.
-static const std::wstring kPipeNameW = L"dotnet-debugger";
-
 // The buffer size to read and write pipes.
 static const int kBufferSize = 1024;
 

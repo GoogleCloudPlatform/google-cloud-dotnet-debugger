@@ -44,7 +44,7 @@ class DebuggerCallbackTest : public ::testing::Test {
  protected:
   // Sets up mock calls for QueryInterface calls.
   virtual void SetUp() {
-    callback = new DebuggerCallback();
+    callback = new DebuggerCallback("pipe-name");
 
     ON_CALL(debug_breakpoint_mock_, QueryInterface(_, _))
         .WillByDefault(

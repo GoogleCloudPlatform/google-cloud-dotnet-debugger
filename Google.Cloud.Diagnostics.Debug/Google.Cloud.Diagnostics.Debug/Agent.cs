@@ -31,11 +31,12 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     internal sealed class Agent : IDisposable
     {
-        private readonly AgentOptions _options;
+        private readonly AgentOptions _agentOptions;
         private readonly DebuggerClient _client;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
         private readonly BreakpointManager _breakpointManager;
+        private readonly DebuggerOptions _debuggerOptions;
 
         private Process _process;
 
@@ -44,11 +45,12 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public Agent(AgentOptions options, Controller2Client controlClient = null)
         {
-            _options = GaxPreconditions.CheckNotNull(options, nameof(options));
+            _agentOptions = GaxPreconditions.CheckNotNull(options, nameof(options));
             _client = new DebuggerClient(options, controlClient);
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
             _breakpointManager = new BreakpointManager();
+            _debuggerOptions = DebuggerOptions.FromAgentOptions(_agentOptions);
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
             // Start the debugger.
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
-                _options.Debugger, _options.DebuggerArguments, null);
+                _agentOptions.Debugger, _debuggerOptions.ToString(), null);
             _process = Process.Start(startInfo);
 
             // The write server needs to connect first due to initialization logic in the debugger.
@@ -90,14 +92,14 @@ namespace Google.Cloud.Diagnostics.Debug
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
             {
-                var breakpointServer = new BreakpointServer(new NamedPipeServer());
+                var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
                 using (var server = new BreakpointWriteActionServer(breakpointServer, _client, _breakpointManager))
                 {
                     TryAction(() =>
                     {
                         server.WaitForConnection();
                         tcs.SetResult(true);
-                        server.StartActionLoop(TimeSpan.FromSeconds(_options.WaitTime), cancellationToken);
+                        server.StartActionLoop(TimeSpan.FromSeconds(_agentOptions.WaitTime), cancellationToken);
                     });
 
                     // TODO(talarico): Temporary solution: This will ensure the debugger shuts down. See #146.
@@ -119,7 +121,7 @@ namespace Google.Cloud.Diagnostics.Debug
             TaskCompletionSource<bool> tcs = new TaskCompletionSource<bool>();
             new Thread(() =>
             {
-                var breakpointServer = new BreakpointServer(new NamedPipeServer());
+                var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
                 using (var server = new BreakpointReadActionServer(breakpointServer, _client, _breakpointManager))
                 {
                     TryAction(() => 

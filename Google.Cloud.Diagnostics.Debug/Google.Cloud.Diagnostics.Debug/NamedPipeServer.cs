@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Google.Api.Gax;
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,10 +27,14 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly INamedPipe _pipe;
         private readonly NamedPipeServerStream _server;
 
-        public NamedPipeServer()
+        /// <summary>
+        /// Create a new <see cref="NamedPipeServer"/>.
+        /// </summary>
+        /// <param name="pipeName">The name of the pipe.</param>
+        public NamedPipeServer(string pipeName)
         {
             _server = new NamedPipeServerStream(
-               pipeName: Constants.PipeName,
+               pipeName: GaxPreconditions.CheckNotNullOrEmpty(pipeName, nameof(pipeName)),
                direction: PipeDirection.InOut,
                // TODO(talarico): This should be NamedPipeServerStream.MaxAllowedServerInstance but it's not public.
                maxNumberOfServerInstances: -1,

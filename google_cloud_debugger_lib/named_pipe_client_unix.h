@@ -27,6 +27,7 @@ namespace google_cloud_debugger {
 // A named pipe client for unix.
 class NamedPipeClient : public INamedPipe {
  public:
+  NamedPipeClient(std::string pipe_name);
   ~NamedPipeClient();
   HRESULT Initialize() override;
   HRESULT WaitForConnection() override;
@@ -36,8 +37,7 @@ class NamedPipeClient : public INamedPipe {
 
  private:
   // The name of the pipe.
-  const std::string pipe_name_ =
-      std::string("/tmp/CoreFxPipe_") + std::string(kPipeName);
+  std::string pipe_name_;
 
   // The socket descriptor for the pipe.
   int pipe_ = -1;
