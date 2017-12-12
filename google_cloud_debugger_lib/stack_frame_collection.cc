@@ -63,7 +63,7 @@ HRESULT StackFrameCollection::Initialize(
   // Walks through the stack and populates stack_frames_ vector.
   while (SUCCEEDED(hr)) {
     // Don't parse too many stack frames.
-    if (frame_parsed_so_far >= kMaximumStackFrame) {
+    if (frame_parsed_so_far >= kMaximumStackFrames) {
       return S_OK;
     }
 
@@ -160,7 +160,7 @@ HRESULT StackFrameCollection::Initialize(
 
     // If we have populate local variables for 4 frames,
     // don't do it for the rest.
-    if (il_frame_parsed_so_far >= kMaximumStackFrameWithVariables) {
+    if (il_frame_parsed_so_far >= kMaximumStackFramesWithVariables) {
       ++il_frame_parsed_so_far;
       stack_frames_.push_back(std::move(stack_frame));
       hr = debug_stack_walk->Next();
