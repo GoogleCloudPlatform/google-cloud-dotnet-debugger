@@ -231,7 +231,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     }
 
     return S_OK;
-
   }
 
   // Gets the name of the pipe the debugger will use to communicate with
