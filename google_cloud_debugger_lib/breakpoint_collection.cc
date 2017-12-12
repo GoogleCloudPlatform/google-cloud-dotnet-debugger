@@ -54,7 +54,7 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
     return E_INVALIDARG;
   }
 
-  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient(pipe_name));//pipe_name));
+  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient(pipe_name));
   if (!pipe) {
     cerr << "Cannot create named pipe client.";
     return E_OUTOFMEMORY;
@@ -86,7 +86,8 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
 
 HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
   if (!breakpoint_client_write_) {
-	  HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_write_, debugger_callback_->pipe_name_);// , pipe_name_);
+    HRESULT hr = CreateAndInitializeBreakpointClient(
+      &breakpoint_client_write_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for writing breakpoints.";
       return hr;
@@ -98,7 +99,8 @@ HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
 
 HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   if (!breakpoint_client_read_) {
-	  HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_read_, debugger_callback_->pipe_name_);//());// , pipe_name_);
+    HRESULT hr = CreateAndInitializeBreakpointClient(&breakpoint_client_read_,
+      debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for reading breakpoints.";
       return hr;

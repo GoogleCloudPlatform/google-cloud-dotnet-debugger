@@ -27,6 +27,11 @@ using std::string;
 
 namespace google_cloud_debugger {
 
+NamedPipeClient::NamedPipeClient(std::string pipe_name)
+{
+	pipe_name_ = std::string("/tmp/CoreFxPipe_") + pipe_name;
+}
+
 NamedPipeClient::~NamedPipeClient() {
   if (pipe_ == -1) {
     return;

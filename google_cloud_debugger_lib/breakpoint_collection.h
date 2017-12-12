@@ -40,8 +40,6 @@ class BreakpointCollection : public IBreakpointCollection {
   // Delimiter for separating different breakpoint strings.
   static const std::string kDelimiter;
 
-  //BreakpointCollection(std::string pipe_name) : pipe_name_(pipe_name) {}
-
   // Sets the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
   HRESULT SetDebuggerCallback(DebuggerCallback *debugger_callback) override;
@@ -128,8 +126,6 @@ class BreakpointCollection : public IBreakpointCollection {
   std::unique_ptr<BreakpointClient> breakpoint_client_write_;
 
   std::mutex mutex_;
-
-  std::string pipe_name_;
 };
 
 // Returns true if the first string and the second string are equal

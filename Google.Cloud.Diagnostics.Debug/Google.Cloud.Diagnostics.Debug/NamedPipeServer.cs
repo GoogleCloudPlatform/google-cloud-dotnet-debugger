@@ -27,6 +27,10 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly INamedPipe _pipe;
         private readonly NamedPipeServerStream _server;
 
+        /// <summary>
+        /// Create a new <see cref="NamedPipeServer"/>.
+        /// </summary>
+        /// <param name="pipeName">The name of the pipe.</param>
         public NamedPipeServer(string pipeName)
         {
             _server = new NamedPipeServerStream(

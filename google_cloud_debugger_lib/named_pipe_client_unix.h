@@ -27,7 +27,7 @@ namespace google_cloud_debugger {
 // A named pipe client for unix.
 class NamedPipeClient : public INamedPipe {
  public:
-  TODO(talarico)
+  NamedPipeClient(std::string pipe_name);
   ~NamedPipeClient();
   HRESULT Initialize() override;
   HRESULT WaitForConnection() override;

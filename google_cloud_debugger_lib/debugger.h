@@ -62,6 +62,7 @@ class Debugger final {
   }
 
  private:
+  // The name of the pipe the debugger will use to communicate with the agent.
   std::string pipe_name_;
 
   // The unregister token that is used in the callback function to

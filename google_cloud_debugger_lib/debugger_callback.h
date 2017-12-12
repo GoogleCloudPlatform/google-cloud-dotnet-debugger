@@ -38,9 +38,8 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
                                ICorDebugManagedCallback2,
                                ICorDebugManagedCallback3 {
  public:
-	 DebuggerCallback(std::string pipe_name) : pipe_name_(pipe_name) {} 
-
-	 HRESULT Initialize();
+  DebuggerCallback(std::string pipe_name) : pipe_name_(pipe_name) {} 
+  HRESULT Initialize();
 
   // IUnknown interface.
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **object) override;
@@ -235,8 +234,10 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   }
 
-  std::string pipe_name_;
-
+  // Gets the name of the pipe the debugger will use to communicate with
+  // the agent.
+  std::string GetPipeName() { return pipe_name_; }
+  
  private:
   // Given an ICorDebugBreakpoint, gets the function token, IL offset
   // and metadata of the function that the breakpoint is in.
@@ -266,6 +267,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   std::unique_ptr<IBreakpointCollection> breakpoint_collection_;
 
   bool initialized_success_ = false;
+
+  // The name of the pipe the debugger will use to communicate with the agent.
+  std::string pipe_name_;
 };
 
 }  //  namespace google_cloud_debugger

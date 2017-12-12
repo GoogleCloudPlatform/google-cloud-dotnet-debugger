@@ -32,8 +32,7 @@ const string kApplicationStartCommandOption = "application-start-command";
 // with this process ID.
 const string kApplicationIDOption = "application-id";
 
-// If given this option, the debugger will attach to the running application
-// with this process ID.
+// The name of the pipe the debugger will use to communicate with the agent.
 const string kPipeNameOption = "pipe-name";
 
 enum optionIndex {
@@ -63,7 +62,8 @@ const option::Descriptor usage[] = {
      "evaluate property of classes. This may modify the state of the "
      "application"},
 	{ PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
-	 "  --pipe-name  \tThe name of the pipe the debugger will connect to " },
+	 "  --pipe-name  \tThe name of the pipe the debugger will use to"
+	 "communicate with the agent" },
     {0, 0, 0, 0, 0, 0}  // Needs this, otherwise the parser throws error.
 };
 

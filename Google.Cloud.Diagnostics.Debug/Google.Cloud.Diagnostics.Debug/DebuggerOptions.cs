@@ -33,20 +33,37 @@ namespace Google.Cloud.Diagnostics.Debug
         // The name of the pipe the debugger will attach to.
         public const string PipeNameOption = "--pipe-name";
 
+        /// <summary>
+        /// If true the debugger will evaluate properties.
+        /// </summary>
         public bool PropertyEvaluation { get; private set; }
 
+        /// <summary>
+        /// A command to start a .NET Core application the debugger will attach to.
+        /// </summary>
         public string ApplicationStartCommand { get; private set; }
 
+        /// <summary>
+        /// The process id of a running .NET Core application to debug.
+        /// </summary>
         public int? ApplicationId { get; private set; }
 
+        /// <summary>
+        /// The name of the pipe the debugger will use to communicate
+        /// with the <see cref="Agent"/> with.
+        /// </summary>
         public string PipeName { get; private set; }
 
+        /// <summary>
+        /// Create <see cref="DebuggerOptions"/> from <see cref="AgentOptions"/>.
+        /// </summary>
         public static DebuggerOptions FromAgentOptions(AgentOptions options)
         {
             if ((string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && !options.ApplicationId.HasValue)
                     || (!string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && options.ApplicationId.HasValue))
             {
-                throw new ArgumentException("TODO.");
+                throw new ArgumentException($"{nameof(ApplicationStartCommand)} or {nameof(ApplicationId)}" +
+                    "must be set but not both.");
             }
 
             return new DebuggerOptions
@@ -58,13 +75,13 @@ namespace Google.Cloud.Diagnostics.Debug
             };
         }
 
+        /// <summary>
+        /// Create a unique pipe name.
+        /// </summary>
         private static string CreatePipeName() => $"{Constants.PipeName}-{Guid.NewGuid()}";
 
         /// <summary>
-        /// TODO
-        /// Returns the processed arguments to pass to the debugger.
-        /// It will either be "application-start-command path (-property-evaluation)"
-        /// or "application-id id (-property-evaluation).
+        /// Returns the debugger options in string form.
         /// </summary>
         public override string ToString()
         {
