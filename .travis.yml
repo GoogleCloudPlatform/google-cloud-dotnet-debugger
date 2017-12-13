@@ -30,6 +30,7 @@ script:
   # TODO(talarico): Write proper test script.
   - ./google_cloud_debugger_test/google_cloud_debugger_test
   - dotnet test ./Google.Cloud.Diagnostics.Debug.Tests/Google.Cloud.Diagnostics.Debug.Tests.csproj
+  - ./run_integration_tests.sh
   
 cache:
   # Wait 20 min for cache (these direcories are large.
