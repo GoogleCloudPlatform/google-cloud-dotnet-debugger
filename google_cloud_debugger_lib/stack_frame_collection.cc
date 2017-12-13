@@ -220,7 +220,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     // If this is the last processed IL frame, just gives it the rest
     // of the size available.
     if (processed_il_frames_so_far == number_of_processed_il_frames_ - 1) {
-      frame_max_size = frame_max_size * 2;
+      frame_max_size = kMaximumBreakpointSize - breakpoint->ByteSize();
     }
 
     StackFrame *frame = breakpoint->add_stack_frames();
