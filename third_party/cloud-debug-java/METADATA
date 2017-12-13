@@ -1,6 +1,7 @@
 name: "cloud-debug-java"
 description:
-    "Google Cloud Debugger for Java."
+    "The Google Cloud Debugger for Java has logic for evaluating expressions "
+    "and conditional breakpoints that the .NET Debugger can use."
 
 third_party {
   url {
@@ -11,7 +12,7 @@ third_party {
     type: GIT
     value: "https://github.com/GoogleCloudPlatform/cloud-debug-java"
   }
-  version: "2.16"
+  version: "v2.16"
   last_upgrade_date { year: 2017 month: 12 day: 13 }
   license_type: PERMISSIVE
 }
