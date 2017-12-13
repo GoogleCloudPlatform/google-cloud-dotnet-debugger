@@ -29,10 +29,12 @@ fi
 # Build the protobuf library
 if [[ ! $(ldconfig -p | grep libprotobuf.so ) ]]
 then
-  $PROTOBUF_DIR/autogen.sh
-  $PROTOBUF_DIR/configure
-  make -C $PROTOBUF_DIR
-  sudo make -C $PROTOBUF_DIR install
+  # We need to run in the protobuf directory per comments in autogen.sh
+  cd $ROOT_DIR/protobuf
+  ./autogen.sh
+  ./configure
+  make
+  sudo make install
 else
   echo "Skipping protobuf, it was already built."
 fi
