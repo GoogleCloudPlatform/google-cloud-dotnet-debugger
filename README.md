@@ -10,14 +10,14 @@ slowing down your applications.
 ## Overview
 The .NET Core Stackdriver Debugger is comprised of four major parts
 
-* **Debuggee** - The _Debuggee_ is the.NET Core application being debugged.
+* **Debuggee** - The _Debuggee_ is the .NET Core application being debugged.
 * **Stackdriver Debugger** - The _Stackdriver Debugger_ is a web application that allows
 users to view source code and set snapshots on _Debuggees_.
-* **.NET Debugger** - The _.NET Debugger_ is an implementation of the 
+* **.NET Debugger** - The _.NET Core Debugger_ is an implementation of the 
 [`ICorDebug`](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/debugging/icordebug-interface)
 interface used to debug the _Debugee_.
-* **Debugging Agent** - The _Debugging Agent_ will run alongside the _.NET Debugger_.  It is responsible for
-starting the _.NET Debugger_ as well as maintaining communication with the _Stackdriver Debugger_.
+* **Debugging Agent** - The _Debugging Agent_ will run alongside the _.NET Core Debugger_.  It is responsible for
+starting the _.NET Core Debugger_ as well as maintaining communication with the _Stackdriver Debugger_.
 
 ## Building
 
@@ -66,55 +66,17 @@ Once the repository and dependencies are built you can run the debugger with:
 
 Once the repository and dependencies are built you can run the tests with:
 
-
-### Linux
-
-#### Unit Tests
-
-C# Unit tests:
+### Unit Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.Tests/
-  dotnet test
-  ```
-  
-C++ Unit tests:
-  ```
-  cd ./google_cloud_debugger_test
-  ./google_cloud_debugger_test
+  ./run_unit_tests.sh
   ```
 
-#### Integration Tests
+### Integration Tests
   ```
   ./run_integration_tests.sh
   ```
 
-#### Performance Tests
+### Performance Tests
   ```
   ./run_integration_tests.sh --performance-tests
-  ```
-
-
-### Windows
-
-#### Unit Tests
-
-C# Unit tests:
-  ```
-  cd .\Google.Cloud.Diagnostics.Debug.Tests\
-  dotnet test
-  ```
-  
-C++ Unit tests:
-  ```
-  Open the solution `GoogleCloudDebugger.sln` and run tests. 
-  ```
-
-#### Integration Tests
-  ```
-  .\run_integration_tests.sh
-  ```
-
-#### Performance Tests
-  ```
-  .\run_integration_tests.sh --performance-tests
   ```
