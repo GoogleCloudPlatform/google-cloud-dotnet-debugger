@@ -186,6 +186,7 @@ HRESULT StackFrameCollection::Initialize(
         return hr;
       }
 
+      ++number_of_processed_il_frames_;
       break;
     }
 
@@ -213,8 +214,15 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
   // Gives the first frame half available kb in the breakpoint.
   int frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+  int processed_il_frames_so_far = 0;
 
   for (auto &&dbg_stack_frame : stack_frames_) {
+    // If this is the last processed IL frame, just gives it the rest
+    // of the size available.
+    if (processed_il_frames_so_far == number_of_processed_il_frames_ - 1) {
+      frame_max_size = frame_max_size * 2;
+    }
+
     StackFrame *frame = breakpoint->add_stack_frames();
     // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
     if (dbg_stack_frame.IsEmpty()) {
@@ -241,11 +249,15 @@ HRESULT StackFrameCollection::PopulateStackFrames(
       return hr;
     }
 
-    // Updates frame_max_size to half of whatever is left.
+    if (dbg_stack_frame.IsProcessedIlFrame()) {
+      ++processed_il_frames_so_far;
+    }
+
     if (breakpoint->ByteSize() > kMaximumBreakpointSize) {
       break;
     }
 
+    // Updates frame_max_size to half of whatever is left.
     frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 

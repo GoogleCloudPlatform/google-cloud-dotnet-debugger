@@ -79,6 +79,7 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
+  is_processed_il_frame_ = true;
   return S_OK;
 }
 
@@ -340,7 +341,6 @@ HRESULT DbgStackFrame::PopulateStackFrame(
     return VariableWrapper::PerformBFS(&bfs_queue,
         [stack_frame, stack_frame_size]() { 
           // Terminates the BFS if stack frame reaches the maximum size.
-          int byte_size = stack_frame->ByteSize();
           return stack_frame->ByteSize() > stack_frame_size;
         },
         eval_coordinator);

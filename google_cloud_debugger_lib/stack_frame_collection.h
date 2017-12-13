@@ -59,6 +59,9 @@ class StackFrameCollection : public IStackFrameCollection {
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;
 
+  // Number of processed IL frames in stack_frames_.
+  int number_of_processed_il_frames_ = 0;
+
   // Maximum number of stack frames to be parsed.
   static const std::uint32_t kMaximumStackFrames = 20;
 
