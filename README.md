@@ -34,10 +34,8 @@ The repository and dependencies can be built with the following:
 The dependencies can be built with the following:
   ```
   .\build-deps.cmd
+  .\build.sh
   ``` 
-
-The repository is built with Visual Studio.  Open and build the solution `GoogleCloudDebugger.sln`. 
-
 
 ## Running
 
@@ -87,18 +85,12 @@ C++ Unit tests:
 
 #### Integration Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.IntegrationTests/
-  dotnet test
+  ./run_integration_tests.sh
   ```
 
 #### Performance Tests
   ```
-  cd ./Google.Cloud.Diagnostics.Debug.TestApp/
-  dotnet publish
-  cd ../Google.Cloud.Diagnostics.Debug.PerformanceTests/
-  dotnet test
+  ./run_integration_tests.sh --performance-tests
   ```
 
 
@@ -119,16 +111,10 @@ C++ Unit tests:
 
 #### Integration Tests
   ```
-  cd .\Google.Cloud.Diagnostics.Debug.TestApp\
-  dotnet publish
-  cd ..\Google.Cloud.Diagnostics.Debug.IntegrationTests\
-  dotnet test
+  .\run_integration_tests.sh
   ```
 
 #### Performance Tests
   ```
-  cd .\Google.Cloud.Diagnostics.Debug.TestApp\
-  dotnet publish
-  cd ..\Google.Cloud.Diagnostics.Debug.PerformanceTests\
-  dotnet test
+  .\run_integration_tests.sh --performance-tests
   ```

@@ -238,8 +238,12 @@ class StackFrameCollectionTest : public ::testing::Test {
                             func_name + "2", class_token + 2, class_name + "2");
     third_frame_.SetUpILFrame(false, 0);
 
-    // Sets up debug_module_ so it will return module_name_
-    // when queried.
+    SetUpDebugModule();
+  }
+
+  // Sets up debug_module_ so it will return module_name_
+  // when queried.
+  virtual void SetUpDebugModule() {
     ON_CALL(debug_module_, GetMetaDataInterface(IID_IMetaDataImport, _))
         .WillByDefault(
             DoAll(SetArgPointee<1>(&metadata_import_), Return(S_OK)));
@@ -325,6 +329,8 @@ class StackFrameCollectionTest : public ::testing::Test {
   FrameFixture first_frame_;
   FrameFixture second_frame_;
   FrameFixture third_frame_;
+  FrameFixture fourth_frame_;
+  FrameFixture fifth_frame_;
 };
 
 // Tests the Initialize function of stack frame collection when
@@ -366,6 +372,79 @@ TEST_F(StackFrameCollectionTest, TestInitializeError) {
     EXPECT_EQ(stack_frame_collection.Initialize(nullptr, pdb_files_),
               E_INVALIDARG);
   }
+}
+
+// Tests that if we have more than 20 frames, only the first
+// 20 will be processed in Initialize function.
+TEST_F(StackFrameCollectionTest, TestInitializeWithMoreThan20Frames) {
+  StackFrameCollection stack_frame_collection;
+
+  // This should only be called 20 times.
+  EXPECT_CALL(debug_stack_walk_, GetFrame(_))
+      .Times(20)
+      .WillRepeatedly(DoAll(
+          SetArgPointee<0>(&first_frame_.frame_), Return(S_OK)));
+
+  // Makes GetFunction returns CORDBG_E_CODE_NOT_AVAILABLE so we will
+  // get an empty frame.
+  EXPECT_CALL(first_frame_.frame_, GetFunction(_))
+      .Times(20)
+      .WillRepeatedly(Return(CORDBG_E_CODE_NOT_AVAILABLE));
+
+  HRESULT hr =
+      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+}
+
+// Tests that if we have more than 4 IL frames, only the first 4
+// are processed.
+TEST_F(StackFrameCollectionTest, TestInitializeWithFourILFrames) {
+  // Sets up the stack walk to return 3 frames.
+  EXPECT_CALL(debug_stack_walk_, GetFrame(_))
+      .WillOnce(DoAll(SetArgPointee<0>(&first_frame_.frame_), Return(S_OK)))
+      .WillOnce(DoAll(SetArgPointee<0>(&second_frame_.frame_), Return(S_OK)))
+      .WillOnce(DoAll(SetArgPointee<0>(&third_frame_.frame_), Return(S_OK)))
+      .WillOnce(DoAll(SetArgPointee<0>(&fourth_frame_.frame_), Return(S_OK)))
+      .WillOnce(DoAll(SetArgPointee<0>(&fifth_frame_.frame_), Return(S_OK)))
+      .WillOnce(Return(S_FALSE));
+
+  ULONG func_virtual_addr = 1000;
+  mdMethodDef func_token = 2000;
+  string func_name = "MyFunction";
+  mdTypeDef class_token = 3000;
+  string class_name = "MyClass";
+
+  first_frame_.SetUpFrame(&debug_module_, &metadata_import_,
+                          func_virtual_addr, func_token, func_name,
+                          class_token, class_name);
+  first_frame_.SetUpILFrame(true, 500);
+  second_frame_.SetUpFrame(
+      &debug_module_, &metadata_import_, func_virtual_addr + 1,
+      func_token + 1, func_name + "1", class_token + 1, class_name + "1");
+  second_frame_.SetUpILFrame(true, 500);
+  third_frame_.SetUpFrame(&debug_module_, &metadata_import_,
+                          func_virtual_addr + 2, func_token + 2,
+                          func_name + "2", class_token + 2, class_name + "2");
+  third_frame_.SetUpILFrame(true, 500);
+  fourth_frame_.SetUpFrame(&debug_module_, &metadata_import_,
+                          func_virtual_addr + 3, func_token + 3,
+                          func_name + "3", class_token + 3, class_name + "3");
+  fourth_frame_.SetUpILFrame(true, 500);
+  fifth_frame_.SetUpFrame(&debug_module_, &metadata_import_,
+                          func_virtual_addr + 4, func_token + 4,
+                          func_name + "4", class_token + 4, class_name + "4");
+
+  // For the fifth frame, only sets up such that it gets identified as
+  // an IL frame, don't set up other things as they shouldn't be called.
+  ON_CALL(fifth_frame_.frame_, QueryInterface(__uuidof(ICorDebugILFrame), _))
+      .WillByDefault(DoAll(SetArgPointee<1>(&(fifth_frame_.il_frame_)), Return(S_OK)));
+
+  SetUpDebugModule();
+
+  StackFrameCollection stack_frame_collection;
+  HRESULT hr =
+      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
 // Tests the PopulateStackFrames function of stack frame collection.
