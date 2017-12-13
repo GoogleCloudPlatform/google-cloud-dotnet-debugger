@@ -38,6 +38,8 @@ cache:
   - $TRAVIS_BUILD_DIR/googletest/googletest/make
   - $TRAVIS_BUILD_DIR/googletest/googlemock/make
   - $TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
+  # TODO(talarico): Figure out a cleaner way to cache this.
+  - $TRAVIS_BUILD_DIR/protobuf
 
 
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
