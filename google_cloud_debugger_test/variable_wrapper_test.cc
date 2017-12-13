@@ -219,7 +219,8 @@ TEST_F(VariableWrapperTest, TestPopulateMembersError) {
 TEST_F(VariableWrapperTest, TestBFSOneItem) {
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(value_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
+      []() { return false; }, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with both value and type.
@@ -234,7 +235,8 @@ TEST_F(VariableWrapperTest, TestBFSTwoChildren) {
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
+      []() { return false; }, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with correct type.
@@ -246,6 +248,37 @@ TEST_F(VariableWrapperTest, TestBFSTwoChildren) {
   CheckValue(&value_wrapper_);
   CheckType(&value_wrapper_2_);
   CheckValue(&value_wrapper_2_);
+}
+
+// Tests PerformBFS method when there is 1 item with 2 children.
+// We put in a twist where the BFS will terminate after processing
+// 1 item. So it should not process the children.
+TEST_F(VariableWrapperTest, TestBFSTwoChildrenWithTerminatingCondition) {
+  AddMembers(&members_wrapper_, value_wrapper_);
+  AddMembers(&members_wrapper_, value_wrapper_2_);
+
+  bool first_time = true;
+  queue<VariableWrapper> bfs_queue;
+  bfs_queue.push(members_wrapper_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
+      [&first_time]() {
+        // Terminates the BFS after processing the first item.
+        if (first_time) {
+          first_time = false;
+          return false;
+        }
+        return true;
+      }, &eval_coordinator_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  // BFS should fill up the proto with correct type.
+  CheckType(&members_wrapper_);
+
+  // Checks that the children are not filled up at all.
+  EXPECT_EQ(value_wrapper_.GetVariableProto()->type(), "");
+  EXPECT_EQ(value_wrapper_.GetVariableProto()->value(), "");
+  EXPECT_EQ(value_wrapper_2_.GetVariableProto()->type(), "");
+  EXPECT_EQ(value_wrapper_2_.GetVariableProto()->value(), "");
 }
 
 // Tests PerformBFS method when there is 1 item with 2 children
@@ -260,7 +293,8 @@ TEST_F(VariableWrapperTest, TestBFSTwoLevels) {
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
+      []() { return false; }, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with correct type.
@@ -294,7 +328,8 @@ TEST_F(VariableWrapperTest, TestBFSThreeLevels) {
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
+      []() { return false; }, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that BFS fill up everything correctly.

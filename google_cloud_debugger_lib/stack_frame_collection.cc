@@ -56,16 +56,24 @@ HRESULT StackFrameCollection::Initialize(
   }
 
   CComPtr<ICorDebugFrame> frame;
+  int il_frame_parsed_so_far = 0;
+  int frame_parsed_so_far = 0;
   HRESULT hr = S_OK;
 
   // Walks through the stack and populates stack_frames_ vector.
   while (SUCCEEDED(hr)) {
+    // Don't parse too many stack frames.
+    if (frame_parsed_so_far >= kMaximumStackFrames) {
+      return S_OK;
+    }
+
     hr = debug_stack_walk->GetFrame(&frame);
     // No more stacks.
     if (hr == S_FALSE) {
       return S_OK;
     }
 
+    ++frame_parsed_so_far;
     if (FAILED(hr)) {
       cerr << "Failed to get active frame.";
       return hr;
@@ -150,6 +158,15 @@ HRESULT StackFrameCollection::Initialize(
       return hr;
     }
 
+    // If we have populate local variables for 4 frames,
+    // don't do it for the rest.
+    if (il_frame_parsed_so_far >= kMaximumStackFramesWithVariables) {
+      ++il_frame_parsed_so_far;
+      stack_frames_.push_back(std::move(stack_frame));
+      hr = debug_stack_walk->Next();
+      continue;
+    }
+
     for (auto index : parsed_pdb_indices) {
       // Gets the PDB file that has the same name as the module.
       CComPtr<ICorDebugModule> pdb_debug_module;
@@ -169,9 +186,11 @@ HRESULT StackFrameCollection::Initialize(
         return hr;
       }
 
+      ++number_of_processed_il_frames_;
       break;
     }
 
+    ++il_frame_parsed_so_far;
     stack_frames_.push_back(std::move(stack_frame));
     hr = debug_stack_walk->Next();
   }
@@ -193,7 +212,17 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   HRESULT hr = S_OK;
   eval_coordinator->WaitForReadySignal();
 
+  // Gives the first frame half available kb in the breakpoint.
+  int frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+  int processed_il_frames_so_far = 0;
+
   for (auto &&dbg_stack_frame : stack_frames_) {
+    // If this is the last processed IL frame, just gives it the rest
+    // of the size available.
+    if (processed_il_frames_so_far == number_of_processed_il_frames_ - 1) {
+      frame_max_size = kMaximumBreakpointSize - breakpoint->ByteSize();
+    }
+
     StackFrame *frame = breakpoint->add_stack_frames();
     // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
     if (dbg_stack_frame.IsEmpty()) {
@@ -213,11 +242,23 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     frame_location->set_line(dbg_stack_frame.GetLineNumber());
     frame_location->set_path(dbg_stack_frame.GetFile());
 
-    hr = dbg_stack_frame.PopulateStackFrame(frame, eval_coordinator);
+    hr = dbg_stack_frame.PopulateStackFrame(frame, frame_max_size,
+                                            eval_coordinator);
     if (FAILED(hr)) {
       eval_coordinator->SignalFinishedPrintingVariable();
       return hr;
     }
+
+    if (dbg_stack_frame.IsProcessedIlFrame()) {
+      ++processed_il_frames_so_far;
+    }
+
+    if (breakpoint->ByteSize() > kMaximumBreakpointSize) {
+      break;
+    }
+
+    // Updates frame_max_size to half of whatever is left.
+    frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 
   eval_coordinator->SignalFinishedPrintingVariable();

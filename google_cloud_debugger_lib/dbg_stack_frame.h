@@ -55,8 +55,11 @@ class DbgStackFrame {
   // Populates the StackFrame object with local variables, method arguments,
   // method name, class name, file name and line number.
   // This method may perform function evaluation using eval_coordinator.
+  // This method should not fill up the proto stack_frame with more kbs of
+  // information than stack_frame_size.
   HRESULT PopulateStackFrame(
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
+      int stack_frame_size,
       IEvalCoordinator *eval_coordinator) const;
 
   // Sets how deep an object will be inspected.
@@ -114,6 +117,9 @@ class DbgStackFrame {
   // Sets whether this is an empty frame.
   void SetEmpty(bool empty) { empty_ = empty; }
 
+  // Returns true if this is a parsed IL frame.
+  bool IsProcessedIlFrame() { return is_processed_il_frame_; }
+
  private:
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
@@ -158,6 +164,10 @@ class DbgStackFrame {
 
   // True if this is an empty frame with no information.
   bool empty_ = false;
+
+  // Returns true if this is an IL frame that has been processed.
+  // This is set after a successful call to Initialize.
+  bool is_processed_il_frame_ = false;
 };
 
 }  //  namespace google_cloud_debugger

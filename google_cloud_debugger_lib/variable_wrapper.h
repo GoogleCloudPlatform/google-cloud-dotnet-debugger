@@ -15,6 +15,7 @@
 #ifndef VARIABLE_WRAPPER_H_
 #define VARIABLE_WRAPPER_H_
 
+#include <functional>
 #include <memory>
 #include <queue>
 #include <sstream>
@@ -48,16 +49,18 @@ public:
   // queue by populating their variable_proto_ with the underlying
   // object variable_value_.
   // Until the queue is empty, this method:
-  //  1. Pops out an item X.
-  //  2. If X is null, continues with the loop.
-  //  3. If the BFS level of X is kDefaultObjectEvalDepth,
+  //  1. Checks if terminate_condition is true. If so, returns.
+  //  2. Pops out an item X.
+  //  3. If X is null, continues with the loop.
+  //  4. If the BFS level of X is kDefaultObjectEvalDepth,
   // sets an error status on X saying that we cannot evaluate
   // its children and continues with the loop.
-  //  4. Otherwise, tries to get members (children) of X.
-  //  5. If there are members, pushes them into the queue. We
+  //  5. Otherwise, tries to get members (children) of X.
+  //  6. If there are members, pushes them into the queue. We
   // also set the BFS level of the members to be the BFS
   // level of the node X + 1. If not, call PopulateValue on X.
   static HRESULT PerformBFS(std::queue<VariableWrapper> *bfs_queue,
+                            const std::function<bool()> &terminate_condition,
                             IEvalCoordinator *eval_coordinator);
 
   // Populates variable proto variable_proto_ with
