@@ -30,7 +30,7 @@ fi
 if [[ ! $(ldconfig -p | grep libprotobuf.so ) ]]
 then
   # We need to run in the protobuf directory per comments in autogen.sh
-  cd $ROOT_DIR/protobuf
+  cd $PROTOBUF_DIR
   ./autogen.sh
   ./configure
   make
