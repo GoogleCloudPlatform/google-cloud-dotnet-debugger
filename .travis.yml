@@ -5,6 +5,7 @@ mono: none
 dotnet: 2.0.0
 
 before_install:
+  - openssl aes-256-cbc -K $encrypted_d6ab37c4d9c3_key -iv $encrypted_d6ab37c4d9c3_iv -in credentials.json.enc -out credentials.json -d
   # Needed for protobuf
   - sudo apt-get install autoconf automake libtool curl make g++ unzip
   # Needed for coreclr
@@ -12,15 +13,15 @@ before_install:
   # Needed for our bits
   - sudo apt-get install llvm-3.9 clang-3.9
 
-# Install the .NET Core 1.0 runtime as that's what we test against
 addons:
   apt:
     sources:
-    - sourceline: 'deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod trusty main'
-      key_url: 'https://packages.microsoft.com/keys/microsoft.asc'
+    - sourceline: deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod
+        trusty main
+      key_url: https://packages.microsoft.com/keys/microsoft.asc
     packages:
     - dotnet-sharedframework-microsoft.netcore.app-1.0.5
-
+ 
 script:
   # Build dependencies
   - ./build-deps.sh
@@ -30,6 +31,9 @@ script:
   # TODO(talarico): Write proper test script.
   - ./google_cloud_debugger_test/google_cloud_debugger_test
   - dotnet test ./Google.Cloud.Diagnostics.Debug.Tests/Google.Cloud.Diagnostics.Debug.Tests.csproj
+  - export TEST_PROJECT=cloud-sharp-test
+  - export GOOGLE_APPLICATION_CREDENTIALS=$TRAVIS_BUILD_DIR/credentials.json
+  - ./run_integration_tests.sh
   
 cache:
   # Wait 20 min for cache (these direcories are large.
