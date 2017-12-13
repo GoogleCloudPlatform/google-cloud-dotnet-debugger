@@ -68,7 +68,7 @@ Once the repository and dependencies are built you can run the tests with:
 
 ### Unit Tests
   ```
-  ./run_tests.sh
+  ./run_unit_tests.sh
   ```
 
 ### Integration Tests

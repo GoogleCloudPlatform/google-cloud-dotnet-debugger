@@ -27,7 +27,7 @@ script:
   # Build all code.
   - ./build.sh
   # Run the unit tests.
-  - ./run_tests.sh
+  - ./run_unit_tests.sh
   
 cache:
   # Wait 20 min for cache (these direcories are large.
