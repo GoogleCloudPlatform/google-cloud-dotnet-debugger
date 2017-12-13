@@ -33,9 +33,9 @@ cache:
   # Wait 20 min for cache (these direcories are large.
   timeout: 1200
   directories:
-  - $TRAVIS_BUILD_DIR/coreclr
-  - $TRAVIS_BUILD_DIR/protobuf
-  - $TRAVIS_BUILD_DIR/googletest
+  - $TRAVIS_BUILD_DIR/googletest/googletest/make
+  - $TRAVIS_BUILD_DIR/googletest/googlemock/make
+  - $TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
 
 
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
