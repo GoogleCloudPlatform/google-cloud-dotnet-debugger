@@ -33,7 +33,6 @@ then
   cd $PROTOBUF_DIR
   ./autogen.sh
   ./configure
-  make
   sudo make install
 else
   echo "Skipping protobuf, it was already built."
