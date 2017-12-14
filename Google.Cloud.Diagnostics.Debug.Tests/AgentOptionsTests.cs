@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using Google.Api.Gax;
+using Google.Cloud.DevTools.Source.V1;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +28,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         private const string _version = "version";
         private static readonly string _debugger = Path.GetTempFileName();
         private static readonly string _application = Path.GetTempFileName();
+        private static readonly string _sourceContext = Path.GetTempFileName();
 
         private static readonly string[] _args = new string[]
         {
@@ -52,6 +54,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(_application, options.ApplicationStartCommand);
             Assert.Equal(_projectId, options.ProjectId);
             Assert.Null(options.ApplicationId);
+            Assert.Null(options.SourceContextFile);
+            Assert.Null(options.SourceContext);
             Assert.False(options.PropertyEvaluation);
             Assert.Equal(2, options.WaitTime);
         }
@@ -70,6 +74,27 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             var args = new List<string>(_args);
             args.Add("--application-id=12345");
             Assert.Throws<ArgumentException>(() => AgentOptions.Parse(args.ToArray()));
+        }
+
+        [Fact]
+        public void Parse_SourceContext()
+        {
+            var sourceContext = new SourceContext
+            {
+                Git = new GitSourceContext
+                {
+                    Url = "some-url.com",
+                    RevisionId = "rev-id",
+                }
+            };
+            var filePath = Path.GetTempFileName();
+            File.WriteAllText(filePath, sourceContext.ToString());
+
+            var args = new List<string>(_args);
+            args.Add($"--source-context={filePath}");
+            var options = AgentOptions.Parse(args.ToArray());
+
+            Assert.Equal(sourceContext, options.SourceContext);
         }
 
         [Fact]
@@ -113,6 +138,34 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         [Fact]
         public void GetVersion_Null() => Assert.Null(AgentOptions.GetVersion(_unknownPlatform));
 
+        [Fact]
+        public void GetSourceContextFile_Param() => 
+            Assert.Equal(_sourceContext, AgentOptions.GetSourceContextFile(_sourceContext));
+        
+
+        [Fact]
+        public void GetSourceContextFile_Env() => 
+            TestEnvVariable(() => AgentOptions.GetSourceContextFile(null), 
+                AgentOptions.SourceContextEnvironmentVariable, _sourceContext);
+        
+
+        [Fact]
+        public void GetSourceContextFile_App()
+        {
+            var filePath = Path.Combine(AppContext.BaseDirectory, AgentOptions.SourceContextFileName);
+            try
+            {
+                File.Create(filePath).Dispose();
+                Assert.Equal(filePath, AgentOptions.GetSourceContextFile(null));
+            }
+            finally
+            {
+                File.Delete(filePath);
+            }
+        }
+
+        [Fact]
+        public void GetSourceContextFile_Null() => Assert.Null(AgentOptions.GetSourceContextFile(null));
 
         /// <summary>
         /// Sets the <paramref name="envVar"/> to <paramref name="envVal"/> and checks that

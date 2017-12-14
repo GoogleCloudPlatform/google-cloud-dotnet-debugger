@@ -15,6 +15,7 @@
 using CommandLine;
 using CommandLine.Text;
 using Google.Api.Gax;
+using Google.Cloud.DevTools.Source.V1;
 using System;
 using System.IO;
 
@@ -25,6 +26,9 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class AgentOptions
     {
+        /// <summary>The name of the source context file.</summary>
+        public static readonly string SourceContextFileName = "source-context.json";
+
         /// <summary>The prefix for environment variables.</summary>
         public static readonly string EnvironmentVariablePrefix = "STACKDRIVER_DEBUGGER";
 
@@ -39,6 +43,9 @@ namespace Google.Cloud.Diagnostics.Debug
 
         /// <summary>An environment variable that can set the debugger path.</summary>
         public static readonly string DebuggerEnvironmentVariable = $"{EnvironmentVariablePrefix}_DEBUGGER";
+
+        /// <summary>An environment variable that can set the source context file location.</summary>
+        public static readonly string SourceContextEnvironmentVariable = $"{EnvironmentVariablePrefix}_SOURCE_CONTEXT";
 
         [Option("module", Required = true, HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
@@ -67,6 +74,11 @@ namespace Google.Cloud.Diagnostics.Debug
             HelpText = "If set, the debugger will evaluate object's properties.")]
         public bool PropertyEvaluation { get; set; }
 
+        [Option("source-context",
+            HelpText = "The location of the source context file. See: " +
+            "https://cloud.google.com/debugger/docs/source-context")]
+        public string SourceContextFile { get; set; }
+
         [Option("wait-time", DefaultValue = 2, 
             HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
         public int WaitTime { get; set; }
@@ -74,6 +86,9 @@ namespace Google.Cloud.Diagnostics.Debug
         [HelpOption]
         public string Usage() => HelpText.AutoBuild(
             this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));
+
+        /// <summary>The parsed source context from the <see cref="SourceContextFile"/>.</summary>
+        public SourceContext SourceContext { get; set; }
 
         /// <summary>
         /// Parse a <see cref="AgentOptions"/> from command line arguments.
@@ -99,6 +114,13 @@ namespace Google.Cloud.Diagnostics.Debug
                 {
                     throw new ArgumentException("Please supply either a command to start a .NET CORE application"
                         + " or the process ID of a running application, NOT both.");
+                }
+
+                options.SourceContextFile = GetSourceContextFile(options.SourceContextFile);
+                if (File.Exists(options.SourceContextFile))
+                {
+                    var contents = File.ReadAllText(options.SourceContextFile);
+                    options.SourceContext = SourceContext.Parser.ParseJson(contents);
                 }
             }
             return options;
@@ -162,5 +184,38 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>The debugger or null if none could be found.</returns>
         internal static string GetDebugger() =>
             Environment.GetEnvironmentVariable(DebuggerEnvironmentVariable);
+
+        /// <summary>
+        /// Attempts to get the location of a source context file.
+        /// It will first look at the passed in file (from the parameters). 
+        /// If not found it will look at the <see cref="SourceContextEnvironmentVariable"/>.
+        /// Lastly it will try and look in this agents application directory.
+        /// </summary>
+        /// <returns>The location of the source context file or null if non can be found.</returns>
+        internal static string GetSourceContextFile(string file)
+        {
+            // look at passed in var
+            // look at env variable
+            // look in root of this project
+
+            if (File.Exists(file))
+            {
+                return file;
+            }
+
+            file = Environment.GetEnvironmentVariable(SourceContextEnvironmentVariable);
+            if (File.Exists(file))
+            {
+                return file;
+            }
+
+            file = Path.Combine(AppContext.BaseDirectory, SourceContextFileName);
+            if (File.Exists(file))
+            {
+                return file;
+            }
+
+            return null;
+        }
     }
 }
