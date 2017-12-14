@@ -28,9 +28,12 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     internal class DebuggerClient : IDebuggerClient
     {
+        internal const string InitialWaitToken = "init";
+        private readonly object _mutex = new object();
         private readonly AgentOptions _options;
         private readonly Controller2Client _controlClient;
         private Debuggee _debuggee;
+        private string _waitToken = InitialWaitToken;
 
         /// <summary>
         /// Create a new <see cref="DebuggerClient"/>
@@ -44,12 +47,16 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Register()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
-            _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
-            if (_debuggee.IsDisabled)
+            lock (_mutex)
             {
-                throw new DebuggeeDisabledException($"'{_debuggee.Id}' is disabled.");
-            }   
+                var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
+                _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
+            
+                if (_debuggee.IsDisabled)
+                {
+                    throw new DebuggeeDisabledException($"'{_debuggee.Id}' is disabled.");
+                }
+            }
         }
 
         /// <inheritdoc />
@@ -57,9 +64,24 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             if (_debuggee == null)
             {
-                throw new InvalidOperationException("Debuggee is not has not been registered.");
+                throw new InvalidOperationException("Debuggee has not been registered.");
             }
-            return TryAction(() => _controlClient.ListActiveBreakpoints(_debuggee.Id).Breakpoints);
+
+            lock (_mutex)
+            {
+                var response = TryAction(() =>
+                {
+                    var request = new ListActiveBreakpointsRequest
+                    {
+                        DebuggeeId = _debuggee.Id,
+                        SuccessOnTimeout = true,
+                        WaitToken = _waitToken,
+                    };
+                    return _controlClient.ListActiveBreakpoints(request);
+                });
+                _waitToken = response.NextWaitToken ?? InitialWaitToken;
+                return response.Breakpoints;
+            }
         }
 
         /// <inheritdoc />
@@ -67,7 +89,7 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             if (_debuggee == null)
             {
-                throw new InvalidOperationException("Debuggee is not has not been registered.");
+                throw new InvalidOperationException("Debuggee has not been registered.");
             }
             GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
             return TryAction(() => _controlClient.UpdateActiveBreakpoint(_debuggee.Id, breakpoint));

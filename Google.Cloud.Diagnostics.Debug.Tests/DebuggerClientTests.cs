@@ -22,15 +22,18 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 {
     public class DebuggerClientTests
     {
-        private static readonly string _debugId = "did";
-        private static readonly string _breakpointId = "bid";
-        private static readonly string _projectId = "pid";
-        private static readonly string _module = "module";
-        private static readonly string _version = "version";
+        private const string _debugId = "did";
+        private const string _breakpointId = "bid";
+        private const string _breakpointId2 = "bid2";
+        private const string _projectId = "pid";
+        private const string _module = "module";
+        private const string _version = "version";
+        private const string _waitToken = "wait-token-123";
 
         private readonly AgentOptions _options;
         private readonly Debuggee _debuggee;
         private readonly Debugger.V2.Breakpoint _breakpoint;
+        private readonly Debugger.V2.Breakpoint _breakpoint2;
         private readonly RegisterDebuggeeResponse _response;
         private readonly Mock<Controller2Client> _mockControllerClient;
         private readonly DebuggerClient _client;
@@ -51,6 +54,10 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _breakpoint = new Debugger.V2.Breakpoint
             {
                 Id = _breakpointId
+            };
+            _breakpoint2 = new Debugger.V2.Breakpoint
+            {
+                Id = _breakpointId2
             };
             _response = new RegisterDebuggeeResponse
             {
@@ -80,20 +87,20 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         [Fact]
         public void ListBreakpoints()
         {
-            _mockControllerClient.Setup(c => c.RegisterDebuggee(It.IsAny<Debuggee>(), null)).Returns(_response);
+            var bpReq = CreateBreakpointRequest();
+            var bpResp = CreateBreakpointResponse(_waitToken, _breakpoint);
+            var bpReq2 = CreateBreakpointRequest(_waitToken);
+            var bpResp2 = CreateBreakpointResponse("some-token", _breakpoint2);
 
-            var bpResp = new ListActiveBreakpointsResponse
-            {
-                Breakpoints =
-                {
-                   _breakpoint
-                }
-            };
-            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(_debugId, null)).Returns(bpResp);
+            _mockControllerClient.Setup(c => c.RegisterDebuggee(It.IsAny<Debuggee>(), null)).Returns(_response);
+            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(bpReq, null)).Returns(bpResp);
+            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(bpReq2, null)).Returns(bpResp2);
 
             _client.Register();
             var breakpoints = _client.ListBreakpoints();
             Assert.Equal(breakpoints, bpResp.Breakpoints);
+            breakpoints = _client.ListBreakpoints();
+            Assert.Equal(breakpoints, bpResp2.Breakpoints);
             _mockControllerClient.VerifyAll();
         }
 
@@ -117,16 +124,13 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 .Returns(_response)
                 .Returns(response2);
 
-            var bpResp = new ListActiveBreakpointsResponse
-            {
-                Breakpoints =
-                {
-                    _breakpoint
-                }
-            };
-            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(_debugId, null))
+            var bpReq = CreateBreakpointRequest();
+            var bpReq2 = CreateBreakpointRequest(debugId: response2.Debuggee.Id);
+            var bpResp = CreateBreakpointResponse(DebuggerClient.InitialWaitToken, _breakpoint);
+
+            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(bpReq, null))
                 .Throws(new RpcException(new Grpc.Core.Status(StatusCode.NotFound, "message")));
-            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(response2.Debuggee.Id, null))
+            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(bpReq2, null))
                 .Returns(bpResp);
 
             _client.Register();
@@ -175,6 +179,31 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _client.Register();
             var breakpoints = _client.UpdateBreakpoint(_breakpoint);
             _mockControllerClient.VerifyAll();
+        }
+
+        /// <summary>Create a <see cref="ListActiveBreakpointsRequest"/>.</summary>
+        private ListActiveBreakpointsRequest CreateBreakpointRequest(
+            string waitToken = DebuggerClient.InitialWaitToken, string debugId = _debugId)
+        {
+            return new ListActiveBreakpointsRequest
+            {
+                DebuggeeId = debugId,
+                SuccessOnTimeout = true,
+                WaitToken = waitToken,
+            };
+        }
+
+        /// <summary>Create a <see cref="ListActiveBreakpointsResponse"/>.</summary>
+        private ListActiveBreakpointsResponse CreateBreakpointResponse(string waitToken, Debugger.V2.Breakpoint breakpoint)
+        {
+            return new ListActiveBreakpointsResponse
+            {
+                Breakpoints =
+                {
+                   breakpoint
+                },
+                NextWaitToken = waitToken,
+            };
         }
     }
 }

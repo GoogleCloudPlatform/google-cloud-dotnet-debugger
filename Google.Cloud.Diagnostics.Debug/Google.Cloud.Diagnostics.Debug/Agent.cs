@@ -99,7 +99,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     {
                         server.WaitForConnection();
                         tcs.SetResult(true);
-                        server.StartActionLoop(TimeSpan.FromSeconds(_agentOptions.WaitTime), cancellationToken);
+                        server.StartActionLoop(TimeSpan.Zero, cancellationToken);
                     });
 
                     // TODO(talarico): Temporary solution: This will ensure the debugger shuts down. See #146.
