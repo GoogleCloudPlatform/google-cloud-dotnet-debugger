@@ -53,7 +53,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(_projectId, options.ProjectId);
             Assert.Null(options.ApplicationId);
             Assert.False(options.PropertyEvaluation);
-            Assert.Equal(2, options.WaitTime);
         }
 
         [Fact]
