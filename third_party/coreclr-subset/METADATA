@@ -1,0 +1,23 @@
+name: "coreclr"
+description:
+    "Subset of files from the Core CLR source repository required to build. "
+    " "
+    "dbgshim.h, located at /coreclr/src/dlls/dbgshim/dbgshim.h "
+    " "
+    "The header file in this repository only contains a subset of all the "
+    "functions in the original header file. Also, we remove __in and __out "
+    "in the header file for compilation on Linux."
+
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "https://github.com/dotnet/coreclr"
+  }
+  url {
+    type: GIT
+    value: "https://github.com/dotnet/coreclr"
+  }
+  version: "86103a4"
+  last_upgrade_date { year: 2017 month: 6 day: 14 }
+  license_type: PERMISSIVE
+}
