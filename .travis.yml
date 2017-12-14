@@ -30,14 +30,13 @@ script:
   - ./run_unit_tests.sh
   
 cache:
-  # Wait 20 min for cache (these direcories are large.
+  # Wait 20 min for cache (these directories are large).
   timeout: 1200
   directories:
   - $TRAVIS_BUILD_DIR/googletest/googletest/make
   - $TRAVIS_BUILD_DIR/googletest/googlemock/make
   - $TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
-  # TODO(talarico): Figure out a cleaner way to cache this.
-  - $TRAVIS_BUILD_DIR/protobuf
+  - $TRAVIS_BUILD_DIR/protobuf/src
 
 
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
