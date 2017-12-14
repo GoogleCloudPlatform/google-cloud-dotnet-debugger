@@ -57,7 +57,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Null(options.SourceContextFile);
             Assert.Null(options.SourceContext);
             Assert.False(options.PropertyEvaluation);
-            Assert.Equal(2, options.WaitTime);
         }
 
         [Fact]

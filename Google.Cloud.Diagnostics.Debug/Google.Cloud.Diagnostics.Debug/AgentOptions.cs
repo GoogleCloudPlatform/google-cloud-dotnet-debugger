@@ -79,10 +79,6 @@ namespace Google.Cloud.Diagnostics.Debug
             "https://cloud.google.com/debugger/docs/source-context")]
         public string SourceContextFile { get; set; }
 
-        [Option("wait-time", DefaultValue = 2, 
-            HelpText = "The amount of time to wait before checking for new breakpoints in seconds.")]
-        public int WaitTime { get; set; }
-
         [HelpOption]
         public string Usage() => HelpText.AutoBuild(
             this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));
@@ -102,7 +98,6 @@ namespace Google.Cloud.Diagnostics.Debug
                 options.Version = GaxPreconditions.CheckNotNullOrEmpty(options.Version ?? GetVersion(), nameof(options.Version));
                 options.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(options.ProjectId ?? GetProject(), nameof(options.ProjectId));
                 options.Debugger = GaxPreconditions.CheckNotNullOrEmpty(options.Debugger ?? GetDebugger(), nameof(options.Debugger));
-                GaxPreconditions.CheckArgumentRange(options.WaitTime, nameof(options.WaitTime), 0, int.MaxValue);
 
                 if (!File.Exists(options.Debugger))
                 {

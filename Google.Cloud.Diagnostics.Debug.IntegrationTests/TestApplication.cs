@@ -83,7 +83,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 ProjectId = ProjectId,
                 Debugger = Utils.GetDebugger(),
                 ApplicationStartCommand = GetStartCommand(),
-                WaitTime = 0,
             };
             Agent agent = new Agent(options);
             new Thread(() =>

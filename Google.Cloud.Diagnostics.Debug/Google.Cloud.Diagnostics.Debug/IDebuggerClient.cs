@@ -28,7 +28,7 @@ namespace Google.Cloud.Diagnostics.Debug
         void Register();
 
         /// <summary>
-        /// Get a list of active breakpoints.
+        /// Get a list of active breakpoints. Blocks until the active breakpoints have changed.
         /// </summary>
         /// <exception cref="DebuggeeDisabledException">If the debuggee should be disabled.</exception>
         IEnumerable<StackdriverBreakpoint> ListBreakpoints();
