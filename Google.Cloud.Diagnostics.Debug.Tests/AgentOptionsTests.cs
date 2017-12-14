@@ -141,13 +141,11 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         public void GetSourceContextFile_Param() => 
             Assert.Equal(_sourceContext, AgentOptions.GetSourceContextFile(_sourceContext));
         
-
         [Fact]
         public void GetSourceContextFile_Env() => 
             TestEnvVariable(() => AgentOptions.GetSourceContextFile(null), 
                 AgentOptions.SourceContextEnvironmentVariable, _sourceContext);
         
-
         [Fact]
         public void GetSourceContextFile_App()
         {

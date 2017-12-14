@@ -186,13 +186,9 @@ namespace Google.Cloud.Diagnostics.Debug
         /// If not found it will look at the <see cref="SourceContextEnvironmentVariable"/>.
         /// Lastly it will try and look in this agents application directory.
         /// </summary>
-        /// <returns>The location of the source context file or null if non can be found.</returns>
+        /// <returns>The location of the source context file or null if none can be found.</returns>
         internal static string GetSourceContextFile(string file)
         {
-            // look at passed in var
-            // look at env variable
-            // look in root of this project
-
             if (File.Exists(file))
             {
                 return file;
@@ -209,7 +205,6 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 return file;
             }
-
             return null;
         }
     }
