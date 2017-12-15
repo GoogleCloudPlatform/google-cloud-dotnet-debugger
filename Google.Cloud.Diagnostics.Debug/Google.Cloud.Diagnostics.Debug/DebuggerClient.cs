@@ -49,7 +49,8 @@ namespace Google.Cloud.Diagnostics.Debug
         {
             lock (_mutex)
             {
-                var debuggee = DebuggeeUtils.CreateDebuggee(_options.ProjectId, _options.Module, _options.Version);
+                var debuggee = DebuggeeUtils.CreateDebuggee(
+                    _options.ProjectId, _options.Module, _options.Version, _options.SourceContext);
                 _debuggee = _controlClient.RegisterDebuggee(debuggee).Debuggee;
             
                 if (_debuggee.IsDisabled)

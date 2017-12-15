@@ -34,7 +34,9 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="projectId">The Google Cloud Console project.</param>
         /// <param name="module">The name of the application.</param>
         /// <param name="version">The version of the application.</param>
-        public static Debuggee CreateDebuggee(string projectId, string module, string version)
+        /// <param name="sourceContext">The source context for the users application.</param>
+        public static Debuggee CreateDebuggee(
+            string projectId, string module, string version, SourceContext sourceContext)
         {
             var debuggee = new Debuggee
             {
@@ -42,7 +44,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 Description = GetDescription(module, version),
                 Project = projectId,
                 Labels = { { GetLabels(projectId, module, version) } },
-                SourceContexts = { { SourceContext.AppSourceContext ?? new SourceContext() } },
+                SourceContexts = { { sourceContext ?? new SourceContext() } },
             };
             
             debuggee.Uniquifier = GetUniquifier(debuggee);

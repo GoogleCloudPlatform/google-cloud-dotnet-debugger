@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using Google.Api.Gax;
+using Google.Cloud.DevTools.Source.V1;
 using Xunit;
 
 namespace Google.Cloud.Diagnostics.Debug.Tests
@@ -26,7 +27,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         [Fact]
         public void CreateDebuggee()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version);
+            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version, null);
             Assert.Equal(DebuggeeUtils.GetAgentVersion(Common.Platform), debuggee.AgentVersion);
             Assert.Equal(DebuggeeUtils.GetDescription(_module, _version), debuggee.Description);
             Assert.Equal(_projectId, debuggee.Project);
@@ -39,9 +40,25 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void CreateDebuggee_SourceContext()
+        {
+            var sourceContext = new SourceContext
+            {
+                Git = new GitSourceContext
+                {
+                    Url = "some-url.com",
+                    RevisionId = "rev-id",
+                }
+            };
+            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version, sourceContext);
+            Assert.Single(debuggee.SourceContexts);
+            Assert.Equal(sourceContext, debuggee.SourceContexts[0]);
+        }
+
+        [Fact]
         public void GetUniquifier()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version);
+            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version, null);
             var uniquifier = DebuggeeUtils.GetUniquifier(debuggee);
             Assert.False(string.IsNullOrWhiteSpace(uniquifier));
             Assert.Equal(DebuggeeUtils.GetUniquifier(debuggee), uniquifier);
@@ -50,10 +67,10 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         [Fact]
         public void GetUniquifierNotEqual()
         {
-            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version);
+            var debuggee = DebuggeeUtils.CreateDebuggee(_projectId, _module, _version, null);
             var uniquifier = DebuggeeUtils.GetUniquifier(debuggee);
 
-            var debuggee2 = DebuggeeUtils.CreateDebuggee(_projectId, _module, "1.0.5");
+            var debuggee2 = DebuggeeUtils.CreateDebuggee(_projectId, _module, "1.0.5", null);
             var uniquifier2 = DebuggeeUtils.GetUniquifier(debuggee2);
 
             Assert.NotEqual(uniquifier2, uniquifier);
