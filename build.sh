@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Builds all source in the repo.
 # TODO(talarico): Allow configuration of platform and config
 

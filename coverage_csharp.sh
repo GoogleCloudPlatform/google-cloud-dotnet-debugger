@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script generates coverage report for the C# code.
 # This script assumes that build-deps.sh has already been run.
 # A summary page will be printed and a webpage opened for finer grained details about coverage.

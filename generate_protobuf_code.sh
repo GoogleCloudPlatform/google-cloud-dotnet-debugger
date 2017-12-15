@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #This script runs updates the generated protobuf code.
 # This script assumes that build-deps.sh has already been run.
 
