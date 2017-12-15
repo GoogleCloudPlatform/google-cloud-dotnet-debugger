@@ -189,9 +189,16 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>The location of the source context file or null if none can be found.</returns>
         internal static string GetSourceContextFile(string file)
         {
-            if (File.Exists(file))
+            if (!string.IsNullOrWhiteSpace(file))
             {
-                return file;
+                if (File.Exists(file))
+                {
+                    return file;
+                }
+                else
+                {
+                    throw new FileNotFoundException($"Source Context file not found: '{file}'");
+                }
             }
 
             file = Environment.GetEnvironmentVariable(SourceContextEnvironmentVariable);
