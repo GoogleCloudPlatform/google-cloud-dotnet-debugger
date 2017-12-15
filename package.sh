@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # The script builds and packages the debugger and agent into a minium set
 # to be used alone.
 #

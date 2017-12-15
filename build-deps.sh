@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # The script builds the submodule dependencies of this repository.
 # TODO(talarico): Allow configuration of platform and config
 

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script runs all integration tests.
 # This script assumes that build-deps.sh has already been run.
 #
