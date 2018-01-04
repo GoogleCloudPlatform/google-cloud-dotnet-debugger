@@ -6,6 +6,8 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
+dotnet build $ROOT_DIR
+
 if [[ "$OS" == "Windows_NT" ]]
 then
   if ! $(type devenv &> /dev/null)
@@ -15,10 +17,9 @@ then
     echo $error_message
     exit 1
   fi
-  devenv $ROOT_DIR/GoogleCloudDebugger.sln //Build
+  devenv $ROOT_DIR/GoogleCloudDebugger.sln //Build "Debug|x64"
 else
   make -C $ROOT_DIR/google_cloud_debugger_lib
   make -C $ROOT_DIR/google_cloud_debugger
   make -C $ROOT_DIR/google_cloud_debugger_test
-  dotnet build $ROOT_DIR
 fi
