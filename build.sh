@@ -17,7 +17,7 @@ then
     echo $error_message
     exit 1
   fi
-  devenv $ROOT_DIR/GoogleCloudDebugger.sln //Build "Debug|x64"
+  devenv.com $ROOT_DIR/GoogleCloudDebugger.sln //Build "Debug|x64"
 else
   make -C $ROOT_DIR/google_cloud_debugger_lib
   make -C $ROOT_DIR/google_cloud_debugger
