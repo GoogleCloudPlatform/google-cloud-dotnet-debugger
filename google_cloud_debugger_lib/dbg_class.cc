@@ -249,6 +249,13 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
     return hr;
   }
 
+  // This can happen if the current type is already
+  // System.Object.
+  if (!base_type) {
+    *base_class_name = "";
+    return S_OK;
+  }
+
   CComPtr<ICorDebugClass> base_class;
   hr = base_type->GetClass(&base_class);
   if (FAILED(hr)) {

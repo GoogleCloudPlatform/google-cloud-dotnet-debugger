@@ -53,7 +53,7 @@ class DbgBreakpoint {
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
   bool TrySetBreakpoint(
-      const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file);
+      google_cloud_debugger_portable_pdb::IPortablePdbFile *pdb_file);
 
   // Returns the IL Offset that corresponds to this breakpoint location.
   uint32_t GetILOffset() { return il_offset_; }

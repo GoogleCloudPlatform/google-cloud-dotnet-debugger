@@ -97,7 +97,7 @@ class BreakpointCollection : public IBreakpointCollection {
   // the TryGetBreakpoint method is called on the breakpoint.
   HRESULT ActivateBreakpointHelper(
       DbgBreakpoint *breakpoint,
-      const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb);
+      google_cloud_debugger_portable_pdb::IPortablePdbFile *portable_pdb);
 
   // Helper function to activate or deactivate an existing breakpoint.
   HRESULT ActivateOrDeactivateExistingBreakpoint(

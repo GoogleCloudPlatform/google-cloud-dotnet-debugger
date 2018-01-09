@@ -37,6 +37,9 @@ static const std::string kDoubleClassName = "System.Double";
 static const std::string kIntPtrClassName = "System.IntPtr";
 static const std::string kUIntPtrClassName = "System.UIntPtr";
 
+// System.Object class name.
+static const std::string kObjectClassName = "System.Object";
+
 // Enum base class.
 static const std::string kEnumClassName = "System.Enum";
 

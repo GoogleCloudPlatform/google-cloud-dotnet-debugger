@@ -182,17 +182,21 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
     }
     new_breakpoint->Initialize(breakpoint);
 
-    for (auto &&pdb_file : debugger_callback_->GetPdbFiles()) {
+    for (auto &pdb_file : debugger_callback_->GetPdbFiles()) {
+      if (!pdb_file) {
+        continue;
+      }
+
       if (!pdb_file->ParsePdbFile()) {
         continue;
       }
 
-      if (!new_breakpoint->TrySetBreakpoint(*pdb_file)) {
+      if (!new_breakpoint->TrySetBreakpoint(pdb_file.get())) {
         continue;
       }
 
       std::lock_guard<std::mutex> lock(mutex_);
-      hr = ActivateBreakpointHelper(new_breakpoint.get(), *pdb_file);
+      hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file.get());
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
@@ -240,9 +244,14 @@ HRESULT BreakpointCollection::CancelSyncBreakpoints() {
 
 HRESULT BreakpointCollection::ActivateBreakpointHelper(
     DbgBreakpoint *breakpoint,
-    const google_cloud_debugger_portable_pdb::IPortablePdbFile &portable_pdb) {
+    google_cloud_debugger_portable_pdb::IPortablePdbFile *portable_pdb) {
   if (!breakpoint) {
     cerr << "Null breakpoint argument for ActivateBreakpoint.";
+    return E_INVALIDARG;
+  }
+
+  if (!portable_pdb) {
+    cerr << "Null Portable PDB File.";
     return E_INVALIDARG;
   }
 
@@ -254,14 +263,14 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
   CComPtr<ICorDebugModule> debug_module;
   CComPtr<IUnknown> temp_import;
 
-  HRESULT hr = portable_pdb.GetDebugModule(&debug_module);
+  HRESULT hr = portable_pdb->GetDebugModule(&debug_module);
   if (FAILED(hr)) {
     cout << "Failed to get ICorDebugModule from portable PDB.";
     return hr;
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = portable_pdb.GetMetaDataImport(&metadata_import);
+  hr = portable_pdb->GetMetaDataImport(&metadata_import);
   if (FAILED(hr)) {
     cout << "Failed to get IMetaDataImport from portable PDB.";
     return hr;
