@@ -473,7 +473,7 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNonNull) {
 
 // Tests CreateDbgClassObject function when class' object is not null.
 // The object being tested also has no base class (so GetBase
-// will returns S_OK but don't set the pointer).
+// will returns S_OK but won't set the pointer).
 TEST_F(DbgClassTest, TestCreateDbgClassObjectNoBaseClass) {
   SetUpDbgClass();
   SetUpMetaDataImport();
