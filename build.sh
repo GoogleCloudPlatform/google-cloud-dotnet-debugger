@@ -10,14 +10,14 @@ dotnet build $ROOT_DIR
 
 if [[ "$OS" == "Windows_NT" ]]
 then
-  if ! $(type devenv &> /dev/null)
+  if ! $(type msbuild &> /dev/null)
   then
-    error_message="'devenv' is not found. Please install 'devenv' or try "
+    error_message="'msbuild' is not found. Please install 'msbuild' or try "
     error_message+="running this script from a Developer Command Prompt."
     echo $error_message
     exit 1
   fi
-  devenv.com $ROOT_DIR/GoogleCloudDebugger.sln //Build "Debug|x64"
+  msbuild $ROOT_DIR/GoogleCloudDebugger.sln //p:Configuration=Debug //p:Platform=x64
 else
   make -C $ROOT_DIR/google_cloud_debugger_lib
   make -C $ROOT_DIR/google_cloud_debugger
