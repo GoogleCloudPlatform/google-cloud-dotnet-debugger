@@ -195,7 +195,7 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
   pdb_file_fixture_.first_doc_.methods_.push_back(method);
   pdb_file_fixture_.first_doc_.methods_.push_back(method2);
 
-  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
+  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(&file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset);
   EXPECT_EQ(breakpoint_.GetMethodDef(), method_def);
   EXPECT_TRUE(breakpoint_.IsSet());
@@ -233,7 +233,7 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
   pdb_file_fixture_.first_doc_.methods_.push_back(method2);
   pdb_file_fixture_.first_doc_.methods_.push_back(method3);
 
-  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(file_mock_));
+  EXPECT_TRUE(breakpoint_.TrySetBreakpoint(&file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset_3);
   EXPECT_EQ(breakpoint_.GetMethodDef(), method3_def);
   EXPECT_TRUE(breakpoint_.IsSet());
@@ -267,7 +267,7 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
   pdb_file_fixture_.first_doc_.methods_.push_back(method);
   pdb_file_fixture_.first_doc_.methods_.push_back(method2);
 
-  EXPECT_FALSE(breakpoint_.TrySetBreakpoint(file_mock_));
+  EXPECT_FALSE(breakpoint_.TrySetBreakpoint(&file_mock_));
 }
 
 // Tests the PopulateBreakpoint function of DbgBreakpoint.

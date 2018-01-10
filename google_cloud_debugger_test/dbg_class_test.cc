@@ -471,6 +471,34 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNonNull) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
+// Tests CreateDbgClassObject function when class' object is not null.
+// The object being tested also has no base class (so GetBase
+// will returns S_OK but won't set the pointer).
+TEST_F(DbgClassTest, TestCreateDbgClassObjectNoBaseClass) {
+  SetUpDbgClass();
+  SetUpMetaDataImport();
+
+  // ICorDebugType returns base type if GetBase is called.
+  // Makes it returns null pointer.
+  ON_CALL(debug_type_, GetBase(_))
+      .WillByDefault(
+          DoAll(SetArgPointee<0>(nullptr), Return(S_OK)));
+
+  unique_ptr<DbgObject> dbgclass;
+  std::ostringstream err_stream;
+  HRESULT hr = DbgClass::CreateDbgClassObject(
+      &debug_type_,
+      -1,  // Sets depth to -1 so no fields or properties are created.
+      &object_value_,
+      FALSE,  // Sets this to non-null object.
+      &dbgclass, &err_stream);
+
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+  dbgclass->Initialize(&object_value_, FALSE);
+  hr = dbgclass->GetInitializeHr();
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+}
+
 // Tests CreateDbgClassObject function when creation depth is not -1.
 // Fields and properties also should not be created.
 TEST_F(DbgClassTest, TestCreateDbgClassWithFieldAndProperty) {

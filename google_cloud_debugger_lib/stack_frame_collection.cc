@@ -49,6 +49,10 @@ HRESULT StackFrameCollection::Initialize(
   vector<uint32_t> parsed_pdb_indices;
   uint32_t pdb_index = 0;
   for (auto &&pdb_file : pdb_files) {
+    if (!pdb_file) {
+      continue;
+    }
+
     if (pdb_file->ParsePdbFile()) {
       parsed_pdb_indices.push_back(pdb_index);
     }
@@ -180,7 +184,7 @@ HRESULT StackFrameCollection::Initialize(
       // Tries to populate local variables and method arguments of this frame.
       hr = PopulateLocalVarsAndMethodArgs(target_function_token, &stack_frame,
                                           il_frame, metadata_import,
-                                          *pdb_files[index]);
+                                          pdb_files[index].get());
       if (FAILED(hr)) {
         cerr << "Failed to populate stack frame information.";
         return hr;
@@ -268,8 +272,8 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
     mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
     ICorDebugILFrame *il_frame, IMetaDataImport *metadata_import,
-    const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file) {
-  if (!dbg_stack_frame || !il_frame) {
+    google_cloud_debugger_portable_pdb::IPortablePdbFile *pdb_file) {
+  if (!dbg_stack_frame || !il_frame || !pdb_file) {
     return E_INVALIDARG;
   }
 
@@ -292,7 +296,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
 
   // Loops through all methods in all the documents of the pdb file to find
   // a MethodInfo object that corresponds with the method at this breakpoint.
-  for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
+  for (auto &&document_index : pdb_file->GetDocumentIndexTable()) {
     for (auto &&method : document_index->GetMethods()) {
       PCCOR_SIGNATURE current_method_signature = 0;
       ULONG current_method_virtual_addr = 0;

@@ -66,14 +66,18 @@ HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
 }
 
 bool DbgBreakpoint::TrySetBreakpoint(
-    const google_cloud_debugger_portable_pdb::IPortablePdbFile &pdb_file) {
+    google_cloud_debugger_portable_pdb::IPortablePdbFile *pdb_file) {
+  if (!pdb_file) {
+    return false;
+  }
+
   uint32_t current_doc_index_index = -1;
   uint32_t best_match_index = current_doc_index_index;
   size_t best_file_name_location_matched = UINT32_MAX;
 
   // Loop through all the documents and try to find the one that
   // best matches the breakpoint's file name.
-  for (auto &&document_index : pdb_file.GetDocumentIndexTable()) {
+  for (auto &&document_index : pdb_file->GetDocumentIndexTable()) {
     ++current_doc_index_index;
     string document_name = document_index->GetFilePath();
     // Normalize path separators. The PDB may use either Unix or Windows-style
