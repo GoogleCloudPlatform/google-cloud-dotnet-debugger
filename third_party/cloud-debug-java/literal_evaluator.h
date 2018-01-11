@@ -19,45 +19,42 @@
 
 #include "common.h"
 #include "expression_evaluator.h"
+#include "../../google_cloud_debugger_lib/dbg_object.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 // Represents a constant of any type (other than a string).
 class LiteralEvaluator : public ExpressionEvaluator {
  public:
-  explicit LiteralEvaluator(JVariant* n)
-      : result_type_({ n->type() }) {
-    n_.swap(n);
+  explicit LiteralEvaluator(std::shared_ptr<DbgObject> literal_obj)
+      : result_type_({ literal_obj->GetCorElementType() }) {
+    n_ = literal_obj;
   }
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override {
-    return true;
+  virtual HRESULT Compile(
+      DbgStackFrame* stack_frame) override {
+    return S_OK;
   }
 
-  const JSignature& GetStaticType() const override { return result_type_; }
+  const TypeSignature& GetStaticType() const override { return result_type_; }
 
-  Nullable<jvalue> GetStaticValue() const override { return n_.get_jvalue(); }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override {
-    return JVariant(n_);
+  HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator) const override {
+    *dbg_object = n_;
+    return S_OK;
   }
 
  private:
   // Literal value associated with this leaf.
-  JVariant n_;
+  std::shared_ptr<google_cloud_debugger::DbgObject> n_;
 
   // Statically computed resulting type of the expression.
-  const JSignature result_type_;
+  const TypeSignature result_type_;
 
   DISALLOW_COPY_AND_ASSIGN(LiteralEvaluator);
 };
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_LITERAL_EVALUATOR_H_
 

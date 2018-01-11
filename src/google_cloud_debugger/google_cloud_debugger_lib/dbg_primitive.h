@@ -163,7 +163,6 @@ class DbgPrimitive : public DbgObject {
   }
 
   T value_;
-  CorElementType cor_element_type_;
 };
 
 }  //  namespace google_cloud_debugger
