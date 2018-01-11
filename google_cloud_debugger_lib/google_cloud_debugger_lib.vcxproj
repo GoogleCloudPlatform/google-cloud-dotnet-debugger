@@ -175,6 +175,24 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\third_party\cloud-debug-java\array_expression_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\binary_expression_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\common.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\conditional_operator_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\expression_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\expression_util.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\field_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\generic_type_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\identifier_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\java_expression.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\literal_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\method_call_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\numeric_cast_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\object_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\string_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\type_cast_operator_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\type_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\unary_expression_evaluator.h" />
     <ClInclude Include="breakpoint.pb.h" />
     <ClInclude Include="breakpoint_client.h" />
     <ClInclude Include="breakpoint_collection.h" />
@@ -215,6 +233,18 @@
     <ClInclude Include="variable_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\third_party\cloud-debug-java\array_expression_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\binary_expression_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\conditional_operator_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\expression_util.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\field_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\generic_type_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\identifier_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\java_expression.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\method_call_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\string_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\type_cast_operator_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\unary_expression_evaluator.cc" />
     <ClCompile Include="breakpoint.pb.cc" />
     <ClCompile Include="breakpoint_client.cc" />
     <ClCompile Include="breakpoint_collection.cc" />
