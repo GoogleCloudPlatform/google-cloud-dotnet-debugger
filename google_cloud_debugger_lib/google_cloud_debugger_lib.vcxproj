@@ -192,6 +192,7 @@
     <ClInclude Include="..\third_party\cloud-debug-java\string_evaluator.h" />
     <ClInclude Include="..\third_party\cloud-debug-java\type_cast_operator_evaluator.h" />
     <ClInclude Include="..\third_party\cloud-debug-java\type_evaluator.h" />
+    <ClInclude Include="..\third_party\cloud-debug-java\type_util.h" />
     <ClInclude Include="..\third_party\cloud-debug-java\unary_expression_evaluator.h" />
     <ClInclude Include="breakpoint.pb.h" />
     <ClInclude Include="breakpoint_client.h" />
@@ -244,6 +245,7 @@
     <ClCompile Include="..\third_party\cloud-debug-java\method_call_evaluator.cc" />
     <ClCompile Include="..\third_party\cloud-debug-java\string_evaluator.cc" />
     <ClCompile Include="..\third_party\cloud-debug-java\type_cast_operator_evaluator.cc" />
+    <ClCompile Include="..\third_party\cloud-debug-java\type_util.cc" />
     <ClCompile Include="..\third_party\cloud-debug-java\unary_expression_evaluator.cc" />
     <ClCompile Include="breakpoint.pb.cc" />
     <ClCompile Include="breakpoint_client.cc" />
