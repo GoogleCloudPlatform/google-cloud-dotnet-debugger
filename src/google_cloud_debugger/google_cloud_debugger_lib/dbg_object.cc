@@ -128,6 +128,7 @@ HRESULT DbgObject::CreateDbgObjectHelper(
     return E_OUTOFMEMORY;
   }
 
+  temp_object->cor_element_type_ = cor_element_type;
   (*result_object) = std::move(temp_object);
   return S_OK;
 }
