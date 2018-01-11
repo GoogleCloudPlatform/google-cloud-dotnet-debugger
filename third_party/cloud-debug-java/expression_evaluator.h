@@ -18,17 +18,25 @@
 #define DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_EVALUATOR_H_
 
 #include <memory>
-#include "nullable.h"
+#include <string>
+
+#include "cor.h"
 #include "common.h"
-#include "model_util.h"
 #include "type_util.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-class ReadersFactory;
-struct FormatMessageModel;
-struct EvaluationContext;
+struct TypeSignature {
+  CorElementType cor_type;
+
+  // This is useful if cor_type is not integral or float type.
+  std::string type_name;
+};
+  
+class DbgObject;
+class DbgStackFrame;
+class IEvalCoordinator;
+struct Context;
 
 // Interface representing compiled expression or subexpression.
 class ExpressionEvaluator {
@@ -47,30 +55,29 @@ class ExpressionEvaluator {
   // recursively. The initialization phase is separated from the evaluation
   // phase to improve performance of repeatedly evaluated expressions and to
   // minimize amount of time that the debugged thread is paused on breakpoint.
-  virtual bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) = 0;
+  virtual HRESULT Compile(
+      DbgStackFrame *stack_frame) = 0;
 
   // Gets the type of the expression as it is known at compile time. If the
   // code is correct, the runtime type will be the same as compile time type.
-  virtual const JSignature& GetStaticType() const = 0;
+  virtual const TypeSignature& GetStaticType() const = 0;
 
   // If the value of the expression can be statically computed at compile time,
   // this function returns the static value. Otherwise returns "Nullable<>"
   // without a value.
-  virtual Nullable<jvalue> GetStaticValue() const = 0;
+  virtual std::shared_ptr<DbgObject> GetStaticValue() const = 0;
 
   // Evaluates the current value of the expression. Returns error if expression
   // computation fails. Failure can happen due to null references, if underlying
-  // JNI calls fail or due to some code bug runtime types don't match types
-  // predicted at compile time.
-  virtual ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const = 0;
+  // calls fail or due to some code bug runtime types don't match types
+  // predicted at compile time. If successful, dbg_object will point to the result.
+  // eval_coordinator is used for method call evaluation.
+  virtual HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator) const = 0;
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_EVALUATOR_H_
 
