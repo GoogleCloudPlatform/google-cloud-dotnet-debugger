@@ -100,10 +100,11 @@ class DbgObject : public StringStreamWrapper {
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialize_hr_; }
 
-  // Returns the CorElementType of this object
+  // Returns the CorElementType of this object.
   CorElementType GetCorElementType() { return cor_element_type_; }
 
  protected:
+   // The CorElementType of the underlying .NET object.
    CorElementType cor_element_type_;
 
  private:
