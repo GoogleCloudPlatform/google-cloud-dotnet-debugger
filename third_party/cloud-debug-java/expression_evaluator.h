@@ -26,10 +26,13 @@
 
 namespace google_cloud_debugger {
 
+// This struct represents a .NET type. This is used to compare
+// whether 2 objects have the same type.
 struct TypeSignature {
+  // CorElementType of the type signature.
   CorElementType cor_type;
 
-  // This is useful if cor_type is not integral or float type.
+  // This is useful if cor_type is not an integral or float type.
   std::string type_name;
 };
   
@@ -62,15 +65,10 @@ class ExpressionEvaluator {
   // code is correct, the runtime type will be the same as compile time type.
   virtual const TypeSignature& GetStaticType() const = 0;
 
-  // If the value of the expression can be statically computed at compile time,
-  // this function returns the static value. Otherwise returns "Nullable<>"
-  // without a value.
-  virtual std::shared_ptr<DbgObject> GetStaticValue() const = 0;
-
   // Evaluates the current value of the expression. Returns error if expression
-  // computation fails. Failure can happen due to null references, if underlying
-  // calls fail or due to some code bug runtime types don't match types
-  // predicted at compile time. If successful, dbg_object will point to the result.
+  // computation fails. Failure can happen due to null references, underlying
+  // calls fail and mismatched runtime types. If successful, dbg_object will
+  // point to the result.
   // eval_coordinator is used for method call evaluation.
   virtual HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator) const = 0;
