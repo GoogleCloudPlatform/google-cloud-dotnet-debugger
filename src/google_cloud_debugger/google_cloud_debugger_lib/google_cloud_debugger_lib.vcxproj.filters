@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="debugger.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="breakpoint_client.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="named_pipe_client_unix.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="named_pipe_client_windows.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="breakpoint.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_builtin_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stack_frame_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="breakpoint_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="custom_binary_reader.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_array.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_breakpoint.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_class.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_class_field.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_class_property.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_enum.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_object.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_stack_frame.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_string.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debugger_callback.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="document_index.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="eval_coordinator.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="i_cor_debug_helper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="metadata_headers.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="metadata_tables.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="portable_pdb_file.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="string_stream_wrapper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="variable_wrapper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ccomptr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="breakpoint_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="named_pipe_client_unix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="named_pipe_client_windows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_named_pipe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="named_pipe_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="breakpoint.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="class_names.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_builtin_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="breakpoint_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="custom_binary_reader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_breakpoint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_class_field.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_class_property.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_enum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_primitive.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_stack_frame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_string.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_callback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="document_index.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="eval_coordinator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_eval_coordinator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_portable_pdb_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_cor_debug_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="metadata_headers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="metadata_tables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="portable_pdb_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stack_frame_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="string_stream_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_stack_frame_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_breakpoint_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_dbg_class_member.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="variable_wrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0c11e057-149e-4eb3-a1bd-f721b704e6a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{72a3061a-e4d4-4422-915b-d46253bbd35c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protos">
+      <UniqueIdentifier>{e32946a0-d701-4759-90d2-18fd78d30c59}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\proto\breakpoint.proto">
+      <Filter>Protos</Filter>
+    </None>
+    <None Include="makefile" />
+  </ItemGroup>
+</Project>
