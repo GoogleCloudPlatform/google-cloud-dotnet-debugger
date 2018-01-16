@@ -12,8 +12,6 @@ x64
 *.o
 *.obj
 *.a
-google_cloud_debugger
-google_cloud_debugger_test
 package-*
 coverage_report
 *.gcno

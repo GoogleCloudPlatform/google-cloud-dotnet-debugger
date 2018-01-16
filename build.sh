@@ -6,7 +6,10 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
-dotnet build $ROOT_DIR
+AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
+DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
+
+dotnet build $AGENT_DIR
 
 if [[ "$OS" == "Windows_NT" ]]
 then
@@ -17,9 +20,9 @@ then
     echo $error_message
     exit 1
   fi
-  msbuild $ROOT_DIR/GoogleCloudDebugger.sln //p:Configuration=Debug //p:Platform=x64
+  msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=Debug //p:Platform=x64
 else
-  make -C $ROOT_DIR/google_cloud_debugger_lib
-  make -C $ROOT_DIR/google_cloud_debugger
-  make -C $ROOT_DIR/google_cloud_debugger_test
+  make -C $DEBUGGER_DIR/google_cloud_debugger_lib
+  make -C $DEBUGGER_DIR/google_cloud_debugger
+  make -C $DEBUGGER_DIR/google_cloud_debugger_test
 fi

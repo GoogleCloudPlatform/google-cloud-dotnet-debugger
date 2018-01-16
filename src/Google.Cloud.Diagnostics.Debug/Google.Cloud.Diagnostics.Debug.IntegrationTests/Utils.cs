@@ -75,8 +75,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             {
 
                 return IsWindows ?
-                    Combine(GetRootDirectory(), "x64", _mode, "google_cloud_debugger.exe") :
-                    Combine(GetRootDirectory(), "google_cloud_debugger", "google_cloud_debugger");
+                    Combine(GetRootDirectory(), "..", "google_cloud_debugger", "x64", _mode, "google_cloud_debugger.exe") :
+                    Combine(GetRootDirectory(), "..", "google_cloud_debugger", "google_cloud_debugger", "google_cloud_debugger");
             }
         }
 

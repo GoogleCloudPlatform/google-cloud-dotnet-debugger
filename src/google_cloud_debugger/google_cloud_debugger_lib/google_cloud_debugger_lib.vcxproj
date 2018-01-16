@@ -77,8 +77,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)protobuf\$(Platform)\$(Configuration);$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\coreclr\src\inc;$(SolutionDir)..\..\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\coreclr\src\debug\inc;$(SolutionDir)..\..\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\protobuf\src;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\protobuf\$(Platform)\$(Configuration);$(SolutionDir)..\..\coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
     <CustomBuildBeforeTargets>BscMake</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,8 +86,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)coreclr\src\inc;$(SolutionDir)coreclr\src\dlls\dbgshim;$(SolutionDir)coreclr\src\debug\inc;$(SolutionDir)coreclr\src\pal\prebuilt\inc;$(SolutionDir)coreclr\src\debug\ildsymlib;$(SolutionDir)protobuf\src;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)protobuf\$(Platform)\$(Configuration);$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\coreclr\src\inc;$(SolutionDir)..\..\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\coreclr\src\debug\inc;$(SolutionDir)..\..\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\protobuf\src;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\protobuf\$(Platform)\$(Configuration);$(SolutionDir)..\..\coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -124,10 +124,10 @@
       <AdditionalDependencies>libprotobuf.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
-      <Command>$(SolutionDir)build-deps.cmd $(SolutionDir) $(Configuration) $(Platform)</Command>
+      <Command>$(SolutionDir)..\..\build-deps.cmd $(SolutionDir)..\..\ $(Configuration) $(Platform)</Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>Copy /Y "$(SolutionDir)coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration)" "$(TargetDir)"</Command>
+      <Command>Copy /Y "$(SolutionDir)..\..\coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration)" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -170,7 +170,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>$(SolutionDir)build-deps.cmd $(SolutionDir) $(Configuration) $(Platform)</Command>
+      <Command>$(SolutionDir)..\..\build-deps.cmd $(SolutionDir)..\..\ $(Configuration) $(Platform)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
