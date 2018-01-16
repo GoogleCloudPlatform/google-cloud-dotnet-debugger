@@ -59,7 +59,7 @@ class ExpressionEvaluator {
   // phase to improve performance of repeatedly evaluated expressions and to
   // minimize amount of time that the debugged thread is paused on breakpoint.
   virtual HRESULT Compile(
-      DbgStackFrame *stack_frame) = 0;
+      DbgStackFrame *stack_frame, std::ostream *err_stream) = 0;
 
   // Gets the type of the expression as it is known at compile time. If the
   // code is correct, the runtime type will be the same as compile time type.
@@ -71,7 +71,7 @@ class ExpressionEvaluator {
   // point to the result.
   // eval_coordinator is used for method call evaluation.
   virtual HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator) const = 0;
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const = 0;
 };
 
 

@@ -15,7 +15,7 @@
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
-using std::ostringstream;
+using std::ostream;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -32,7 +32,7 @@ DbgObject::DbgObject(ICorDebugType *debug_type, int depth) {
 HRESULT DbgObject::CreateDbgObjectHelper(
     ICorDebugValue *debug_value, ICorDebugType *debug_type,
     CorElementType cor_element_type, BOOL is_null, int depth,
-    std::unique_ptr<DbgObject> *result_object, ostringstream *err_stream) {
+    std::unique_ptr<DbgObject> *result_object, ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!result_object) {
@@ -135,7 +135,7 @@ HRESULT DbgObject::CreateDbgObjectHelper(
 
 HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
                                    unique_ptr<DbgObject> *result_object,
-                                   ostringstream *err_stream) {
+                                   ostream *err_stream) {
   assert(err_stream != nullptr);
 
   CorElementType cor_element_type;
@@ -153,7 +153,7 @@ HRESULT DbgObject::CreateDbgObject(ICorDebugType *debug_type,
 
 HRESULT DbgObject::CreateDbgObject(ICorDebugValue *debug_value, int depth,
                                    unique_ptr<DbgObject> *result_object,
-                                   ostringstream *err_stream) {
+                                   ostream *err_stream) {
   assert(err_stream != nullptr);
 
   HRESULT hr;
