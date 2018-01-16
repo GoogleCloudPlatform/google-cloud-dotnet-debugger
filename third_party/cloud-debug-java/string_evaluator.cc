@@ -19,6 +19,7 @@
 #include "../../google_cloud_debugger_lib/i_eval_coordinator.h"
 #include "../../google_cloud_debugger_lib/error_messages.h"
 #include "../../google_cloud_debugger_lib/dbg_object.h"
+#include "../../google_cloud_debugger_lib/constants.h"
 
 namespace google_cloud_debugger {
 
@@ -68,7 +69,8 @@ HRESULT StringEvaluator::Evaluate(
   }
 
   std::unique_ptr<DbgObject> result_string_obj;
-  hr = DbgObject::CreateDbgObject(debug_string, 2, &result_string_obj, err_stream);
+  hr = DbgObject::CreateDbgObject(debug_string, kDefaultObjectEvalDepth,
+      &result_string_obj, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToCreateDbgObject;
     return hr;
