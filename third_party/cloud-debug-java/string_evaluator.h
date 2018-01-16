@@ -28,7 +28,7 @@ namespace google_cloud_debugger {
 // in "Evaluate".
 class StringEvaluator : public ExpressionEvaluator {
  public:
-  explicit StringEvaluator(std::vector<char> string_content);
+  explicit StringEvaluator(std::string string_content);
 
   // Nothing to do in Compile.
   HRESULT Compile(
