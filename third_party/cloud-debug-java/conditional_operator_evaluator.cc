@@ -17,9 +17,10 @@
 #include "conditional_operator_evaluator.h"
 
 #include "numeric_cast_evaluator.h"
-#include "../../google_cloud_debugger_lib/dbg_object.h"
+#include "../../google_cloud_debugger_lib/dbg_primitive.h"
 #include "../../google_cloud_debugger_lib/class_names.h"
 #include "../../google_cloud_debugger_lib/error_messages.h"
+#include "../../google_cloud_debugger_lib/compiler_helpers.h"
 
 namespace google_cloud_debugger {
 
@@ -39,7 +40,7 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
 
 HRESULT ConditionalOperatorEvaluator::Compile(
     DbgStackFrame* stack_frame, std::ostream *err_stream) {
-  HRESULT hr = condition_->Compile(stack_frame);
+  HRESULT hr = condition_->Compile(stack_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -91,82 +92,16 @@ bool ConditionalOperatorEvaluator::CompileBoolean() {
   return false;
 }
 
-
 bool ConditionalOperatorEvaluator::CompileNumeric() {
-  // According to C# spec, if an implicit conversion exists from X to Y
-  // but not from Y to X then Y is the type of the expression.
-  // If an implicit conversion exists from Y to X but not from X to Y
-  // then X is the type of the exppression.
-  const CorElementType &true_type = if_true_->GetStaticType().cor_type;
-  const CorElementType &false_type = if_false_->GetStaticType().cor_type;
-  switch (true_type) {
-    case CorElementType::ELEMENT_TYPE_I1:
-    {
-      switch (false_type) {
-        case CorElementType::ELEMENT_TYPE_I1:
-        case CorElementType::ELEMENT_TYPE_I2:
-        case CorElementType::ELEMENT_TYPE_I4:
-        case CorElementType::ELEMENT_TYPE_I8:
-        case CorElementType::ELEMENT_TYPE_R4:
-        case CorElementType::ELEMENT_TYPE_R8:
-          return true;
-        default:
-          return false;
-      }
-    }
-    MORE CASES HERE.
-    default:
-  }
-
-  if (IsEitherType(CorElementType::ELEMENT_TYPE_R8)) {
-    if (!ApplyNumericPromotions<jdouble>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Double };
-    return true;
-
-  } else if (IsEitherType(JType::Float)) {
-    if (!ApplyNumericPromotions<jfloat>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Float };
-    return true;
-
-  } else if (IsEitherType(JType::Long)) {
-    if (!ApplyNumericPromotions<jlong>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Long };
-    return true;
-
-  } else {
-    if (!ApplyNumericPromotions<jint>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Int };
+  const TypeSignature &true_type = if_true_->GetStaticType();
+  const TypeSignature &false_type = if_false_->GetStaticType();
+  if (IsImplicitNumericConversionable(true_type, false_type)) {
+    result_type_ = false_type;
     return true;
   }
-}
 
-
-bool ConditionalOperatorEvaluator::CompileObjects() {
-  // TODO(vlif): this is a super-simplistic implementation that doesn't cover
-  // a lot of cases. For more details please refer to Java Language
-  // Specification section 15.25.3 and tables in section 15.25.
-
-  const JSignature& true_signature = if_true_->GetStaticType();
-  const JSignature& false_signature = if_false_->GetStaticType();
-  if ((true_signature.type == JType::Object) &&
-      (false_signature.type == JType::Object)) {
-    if (true_signature.object_signature == false_signature.object_signature) {
-      result_type_ = true_signature;
-    } else {
-      result_type_ = { JType::Object };  // Note the lost signature.
-    }
+  if (IsImplicitNumericConversionable(false_type, true_type)) {
+    result_type_ = true_type;
     return true;
   }
 
@@ -174,37 +109,45 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
 }
 
 
-bool ConditionalOperatorEvaluator::IsEitherType(const CorElementType &type) const {
-  return (if_true_->GetStaticType().cor_type == type) ||
-         (if_false_->GetStaticType().cor_type == type);
-}
-
-
-template <typename TTargetType>
-bool ConditionalOperatorEvaluator::ApplyNumericPromotions(
-    FormatMessageModel* error_message) {
-  return ApplyNumericCast<TTargetType>(&if_true_, error_message) &&
-         ApplyNumericCast<TTargetType>(&if_false_, error_message);
-}
-
-
-ErrorOr<JVariant> ConditionalOperatorEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> evaluated_condition =
-      condition_->Evaluate(evaluation_context);
-  if (evaluated_condition.is_error()) {
-    return evaluated_condition;
+bool ConditionalOperatorEvaluator::CompileObjects() {
+  const TypeSignature &true_type = if_true_->GetStaticType();
+  const TypeSignature &false_type = if_false_->GetStaticType();
+  if (true_type.cor_type == false_type.cor_type &&
+      (true_type.cor_type == CorElementType::ELEMENT_TYPE_OBJECT
+       || true_type.cor_type == CorElementType::ELEMENT_TYPE_CLASS
+       || true_type.cor_type == CorElementType::ELEMENT_TYPE_VALUETYPE)) {
+    if (true_type.type_name.compare(false_type.type_name) == 0) {
+      result_type_ = true_type;
+    } else {
+      result_type_ = { CorElementType::ELEMENT_TYPE_OBJECT };  // Note the lost signature.
+    }
+    return true;
   }
 
-  jboolean condition_value = false;
-  if (!evaluated_condition.value().get<jboolean>(&condition_value)) {
-    return INTERNAL_ERROR_MESSAGE;
+  return false;
+}
+
+HRESULT ConditionalOperatorEvaluator::Evaluate(
+    std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+    IEvalCoordinator *eval_coordinator,
+    std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> condition_obj;
+  HRESULT hr =
+      condition_->Evaluate(&condition_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  const ExpressionEvaluator& target_expression =
-      (condition_value ? *if_true_ : *if_false_);
+  DbgPrimitive<bool> *condition_value = dynamic_cast<DbgPrimitive<bool> *>(condition_obj.get());
+  if (!condition_value) {
+    return E_FAIL;
+  }
 
-  return target_expression.Evaluate(evaluation_context);
+  if (condition_value->GetValue()) {
+    return if_true_->Evaluate(dbg_object, eval_coordinator, err_stream);
+  }
+
+  return if_false_->Evaluate(dbg_object, eval_coordinator, err_stream);
 }
 
 }  // namespace google_cloud_debugger
