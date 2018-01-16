@@ -32,14 +32,14 @@ class LiteralEvaluator : public ExpressionEvaluator {
   }
 
   virtual HRESULT Compile(
-      DbgStackFrame* stack_frame) override {
+      DbgStackFrame* stack_frame, std::ostream *err_stream) override {
     return S_OK;
   }
 
   const TypeSignature& GetStaticType() const override { return result_type_; }
 
   HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator) const override {
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override {
     *dbg_object = n_;
     return S_OK;
   }

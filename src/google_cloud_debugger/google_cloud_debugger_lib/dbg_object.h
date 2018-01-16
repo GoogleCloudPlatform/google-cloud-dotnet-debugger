@@ -76,13 +76,13 @@ class DbgObject : public StringStreamWrapper {
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
                                  std::unique_ptr<DbgObject> *result_object,
-                                 std::ostringstream *err_stream);
+                                 std::ostream *err_stream);
 
   // Create an empty DbgObject. This object is mainly used
   // to store complex type and printing them out later.
   static HRESULT CreateDbgObject(ICorDebugType *debug_type,
                                  std::unique_ptr<DbgObject> *result_object,
-                                 std::ostringstream *err_stream);
+                                 std::ostream *err_stream);
 
   // Returns the ICorDebugType of the object.
   ICorDebugType *GetDebugType() const { return debug_type_; }
@@ -113,7 +113,7 @@ class DbgObject : public StringStreamWrapper {
       ICorDebugValue *debug_value, ICorDebugType *debug_type,
       CorElementType cor_element_type, BOOL is_null, int depth,
       std::unique_ptr<DbgObject> *result_object,
-      std::ostringstream *err_stream);
+      std::ostream *err_stream);
 
   // The underlying type of the object.
   CComPtr<ICorDebugType> debug_type_;
