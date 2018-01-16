@@ -70,7 +70,8 @@ class ExpressionEvaluator {
   // calls fail and mismatched runtime types. If successful, dbg_object will
   // point to the result.
   // eval_coordinator is used for method call evaluation.
-  virtual HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+  virtual HRESULT Evaluate(
+      std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const = 0;
 };
 
