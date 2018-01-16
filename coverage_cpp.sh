@@ -24,9 +24,10 @@ done
 
 COVERAGE_REPORT_DIR="$ROOT_DIR/coverage_report"
 INFO_FILE="$COVERAGE_REPORT_DIR/test.info" 
-DEBUGGER_DIR="$ROOT_DIR/google_cloud_debugger"
-DEBUGGER_LIB_DIR="$ROOT_DIR/google_cloud_debugger_lib"
-DEBUGGER_TEST_DIR="$ROOT_DIR/google_cloud_debugger_test"
+DEBUGGER_ROOT_DIR="$ROOT_DIR/src/google_cloud_debugger"
+DEBUGGER_DIR="$DEBUGGER_ROOT_DIR/google_cloud_debugger"
+DEBUGGER_LIB_DIR="$DEBUGGER_ROOT_DIR/google_cloud_debugger_lib"
+DEBUGGER_TEST_DIR="$DEBUGGER_ROOT_DIR/google_cloud_debugger_test"
 DEBUGGER_TEST="$DEBUGGER_TEST_DIR/google_cloud_debugger_test"
 
 rm -r $COVERAGE_REPORT_DIR
