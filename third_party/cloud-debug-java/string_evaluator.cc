@@ -22,8 +22,8 @@
 
 namespace google_cloud_debugger {
 
-StringEvaluator::StringEvaluator(std::vector<char> string_content)
-    : string_content_(string_content.begin(), string_content.end()) {
+StringEvaluator::StringEvaluator(std::string string_content)
+    : string_content_(std::move(string_content)) {
 }
 
 const TypeSignature& StringEvaluator::GetStaticType() const {
@@ -60,7 +60,8 @@ HRESULT StringEvaluator::Evaluate(
   BOOL exception_thrown;
   CComPtr<ICorDebugValue> debug_string;
   hr = eval_coordinator->WaitForEval(&exception_thrown, debug_eval, &debug_string);
-  // TODO(quoct): Gets the error from debug_string.
+  // TODO(quoct): If exception_thrown is set to true, then an error occurs when
+  // we try to create the string. We should get this error.
   if (FAILED(hr)) {
     *err_stream << kFailedToCreateString;
     return hr;
