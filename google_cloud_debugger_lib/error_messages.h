@@ -18,7 +18,6 @@
 #include <string>
 
 // This file contains error messages used by the Debugger.
-
 namespace google_cloud_debugger {
 
 static const std::string kFailedEvalCreation =
