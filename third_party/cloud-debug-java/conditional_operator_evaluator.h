@@ -32,13 +32,22 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
       std::unique_ptr<ExpressionEvaluator> if_true,
       std::unique_ptr<ExpressionEvaluator> if_false);
 
+  // Determines the type of the expression using
+  // the helper functions CompileBoolean, CompileNumeric
+  // and CompileObjects.
   HRESULT Compile(
-      DbgStackFrame* stack_frame, std::ostream *err_stream) override;
+      DbgStackFrame *stack_frame, std::ostream *err_stream) override;
 
+  // Returns static type of this expression, determined by
+  // the true and false expression.
   virtual const TypeSignature& GetStaticType() const override {
     return result_type_;
   }
 
+  // To evaluate the expression, the condition will be evaluated first.
+  // If the condition is not a boolean object, return an error.
+  // If condition is true, call Evaluate on the true expression.
+  // If condition is false, call Evaluate on the false expression.
   HRESULT Evaluate(
       std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator,
@@ -50,23 +59,18 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   bool CompileBoolean();
 
   // Compiles the conditional operator if both "if_true_" and "if_false_"
-  // are numeric. Potentially applies binary numeric promotion. Returns false
-  // if arguments are of other types.
+  // are numeric. Returns true only if both of them are of the same numeric
+  // type or 1 can be implicitly converted to the other.
   bool CompileNumeric();
 
   // Compiles the conditional operator if both "if_true_" and "if_false_"
-  // are references to objects. Potentially applies boxing and computes common
-  // types ("lub" in Java Language Specification).
+  // are references to objects. If the expressions
+  // have the same type name, then gives result_type_ that type name.
+  // Otherwise, sets result_type_ to object type.
+  // TODO(quoct): Support the case where 1 type name can be
+  // implicitly converted to the other. For example, if
+  // if_true_ is a child class of if_false_.
   bool CompileObjects();
-
-  // Checks whether "if_true_" or "if_false_" are of the specified type.
-  bool IsEitherType(const CorElementType &type) const;
-
-  // Applies binary numeric promotion of type "TTargetType" to both "if_true_"
-  // and "if_false_". Returns false if either numeric promotion is not viable
-  // (one of the arguments is boolean or object).
-  template <typename TTargetType>
-  bool ApplyNumericPromotions(FormatMessageModel* error_message);
 
  private:
   // Compiled expression corresponding to the condition.
