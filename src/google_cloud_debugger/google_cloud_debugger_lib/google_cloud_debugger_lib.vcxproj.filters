@@ -121,6 +121,9 @@
     <ClCompile Include="..\third_party\cloud-debug-java\type_util.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="compiler_helpers.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -292,6 +295,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\third_party\cloud-debug-java\type_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="compiler_helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
