@@ -20,11 +20,9 @@
 #include "common.h"
 #include "expression_evaluator.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-// Implements conditional Java operator (i.e. a ? b : c). The details of this
-// operator are explained in Java Language Specification section 15.25.
+// Implements conditional C# operator (i.e. a ? b : c).
 class ConditionalOperatorEvaluator : public ExpressionEvaluator {
  public:
   // Class constructor. The instance will own "condition", "if_true" and
@@ -34,20 +32,17 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
       std::unique_ptr<ExpressionEvaluator> if_true,
       std::unique_ptr<ExpressionEvaluator> if_false);
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  HRESULT Compile(
+      DbgStackFrame* stack_frame, std::ostream *err_stream) override;
 
-  const JSignature& GetStaticType() const override {
+  virtual const TypeSignature& GetStaticType() const override {
     return result_type_;
   }
 
-  Nullable<jvalue> GetStaticValue() const override {
-    return nullptr;
-  }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
+  HRESULT Evaluate(
+      std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator,
+      std::ostream *err_stream) const override;
 
  private:
   // Compiles the conditional operator if both "if_true_" and "if_false_"
@@ -65,7 +60,7 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   bool CompileObjects();
 
   // Checks whether "if_true_" or "if_false_" are of the specified type.
-  bool IsEitherType(JType type) const;
+  bool IsEitherType(const CorElementType &type) const;
 
   // Applies binary numeric promotion of type "TTargetType" to both "if_true_"
   // and "if_false_". Returns false if either numeric promotion is not viable
@@ -84,16 +79,13 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   std::unique_ptr<ExpressionEvaluator> if_false_;
 
   // Statically computed resulting type of the expression. This is what
-  // computer_ is supposed product.
-  JSignature result_type_;
+  // computer_ is supposed to produce.
+  TypeSignature result_type_;
 
   DISALLOW_COPY_AND_ASSIGN(ConditionalOperatorEvaluator);
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_CONDITIONAL_OPERATOR_EVALUATOR_H_
-
-

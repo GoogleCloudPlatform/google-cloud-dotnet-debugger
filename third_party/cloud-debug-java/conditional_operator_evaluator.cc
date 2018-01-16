@@ -16,12 +16,12 @@
 
 #include "conditional_operator_evaluator.h"
 
-#include "messages.h"
-#include "model.h"
 #include "numeric_cast_evaluator.h"
+#include "../../google_cloud_debugger_lib/dbg_object.h"
+#include "../../google_cloud_debugger_lib/class_names.h"
+#include "../../google_cloud_debugger_lib/error_messages.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     std::unique_ptr<ExpressionEvaluator> condition,
@@ -30,25 +30,34 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     : condition_(std::move(condition)),
       if_true_(std::move(if_true)),
       if_false_(std::move(if_false)) {
-  result_type_.type = JType::Object;
+  result_type_ = TypeSignature {
+    CorElementType::ELEMENT_TYPE_OBJECT,
+    kObjectClassName
+  };
 }
 
 
-bool ConditionalOperatorEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!condition_->Compile(readers_factory, error_message) ||
-      !if_true_->Compile(readers_factory, error_message) ||
-      !if_false_->Compile(readers_factory, error_message)) {
-    return false;
+HRESULT ConditionalOperatorEvaluator::Compile(
+    DbgStackFrame* stack_frame, std::ostream *err_stream) {
+  HRESULT hr = condition_->Compile(stack_frame);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // TODO(vlif): unbox "condition_" (Java Language Specification section 5.1.8).
+  hr = if_true_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = if_false_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
   // All conditional operators must have "condition_" of a boolean type.
-  if (condition_->GetStaticType().type != JType::Boolean) {
-    *error_message = { TypeMismatch };
-    return false;
+  if (condition_->GetStaticType().cor_type != CorElementType::ELEMENT_TYPE_BOOLEAN) {
+    *err_stream << kConditionHasToBeBoolean;
+    return E_FAIL;
   }
 
   // Case 1: both "if_true_" and "if_false_" are of a boolean type.
@@ -66,18 +75,16 @@ bool ConditionalOperatorEvaluator::Compile(
     return true;
   }
 
-  *error_message = { TypeMismatch };
-
-  return false;
+  *err_stream << kTypeMisMatch;
+  return E_FAIL;
 }
 
 
 bool ConditionalOperatorEvaluator::CompileBoolean() {
   // TODO(vlif): unbox "if_true_" and "if_false_" from Boolean to boolean.
-
-  if ((if_true_->GetStaticType().type == JType::Boolean) &&
-      (if_false_->GetStaticType().type == JType::Boolean)) {
-    result_type_ = { JType::Boolean };
+  if ((if_true_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) &&
+      (if_false_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
+    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
     return true;
   }
 
@@ -86,24 +93,32 @@ bool ConditionalOperatorEvaluator::CompileBoolean() {
 
 
 bool ConditionalOperatorEvaluator::CompileNumeric() {
-  FormatMessageModel unused_error_message;
+  // According to C# spec, if an implicit conversion exists from X to Y
+  // but not from Y to X then Y is the type of the expression.
+  // If an implicit conversion exists from Y to X but not from X to Y
+  // then X is the type of the exppression.
+  const CorElementType &true_type = if_true_->GetStaticType().cor_type;
+  const CorElementType &false_type = if_false_->GetStaticType().cor_type;
+  switch (true_type) {
+    case CorElementType::ELEMENT_TYPE_I1:
+    {
+      switch (false_type) {
+        case CorElementType::ELEMENT_TYPE_I1:
+        case CorElementType::ELEMENT_TYPE_I2:
+        case CorElementType::ELEMENT_TYPE_I4:
+        case CorElementType::ELEMENT_TYPE_I8:
+        case CorElementType::ELEMENT_TYPE_R4:
+        case CorElementType::ELEMENT_TYPE_R8:
+          return true;
+        default:
+          return false;
+      }
+    }
+    MORE CASES HERE.
+    default:
+  }
 
-  // TODO(vlif): unbox "if_true_" and "if_false_".
-
-  // TODO(vlif): implement this clause after we have support for byte/short:
-  //    If one of the operands is of type byte or Byte and the other is of
-  //    type short or Short, then the type of the conditional expression is
-  //    short.
-
-  // TODO(vlif): add support for constants and implement this clause:
-  //    If one of the operands is of type T where T is byte, short, or char,
-  //    and the other operand is a constant expression (15.28) of type int
-  //    whose value is representable in type T, then the type of the
-  //    conditional expression is T.
-
-  // Default case of numeric conditional expression (applying binary numeric
-  // promotion).
-  if (IsEitherType(JType::Double)) {
+  if (IsEitherType(CorElementType::ELEMENT_TYPE_R8)) {
     if (!ApplyNumericPromotions<jdouble>(&unused_error_message)) {
       return false;
     }
@@ -159,9 +174,9 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
 }
 
 
-bool ConditionalOperatorEvaluator::IsEitherType(JType type) const {
-  return (if_true_->GetStaticType().type == type) ||
-         (if_false_->GetStaticType().type == type);
+bool ConditionalOperatorEvaluator::IsEitherType(const CorElementType &type) const {
+  return (if_true_->GetStaticType().cor_type == type) ||
+         (if_false_->GetStaticType().cor_type == type);
 }
 
 
@@ -192,6 +207,4 @@ ErrorOr<JVariant> ConditionalOperatorEvaluator::Evaluate(
   return target_expression.Evaluate(evaluation_context);
 }
 
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger
