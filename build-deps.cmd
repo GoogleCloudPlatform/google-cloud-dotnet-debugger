@@ -26,7 +26,7 @@ if "%3" == "x64" (
 
 :: Ensure the submodule are up to date.
 git submodule init
-git submodule update
+git submodule sync
 
 :: Build the protobuf repository.
 if not exist "%PROTOBUF_DIR%\%PLATFORM%\%CONFIG%\libprotobuf.lib" (
