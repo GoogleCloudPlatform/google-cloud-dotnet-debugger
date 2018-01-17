@@ -23,14 +23,17 @@ namespace google_cloud_debugger {
 
 class TypeSignature;
 
-// Returns true if source can be implicitly converted to target.
-// If source and target are not numeric type, the function
-// return false.
-// If source and target are the same numeric type, the function
-// will also return true.
-// TODO(quoct): Add support for decimal type.
-bool IsImplicitNumericConversionable(const TypeSignature &source,
-  const TypeSignature &target);
+class NumericConversion {
+public:
+  // Returns true if source can be implicitly converted to target.
+  // If source and target are not numeric type, the function
+  // return false.
+  // If source and target are the same numeric type, the function
+  // will also return true.
+  // TODO(quoct): Add support for decimal type.
+  static bool IsImplicitNumericConversionable(const TypeSignature &source,
+    const TypeSignature &target);
+};
 
 }  //  namespace google_cloud_debugger
 

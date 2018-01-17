@@ -17,10 +17,12 @@
 
 namespace google_cloud_debugger {
 
-bool IsImplicitNumericConversionable(const TypeSignature &source,
-    const TypeSignature &target) {
+bool NumericConversion::IsImplicitNumericConversionable(
+    const TypeSignature &source, const TypeSignature &target) {
   const CorElementType &source_type = source.cor_type;
   const CorElementType &target_type = target.cor_type;
+  // Most of the logic here is from implicit numeric conversions:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/conversions#implicit-conversions
   switch (source_type) {
     case CorElementType::ELEMENT_TYPE_I1:
     {
