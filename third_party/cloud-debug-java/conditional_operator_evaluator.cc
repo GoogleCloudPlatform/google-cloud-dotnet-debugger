@@ -76,13 +76,12 @@ HRESULT ConditionalOperatorEvaluator::Compile(
     return true;
   }
 
-  *err_stream << kTypeMisMatch;
+  *err_stream << kTypeMismatch;
   return E_FAIL;
 }
 
 
 bool ConditionalOperatorEvaluator::CompileBoolean() {
-  // TODO(vlif): unbox "if_true_" and "if_false_" from Boolean to boolean.
   if ((if_true_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) &&
       (if_false_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
     result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
@@ -95,12 +94,14 @@ bool ConditionalOperatorEvaluator::CompileBoolean() {
 bool ConditionalOperatorEvaluator::CompileNumeric() {
   const TypeSignature &true_type = if_true_->GetStaticType();
   const TypeSignature &false_type = if_false_->GetStaticType();
-  if (IsImplicitNumericConversionable(true_type, false_type)) {
+  if (NumericConversion::IsImplicitNumericConversionable(
+      true_type, false_type)) {
     result_type_ = false_type;
     return true;
   }
 
-  if (IsImplicitNumericConversionable(false_type, true_type)) {
+  if (NumericConversion::IsImplicitNumericConversionable(
+      false_type, true_type)) {
     result_type_ = true_type;
     return true;
   }

@@ -38,7 +38,7 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   HRESULT Compile(
       DbgStackFrame *stack_frame, std::ostream *err_stream) override;
 
-  // Returns static type of this expression, determined by
+  // Returns the static type of this expression, determined by
   // the true and false expression.
   virtual const TypeSignature& GetStaticType() const override {
     return result_type_;

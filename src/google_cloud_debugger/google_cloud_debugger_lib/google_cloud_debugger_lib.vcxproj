@@ -218,6 +218,7 @@
     <ClInclude Include="dbg_object.h" />
     <ClInclude Include="dbg_primitive.h" />
     <ClInclude Include="document_index.h" />
+    <ClInclude Include="error_messages.h" />
     <ClInclude Include="eval_coordinator.h" />
     <ClInclude Include="i_breakpoint_collection.h" />
     <ClInclude Include="i_cor_debug_helper.h" />
