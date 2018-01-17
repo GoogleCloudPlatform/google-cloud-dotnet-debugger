@@ -6,7 +6,7 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
-PROTOBUF_DIR=$ROOT_DIR/protobuf
+PROTOBUF_DIR=$ROOT_DIR/third_party/protobuf
 PROTOBUF_SRC=$PROTOBUF_DIR/src
 PROTOC_EXE=$PROTOBUF_DIR/cmake/build/solution/Debug/protoc.exe
 PROTO=$ROOT_DIR/src/proto/breakpoint.proto

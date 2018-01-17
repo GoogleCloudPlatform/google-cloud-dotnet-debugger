@@ -6,10 +6,11 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
-GTEST_DIR=$ROOT_DIR/googletest/googletest/make
-GMOCK_DIR=$ROOT_DIR/googletest/googlemock/make
-PROTOBUF_DIR=$ROOT_DIR/protobuf
-CORECLR_DIR=$ROOT_DIR/coreclr
+THIRD_PARTY_DIR=$ROOT_DIR/third_party
+GTEST_DIR=$THIRD_PARTY_DIR/googletest/googletest/make
+GMOCK_DIR=$THIRD_PARTY_DIR/googletest/googlemock/make
+PROTOBUF_DIR=$THIRD_PARTY_DIR/protobuf
+CORECLR_DIR=$THIRD_PARTY_DIR/coreclr
 CORECLR_BIN=$CORECLR_DIR/bin/Product/Linux.x64.Debug
 
 # Build the gtest library

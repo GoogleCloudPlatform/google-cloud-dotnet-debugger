@@ -72,8 +72,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\..\googletest\googlemock\include;$(SolutionDir)..\..\googletest\googletest\include;$(SolutionDir)..\..\google_cloud_debugger_lib;$(SolutionDir)..\..\protobuf\src;$(SolutionDir)..\..\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\coreclr\src\debug\inc;$(SolutionDir)..\..\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\coreclr\src\inc;$(SolutionDir)google_cloud_debugger_lib;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\..\googletest\googlemock\$(Platform)\$(Configuration);$(SolutionDir)..\..\googletest\googletest\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)\third_party\Windows;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\third_party\googletest\googlemock\include;$(SolutionDir)..\..\third_party\googletest\googletest\include;$(SolutionDir)..\..\third_party\google_cloud_debugger_lib;$(SolutionDir)..\..\third_party\protobuf\src;$(SolutionDir)..\..\third_party\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\third_party\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\third_party\coreclr\src\debug\inc;$(SolutionDir)..\..\third_party\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\third_party\coreclr\src\inc;$(SolutionDir)google_cloud_debugger_lib;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\third_party\googletest\googlemock\$(Platform)\$(Configuration);$(SolutionDir)..\..\third_party\googletest\googletest\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)\third_party\Windows;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -83,8 +83,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\..\googletest\googlemock\include;$(SolutionDir)..\..\googletest\googletest\include;$(SolutionDir)..\..\google_cloud_debugger_lib;$(SolutionDir)..\..\protobuf\src;$(SolutionDir)..\..\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\coreclr\src\debug\inc;$(SolutionDir)..\..\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\coreclr\src\inc;$(SolutionDir)google_cloud_debugger_lib;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\..\googletest\googlemock\$(Platform)\$(Configuration);$(SolutionDir)..\..\googletest\googletest\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)..\..\protobuf\$(Platform)\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IncludePath>$(SolutionDir)..\..\third_party\googletest\googlemock\include;$(SolutionDir)..\..\third_party\googletest\googletest\include;$(SolutionDir)..\..\third_party\google_cloud_debugger_lib;$(SolutionDir)..\..\third_party\protobuf\src;$(SolutionDir)..\..\third_party\coreclr\src\debug\ildsymlib;$(SolutionDir)..\..\third_party\coreclr\src\pal\prebuilt\inc;$(SolutionDir)..\..\third_party\coreclr\src\debug\inc;$(SolutionDir)..\..\third_party\coreclr\src\dlls\dbgshim;$(SolutionDir)..\..\third_party\coreclr\src\inc;$(SolutionDir)google_cloud_debugger_lib;$(NETFXSDKDir)Include\um;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)..\..\third_party\googletest\googlemock\$(Platform)\$(Configuration);$(SolutionDir)..\..\third_party\googletest\googletest\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration);$(SolutionDir)..\..\protobuf\$(Platform)\$(Configuration);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
