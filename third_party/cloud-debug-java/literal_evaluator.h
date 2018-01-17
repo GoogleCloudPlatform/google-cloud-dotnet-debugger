@@ -20,6 +20,7 @@
 #include "common.h"
 #include "expression_evaluator.h"
 #include "../../google_cloud_debugger_lib/dbg_object.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -38,7 +39,7 @@ class LiteralEvaluator : public ExpressionEvaluator {
 
   const TypeSignature& GetStaticType() const override { return result_type_; }
 
-  HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override {
     *dbg_object = n_;
     return S_OK;

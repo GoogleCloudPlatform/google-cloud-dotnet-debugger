@@ -16,194 +16,227 @@
 
 #include "unary_expression_evaluator.h"
 
-#include "model.h"
-#include "messages.h"
+#include "../../google_cloud_debugger_lib/compiler_helpers.h"
+#include "../../google_cloud_debugger_lib/dbg_object.h"
+#include "../../google_cloud_debugger_lib/dbg_primitive.h"
+#include "../../google_cloud_debugger_lib/error_messages.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 #include "numeric_cast_evaluator.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 UnaryExpressionEvaluator::UnaryExpressionEvaluator(
-    UnaryJavaExpression::Type type,
-    std::unique_ptr<ExpressionEvaluator> arg)
-    : type_(type),
-      arg_(std::move(arg)),
-      computer_(nullptr) {
-  result_type_.type = JType::Object;
+    UnaryJavaExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg)
+    : type_(type), arg_(std::move(arg)), computer_(nullptr) {
+  result_type_ = TypeSignature::Object;
 }
 
-
-bool UnaryExpressionEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!arg_->Compile(readers_factory, error_message)) {
-    return false;
+HRESULT UnaryExpressionEvaluator::Compile(DbgStackFrame *stack_frame,
+                                          std::ostream *err_stream) {
+  HRESULT hr = arg_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    *err_stream << kFailedToCompileFirstSubExpr;
+    return hr;
   }
 
   switch (type_) {
     case UnaryJavaExpression::Type::plus:
     case UnaryJavaExpression::Type::minus:
-      return CompilePlusMinusOperators(error_message);
+      return CompilePlusMinusOperators(err_stream);
 
     case UnaryJavaExpression::Type::bitwise_complement:
-      return CompileBitwiseComplement(error_message);
+      return CompileBitwiseComplement(err_stream);
 
     case UnaryJavaExpression::Type::logical_complement:
-      return CompileLogicalComplement(error_message);
+      return CompileLogicalComplement(err_stream);
   }
 
-  return false;
+  return E_FAIL;
 }
 
-
-bool UnaryExpressionEvaluator::CompilePlusMinusOperators(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-
-  DCHECK((type_ == UnaryJavaExpression::Type::plus) ||
+HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
+    std::ostream *err_stream) {
+  assert((type_ == UnaryJavaExpression::Type::plus) ||
          (type_ == UnaryJavaExpression::Type::minus));
   const bool is_plus = (type_ == UnaryJavaExpression::Type::plus);
+  CorElementType cor_type = arg_->GetStaticType().cor_type;
 
-  switch (arg_->GetStaticType().type) {
-    case JType::Byte:
-    case JType::Char:
-    case JType::Short:
-    case JType::Int:
-      if (!ApplyNumericCast<jint>(&arg_, error_message)) {
-        return false;
-      }
+  // Promote sbyte, byte, short, ushort or char to int.
+  if (NumericCompilerHelper::IsNumericallyPromotedToInt(cor_type)) {
+    cor_type = CorElementType::ELEMENT_TYPE_I4;
+  }
 
-      computer_ = is_plus ? DoNothingComputer : MinusOperatorComputer<jint>;
-      result_type_ = { JType::Int };
+  // For - operator, we also promote uint to long.
+  if (!is_plus && cor_type == CorElementType::ELEMENT_TYPE_U4) {
+    cor_type == CorElementType::ELEMENT_TYPE_I8;
+  }
 
-      return true;
+  result_type_ = {cor_type};
 
-    case JType::Long:
-      computer_ = is_plus ? DoNothingComputer : MinusOperatorComputer<jlong>;
-      result_type_ = { JType::Long };
+  // For + operator, we do nothing.
+  // TODO(quoct): Add support for Decimal.
+  if (is_plus) {
+    if (cor_type == CorElementType::ELEMENT_TYPE_I4 ||
+        cor_type == CorElementType::ELEMENT_TYPE_U4 ||
+        cor_type == CorElementType::ELEMENT_TYPE_I8 ||
+        cor_type == CorElementType::ELEMENT_TYPE_U8 ||
+        cor_type == CorElementType::ELEMENT_TYPE_R4 ||
+        cor_type == CorElementType::ELEMENT_TYPE_R8) {
+      computer_ = DoNothingComputer;
+      return S_OK;
+    }
+    return E_FAIL;
+  }
 
-      return true;
-
-    case JType::Float:
-      computer_ = is_plus ? DoNothingComputer : MinusOperatorComputer<jfloat>;
-      result_type_ = { JType::Float };
-
-      return true;
-
-    case JType::Double:
-      computer_ = is_plus ? DoNothingComputer : MinusOperatorComputer<jdouble>;
-      result_type_ = { JType::Double };
-
-      return true;
-
-    default:
+  // - operator case.
+  switch (cor_type) {
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = MinusOperatorComputer<int32_t>;
+      return S_OK;
+    }
+    // uint promoted to long.
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = MinusOperatorComputer<int64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4: {
+      computer_ = MinusOperatorComputer<float_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8: {
+      computer_ = MinusOperatorComputer<double_t>;
+      return S_OK;
+    }
+    default: {
       // Unary plus and minus operators only apply to primitive numeric type.
-      *error_message = { TypeMismatch };
-      return false;
+      *err_stream << kTypeMismatch;
+      return E_FAIL;
+    }
   }
 }
 
+HRESULT UnaryExpressionEvaluator::CompileBitwiseComplement(
+    std::ostream *err_stream) {
+  assert(type_ == UnaryJavaExpression::Type::bitwise_complement);
+  CorElementType cor_type = arg_->GetStaticType().cor_type;
 
-bool UnaryExpressionEvaluator::CompileBitwiseComplement(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
+  // Promote sbyte, byte, short, ushort or char to int.
+  if (NumericCompilerHelper::IsNumericallyPromotedToInt(cor_type)) {
+    cor_type = CorElementType::ELEMENT_TYPE_I4;
+  }
 
-  switch (arg_->GetStaticType().type) {
-    case JType::Byte:
-    case JType::Char:
-    case JType::Short:
-    case JType::Int:
-      if (!ApplyNumericCast<jint>(&arg_, error_message)) {
-        return false;
-      }
+  result_type_ = { cor_type };
 
-      computer_ = BitwiseComplementComputer<jint>;
-      result_type_ = { JType::Int };
-
-      return true;
-
-    case JType::Long:
-      computer_ = BitwiseComplementComputer<jlong>;
-      result_type_ = { JType::Long };
-
-      return true;
-
+  switch (cor_type) {
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = BitwiseComplementComputer<int32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      computer_ = BitwiseComplementComputer<uint32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = BitwiseComplementComputer<int64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      computer_ = BitwiseComplementComputer<uint64_t>;
+      return S_OK;
+    }
     default:
       // Bitwise complement only applies to primitive integral types.
-      *error_message = { TypeMismatch };
-      return false;
+      *err_stream << kTypeMismatch;
+      return E_FAIL;
   }
 }
 
-
-bool UnaryExpressionEvaluator::CompileLogicalComplement(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-
-  if (arg_->GetStaticType().type == JType::Boolean) {
+HRESULT UnaryExpressionEvaluator::CompileLogicalComplement(
+    std::ostream *err_stream) {
+  assert(type_ == UnaryJavaExpression::Type::logical_complement);
+  if (arg_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
     computer_ = LogicalComplementComputer;
-    result_type_ = { JType::Boolean };
-
-    return true;
+    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
+    return S_OK;
   }
 
-  *error_message = { TypeMismatch };
-  return false;
+  *err_stream << kTypeMismatch;
+  return E_FAIL;
 }
 
-
-ErrorOr<JVariant> UnaryExpressionEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> arg_value = arg_->Evaluate(evaluation_context);
-  if (arg_value.is_error()) {
-    return arg_value;
+HRESULT UnaryExpressionEvaluator::Evaluate(
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> arg_obj;
+  HRESULT hr = arg_->Evaluate(&arg_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    *err_stream << kFailedToEvalFirstSubExpr;
+    return hr;
   }
 
-  return computer_(arg_value.value());
+  return computer_(arg_obj, dbg_object);
 }
 
-
-ErrorOr<JVariant> UnaryExpressionEvaluator::LogicalComplementComputer(
-    const JVariant& arg) {
-  jboolean boolean_value = false;
-  if (!arg.get<jboolean>(&boolean_value)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT UnaryExpressionEvaluator::LogicalComplementComputer(
+    std::shared_ptr<DbgObject> arg_object,
+    std::shared_ptr<DbgObject> *dbg_object) {
+  if (!dbg_object) {
+    return E_INVALIDARG;
   }
 
-  return JVariant::Boolean(!boolean_value);
+  bool value;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+      arg_object.get(), &value);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(!value));
+  return S_OK;
 }
 
-
-ErrorOr<JVariant> UnaryExpressionEvaluator::DoNothingComputer(
-    const JVariant& arg) {
-  return JVariant(arg);
+HRESULT UnaryExpressionEvaluator::DoNothingComputer(
+    std::shared_ptr<DbgObject> arg_object,
+    std::shared_ptr<DbgObject> *dbg_object) {
+  return S_OK;
 }
-
 
 template <typename T>
-ErrorOr<JVariant> UnaryExpressionEvaluator::MinusOperatorComputer(
-    const JVariant& arg) {
-  T value = T();
-  if (!arg.get<T>(&value)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT UnaryExpressionEvaluator::MinusOperatorComputer(
+    std::shared_ptr<DbgObject> arg_object,
+    std::shared_ptr<DbgObject> *dbg_object) {
+  if (!dbg_object) {
+    return E_INVALIDARG;
   }
 
-  return JVariant::Primitive<T>(-value);
-}
+  T value;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg_object.get(), &value);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
+  *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(-value));
+  return S_OK;
+}
 
 template <typename T>
-ErrorOr<JVariant> UnaryExpressionEvaluator::BitwiseComplementComputer(
-    const JVariant& arg) {
-  T value = T();
-  if (!arg.get<T>(&value)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT UnaryExpressionEvaluator::BitwiseComplementComputer(
+    std::shared_ptr<DbgObject> arg_object,
+    std::shared_ptr<DbgObject> *dbg_object) {
+  if (!dbg_object) {
+    return E_INVALIDARG;
   }
 
-  return JVariant::Primitive<T>(~value);
+  T value;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg_object.get(), &value);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(~value));
+  return S_OK;
 }
 
-
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger
