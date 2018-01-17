@@ -31,8 +31,7 @@
 #include "type_cast_operator_evaluator.h"
 #include "unary_expression_evaluator.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 // Single character de-escaping for "UnescapeJavaString". Returns the de-escaped
 // character and iterator to the next byte in the input sequence.
@@ -838,8 +837,4 @@ CompiledExpression MethodCallExpression::CreateEvaluator() {
 }
 
 
-}  // namespace cdbg
-}  // namespace devtools
-
-
-
+}  // namespace google_cloud_debugger

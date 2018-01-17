@@ -21,8 +21,7 @@
 #include "expression_evaluator.h"
 #include "java_expression.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 // Implements all Java unary operators.
 class UnaryExpressionEvaluator : public ExpressionEvaluator {
@@ -33,46 +32,67 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
       UnaryJavaExpression::Type type,
       std::unique_ptr<ExpressionEvaluator> arg);
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  // Compiles and extracts the static type of the expression into result_type_.
+  // Will return an failed HRESULT if the expression cannot be compiled.
+  // This function will also select the appropriate member function to
+  // evaluate the expressoin and assign that to computer_.
+  HRESULT Compile(
+      DbgStackFrame *stack_frame,
+      std::ostream *err_stream) override;
 
-  const JSignature& GetStaticType() const override {
+  // Returns the static type of the expression.
+  const TypeSignature& GetStaticType() const override {
     return result_type_;
   }
 
-  Nullable<jvalue> GetStaticValue() const override {
-    return nullptr;
-  }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
+  // Evaluates the expression and stores the result in dbg_object.
+  // This simply calls computer_, which should have been assigned in Compile call. 
+  HRESULT Evaluate(
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override;
 
  private:
   // Tries to compile the expression for unary plus and minus operators.
-  // Returns false if the argument is not suitable.
-  bool CompilePlusMinusOperators(FormatMessageModel* error_message);
+  // Returns E_FAIL if the argument is not suitable.
+  // The logic here is based on:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#unary-operators
+  HRESULT CompilePlusMinusOperators(std::ostream *err_stream);
 
   // Tries to compile the expression for bitwise complement operator (!).
-  // Returns false if the argument is not suitable.
-  bool CompileBitwiseComplement(FormatMessageModel* error_message);
+  // Returns E_FAIL if the argument is not suitable.
+  // The logic here is based on:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#unary-operators
+  HRESULT CompileBitwiseComplement(std::ostream *err_stream);
 
   // Tries to compile the expression for logical complement operator (!).
-  // Returns false if the argument is not suitable.
-  bool CompileLogicalComplement(FormatMessageModel* error_message);
+  // Returns E_FAIL if the argument is not suitable.
+  // The logic here is based on:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#unary-operators
+  HRESULT CompileLogicalComplement(std::ostream *err_stream);
 
   // Computes the logical complement of a boolean argument (operator !).
-  static ErrorOr<JVariant> LogicalComplementComputer(const JVariant& arg);
+  // This extracts out value in arg_object and creates a DbgObject
+  // with value !value. Will returns failed HRESULT if arg_object is not
+  // a boolean.
+  static HRESULT LogicalComplementComputer(std::shared_ptr<DbgObject> arg_object,
+      std::shared_ptr<DbgObject> *dbg_object);
 
   // NOP computer used for unary plus operator (+) that does nothing beyond.
   // numeric promotion.
-  static ErrorOr<JVariant> DoNothingComputer(const JVariant& arg);
+  static HRESULT DoNothingComputer(std::shared_ptr<DbgObject> arg_object,
+      std::shared_ptr<DbgObject> *dbg_object);
 
+  // This extracts out value in arg_object and creates a DbgObject
+  // with value -value.
   template <typename T>
-  static ErrorOr<JVariant> MinusOperatorComputer(const JVariant& arg);
+  static HRESULT MinusOperatorComputer(std::shared_ptr<DbgObject> arg_object,
+      std::shared_ptr<DbgObject> *dbg_object);
 
+  // This extracts out value in arg_object and creates a DbgObject
+  // with value ~value.
   template <typename T>
-  static ErrorOr<JVariant> BitwiseComplementComputer(const JVariant& arg);
+  static HRESULT BitwiseComplementComputer(std::shared_ptr<DbgObject> arg_object,
+      std::shared_ptr<DbgObject> *dbg_object);
 
  private:
   // Binary expression type (e.g. +, -, ~, !).
@@ -82,20 +102,18 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
   std::unique_ptr<ExpressionEvaluator> arg_;
 
   // Pointer to a member function of this class to do the actual evaluation
-  // of the binary expression.
-  ErrorOr<JVariant> (*computer_)(const JVariant&);
+  // of the unary expression.
+  HRESULT (*computer_)(std::shared_ptr<DbgObject> arg_object,
+      std::shared_ptr<DbgObject> *result_object);
 
   // Statically computed resulting type of the expression. This is what
   // computer_ is supposed product.
-  JSignature result_type_;
+  TypeSignature result_type_;
 
   DISALLOW_COPY_AND_ASSIGN(UnaryExpressionEvaluator);
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_UNARY_EXPRESSION_EVALUATOR_H_
-
-

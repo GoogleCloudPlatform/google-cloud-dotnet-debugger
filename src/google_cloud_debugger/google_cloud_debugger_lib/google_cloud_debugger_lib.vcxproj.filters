@@ -124,6 +124,9 @@
     <ClCompile Include="compiler_helpers.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="type_signature.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -301,6 +304,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="error_messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="type_signature.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
