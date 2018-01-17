@@ -16,12 +16,13 @@
 
 #include "conditional_operator_evaluator.h"
 
-#include "messages.h"
-#include "model.h"
 #include "numeric_cast_evaluator.h"
+#include "../../google_cloud_debugger_lib/dbg_primitive.h"
+#include "../../google_cloud_debugger_lib/class_names.h"
+#include "../../google_cloud_debugger_lib/error_messages.h"
+#include "../../google_cloud_debugger_lib/compiler_helpers.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     std::unique_ptr<ExpressionEvaluator> condition,
@@ -30,25 +31,34 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     : condition_(std::move(condition)),
       if_true_(std::move(if_true)),
       if_false_(std::move(if_false)) {
-  result_type_.type = JType::Object;
+  result_type_ = TypeSignature {
+    CorElementType::ELEMENT_TYPE_OBJECT,
+    kObjectClassName
+  };
 }
 
 
-bool ConditionalOperatorEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!condition_->Compile(readers_factory, error_message) ||
-      !if_true_->Compile(readers_factory, error_message) ||
-      !if_false_->Compile(readers_factory, error_message)) {
-    return false;
+HRESULT ConditionalOperatorEvaluator::Compile(
+    DbgStackFrame* stack_frame, std::ostream *err_stream) {
+  HRESULT hr = condition_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // TODO(vlif): unbox "condition_" (Java Language Specification section 5.1.8).
+  hr = if_true_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = if_false_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
   // All conditional operators must have "condition_" of a boolean type.
-  if (condition_->GetStaticType().type != JType::Boolean) {
-    *error_message = { TypeMismatch };
-    return false;
+  if (condition_->GetStaticType().cor_type != CorElementType::ELEMENT_TYPE_BOOLEAN) {
+    *err_stream << kConditionHasToBeBoolean;
+    return E_FAIL;
   }
 
   // Case 1: both "if_true_" and "if_false_" are of a boolean type.
@@ -66,91 +76,51 @@ bool ConditionalOperatorEvaluator::Compile(
     return true;
   }
 
-  *error_message = { TypeMismatch };
-
-  return false;
+  *err_stream << kTypeMismatch;
+  return E_FAIL;
 }
 
 
 bool ConditionalOperatorEvaluator::CompileBoolean() {
-  // TODO(vlif): unbox "if_true_" and "if_false_" from Boolean to boolean.
-
-  if ((if_true_->GetStaticType().type == JType::Boolean) &&
-      (if_false_->GetStaticType().type == JType::Boolean)) {
-    result_type_ = { JType::Boolean };
+  if ((if_true_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) &&
+      (if_false_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
+    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
     return true;
   }
 
   return false;
 }
 
-
 bool ConditionalOperatorEvaluator::CompileNumeric() {
-  FormatMessageModel unused_error_message;
-
-  // TODO(vlif): unbox "if_true_" and "if_false_".
-
-  // TODO(vlif): implement this clause after we have support for byte/short:
-  //    If one of the operands is of type byte or Byte and the other is of
-  //    type short or Short, then the type of the conditional expression is
-  //    short.
-
-  // TODO(vlif): add support for constants and implement this clause:
-  //    If one of the operands is of type T where T is byte, short, or char,
-  //    and the other operand is a constant expression (15.28) of type int
-  //    whose value is representable in type T, then the type of the
-  //    conditional expression is T.
-
-  // Default case of numeric conditional expression (applying binary numeric
-  // promotion).
-  if (IsEitherType(JType::Double)) {
-    if (!ApplyNumericPromotions<jdouble>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Double };
-    return true;
-
-  } else if (IsEitherType(JType::Float)) {
-    if (!ApplyNumericPromotions<jfloat>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Float };
-    return true;
-
-  } else if (IsEitherType(JType::Long)) {
-    if (!ApplyNumericPromotions<jlong>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Long };
-    return true;
-
-  } else {
-    if (!ApplyNumericPromotions<jint>(&unused_error_message)) {
-      return false;
-    }
-
-    result_type_ = { JType::Int };
+  const TypeSignature &true_type = if_true_->GetStaticType();
+  const TypeSignature &false_type = if_false_->GetStaticType();
+  if (NumericConversion::IsImplicitNumericConversionable(
+      true_type, false_type)) {
+    result_type_ = false_type;
     return true;
   }
+
+  if (NumericConversion::IsImplicitNumericConversionable(
+      false_type, true_type)) {
+    result_type_ = true_type;
+    return true;
+  }
+
+  return false;
 }
 
 
 bool ConditionalOperatorEvaluator::CompileObjects() {
-  // TODO(vlif): this is a super-simplistic implementation that doesn't cover
-  // a lot of cases. For more details please refer to Java Language
-  // Specification section 15.25.3 and tables in section 15.25.
-
-  const JSignature& true_signature = if_true_->GetStaticType();
-  const JSignature& false_signature = if_false_->GetStaticType();
-  if ((true_signature.type == JType::Object) &&
-      (false_signature.type == JType::Object)) {
-    if (true_signature.object_signature == false_signature.object_signature) {
-      result_type_ = true_signature;
+  const TypeSignature &true_type = if_true_->GetStaticType();
+  const TypeSignature &false_type = if_false_->GetStaticType();
+  if (true_type.cor_type == false_type.cor_type &&
+      (true_type.cor_type == CorElementType::ELEMENT_TYPE_OBJECT
+       || true_type.cor_type == CorElementType::ELEMENT_TYPE_CLASS
+       || true_type.cor_type == CorElementType::ELEMENT_TYPE_VALUETYPE)) {
+    if (true_type.type_name.compare(false_type.type_name) == 0) {
+      result_type_ = true_type;
     } else {
-      result_type_ = { JType::Object };  // Note the lost signature.
+      result_type_ = { CorElementType::ELEMENT_TYPE_OBJECT };  // Note the lost signature.
     }
     return true;
   }
@@ -158,40 +128,27 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
   return false;
 }
 
-
-bool ConditionalOperatorEvaluator::IsEitherType(JType type) const {
-  return (if_true_->GetStaticType().type == type) ||
-         (if_false_->GetStaticType().type == type);
-}
-
-
-template <typename TTargetType>
-bool ConditionalOperatorEvaluator::ApplyNumericPromotions(
-    FormatMessageModel* error_message) {
-  return ApplyNumericCast<TTargetType>(&if_true_, error_message) &&
-         ApplyNumericCast<TTargetType>(&if_false_, error_message);
-}
-
-
-ErrorOr<JVariant> ConditionalOperatorEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> evaluated_condition =
-      condition_->Evaluate(evaluation_context);
-  if (evaluated_condition.is_error()) {
-    return evaluated_condition;
+HRESULT ConditionalOperatorEvaluator::Evaluate(
+    std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+    IEvalCoordinator *eval_coordinator,
+    std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> condition_obj;
+  HRESULT hr =
+      condition_->Evaluate(&condition_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  jboolean condition_value = false;
-  if (!evaluated_condition.value().get<jboolean>(&condition_value)) {
-    return INTERNAL_ERROR_MESSAGE;
+  DbgPrimitive<bool> *condition_value = dynamic_cast<DbgPrimitive<bool> *>(condition_obj.get());
+  if (!condition_value) {
+    return E_FAIL;
   }
 
-  const ExpressionEvaluator& target_expression =
-      (condition_value ? *if_true_ : *if_false_);
+  if (condition_value->GetValue()) {
+    return if_true_->Evaluate(dbg_object, eval_coordinator, err_stream);
+  }
 
-  return target_expression.Evaluate(evaluation_context);
+  return if_false_->Evaluate(dbg_object, eval_coordinator, err_stream);
 }
 
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger

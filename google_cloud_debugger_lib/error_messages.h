@@ -29,6 +29,12 @@ static const std::string kFailedToCreateString =
 static const std::string kFailedToCreateDbgObject =
     "Failed to create DbgObject.";
 
+static const std::string kConditionHasToBeBoolean =
+    "Condition must be a boolean.";
+
+static const std::string kTypeMismatch =
+    "Actual types does not match expected types.";
+
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_
