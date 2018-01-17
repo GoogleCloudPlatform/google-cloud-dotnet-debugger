@@ -13,11 +13,11 @@
 // limitations under the License.
 
 #include "compiler_helpers.h"
-#include "../third_party/cloud-debug-java/expression_evaluator.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
-bool NumericConversion::IsImplicitNumericConversionable(
+bool NumericCompilerHelper::IsImplicitNumericConversionable(
     const TypeSignature &source, const TypeSignature &target) {
   const CorElementType &source_type = source.cor_type;
   const CorElementType &target_type = target.cor_type;
@@ -168,6 +168,13 @@ bool NumericConversion::IsImplicitNumericConversionable(
     default:
       return false;
   }
+}
+
+bool NumericCompilerHelper::IsNumericallyPromotedToInt(const CorElementType &source) {
+  return source == CorElementType::ELEMENT_TYPE_CHAR
+      || source == CorElementType::ELEMENT_TYPE_I1
+      || source == CorElementType::ELEMENT_TYPE_U1
+      || source == CorElementType::ELEMENT_TYPE_I2;
 }
 
 }  //  namespace google_cloud_debugger

@@ -35,6 +35,12 @@ static const std::string kConditionHasToBeBoolean =
 static const std::string kTypeMismatch =
     "Actual types does not match expected types.";
 
+static const std::string kFailedToCompileFirstSubExpr =
+    "Failed to compile first sub-expression.";
+
+static const std::string kFailedToEvalFirstSubExpr =
+    "Failed to evaluate first sub-expression.";
+
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_
