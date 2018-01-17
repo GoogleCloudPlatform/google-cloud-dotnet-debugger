@@ -49,7 +49,7 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   // If condition is true, call Evaluate on the true expression.
   // If condition is false, call Evaluate on the false expression.
   HRESULT Evaluate(
-      std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator,
       std::ostream *err_stream) const override;
 

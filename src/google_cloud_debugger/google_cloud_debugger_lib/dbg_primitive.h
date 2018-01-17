@@ -37,6 +37,11 @@ class DbgPrimitive : public DbgObject {
  public:
   DbgPrimitive(ICorDebugType *debug_type) : DbgObject(debug_type, 0) {}
 
+  DbgPrimitive(T value) : DbgObject(nullptr, 0) {
+    value_ = value;
+    SetCorElementType(value);
+  }
+
   // debug_value can be a null pointer, in which case value_ is just the default
   // value for the type.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override {
@@ -160,6 +165,43 @@ class DbgPrimitive : public DbgObject {
   void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
                    std::double_t value) {
     variable->set_type(kDoubleClassName);
+  }
+
+  void SetCorElementType(char value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_CHAR;
+  }
+  void SetCorElementType(bool value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_BOOLEAN;
+  }
+  void SetCorElementType(std::int8_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I1;
+  }
+  void SetCorElementType(std::uint8_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U1;
+  }
+  void SetCorElementType(std::int16_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I2;
+  }
+  void SetCorElementType(std::uint16_t) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U2;
+  }
+  void SetCorElementType(std::int32_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I4;
+  }
+  void SetCorElementType(std::uint32_t) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U4;
+  }
+  void SetCorElementType(std::int64_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I8;
+  }
+  void SetCorElementType(std::uint64_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U8;
+  }
+  void SetCorElementType(std::float_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_R4;
+  }
+  void SetCorElementType(std::double_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_R8;
   }
 
   T value_;

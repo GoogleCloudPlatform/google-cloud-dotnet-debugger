@@ -41,7 +41,7 @@ class StringEvaluator : public ExpressionEvaluator {
 
   // Creates a string object in the app domain and uses the references
   // of that object to create a DbgObject.
-  HRESULT Evaluate(std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override;
 
  private:
