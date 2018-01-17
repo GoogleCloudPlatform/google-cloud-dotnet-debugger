@@ -32,7 +32,7 @@ static const std::string kFailedToCreateDbgObject =
 static const std::string kConditionHasToBeBoolean =
     "Condition must be a boolean.";
 
-static const std::string kTypeMisMatch =
+static const std::string kTypeMismatch =
     "Actual types does not match expected types.";
 
 }  // namespace google_cloud_debugger
