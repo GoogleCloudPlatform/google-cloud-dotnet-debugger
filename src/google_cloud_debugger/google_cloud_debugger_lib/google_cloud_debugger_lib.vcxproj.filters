@@ -300,6 +300,9 @@
     <ClInclude Include="compiler_helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="error_messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
