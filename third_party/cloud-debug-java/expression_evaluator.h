@@ -26,20 +26,10 @@
 
 namespace google_cloud_debugger {
 
-// This struct represents a .NET type. This is used to compare
-// whether 2 objects have the same type.
-struct TypeSignature {
-  // CorElementType of the type signature.
-  CorElementType cor_type;
-
-  // This is useful if cor_type is not an integral or float type.
-  std::string type_name;
-};
-  
 class DbgObject;
 class DbgStackFrame;
 class IEvalCoordinator;
-struct Context;
+struct TypeSignature;
 
 // Interface representing compiled expression or subexpression.
 class ExpressionEvaluator {
@@ -71,7 +61,7 @@ class ExpressionEvaluator {
   // point to the result.
   // eval_coordinator is used for method call evaluation.
   virtual HRESULT Evaluate(
-      std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const = 0;
 };
 

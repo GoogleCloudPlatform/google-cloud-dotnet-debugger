@@ -16,15 +16,16 @@
 #define COMPILER_HELPERS_H_
 
 #include "cor.h"
+#include "dbg_primitive.h"
 
 // Various helper functions for compiling such as numeric conversions,
 // numeric promotions, etc.
 namespace google_cloud_debugger {
 
-class TypeSignature;
+struct TypeSignature;
 
-class NumericConversion {
-public:
+class NumericCompilerHelper {
+ public:
   // Returns true if source can be implicitly converted to target.
   // If source and target are not numeric type, the function
   // return false.
@@ -32,7 +33,138 @@ public:
   // will also return true.
   // TODO(quoct): Add support for decimal type.
   static bool IsImplicitNumericConversionable(const TypeSignature &source,
-    const TypeSignature &target);
+                                              const TypeSignature &target);
+
+  // Returns true if source can be numerically promoted to int.
+  static bool IsNumericallyPromotedToInt(const CorElementType &source);
+
+  // Given a DbgObject, try to convert it into a DbgPrimitive, extracts
+  // the underlying value of the DbgPrimitive object and cast that to
+  // type T.
+  template <typename T>
+  static HRESULT ExtractPrimitiveValue(DbgObject *dbg_object, T *cast_result) {
+    if (!dbg_object) {
+      return E_INVALIDARG;
+    }
+
+    HRESULT hr;
+    CorElementType cor_type = dbg_object->GetCorElementType();
+    switch (cor_type) {
+      case CorElementType::ELEMENT_TYPE_BOOLEAN: {
+        bool value;
+        hr = DbgPrimitive<bool>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_CHAR: {
+        char value;
+        hr = DbgPrimitive<char>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_I: {
+        intptr_t value;
+        hr = DbgPrimitive<intptr_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_U: {
+        uintptr_t value;
+        hr = DbgPrimitive<uintptr_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_I1: {
+        int8_t value;
+        hr = DbgPrimitive<int8_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_U1: {
+        uint8_t value;
+        hr = DbgPrimitive<uint8_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_I2: {
+        int16_t value;
+        hr = DbgPrimitive<int16_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_U2: {
+        uint16_t value;
+        hr = DbgPrimitive<uint16_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_I4: {
+        int32_t value;
+        hr = DbgPrimitive<int32_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_U4: {
+        uint32_t value;
+        hr = DbgPrimitive<uint32_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_I8: {
+        int64_t value;
+        hr = DbgPrimitive<int64_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_U8: {
+        uint64_t value;
+        hr = DbgPrimitive<uint64_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_R4: {
+        float_t value;
+        hr = DbgPrimitive<float_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      case CorElementType::ELEMENT_TYPE_R8: {
+        double_t value;
+        hr = DbgPrimitive<double_t>::GetValue(dbg_object, &value);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *cast_result = static_cast<T>(value);
+      }
+      default: { return E_FAIL; }
+    }
+  }
 };
 
 }  //  namespace google_cloud_debugger

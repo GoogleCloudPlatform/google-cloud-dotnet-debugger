@@ -21,6 +21,7 @@
 #include "../../google_cloud_debugger_lib/class_names.h"
 #include "../../google_cloud_debugger_lib/error_messages.h"
 #include "../../google_cloud_debugger_lib/compiler_helpers.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -31,10 +32,7 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     : condition_(std::move(condition)),
       if_true_(std::move(if_true)),
       if_false_(std::move(if_false)) {
-  result_type_ = TypeSignature {
-    CorElementType::ELEMENT_TYPE_OBJECT,
-    kObjectClassName
-  };
+  result_type_ = TypeSignature::Object;
 }
 
 
@@ -94,13 +92,13 @@ bool ConditionalOperatorEvaluator::CompileBoolean() {
 bool ConditionalOperatorEvaluator::CompileNumeric() {
   const TypeSignature &true_type = if_true_->GetStaticType();
   const TypeSignature &false_type = if_false_->GetStaticType();
-  if (NumericConversion::IsImplicitNumericConversionable(
+  if (NumericCompilerHelper::IsImplicitNumericConversionable(
       true_type, false_type)) {
     result_type_ = false_type;
     return true;
   }
 
-  if (NumericConversion::IsImplicitNumericConversionable(
+  if (NumericCompilerHelper::IsImplicitNumericConversionable(
       false_type, true_type)) {
     result_type_ = true_type;
     return true;
@@ -129,7 +127,7 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
 }
 
 HRESULT ConditionalOperatorEvaluator::Evaluate(
-    std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+    std::shared_ptr<DbgObject> *dbg_object,
     IEvalCoordinator *eval_coordinator,
     std::ostream *err_stream) const {
   std::shared_ptr<DbgObject> condition_obj;

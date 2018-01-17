@@ -20,6 +20,7 @@
 #include "../../google_cloud_debugger_lib/error_messages.h"
 #include "../../google_cloud_debugger_lib/dbg_object.h"
 #include "../../google_cloud_debugger_lib/constants.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -37,7 +38,7 @@ const TypeSignature& StringEvaluator::GetStaticType() const {
 
 
 HRESULT StringEvaluator::Evaluate(
-      std::shared_ptr<google_cloud_debugger::DbgObject> *dbg_object,
+      std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const {
   if (!dbg_object || !eval_coordinator || !err_stream) {
     return E_INVALIDARG;
