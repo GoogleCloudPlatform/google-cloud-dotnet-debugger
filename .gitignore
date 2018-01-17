@@ -16,3 +16,5 @@ package-*
 coverage_report
 *.gcno
 *.gcda
+src/google_cloud_debugger/google_cloud_debugger/google_cloud_debugger
+src/google_cloud_debugger/google_cloud_debugger_test/google_cloud_debugger_test
