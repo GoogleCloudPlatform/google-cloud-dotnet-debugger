@@ -32,7 +32,7 @@ fi
 # Build the coreclr library
 if [[ ! -d $CORECLR_BIN ]]
 then
-  sudo $CORECLR_DIR/build.sh skipgenerateversion skiptests skipnuget skipmscorlib
+  sudo $CORECLR_DIR/build.sh 
 else
   echo "Skipping coreclr, it was already built."
 fi
