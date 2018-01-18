@@ -233,6 +233,7 @@
     <ClInclude Include="metadata_headers.h" />
     <ClInclude Include="metadata_tables.h" />
     <ClInclude Include="portable_pdb_file.h" />
+    <ClInclude Include="type_signature.h" />
     <ClInclude Include="variable_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
@@ -276,6 +277,7 @@
     <ClCompile Include="portable_pdb_file.cc" />
     <ClCompile Include="stack_frame_collection.cc" />
     <ClCompile Include="string_stream_wrapper.cc" />
+    <ClCompile Include="type_signature.cc" />
     <ClCompile Include="variable_wrapper.cc" />
   </ItemGroup>
   <ItemGroup>

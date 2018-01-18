@@ -22,8 +22,7 @@
 #include "common.h"
 #include "expression_util.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 class ExpressionEvaluator;
 struct FormatMessageModel;
@@ -438,8 +437,7 @@ class MethodCallExpression : public JavaExpressionSelector {
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_JAVA_EXPRESSION_H_
 

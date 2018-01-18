@@ -21,10 +21,10 @@
 // numeric promotions, etc.
 namespace google_cloud_debugger {
 
-class TypeSignature;
+struct TypeSignature;
 
-class NumericConversion {
-public:
+class NumericCompilerHelper {
+ public:
   // Returns true if source can be implicitly converted to target.
   // If source and target are not numeric type, the function
   // return false.
@@ -32,7 +32,16 @@ public:
   // will also return true.
   // TODO(quoct): Add support for decimal type.
   static bool IsImplicitNumericConversionable(const TypeSignature &source,
-    const TypeSignature &target);
+                                              const TypeSignature &target);
+
+  // Returns true if source can be numerically promoted to int.
+  static bool IsNumericallyPromotedToInt(const CorElementType &source);
+
+  // Given a DbgObject, try to convert it into a DbgPrimitive and extract
+  // the underlying value of the DbgPrimitive object and cast it to
+  // type T.
+  template <typename T>
+  static HRESULT ExtractPrimitiveValue(DbgObject *dbg_object, T *cast_result);
 };
 
 }  //  namespace google_cloud_debugger
