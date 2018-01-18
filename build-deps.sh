@@ -45,7 +45,7 @@ fi
 if [[ ! -d $CORECLR_BIN ]]
 then
   cd $CORECLR_DIR
-  sudo ./build.sh skiptests skipnuget skipmscorlib
+  ./build.sh skiptests skipnuget skipmscorlib
 else
   echo "Skipping coreclr, it was already built."
 fi
