@@ -32,7 +32,8 @@ fi
 # Build the coreclr library
 if [[ ! -d $CORECLR_BIN ]]
 then
-  sudo $CORECLR_DIR/build.sh 
+  cd $CORECLR_DIR
+  sudo ./build.sh 
 else
   echo "Skipping coreclr, it was already built."
 fi
