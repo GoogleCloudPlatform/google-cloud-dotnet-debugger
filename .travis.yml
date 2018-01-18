@@ -7,19 +7,16 @@ dotnet: 2.0.0
 
 addons:
   apt:
+    # Needed for coreclr
     sources:
-    - sourceline: 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.6 main'
-      key_url: 'http://llvm.org/apt/llvm-snapshot.gpg.key'
+      - sourceline: 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.6 main'
+        key_url: 'http://llvm.org/apt/llvm-snapshot.gpg.key'
     packages:
-    - lldb-3.6 lldb-3.6-dev
+      - lldb-3.6 lldb-3.6-dev
 
 before_install:
   # Needed for protobuf
   - sudo apt-get install autoconf automake libtool curl make g++ unzip
-  # Needed for lldb-3.6 for core
-  - echo "deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.6 main" | sudo tee /etc/apt/sources.list.d/llvm.list
-  - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | sudo apt-key add -
-  - sudo apt-get update
   # Needed for coreclr
   - sudo apt-get install cmake llvm-3.5 clang-3.5 lldb-3.6 lldb-3.6-dev libunwind8 libunwind8-dev gettext libicu-dev liblttng-ust-dev libcurl4-openssl-dev libssl-dev uuid-dev libkrb5-dev
   # Needed for our bits
@@ -33,7 +30,14 @@ script:
   # Run the unit tests.
   - ./run_unit_tests.sh
   
-
+cache:
+  # Wait 20 min for cache (these directories are large).
+  timeout: 1200
+  directories:
+  - $TRAVIS_BUILD_DIR/third_party/googletest/googletest/make
+  - $TRAVIS_BUILD_DIR/third_party/googletest/googlemock/make
+  - $TRAVIS_BUILD_DIR/third_party/coreclr/bin/Product/Linux.x64.Debug
+  - $TRAVIS_BUILD_DIR/third_party/protobuf/src
  
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
 env:

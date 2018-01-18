@@ -29,15 +29,6 @@ else
   echo "Skipping gmock, it was already built."
 fi
 
-# Build the coreclr library
-if [[ ! -d $CORECLR_BIN ]]
-then
-  cd $CORECLR_DIR
-  sudo ./build.sh 
-else
-  echo "Skipping coreclr, it was already built."
-fi
-
 # Build the protobuf library
 if [[ ! $(ldconfig -p | grep libprotobuf.so ) ]]
 then
@@ -50,6 +41,14 @@ else
   echo "Skipping protobuf, it was already built."
 fi
 
+# Build the coreclr library
+if [[ ! -d $CORECLR_BIN ]]
+then
+  cd $CORECLR_DIR
+  sudo ./build.sh skiptests skipnuget skipmscorlib
+else
+  echo "Skipping coreclr, it was already built."
+fi
 
 
 export LD_LIBRARY_PATH=$CORECLR_BIN
