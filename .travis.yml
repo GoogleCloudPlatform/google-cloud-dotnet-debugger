@@ -5,6 +5,14 @@ group: deprecated-2017Q4
 mono: none
 dotnet: 2.0.0
 
+addons:
+  apt:
+    sources:
+    - sourceline: 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.6 main'
+      key_url: 'http://llvm.org/apt/llvm-snapshot.gpg.key'
+    packages:
+    - lldb-3.6 lldb-3.6-dev
+
 before_install:
   # Needed for protobuf
   - sudo apt-get install autoconf automake libtool curl make g++ unzip
