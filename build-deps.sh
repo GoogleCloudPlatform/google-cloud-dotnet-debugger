@@ -44,7 +44,7 @@ fi
 # Build the coreclr library
 if [[ ! -d $CORECLR_BIN ]]
 then
-  $CORECLR_DIR/build.sh
+  $CORECLR_DIR/build.sh skiptests skipnuget skipmscorlib
 else
   echo "Skipping coreclr, it was already built."
 fi
