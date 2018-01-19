@@ -21,8 +21,7 @@
 #include "expression_evaluator.h"
 #include "java_expression.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 // Implements all Java binary operators.
 class BinaryExpressionEvaluator : public ExpressionEvaluator {
@@ -34,106 +33,103 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
       std::unique_ptr<ExpressionEvaluator> arg1,
       std::unique_ptr<ExpressionEvaluator> arg2);
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  // Compiles the subexpressions. Based on the static type of the subexpressions
+  // and the binary operator, compiles and sets the static type of this expression.
+  HRESULT Compile(
+      DbgStackFrame* readers_factory,
+      std::ostream* err_stream) override;
 
-  const JSignature& GetStaticType() const override {
+  // Returns the static type of the expression.
+  const TypeSignature& GetStaticType() const override {
     return result_type_;
   }
 
-  Nullable<jvalue> GetStaticValue() const override {
-    return nullptr;
-  }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
+  // Evaluates the binary expression.
+  // This will first evaluate the first subexpression.
+  // If the operator is either && or ||, this function may skip
+  // evaluating the second subexpression (short-circuiting).
+  // Otherwise, evaluates the second expression and perform
+  // the binary function computer_ on both of them.
+  HRESULT Evaluate(
+    std::shared_ptr<DbgObject> *dbg_object,
+    IEvalCoordinator *eval_coordinator,
+    std::ostream *err_stream) const override;
 
  private:
   // Implements "Compile" for arithmetical operators (+, -, *, /, %).
-  bool CompileArithmetical(FormatMessageModel* error_message);
+  HRESULT CompileArithmetical(std::ostream* err_stream);
 
   // Implements "Compile" for conditional operators (e.g. &&, ==, <=).
-  bool CompileConditional(FormatMessageModel* error_message);
+  HRESULT CompileRelational(std::ostream* err_stream);
 
   // Implements "Compile" for boolean conditional operators
   // (e.g. &, |, &&, ==, <=).
-  bool CompileBooleanConditional(FormatMessageModel* error_message);
+  HRESULT CompileBooleanConditional(std::ostream* err_stream);
 
   // Implements "Compile" for bitwise operators (&, |, ^).
-  bool CompileBitwise(FormatMessageModel* error_message);
+  HRESULT CompileLogical(std::ostream* err_stream);
 
   // Implements "Compile" for shoft operators (<<, >>, >>>).
-  bool CompileShift(FormatMessageModel* error_message);
-
-  // Checks whether "arg1" or "arg2" are of the specified type.
-  bool IsEitherType(JType type) const;
-
-  // Applies numeric promotion of type "TTargetType" to both "arg1" and "arg2".
-  // Returns false if either numeric promotion is not viable (one of the
-  // arguments is boolean or object).
-  template <typename TTargetType>
-  bool ApplyNumericPromotions(FormatMessageModel* error_message);
-
-  // Applies numeric promotion of either "arg1" or "arg2" as per Java Language
-  // Specifications section 5.6.1.
-  static bool ApplyShiftNumericPromotion(
-      std::unique_ptr<ExpressionEvaluator>* arg,
-      FormatMessageModel* error_message);
+  HRESULT CompileShift(std::ostream* err_stream);
 
   // Computes the value of the expression for arithmetical operators. The
   // template type "T" is the type that both arguments were promoted into.
-  // See Java Language Specification section 5.6.2 for more details.
   template <typename T>
-  ErrorOr<JVariant> ArithmeticComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  HRESULT ArithmeticComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
   // Computes the value of the expression for bitwise operators. This does not
   // include bitwise operators applied on booleans (which become conditional
-  // operators). The template type "T" can be either jint or jlong as per
-  // Java Language Specification section 15.22).
+  // operators). The template type "T" can be either any integral types.
+  // "T" is the type that both arguments were promoted too.
   template <typename T>
-  ErrorOr<JVariant> BitwiseComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  HRESULT BitwiseComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
   // Computes the value of shift expression. The template type "T" denotes the
-  // type of the first argument (the shifted number). As per Java Language
-  // Specification section 15.19), "T" can only be jint or jlong. The type of
-  // the second argument is either int or long. "Bitmask" is applied to the
-  // second argument as per specifications (also section 15.19).
-  template <typename T, typename TUnsigned, uint16 Bitmask>
-  ErrorOr<JVariant> ShiftComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  // type of the first argument (the shifted number). The type of
+  // the second argument must be int. "Bitmask" is applied to the
+  // second argument as per specifications:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#shift-operators
+  template <typename T, uint16 Bitmask>
+  HRESULT ShiftComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
-  // Implements comparison operator on Java objects. JNI method IsSameObject
-  // is used to actually compare the two objects.
-  ErrorOr<JVariant> ConditionalObjectComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  // Implements comparison operator on .NET objects.
+  // Objects are equal if they have the same address.
+  HRESULT ConditionalObjectComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
-  // Compares two Java strings (including inline string literals).
-  ErrorOr<JVariant> ConditionalStringComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  // Compares two stringgs.
+  HRESULT ConditionalStringComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
   // Implements conditional operators. As per Java Language
   // Specifications sections 15.23 and 15.24 logical operators && and || only
   // apply to boolean type. Comparison operators == and != can also apply to
   // boolean.
-  ErrorOr<JVariant> ConditionalBooleanComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  HRESULT ConditionalBooleanComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
   // Implements comparison operators for numerical types (i.e. not booleans).
-  // As per Java Language Specifications section 15.20 the two arguments are
-  // promoted to the same type and compared against each other.
+  // The two arguments are promoted to the same type and compared against each other.
   template <typename T>
-  ErrorOr<JVariant> NumericalComparisonComputer(
-      const JVariant& arg1,
-      const JVariant& arg2) const;
+  HRESULT NumericalComparisonComputer(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
  private:
   // Binary expression type (e.g. + or <<).
@@ -147,21 +143,19 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
 
   // Pointer to a member function of this class to do the actual evaluation
   // of the binary expression.
-  ErrorOr<JVariant> (BinaryExpressionEvaluator::*computer_)(
-      const JVariant&,
-      const JVariant&) const;
+  HRESULT (BinaryExpressionEvaluator::*computer_)(
+      std::shared_ptr<DbgObject> arg1,
+      std::shared_ptr<DbgObject> arg2,
+      std::shared_ptr<DbgObject> *result) const;
 
   // Statically computed resulting type of the expression. This is what
   // computer_ is supposed product.
-  JSignature result_type_;
+  TypeSignature result_type_;
 
   DISALLOW_COPY_AND_ASSIGN(BinaryExpressionEvaluator);
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_BINARY_EXPRESSION_EVALUATOR_H_
-
-

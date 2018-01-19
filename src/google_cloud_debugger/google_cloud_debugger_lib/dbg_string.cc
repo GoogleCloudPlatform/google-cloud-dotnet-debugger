@@ -55,6 +55,60 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
     return S_OK;
   }
 
+  // If the underlying string already set, don't need
+  // to extract again.
+  if (string_obj_set_) {
+    variable->set_value(string_obj_);
+    return S_OK;
+  }
+
+  HRESULT hr = ExtractStringFromReference();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  string_obj_set_ = true;
+  variable->set_value(string_obj_);
+  return S_OK;
+}
+
+HRESULT DbgString::PopulateType(Variable *variable) {
+  if (!variable) {
+    return E_INVALIDARG;
+  }
+
+  variable->set_type("System.String");
+  return S_OK;
+}
+
+HRESULT DbgString::GetString(DbgObject *object, string *returned_string) {
+  if (object == nullptr || returned_string == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  DbgString *dbg_string = dynamic_cast<DbgString *>(object);
+  if (object == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  if (!dbg_string->string_obj_set_) {
+    HRESULT hr = dbg_string->ExtractStringFromReference();
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    dbg_string->string_obj_set_ = true;
+  }
+
+  *returned_string = dbg_string->string_obj_;
+  return S_OK;
+}
+
+HRESULT DbgString::ExtractStringFromReference() {
+  if (!string_handle_) {
+    return E_INVALIDARG;
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugValue> debug_value;
   CComPtr<ICorDebugStringValue> debug_string;
@@ -74,59 +128,8 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
     return hr;
   }
 
-  std::string value;
-  hr = GetString(debug_string, &value);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  variable->set_value(value);
-  return S_OK;
-}
-
-HRESULT DbgString::PopulateType(Variable *variable) {
-  if (!variable) {
-    return E_INVALIDARG;
-  }
-
-  variable->set_type("System.String");
-  return S_OK;
-}
-
-HRESULT DbgString::GetString(ICorDebugStringValue *debug_string,
-                             std::string *returned_string) {
-  if (!returned_string || !debug_string) {
-    return E_INVALIDARG;
-  }
-
-  HRESULT hr;
-  std::unique_ptr<WCHAR[]> string_value;
-  ULONG32 str_len;
-  ULONG32 str_returned_len;
-
-  hr = debug_string->GetLength(&str_len);
-  if (FAILED(hr)) {
-    WriteError("Failed to get length of string.");
-    return hr;
-  }
-
-  // Plus 1 for the NULL at the end of the string.
-  str_len += 1;
-  string_value =
-      std::unique_ptr<WCHAR[]>(new (std::nothrow) WCHAR[str_len]);
-  if (!string_value) {
-    return E_OUTOFMEMORY;
-  }
-
-  hr = debug_string->GetString(str_len, &str_returned_len,
-                               string_value.get());
-  if (FAILED(hr)) {
-    WriteError("Failed to extract the string.");
-    return hr;
-  }
-
-  *returned_string = ConvertWCharPtrToString(string_value.get());
-  return S_OK;
+  return ExtractStringFromICorDebugStringValue(debug_string,
+      &string_obj_, GetErrorStream());
 }
 
 }  // namespace google_cloud_debugger

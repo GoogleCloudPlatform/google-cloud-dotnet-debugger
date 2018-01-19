@@ -178,6 +178,93 @@ bool NumericCompilerHelper::IsNumericallyPromotedToInt(const CorElementType &sou
       || source == CorElementType::ELEMENT_TYPE_I2;
 }
 
+bool NumericCompilerHelper::BinaryNumericalPromotion(
+  const CorElementType &arg1,
+  const CorElementType &arg2,
+  CorElementType *result) {
+  if (!IsNumericalType(arg1) && !IsNumericalType(arg2)) {
+    return false;
+  }
+
+  // TODO(quoct): Add support for Decimal.
+  if (arg1 == CorElementType::ELEMENT_TYPE_R8
+    || arg2 == CorElementType::ELEMENT_TYPE_R8) {
+    *result = CorElementType::ELEMENT_TYPE_R8;
+    return true;
+  }
+  else if (arg1 == CorElementType::ELEMENT_TYPE_R4
+    || arg2 == CorElementType::ELEMENT_TYPE_R4) {
+    *result = CorElementType::ELEMENT_TYPE_R4;
+    return true;
+  }
+  else if (arg1 == CorElementType::ELEMENT_TYPE_U8
+    || arg2 == CorElementType::ELEMENT_TYPE_U8) {
+    // If the other operand is of type sbyte, short, int or long,
+    // an error will occur. This is because no integral type exists that can
+    // represent the full range of ulong as well as the signed integral types.
+    if (arg1 == CorElementType::ELEMENT_TYPE_I1
+      || arg1 == CorElementType::ELEMENT_TYPE_I2
+      || arg1 == CorElementType::ELEMENT_TYPE_I4
+      || arg1 == CorElementType::ELEMENT_TYPE_I8
+      || arg2 == CorElementType::ELEMENT_TYPE_I1
+      || arg2 == CorElementType::ELEMENT_TYPE_I2
+      || arg2 == CorElementType::ELEMENT_TYPE_I4
+      || arg2 == CorElementType::ELEMENT_TYPE_I8) {
+      return false;
+    }
+    *result = CorElementType::ELEMENT_TYPE_U8;
+    return true;
+  }
+  else if (arg1 == CorElementType::ELEMENT_TYPE_I8
+    || arg2 == CorElementType::ELEMENT_TYPE_I8) {
+    *result = CorElementType::ELEMENT_TYPE_I8;
+    return true;
+  }
+  else if (arg1 == CorElementType::ELEMENT_TYPE_U4
+    || arg2 == CorElementType::ELEMENT_TYPE_U4) {
+    // If 1 of the operand is sbyte, short or int,
+    // the result will be long.
+    if (arg1 == CorElementType::ELEMENT_TYPE_I1
+      || arg1 == CorElementType::ELEMENT_TYPE_I2
+      || arg1 == CorElementType::ELEMENT_TYPE_I4) {
+      *result = CorElementType::ELEMENT_TYPE_I8;
+      return true;
+    }
+
+    if (arg2 == CorElementType::ELEMENT_TYPE_I1
+      || arg2 == CorElementType::ELEMENT_TYPE_I2
+      || arg2 == CorElementType::ELEMENT_TYPE_I4) {
+      *result = CorElementType::ELEMENT_TYPE_I8;
+      return true;
+    }
+
+    *result = CorElementType::ELEMENT_TYPE_U4;
+    return true;
+  }
+  else {
+    *result = CorElementType::ELEMENT_TYPE_I4;
+    return true;
+  }
+}
+
+bool NumericCompilerHelper::IsNumericalType(const CorElementType &cor_type) {
+  return IsIntegralType(cor_type)
+    || cor_type == CorElementType::ELEMENT_TYPE_R4
+    || cor_type == CorElementType::ELEMENT_TYPE_R8;
+}
+
+bool NumericCompilerHelper::IsIntegralType(const CorElementType &cor_type) {
+  return cor_type == CorElementType::ELEMENT_TYPE_I1
+    || cor_type == CorElementType::ELEMENT_TYPE_U1
+    || cor_type == CorElementType::ELEMENT_TYPE_I2
+    || cor_type == CorElementType::ELEMENT_TYPE_U2
+    || cor_type == CorElementType::ELEMENT_TYPE_I4
+    || cor_type == CorElementType::ELEMENT_TYPE_U4
+    || cor_type == CorElementType::ELEMENT_TYPE_I8
+    || cor_type == CorElementType::ELEMENT_TYPE_U8
+    || cor_type == CorElementType::ELEMENT_TYPE_CHAR;
+}
+
 template <typename T>
 HRESULT NumericCompilerHelper::ExtractPrimitiveValue(DbgObject *dbg_object, T *cast_result) {
   if (!dbg_object) {
