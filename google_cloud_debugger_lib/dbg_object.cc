@@ -129,6 +129,14 @@ HRESULT DbgObject::CreateDbgObjectHelper(
   }
 
   temp_object->cor_element_type_ = cor_element_type;
+  if (debug_value != nullptr) {
+    hr = debug_value->GetAddress(&temp_object->address_);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get address of the object.";
+      return hr;
+    }
+  }
+
   (*result_object) = std::move(temp_object);
   return S_OK;
 }

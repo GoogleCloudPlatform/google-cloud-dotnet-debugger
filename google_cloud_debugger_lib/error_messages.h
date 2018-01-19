@@ -41,6 +41,12 @@ static const std::string kFailedToCompileFirstSubExpr =
 static const std::string kFailedToEvalFirstSubExpr =
     "Failed to evaluate first sub-expression.";
 
+static const std::string kFailedToEvalSecondSubExpr =
+    "Failed to evaluate second sub-expression.";
+
+static const std::string kExpressionNotSupported =
+    "Expression not supported.";
+
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_
