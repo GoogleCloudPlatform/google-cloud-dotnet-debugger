@@ -37,6 +37,20 @@ class NumericCompilerHelper {
   // Returns true if source can be numerically promoted to int.
   static bool IsNumericallyPromotedToInt(const CorElementType &source);
 
+  // Apply numeric promotions for +,-,*,/,%, &, |, ^, ==, !=, >, <, >= and <=
+  // based on:
+  // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#binary-numeric-promotions
+  // Returns false if an error occurs.
+  static bool BinaryNumericalPromotion(const CorElementType &arg1,
+    const CorElementType &arg2, CorElementType *result);
+
+  // Returns true if CorElementType is a numerical type.
+  // TODO(quoct): This does not handle Decimal.
+  static bool IsNumericalType(const CorElementType &cor_type);
+
+  // Returns true if CorElementType is an integral type.
+  static bool IsIntegralType(const CorElementType &cor_type);
+
   // Given a DbgObject, try to convert it into a DbgPrimitive and extract
   // the underlying value of the DbgPrimitive object and cast it to
   // type T.

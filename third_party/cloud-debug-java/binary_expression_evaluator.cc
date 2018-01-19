@@ -18,145 +18,108 @@
 
 #include <cmath>
 #include <limits>
-#include "model.h"
-#include "messages.h"
-#include "numeric_cast_evaluator.h"
+#include "../../google_cloud_debugger_lib/compiler_helpers.h"
+#include "../../google_cloud_debugger_lib/dbg_primitive.h"
+#include "../../google_cloud_debugger_lib/dbg_string.h"
+#include "../../google_cloud_debugger_lib/error_messages.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-// Implementation of Java modulo (%) operator for int data type.
-static jint ComputeModulo(jint x, jint y) {
+// Implementation of C# modulo (%) operator for int data type.
+static int32_t ComputeModulo(int32_t x, int32_t y) {
   return x % y;
 }
 
 
-// Implementation of Java modulo (%) operator for long data type.
-static jlong ComputeModulo(jlong x, jlong y) {
+// Implementation of C# modulo (%) operator for long data type.
+static int64_t ComputeModulo(int64_t x, int64_t y) {
   return x % y;
 }
 
 
-// Implementation of Java modulo (%) operator for float data type.
-static jfloat ComputeModulo(jfloat x, jfloat y) {
-  return std::fmod(static_cast<float>(x), static_cast<float>(y));
+// Implementation of C# modulo (%) operator for float data type.
+static float_t ComputeModulo(float_t x, float_t y) {
+  return std::fmod(x, y);
 }
 
 
-// Implementation of Java modulo (%) operator for double data type.
-static jdouble ComputeModulo(jdouble x, jdouble y) {
-  return std::fmod(static_cast<double>(x), static_cast<double>(y));
+// Implementation of C# modulo (%) operator for double data type.
+static double_t ComputeModulo(double_t x, double_t y) {
+  return std::fmod(x, y);
 }
 
 
 // Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(jint divisor) {
+static bool IsDivisionByZero(int32_t divisor) {
   return divisor == 0;
 }
 
 
 // Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(jlong divisor) {
+static bool IsDivisionByZero(int64_t divisor) {
   return divisor == 0;
 }
 
 
 // Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(jfloat divisor) {
+static bool IsDivisionByZero(float_t divisor) {
   return false;  // Floating point division never triggers the signal
 }
 
 
 // Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(jdouble divisor) {
+static bool IsDivisionByZero(double_t divisor) {
   return false;  // Floating point division never triggers the signal
 }
 
 
 // Detects edge case in integer division that causes SIGFPE signal.
-static bool IsDivisionOverflow(jint value1, jint value2) {
-  return (value1 == std::numeric_limits<jint>::min()) &&
+static bool IsDivisionOverflow(int32_t value1, int32_t value2) {
+  return (value1 == INT_MIN) &&
          (value2 == -1);
 }
 
 
 // Detects edge case in integer division that causes SIGFPE signal.
-static bool IsDivisionOverflow(jlong value1, jlong value2) {
-  return (value1 == std::numeric_limits<jlong>::min()) &&
+static bool IsDivisionOverflow(int64_t value1, int64_t value2) {
+  return (value1 == LONG_MIN) &&
          (value2 == -1);
 }
 
 
 // Detects edge case in integer division that causes SIGFPE signal.
-static bool IsDivisionOverflow(jfloat value1, jfloat value2) {
+static bool IsDivisionOverflow(float_t value1, float_t value2) {
   return false;  // This condition does not apply to floating point.
 }
 
 
 // Detects edge case in integer division that causes SIGFPE signal.
-static bool IsDivisionOverflow(jdouble value1, jdouble value2) {
+static bool IsDivisionOverflow(double_t value1, double_t value2) {
   return false;  // This condition does not apply to floating point.
 }
-
-
-// Compares two Java strings.
-static bool IsEqual(jstring string1, jstring string2) {
-  if ((string1 == nullptr) || (string2 == nullptr)) {
-    return string1 == string2;
-  }
-
-  const jint length1 = jni()->GetStringLength(string1);
-  const jint length2 = jni()->GetStringLength(string2);
-
-  if (length1 != length2) {
-    return false;
-  }
-
-  if (length1 == 0) {
-    return true;
-  }
-
-  const jchar* data1 = jni()->GetStringCritical(string1, nullptr);
-  if (data1 == nullptr) {   // Some error occurred.
-    return false;
-  }
-
-  const jchar* data2 = jni()->GetStringCritical(string2, nullptr);
-  if (data2 == nullptr) {   // Some error occurred.
-    jni()->ReleaseStringCritical(string1, data1);
-    return false;
-  }
-
-  const bool is_equal = (memcmp(data1, data2, sizeof(jchar) * length1) == 0);
-
-  jni()->ReleaseStringCritical(string1, data1);
-  jni()->ReleaseStringCritical(string2, data2);
-
-  return is_equal;
-}
-
 
 BinaryExpressionEvaluator::BinaryExpressionEvaluator(
-    BinaryJavaExpression::Type type,
-    std::unique_ptr<ExpressionEvaluator> arg1,
+    BinaryJavaExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg1,
     std::unique_ptr<ExpressionEvaluator> arg2)
     : type_(type),
       arg1_(std::move(arg1)),
       arg2_(std::move(arg2)),
       computer_(nullptr) {
-  result_type_.type = JType::Object;
+  result_type_ = TypeSignature::Object;
 }
 
-
-bool BinaryExpressionEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!arg1_->Compile(readers_factory, error_message)) {
-    return false;
+HRESULT BinaryExpressionEvaluator::Compile(DbgStackFrame *readers_factory,
+                                           std::ostream *error_stream) {
+  HRESULT hr;
+  hr = arg1_->Compile(readers_factory, error_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  if (!arg2_->Compile(readers_factory, error_message)) {
-    return false;
+  hr = arg2_->Compile(readers_factory, error_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   switch (type_) {
@@ -165,552 +128,580 @@ bool BinaryExpressionEvaluator::Compile(
     case BinaryJavaExpression::Type::mul:
     case BinaryJavaExpression::Type::div:
     case BinaryJavaExpression::Type::mod:
-      return CompileArithmetical(error_message);
+      return CompileArithmetical(error_stream);
 
-    case BinaryJavaExpression::Type::conditional_and:
-    case BinaryJavaExpression::Type::conditional_or:
     case BinaryJavaExpression::Type::eq:
     case BinaryJavaExpression::Type::ne:
     case BinaryJavaExpression::Type::le:
     case BinaryJavaExpression::Type::ge:
     case BinaryJavaExpression::Type::lt:
     case BinaryJavaExpression::Type::gt:
-      return CompileConditional(error_message);
+      return CompileRelational(error_stream);
+
+    case BinaryJavaExpression::Type::conditional_and:
+    case BinaryJavaExpression::Type::conditional_or:
+      return CompileBooleanConditional(error_stream);
 
     case BinaryJavaExpression::Type::bitwise_and:
     case BinaryJavaExpression::Type::bitwise_or:
     case BinaryJavaExpression::Type::bitwise_xor:
-      return CompileBitwise(error_message);
+      return CompileLogical(error_stream);
 
     case BinaryJavaExpression::Type::shl:
     case BinaryJavaExpression::Type::shr_s:
     case BinaryJavaExpression::Type::shr_u:
-      return CompileShift(error_message);
-  }
-
-  // Compiler should catch any missing enums. We should never get here.
-  return false;
-}
-
-bool BinaryExpressionEvaluator::CompileArithmetical(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-
-  // TODO(vlif): implement concatenation for strings
-
-  // Apply numeric promotions (Java Language Specification section 5.6.2)
-  // and initialize the computation routine.
-  if (IsEitherType(JType::Double)) {
-    if (!ApplyNumericPromotions<jdouble>(error_message)) {
-      return false;
-    }
-
-    computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<jdouble>;
-    result_type_ = { JType::Double };
-
-    return true;
-  } else if (IsEitherType(JType::Float)) {
-    if (!ApplyNumericPromotions<jfloat>(error_message)) {
-      return false;
-    }
-
-    computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<jfloat>;
-    result_type_ = { JType::Float };
-
-    return true;
-  } else if (IsEitherType(JType::Long)) {
-    if (!ApplyNumericPromotions<jlong>(error_message)) {
-      return false;
-    }
-
-    computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<jlong>;
-    result_type_ = { JType::Long };
-
-    return true;
-  } else {
-    if (!ApplyNumericPromotions<jint>(error_message)) {
-      return false;
-    }
-
-    computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<jint>;
-    result_type_ = { JType::Int };
-
-    return true;
+      return CompileShift(error_stream);
+    default:
+      // Compiler should catch any missing enums. We should never get here.
+      return E_FAIL;
   }
 }
 
+HRESULT BinaryExpressionEvaluator::CompileArithmetical(
+    std::ostream *err_stream) {
+  // TODO(quoct): implement concatenation for strings
+  CorElementType result;
+  if (!NumericCompilerHelper::BinaryNumericalPromotion(
+          arg1_->GetStaticType().cor_type, arg2_->GetStaticType().cor_type,
+          &result)) {
+    *err_stream << kTypeMismatch;
+    return E_FAIL;
+  }
 
-bool BinaryExpressionEvaluator::CompileConditional(
-    FormatMessageModel* error_message) {
-  const JSignature& signature1 = arg1_->GetStaticType();
-  const JSignature& signature2 = arg2_->GetStaticType();
+  result_type_ = {result};
+  switch (result) {
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<int32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<uint32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<int64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<uint64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<float_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8: {
+      computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<double_t>;
+      return S_OK;
+    }
+    default: {
+      *err_stream << kTypeMismatch;
+      return E_FAIL;
+    }
+  }
+}
+
+HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
+  const TypeSignature &signature1 = arg1_->GetStaticType();
+  const TypeSignature &signature2 = arg2_->GetStaticType();
+  result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN};
+
+  // If both items are numerical type, perform numeric promotion.
+  if (NumericCompilerHelper::IsNumericalType(signature1.cor_type) &&
+      NumericCompilerHelper::IsNumericalType(signature2.cor_type)) {
+    CorElementType result;
+    if (!NumericCompilerHelper::BinaryNumericalPromotion(
+            signature1.cor_type, signature1.cor_type, &result)) {
+      *err_stream << kTypeMismatch;
+      return E_FAIL;
+    }
+
+    switch (result) {
+      case CorElementType::ELEMENT_TYPE_I4: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<int32_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_U4: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<uint32_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_I8: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<int64_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_U8: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<uint64_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_R4: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<float_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_R8: {
+        computer_ =
+            &BinaryExpressionEvaluator::NumericalComparisonComputer<double_t>;
+        return S_OK;
+      }
+      default: {
+        *err_stream << kTypeMismatch;
+        return E_FAIL;
+      }
+    }
+  }
+
+  // We don't support the other expressions if the types are not numeric.
+  if (type_ != BinaryJavaExpression::Type::eq &&
+      type_ != BinaryJavaExpression::Type::ne) {
+    *err_stream << kExpressionNotSupported;
+    return E_NOTIMPL;
+  }
+
+  if (signature1.cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN &&
+      signature2.cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
+    return CompileBooleanConditional(err_stream);
+  }
 
   // Conditional operations applied to objects.
-  if ((signature1.type == JType::Object) &&
-      (signature2.type == JType::Object) &&
-      ((type_ == BinaryJavaExpression::Type::eq) ||
-       (type_ == BinaryJavaExpression::Type::ne))) {
-    // Use regular comparison operators ("==" and "!=") to compare Java
-    // strings. This is not consistent with Java language. The way to compare
-    // strings in Java is through "equals" method, but expression evaluator
-    // doesn't support methods yet. Also it wouldn't make sense if breakpoint
-    // condition like (myName == "vlad") would always evaluate to false.
-    // TODO(vlif): support string comparison through "equals" method and keep
-    // this kind of string comparison for inline strings only.
-    if ((signature1.object_signature == kJavaStringClassSignature) &&
-        (signature2.object_signature == kJavaStringClassSignature)) {
-      computer_ = &BinaryExpressionEvaluator::ConditionalStringComputer;
-    } else {
-      computer_ = &BinaryExpressionEvaluator::ConditionalObjectComputer;
-    }
-    result_type_ = { JType::Boolean };
-
-    return true;
+  if (signature1.type_name.compare(kStringClassName) == 0 &&
+      signature2.type_name.compare(kStringClassName) == 0) {
+    computer_ = &BinaryExpressionEvaluator::ConditionalStringComputer;
+    return S_OK;
+  } else if (!NumericCompilerHelper::IsNumericalType(signature1.cor_type) &&
+             !NumericCompilerHelper::IsNumericalType(signature2.cor_type)) {
+    // Compares address (only applies for non-numeric types.
+    computer_ = &BinaryExpressionEvaluator::ConditionalObjectComputer;
+    return S_OK;
   }
 
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-  FormatMessageModel unused_error_message;
-  if (CompileBooleanConditional(&unused_error_message)) {
-    return true;
-  }
-
-  // Numerical comparison operators.
-  if ((type_ == BinaryJavaExpression::Type::eq) ||
-      (type_ == BinaryJavaExpression::Type::ne) ||
-      (type_ == BinaryJavaExpression::Type::le) ||
-      (type_ == BinaryJavaExpression::Type::ge) ||
-      (type_ == BinaryJavaExpression::Type::lt) ||
-      (type_ == BinaryJavaExpression::Type::gt)) {
-    // Apply numeric promotions (Java Language Specification section 5.6.2)
-    // and initialize the computation routine.
-    if (IsEitherType(JType::Double)) {
-      if (!ApplyNumericPromotions<jdouble>(error_message)) {
-        return false;
-      }
-
-      computer_ =
-          &BinaryExpressionEvaluator::NumericalComparisonComputer<jdouble>;
-    } else if (IsEitherType(JType::Float)) {
-      if (!ApplyNumericPromotions<jfloat>(error_message)) {
-        return false;
-      }
-
-      computer_ =
-          &BinaryExpressionEvaluator::NumericalComparisonComputer<jfloat>;
-    } else if (IsEitherType(JType::Long)) {
-      if (!ApplyNumericPromotions<jlong>(error_message)) {
-        return false;
-      }
-
-      computer_ =
-          &BinaryExpressionEvaluator::NumericalComparisonComputer<jlong>;
-    } else {
-      if (!ApplyNumericPromotions<jint>(error_message)) {
-        return false;
-      }
-
-      computer_ = &BinaryExpressionEvaluator::NumericalComparisonComputer<jint>;
-    }
-
-    result_type_ = { JType::Boolean };
-    return true;
-  }
-
-  *error_message = { TypeMismatch };
-
-  return false;
+  *err_stream << kTypeMismatch;
+  return E_FAIL;
 }
 
-
-bool BinaryExpressionEvaluator::CompileBooleanConditional(
-    FormatMessageModel* error_message) {
+HRESULT BinaryExpressionEvaluator::CompileBooleanConditional(
+    std::ostream *err_stream) {
   // Conditional operations that apply to boolean arguments.
-  if (IsBooleanType(arg1_->GetStaticType().type) &&
-      IsBooleanType(arg2_->GetStaticType().type) &&
-      ((type_ == BinaryJavaExpression::Type::conditional_and) ||
-       (type_ == BinaryJavaExpression::Type::conditional_or) ||
-       (type_ == BinaryJavaExpression::Type::eq) ||
-       (type_ == BinaryJavaExpression::Type::ne) ||
-       (type_ == BinaryJavaExpression::Type::bitwise_and) ||
-       (type_ == BinaryJavaExpression::Type::bitwise_or) ||
-       (type_ == BinaryJavaExpression::Type::bitwise_xor))) {
+  if (arg1_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN &&
+      arg2_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
     computer_ = &BinaryExpressionEvaluator::ConditionalBooleanComputer;
-    result_type_ = { JType::Boolean };
-
-    return true;
+    result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN};
+    return S_OK;
   }
 
-  *error_message = { TypeMismatch };
-
-  return false;
+  *err_stream << kTypeMismatch;
+  return E_FAIL;
 }
 
+HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
+  const CorElementType &arg1_type = arg1_->GetStaticType().cor_type;
+  const CorElementType &arg2_type = arg2_->GetStaticType().cor_type;
 
-bool BinaryExpressionEvaluator::CompileBitwise(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-
-  // Bitwise operators become conditional when applied to boolean arguments
-  // (Java Language Specification, section 15.22.2).
-  FormatMessageModel unused_error_message;
-  if (CompileBooleanConditional(&unused_error_message)) {
-    return true;
-  }
-
-  // Integer bitwise operators are only applicable to int and long.
-  if (!IsIntegerType(arg1_->GetStaticType().type) ||
-      !IsIntegerType(arg2_->GetStaticType().type)) {
-    *error_message = { TypeMismatch };
-    return false;
-  }
-
-  // Shift of "long".
-  if (IsEitherType(JType::Long)) {
-    if (!ApplyNumericPromotions<jlong>(error_message)) {
-      return false;
+  // We support 2 cases, either both arguments are integers
+  // or if both arguments are boolean.
+  if (NumericCompilerHelper::IsIntegralType(arg1_type) &&
+      NumericCompilerHelper::IsIntegralType(arg2_type)) {
+    // For numerical type, perform binary numerical promotion.
+    CorElementType result;
+    if (!NumericCompilerHelper::BinaryNumericalPromotion(
+            arg1_->GetStaticType().cor_type, arg2_->GetStaticType().cor_type,
+            &result)) {
+      *err_stream << kTypeMismatch;
+      return E_FAIL;
     }
 
-    computer_ = &BinaryExpressionEvaluator::BitwiseComputer<jlong>;
-    result_type_ = { JType::Long };
-
-    return true;
+    result_type_ = { result };
+    switch (result) {
+      case CorElementType::ELEMENT_TYPE_I4: {
+        computer_ = &BinaryExpressionEvaluator::BitwiseComputer<int32_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_U4: {
+        computer_ = &BinaryExpressionEvaluator::BitwiseComputer<uint32_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_I8: {
+        computer_ = &BinaryExpressionEvaluator::BitwiseComputer<int64_t>;
+        return S_OK;
+      }
+      case CorElementType::ELEMENT_TYPE_U8: {
+        computer_ = &BinaryExpressionEvaluator::BitwiseComputer<uint64_t>;
+        return S_OK;
+      }
+      default: {
+        *err_stream << kTypeMismatch;
+        return E_FAIL;
+      }
+    }
   }
 
-  // Shift of "int".
-  if (!ApplyNumericPromotions<jint>(error_message)) {
-    return false;
-  }
-
-  computer_ = &BinaryExpressionEvaluator::BitwiseComputer<jint>;
-  result_type_ = { JType::Int };
-
-  return true;
+  // Otherwise, try to compile them as boolean.
+  return CompileBooleanConditional(err_stream);
 }
 
-
-bool BinaryExpressionEvaluator::CompileShift(
-    FormatMessageModel* error_message) {
-  // TODO(vlif): unbox (Java Language Specification section 5.1.8).
-
-  // Numeric promotion is applied separately for each argument
-  // (Java Language Specification section 15.19)
-  if (!IsIntegerType(arg1_->GetStaticType().type) ||
-      !IsIntegerType(arg2_->GetStaticType().type)) {
-    *error_message = { TypeMismatch };
-    return false;
+HRESULT BinaryExpressionEvaluator::CompileShift(std::ostream *err_stream) {
+  CorElementType arg1_type = arg1_->GetStaticType().cor_type;
+  CorElementType arg2_type = arg2_->GetStaticType().cor_type;
+  if (!NumericCompilerHelper::IsIntegralType(arg1_type) &&
+      !NumericCompilerHelper::IsIntegralType(arg2_type)) {
+    *err_stream << kTypeMismatch;
+    return E_FAIL;
   }
 
-  if (!ApplyShiftNumericPromotion(&arg1_, error_message) ||
-      !ApplyShiftNumericPromotion(&arg2_, error_message)) {
-    return false;
+  // Arg2 has to be an int or numerically promotable to an int.
+  if (!NumericCompilerHelper::IsNumericallyPromotedToInt(arg2_type) &&
+      arg2_type != CorElementType::ELEMENT_TYPE_I4) {
+    *err_stream << kTypeMismatch;
+    return E_FAIL;
   }
 
-  switch (arg1_->GetStaticType().type) {
-    case JType::Int:
-      computer_ = &BinaryExpressionEvaluator::ShiftComputer<jint, uint32, 0x1f>;
-      result_type_ = { JType::Int };
+  if (NumericCompilerHelper::IsNumericallyPromotedToInt(arg1_type)) {
+    arg1_type = CorElementType::ELEMENT_TYPE_I4;
+  }
 
-      return true;
-
-    case JType::Long:
-      computer_ =
-          &BinaryExpressionEvaluator::ShiftComputer<jlong, uint64, 0x3f>;
-      result_type_ = { JType::Long };
-
-      return true;
-
-    default:
-      *error_message = { TypeMismatch };
+  result_type_ = {arg1_type};
+  switch (arg1_type) {
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = &BinaryExpressionEvaluator::ShiftComputer<int32_t, 0x1f>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      computer_ = &BinaryExpressionEvaluator::ShiftComputer<uint32_t, 0x1f>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = &BinaryExpressionEvaluator::ShiftComputer<int64_t, 0x3f>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      computer_ = &BinaryExpressionEvaluator::ShiftComputer<uint64_t, 0x3f>;
+      return S_OK;
+    }
+    default: {
+      *err_stream << kTypeMismatch;
       return false;
+    }
   }
 }
 
-
-bool BinaryExpressionEvaluator::IsEitherType(JType type) const {
-  return (arg1_->GetStaticType().type == type) ||
-         (arg2_->GetStaticType().type == type);
-}
-
-
-template <typename TTargetType>
-bool BinaryExpressionEvaluator::ApplyNumericPromotions(
-    FormatMessageModel* error_message) {
-  return ApplyNumericCast<TTargetType>(&arg1_, error_message) &&
-         ApplyNumericCast<TTargetType>(&arg2_, error_message);
-}
-
-
-bool BinaryExpressionEvaluator::ApplyShiftNumericPromotion(
-    std::unique_ptr<ExpressionEvaluator>* arg,
-    FormatMessageModel* error_message) {
-  switch ((*arg)->GetStaticType().type) {
-    case JType::Byte:
-    case JType::Char:
-    case JType::Short:
-      return ApplyNumericCast<jint>(arg, error_message);
-
-    case JType::Int:
-    case JType::Long:
-      return true;  // No numeric promotion needed.
-
-    default:
-      *error_message = { TypeMismatch };
-      return false;  // Shift operator not applicable for this type.
-  }
-}
-
-
-ErrorOr<JVariant> BinaryExpressionEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> arg1_value = arg1_->Evaluate(evaluation_context);
-  if (arg1_value.is_error()) {
-    return arg1_value;
+HRESULT BinaryExpressionEvaluator::Evaluate(
+    std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
+    std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> arg1_obj;
+  HRESULT hr = arg1_->Evaluate(&arg1_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    *err_stream << kFailedToEvalFirstSubExpr;
+    return hr;
   }
 
-  // TODO(vlif): evaluate second argument on demand. For example in this one:
-  //    (true || exp)
-  // "exp" should never be evaluated.
-  ErrorOr<JVariant> arg2_value = arg2_->Evaluate(evaluation_context);
-  if (arg2_value.is_error()) {
-    return arg2_value;
+  // For this special case, don't evaluate the second obj.
+  if (type_ == BinaryJavaExpression::Type::conditional_and) {
+    bool boolean1;
+    HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+        arg1_obj.get(), &boolean1);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    // If arg1 in arg1 && arg2 is false, expression is false.
+    if (!boolean1) {
+      *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(false));
+      return S_OK;
+    }
+    // Otherwise, proceeds to evaluate the second operand.
+  }
+  else if (type_ == BinaryJavaExpression::Type::conditional_or) {
+    bool boolean1;
+    HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+        arg1_obj.get(), &boolean1);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    // If arg1 in arg1 || arg2 is true, expression is false.
+    if (boolean1) {
+      *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(true));
+      return S_OK;
+    }
+    // Otherwise, proceeds to evaluate the second operand.
   }
 
-  return (this->*computer_)(arg1_value.value(), arg2_value.value());
-}
+  std::shared_ptr<DbgObject> arg2_obj;
+  HRESULT hr = arg2_->Evaluate(&arg2_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    *err_stream << kFailedToEvalSecondSubExpr;
+    return hr;
+  }
 
+  return (this->*computer_)(arg1_obj, arg2_obj, dbg_object);
+}
 
 template <typename T>
-ErrorOr<JVariant> BinaryExpressionEvaluator::ArithmeticComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  T value1 = T();
-  if (!arg1.get<T>(&value1)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT BinaryExpressionEvaluator::ArithmeticComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  T value1;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg1.get(), &value1);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  T value2 = T();
-  if (!arg2.get<T>(&value2)) {
-    return INTERNAL_ERROR_MESSAGE;
+  T value2;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg2.get(), &value2);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::add:
-      return JVariant::Primitive<T>(value1 + value2);
+    case BinaryJavaExpression::Type::add: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 + value2));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::sub:
-      return JVariant::Primitive<T>(value1 - value2);
+    case BinaryJavaExpression::Type::sub: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 - value2));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::mul:
-      return JVariant::Primitive<T>(value1 * value2);
+    case BinaryJavaExpression::Type::mul: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 * value2));
+      return S_OK;
+    }
 
     case BinaryJavaExpression::Type::mod:
     case BinaryJavaExpression::Type::div:
       if (IsDivisionByZero(value2)) {
-        return FormatMessageModel { DivisionByZero };
+        return E_INVALIDARG;
       }
 
       if (IsDivisionOverflow(value1, value2)) {
-        return FormatMessageModel { IntegerDivisionOverflow };
+        return E_INVALIDARG;
       }
 
       if (type_ == BinaryJavaExpression::Type::div) {
-        return JVariant::Primitive<T>(value1 / value2);
+        *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 / value2));
+        return S_OK;
       } else {
-        return JVariant::Primitive<T>(ComputeModulo(value1, value2));
+        *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(ComputeModule(value1, value2)));
+        return S_OK;
       }
 
     default:
-      DCHECK(false);  // Any non arithmetic operations are unexpected here.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 
-
 template <typename T>
-ErrorOr<JVariant> BinaryExpressionEvaluator::BitwiseComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  T value1 = T();
-  if (!arg1.get<T>(&value1)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT BinaryExpressionEvaluator::BitwiseComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  T value1;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg1.get(), &value1);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  T value2 = T();
-  if (!arg2.get<T>(&value2)) {
-    return INTERNAL_ERROR_MESSAGE;
+  T value2;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg2.get(), &value2);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::bitwise_and:
-      return JVariant::Primitive<T>(value1 & value2);
+    case BinaryJavaExpression::Type::bitwise_and: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 & value2));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::bitwise_or:
-      return JVariant::Primitive<T>(value1 | value2);
+    case BinaryJavaExpression::Type::bitwise_or: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 | value2));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::bitwise_xor:
-      return JVariant::Primitive<T>(value1 ^ value2);
+    case BinaryJavaExpression::Type::bitwise_xor: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 ^ value2));
+      return S_OK;
+    }
 
     default:
-      DCHECK(false);  // Any other operations are unexpected here.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 
-
-template <typename T, typename TUnsigned, uint16 Bitmask>
-ErrorOr<JVariant> BinaryExpressionEvaluator::ShiftComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  T value1 = T();
-  if (!arg1.get<T>(&value1)) {
-    return INTERNAL_ERROR_MESSAGE;
+template <typename T, uint16 Bitmask>
+HRESULT BinaryExpressionEvaluator::ShiftComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  T value1;
+  HRESULT hr =
+      NumericCompilerHelper::ExtractPrimitiveValue<T>(arg_object.get(), &value);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  jint value2 = 0;
-  if (!arg2.get<jint>(&value2)) {
-    jlong value2_long = 0;
-    if (!arg2.get<jlong>(&value2_long)) {
-      return INTERNAL_ERROR_MESSAGE;
-    }
-
-    value2 = static_cast<jint>(value2_long);
+  int32_t value2 = 0;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<int32_t>(
+      arg_object.get(), &value);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // From Java Language Specification, section 15.19:
-  // If the promoted type of the left-hand operand is int, only the five lowest-
-  // order bits of the right-hand operand are used as the shift distance. It is
-  // as if the right-hand operand were subjected to a bitwise logical AND
-  // operator & (15.22.1) with the mask value 0x1f (0b11111). The shift
-  // distance actually used is therefore always in the range 0 to 31, inclusive.
-  // If the promoted type of the left-hand operand is long, then only the six
-  // lowest-order bits of the right-hand operand are used as the shift distance.
-  // It is as if the right-hand operand were subjected to a bitwise logical AND
-  // operator & (15.22.1) with the mask value 0x3f (0b111111). The shift
-  // distance actually used is therefore always in the range 0 to 63, inclusive.
+  // For the predefined operators, the number of bits to
+  // shift is computed as follows:
+  //   1. When the type of x is int or uint,
+  // the shift count is given by the low-order five bits of count.
+  // In other words, the shift count is computed from count & 0x1F.
+  //   2. When the type of x is long or ulong, the shift count
+  // is given by the low-order six bits of count.
+  // In other words, the shift count is computed from count & 0x3F.
+  // Bitmask represents either 0x1F or 0x3F.
   value2 &= Bitmask;
 
   switch (type_) {
-    case BinaryJavaExpression::Type::shl:
-      return JVariant::Primitive<T>(value1 << value2);
+    case BinaryJavaExpression::Type::shl: {
+      value1 = value1 << value2;
+      break;
+    }
 
     case BinaryJavaExpression::Type::shr_s:
-      return JVariant::Primitive<T>(value1 >> value2);
-
-    case BinaryJavaExpression::Type::shr_u:
-      return JVariant::Primitive<T>(static_cast<TUnsigned>(value1) >> value2);
+    case BinaryJavaExpression::Type::shr_u: {
+      value1 = value1 >> value2;
+      break;
+    }
 
     default:
-      DCHECK(false);  // Any operations other than shift are unexpected here.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_FAIL;
   }
+
+  *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1));
+  return S_OK;
 }
 
-
-ErrorOr<JVariant> BinaryExpressionEvaluator::ConditionalObjectComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  jobject object1 = nullptr;
-  if (!arg1.get<jobject>(&object1)) {
-    return INTERNAL_ERROR_MESSAGE;
-  }
-
-  jobject object2 = nullptr;
-  if (!arg2.get<jobject>(&object2)) {
-    return INTERNAL_ERROR_MESSAGE;
-  }
+HRESULT BinaryExpressionEvaluator::ConditionalObjectComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  bool has_same_address = arg1->GetAddress() == arg2->GetAddress();
 
   switch (type_) {
-    case BinaryJavaExpression::Type::eq:
-      return JVariant::Boolean(jni()->IsSameObject(object1, object2));
+    case BinaryJavaExpression::Type::eq: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(has_same_address));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::ne:
-      return JVariant::Boolean(!jni()->IsSameObject(object1, object2));
+    case BinaryJavaExpression::Type::ne: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(has_same_address));
+      return S_OK;
+    }
 
     default:
-      DCHECK(false);  // Any other operations are not supported for objects.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 
-
-ErrorOr<JVariant> BinaryExpressionEvaluator::ConditionalStringComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  jobject object1 = nullptr;
-  if (!arg1.get<jobject>(&object1)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT BinaryExpressionEvaluator::ConditionalStringComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  // Extracts out the 2 strings and compare them.
+  std::string first_string;
+  HRESULT hr = DbgString::GetString(arg1.get(), &first_string);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  jobject object2 = nullptr;
-  if (!arg2.get<jobject>(&object2)) {
-    return INTERNAL_ERROR_MESSAGE;
+  std::string second_string;
+  HRESULT hr = DbgString::GetString(arg2.get(), &second_string);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  const bool is_equal =
-      IsEqual(static_cast<jstring>(object1), static_cast<jstring>(object2));
+  const bool is_equal = first_string.compare(second_string) == 0;
 
   switch (type_) {
-    case BinaryJavaExpression::Type::eq:
-      return JVariant::Boolean(is_equal);
+    case BinaryJavaExpression::Type::eq: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(is_equal));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::ne:
-      return JVariant::Boolean(!is_equal);
+    case BinaryJavaExpression::Type::ne: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(!is_equal));
+      return S_OK;
+    }
 
     default:
-      DCHECK(false);  // Any other operations are not supported for strings.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 
-
-ErrorOr<JVariant> BinaryExpressionEvaluator::ConditionalBooleanComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  jboolean boolean1 = false;
-  if (!arg1.get<jboolean>(&boolean1)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT BinaryExpressionEvaluator::ConditionalBooleanComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  // Extracts out the booleans and perform the binary operator.
+  bool boolean1;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+      arg1.get(), &boolean1);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  jboolean boolean2 = false;
-  if (!arg2.get<jboolean>(&boolean2)) {
-    return INTERNAL_ERROR_MESSAGE;
+  bool boolean2;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+      arg2.get(), &boolean2);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   switch (type_) {
     case BinaryJavaExpression::Type::conditional_and:
-    case BinaryJavaExpression::Type::bitwise_and:
-      return JVariant::Boolean(boolean1 && boolean2);
+    case BinaryJavaExpression::Type::bitwise_and: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 && boolean2));
+      return S_OK;
+    }
 
     case BinaryJavaExpression::Type::conditional_or:
-    case BinaryJavaExpression::Type::bitwise_or:
-      return JVariant::Boolean(boolean1 || boolean2);
+    case BinaryJavaExpression::Type::bitwise_or: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 || boolean2));
+      return S_OK;
+    }
 
-    case BinaryJavaExpression::Type::eq:
-      return JVariant::Boolean(boolean1 == boolean2);
+    case BinaryJavaExpression::Type::eq: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 == boolean2));
+      return S_OK;
+    }
 
     case BinaryJavaExpression::Type::ne:
-    case BinaryJavaExpression::Type::bitwise_xor:
-      return JVariant::Boolean(boolean1 != boolean2);
+    case BinaryJavaExpression::Type::bitwise_xor: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 != boolean2));
+      return S_OK;
+    }
 
     default:
-      DCHECK(false);  // Any other operations are unexpected here.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 
-
 template <typename T>
-ErrorOr<JVariant> BinaryExpressionEvaluator::NumericalComparisonComputer(
-    const JVariant& arg1,
-    const JVariant& arg2) const {
-  T value1 = T();
-  if (!arg1.get<T>(&value1)) {
-    return INTERNAL_ERROR_MESSAGE;
+HRESULT BinaryExpressionEvaluator::NumericalComparisonComputer(
+    std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
+    std::shared_ptr<DbgObject> *result) const {
+  T value1;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg1.get(), &value1);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  T value2 = T();
-  if (!arg2.get<T>(&value2)) {
-    return INTERNAL_ERROR_MESSAGE;
+  T value2;
+  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+      arg2.get(), &value2);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   switch (type_) {
@@ -739,7 +730,4 @@ ErrorOr<JVariant> BinaryExpressionEvaluator::NumericalComparisonComputer(
   }
 }
 
-
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger

@@ -43,6 +43,9 @@ static const std::string kObjectClassName = "System.Object";
 // Enum base class.
 static const std::string kEnumClassName = "System.Enum";
 
+// String class.
+static const std::string kStringClassName = "System.String";
+
 // String that represents collection classes.
 static const std::string kListClassName = "System.Collections.Generic.List`1";
 static const std::string kHashSetClassName =

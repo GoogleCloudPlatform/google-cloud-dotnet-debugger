@@ -77,6 +77,12 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
                            ICorDebugHandleValue **handle,
                            std::ostream *err_stream);
 
+// Extracts out a string from ICorDebugStringValue.
+HRESULT ExtractStringFromICorDebugStringValue(
+    ICorDebugStringValue *debug_string,
+    std::string *returned_string,
+    std::ostream *err_stream);
+
 }  // namespace google_cloud_debugger
 
 #endif  //  I_CORDEBUG_HELPER_H_
