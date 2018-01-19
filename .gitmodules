@@ -6,7 +6,7 @@
 [submodule "googletest"]
   path = third_party/googletest
   url = https://github.com/google/googletest.git
-  commit = 5ed471caec6f341018707e74e0dc41201fb59edd
+  commit = 62ba5d91d0ceff98fbd95294bd94c97017a07f9e
   ignore = dirty
 [submodule "protobuf"]
   path = third_party/protobuf
