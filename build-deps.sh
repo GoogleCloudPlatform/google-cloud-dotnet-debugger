@@ -12,6 +12,7 @@ GMOCK_DIR=$THIRD_PARTY_DIR/googletest/googlemock/make
 PROTOBUF_DIR=$THIRD_PARTY_DIR/protobuf
 CORECLR_DIR=$THIRD_PARTY_DIR/coreclr
 CORECLR_BIN=$CORECLR_DIR/bin/Product/Linux.x64.Debug
+LIB_DBGSHIM=$CORECLR_BIN/libdbgshim.so
 
 # Build the gtest library
 if [[ ! -f $GTEST_DIR/gtest.a ]]
@@ -42,7 +43,7 @@ else
 fi
 
 # Build the coreclr library
-if [[ ! -d $CORECLR_BIN ]]
+if [[ ! -f $LIB_DBGSHIM ]]
 then
   cd $CORECLR_DIR
   ./build.sh skiptests skipnuget skipmscorlib
