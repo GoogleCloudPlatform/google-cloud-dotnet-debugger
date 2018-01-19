@@ -1,8 +1,18 @@
 language: csharp
-sudo: enabled
+sudo: required
 dist: trusty
+group: deprecated-2017Q4
 mono: none
 dotnet: 2.0.0
+
+addons:
+  apt:
+    # Needed for coreclr
+    sources:
+      - sourceline: 'deb http://llvm.org/apt/trusty/ llvm-toolchain-trusty-3.6 main'
+        key_url: 'http://llvm.org/apt/llvm-snapshot.gpg.key'
+    packages:
+      - lldb-3.6 lldb-3.6-dev
 
 before_install:
   # Needed for protobuf
@@ -24,12 +34,11 @@ cache:
   # Wait 20 min for cache (these directories are large).
   timeout: 1200
   directories:
-  - $TRAVIS_BUILD_DIR/googletest/googletest/make
-  - $TRAVIS_BUILD_DIR/googletest/googlemock/make
-  - $TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
-  - $TRAVIS_BUILD_DIR/protobuf/src
-
-
+  - $TRAVIS_BUILD_DIR/third_party/googletest/googletest/make
+  - $TRAVIS_BUILD_DIR/third_party/googletest/googlemock/make
+  - $TRAVIS_BUILD_DIR/third_party/coreclr/bin/Product/Linux.x64.Debug
+  - $TRAVIS_BUILD_DIR/third_party/protobuf/src
+ 
 # TODO(talarico): Hack to get build working as the scripts are not setting this properly.
 env:
-  - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/coreclr/bin/Product/Linux.x64.Debug
+  - LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/third_party/coreclr/bin/Product/Linux.x64.Debug

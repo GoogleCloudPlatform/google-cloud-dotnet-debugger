@@ -6,11 +6,13 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
-GTEST_DIR=$ROOT_DIR/googletest/googletest/make
-GMOCK_DIR=$ROOT_DIR/googletest/googlemock/make
-PROTOBUF_DIR=$ROOT_DIR/protobuf
-CORECLR_DIR=$ROOT_DIR/coreclr
+THIRD_PARTY_DIR=$ROOT_DIR/third_party
+GTEST_DIR=$THIRD_PARTY_DIR/googletest/googletest/make
+GMOCK_DIR=$THIRD_PARTY_DIR/googletest/googlemock/make
+PROTOBUF_DIR=$THIRD_PARTY_DIR/protobuf
+CORECLR_DIR=$THIRD_PARTY_DIR/coreclr
 CORECLR_BIN=$CORECLR_DIR/bin/Product/Linux.x64.Debug
+LIB_DBGSHIM=$CORECLR_BIN/libdbgshim.so
 
 # Build the gtest library
 if [[ ! -f $GTEST_DIR/gtest.a ]]
@@ -41,12 +43,14 @@ else
 fi
 
 # Build the coreclr library
-if [[ ! -d $CORECLR_BIN ]]
+if [[ ! -f $LIB_DBGSHIM ]]
 then
-  $CORECLR_DIR/build.sh skiptests skipnuget skipmscorlib
+  cd $CORECLR_DIR
+  ./build.sh skiptests skipnuget skipmscorlib
 else
   echo "Skipping coreclr, it was already built."
 fi
+
 
 export LD_LIBRARY_PATH=$CORECLR_BIN
 sudo ldconfig
