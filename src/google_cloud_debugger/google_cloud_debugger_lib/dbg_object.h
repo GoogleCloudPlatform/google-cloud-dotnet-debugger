@@ -103,6 +103,9 @@ class DbgObject : public StringStreamWrapper {
   // Returns the CorElementType of this object.
   CorElementType GetCorElementType() { return cor_element_type_; }
 
+  // Returns the address of the object.
+  CORDB_ADDRESS GetAddress() { return address_; }
+
  protected:
    // The CorElementType of the underlying .NET object.
    CorElementType cor_element_type_;
@@ -120,6 +123,9 @@ class DbgObject : public StringStreamWrapper {
 
   // True if the object is null.
   BOOL is_null_ = FALSE;
+
+  // The address of the object.
+  CORDB_ADDRESS address_ = 0;
 
   // The depth of creation for this object.
   // Once this is 0, we don't create the fields and properties of the object.
