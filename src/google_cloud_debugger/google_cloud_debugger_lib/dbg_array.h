@@ -62,9 +62,8 @@ class DbgArray : public DbgObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
-  // Sets the type of variable to this array type.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  // Sets type_string to type of variable to this array type.
+  HRESULT GetTypeString(std::string *type_string) override;
 
   // Sets the maximum amount of items that the array will retrieve
   // when PopulateMembers is called.
