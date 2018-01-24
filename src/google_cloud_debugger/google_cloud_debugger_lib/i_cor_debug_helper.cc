@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "ccomptr.h"
+#include "string_stream_wrapper.h"
 
 using std::cerr;
 using std::ostream;
@@ -279,7 +280,6 @@ HRESULT ExtractStringFromICorDebugStringValue(
   }
 
   HRESULT hr;
-  std::unique_ptr<WCHAR[]> string_value;
   ULONG32 str_len;
   ULONG32 str_returned_len;
 
@@ -289,22 +289,23 @@ HRESULT ExtractStringFromICorDebugStringValue(
     return hr;
   }
 
-  // Plus 1 for the NULL at the end of the string.
-  str_len += 1;
-  string_value =
-      std::unique_ptr<WCHAR[]>(new (std::nothrow) WCHAR[str_len]);
-  if (!string_value) {
-    return E_OUTOFMEMORY;
+  if (str_len == 0) {
+    *returned_string = "";
+    return S_OK;
   }
 
+  // Plus 1 for the NULL at the end of the string.
+  str_len += 1;
+  std::vector<WCHAR> string_value(str_len, 0);
+
   hr = debug_string->GetString(str_len, &str_returned_len,
-                               string_value.get());
+                               string_value.data());
   if (FAILED(hr)) {
     *err_stream << "Failed to extract the string.";
     return hr;
   }
 
-  *returned_string = ConvertWCharPtrToString(string_value.get());
+  *returned_string = ConvertWCharPtrToString(string_value);
   return S_OK;
 }
 
