@@ -26,53 +26,21 @@
 
 namespace google_cloud_debugger {
 
-// Implementation of C# modulo (%) operator for int data type.
-static int32_t ComputeModulo(int32_t x, int32_t y) {
+// Computes x % y. Handles floating point case too.
+template<typename T> inline T ComputeModule(T x, T y) {
+  if (std::is_floating_point<T>::value) {
+    return std::fmod(x, y);
+  }
   return x % y;
 }
 
-
-// Implementation of C# modulo (%) operator for long data type.
-static int64_t ComputeModulo(int64_t x, int64_t y) {
-  return x % y;
-}
-
-
-// Implementation of C# modulo (%) operator for float data type.
-static float_t ComputeModulo(float_t x, float_t y) {
-  return std::fmod(x, y);
-}
-
-
-// Implementation of C# modulo (%) operator for double data type.
-static double_t ComputeModulo(double_t x, double_t y) {
-  return std::fmod(x, y);
-}
-
-
 // Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(int32_t divisor) {
+template<typename T> inline bool IsDivisionByZero(T divisor) {
+  if (std::is_floating_point<T>::value) {
+    return false; // Floating point division never triggers the signal
+  }
   return divisor == 0;
 }
-
-
-// Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(int64_t divisor) {
-  return divisor == 0;
-}
-
-
-// Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(float_t divisor) {
-  return false;  // Floating point division never triggers the signal
-}
-
-
-// Checks that the divisor will not trigger "division by zero" signal.
-static bool IsDivisionByZero(double_t divisor) {
-  return false;  // Floating point division never triggers the signal
-}
-
 
 // Detects edge case in integer division that causes SIGFPE signal.
 static bool IsDivisionOverflow(int32_t value1, int32_t value2) {
@@ -163,7 +131,7 @@ HRESULT BinaryExpressionEvaluator::CompileArithmetical(
   CorElementType result;
   if (!NumericCompilerHelper::BinaryNumericalPromotion(
           arg1_->GetStaticType().cor_type, arg2_->GetStaticType().cor_type,
-          &result)) {
+          &result, err_stream)) {
     *err_stream << kTypeMismatch;
     return E_FAIL;
   }
@@ -211,7 +179,7 @@ HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
       NumericCompilerHelper::IsNumericalType(signature2.cor_type)) {
     CorElementType result;
     if (!NumericCompilerHelper::BinaryNumericalPromotion(
-            signature1.cor_type, signature1.cor_type, &result)) {
+            signature1.cor_type, signature1.cor_type, &result, err_stream)) {
       *err_stream << kTypeMismatch;
       return E_FAIL;
     }
@@ -308,7 +276,7 @@ HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
     CorElementType result;
     if (!NumericCompilerHelper::BinaryNumericalPromotion(
             arg1_->GetStaticType().cor_type, arg2_->GetStaticType().cor_type,
-            &result)) {
+            &result, err_stream)) {
       *err_stream << kTypeMismatch;
       return E_FAIL;
     }
@@ -406,7 +374,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
       return hr;
     }
 
-    // If arg1 in arg1 && arg2 is false, expression is false.
+    // If arg1 in 'arg1 && arg2' is false, expression is false.
     if (!boolean1) {
       *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(false));
       return S_OK;
@@ -421,7 +389,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
       return hr;
     }
 
-    // If arg1 in arg1 || arg2 is true, expression is false.
+    // If arg1 in 'arg1 || arg2' is true, expression is true.
     if (boolean1) {
       *dbg_object = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(true));
       return S_OK;
@@ -577,7 +545,7 @@ HRESULT BinaryExpressionEvaluator::ShiftComputer(
     }
 
     default:
-      return E_FAIL;
+      return E_NOTIMPL;
   }
 
   *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1));

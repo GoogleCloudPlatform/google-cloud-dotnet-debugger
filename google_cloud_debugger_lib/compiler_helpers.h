@@ -16,6 +16,7 @@
 #define COMPILER_HELPERS_H_
 
 #include "cor.h"
+#include <iostream>
 
 // Various helper functions for compiling such as numeric conversions,
 // numeric promotions, etc.
@@ -42,7 +43,7 @@ class NumericCompilerHelper {
   // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#binary-numeric-promotions
   // Returns false if an error occurs.
   static bool BinaryNumericalPromotion(const CorElementType &arg1,
-    const CorElementType &arg2, CorElementType *result);
+    const CorElementType &arg2, CorElementType *result, std::ostream *err_stream);
 
   // Returns true if CorElementType is a numerical type.
   // TODO(quoct): This does not handle Decimal.
