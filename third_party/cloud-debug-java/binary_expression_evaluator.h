@@ -114,10 +114,9 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
       std::shared_ptr<DbgObject> arg2,
       std::shared_ptr<DbgObject> *result) const;
 
-  // Implements conditional operators. As per Java Language
-  // Specifications sections 15.23 and 15.24 logical operators && and || only
-  // apply to boolean type. Comparison operators == and != can also apply to
-  // boolean.
+  // Implements conditional operators. This method will extract out
+  // the boolean value from arg1 and arg2 and perform the binary operators
+  // on them. The result will be stored in result.
   HRESULT ConditionalBooleanComputer(
       std::shared_ptr<DbgObject> arg1,
       std::shared_ptr<DbgObject> arg2,

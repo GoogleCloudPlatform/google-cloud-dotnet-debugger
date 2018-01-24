@@ -55,19 +55,11 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
     return S_OK;
   }
 
-  // If the underlying string already set, don't need
-  // to extract again.
-  if (string_obj_set_) {
-    variable->set_value(string_obj_);
-    return S_OK;
-  }
-
   HRESULT hr = ExtractStringFromReference();
   if (FAILED(hr)) {
     return hr;
   }
 
-  string_obj_set_ = true;
   variable->set_value(string_obj_);
   return S_OK;
 }
@@ -91,13 +83,9 @@ HRESULT DbgString::GetString(DbgObject *object, string *returned_string) {
     return E_INVALIDARG;
   }
 
-  if (!dbg_string->string_obj_set_) {
-    HRESULT hr = dbg_string->ExtractStringFromReference();
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    dbg_string->string_obj_set_ = true;
+  HRESULT hr = dbg_string->ExtractStringFromReference();
+  if (FAILED(hr)) {
+    return hr;
   }
 
   *returned_string = dbg_string->string_obj_;
@@ -105,6 +93,10 @@ HRESULT DbgString::GetString(DbgObject *object, string *returned_string) {
 }
 
 HRESULT DbgString::ExtractStringFromReference() {
+  if (string_obj_set_) {
+    return S_OK;
+  }
+
   if (!string_handle_) {
     return E_INVALIDARG;
   }
@@ -128,8 +120,14 @@ HRESULT DbgString::ExtractStringFromReference() {
     return hr;
   }
 
-  return ExtractStringFromICorDebugStringValue(debug_string,
+  hr = ExtractStringFromICorDebugStringValue(debug_string,
       &string_obj_, GetErrorStream());
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  string_obj_set_ = true;
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger
