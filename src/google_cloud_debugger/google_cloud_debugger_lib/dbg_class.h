@@ -51,9 +51,8 @@ class DbgClass : public DbgObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
-  // Populates variable with type of this class.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  // Populates type_string with type of this class.
+  HRESULT GetTypeString(std::string *type_string) override;
 
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
