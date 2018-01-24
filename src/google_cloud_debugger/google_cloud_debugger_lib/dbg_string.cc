@@ -18,6 +18,7 @@
 
 #include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
+#include "class_names.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
@@ -64,12 +65,12 @@ HRESULT DbgString::PopulateValue(Variable *variable) {
   return S_OK;
 }
 
-HRESULT DbgString::PopulateType(Variable *variable) {
-  if (!variable) {
+HRESULT DbgString::GetTypeString(std::string *type_string) {
+  if (!type_string) {
     return E_INVALIDARG;
   }
 
-  variable->set_type("System.String");
+  *type_string = kStringClassName;
   return S_OK;
 }
 

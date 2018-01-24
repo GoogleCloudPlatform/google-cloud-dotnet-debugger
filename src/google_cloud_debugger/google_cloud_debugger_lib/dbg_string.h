@@ -36,8 +36,7 @@ class DbgString : public DbgObject {
       google::cloud::diagnostics::debug::Variable *variable) override;
 
   // Sets type of variable to System.String.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  HRESULT GetTypeString(std::string *type_string) override;
 
   // Extracts string from DbgObject.
   // Fails if DbgObject is not a DbgString.

@@ -856,8 +856,8 @@ HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
   return S_OK;
 }
 
-HRESULT DbgClass::PopulateType(Variable *variable) {
-  if (!variable) {
+HRESULT DbgClass::GetTypeString(std::string *type_string) {
+  if (!type_string) {
     return E_INVALIDARG;
   }
 
@@ -870,34 +870,34 @@ HRESULT DbgClass::PopulateType(Variable *variable) {
     return E_FAIL;
   }
 
+  *type_string = class_name_;
+
   if (empty_generic_objects_.size() == 0) {
-    variable->set_type(class_name_);
     return S_OK;
   }
 
-  string class_name_with_generic = class_name_ + "<";
+  *type_string += "<";
 
   unique_ptr<Variable> place_holder(new (std::nothrow) Variable());
 
   for (int i = 0; i < empty_generic_objects_.size(); ++i) {
     if (empty_generic_objects_[i]) {
-      HRESULT hr = empty_generic_objects_[i]->PopulateType(place_holder.get());
+      std::string generic_type_name;
+      HRESULT hr = empty_generic_objects_[i]->GetTypeString(&generic_type_name);
       if (FAILED(hr)) {
         WriteError("Failed to print generic type in class");
         return hr;
       }
-      class_name_with_generic += place_holder->type();
+      *type_string += generic_type_name;
 
       if (empty_generic_objects_.size() > 1 &&
           i != empty_generic_objects_.size() - 1) {
-        class_name_with_generic += ", ";
+        *type_string += ", ";
       }
     }
   }
 
-  class_name_with_generic += ">";
-  variable->set_type(class_name_with_generic);
-
+  *type_string += ">";
   return S_OK;
 }
 

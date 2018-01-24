@@ -236,12 +236,12 @@ HRESULT DbgArray::PopulateMembers(
   return S_OK;
 }
 
-HRESULT DbgArray::PopulateType(Variable *variable) {
+HRESULT DbgArray::GetTypeString(std::string *type_string) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  if (!variable) {
+  if (!type_string) {
     return E_INVALIDARG;
   }
 
@@ -250,13 +250,16 @@ HRESULT DbgArray::PopulateType(Variable *variable) {
     return E_FAIL;
   }
 
-  empty_object_->PopulateType(variable);
-  std::string array_type = variable->type();
-  for (int i = 0; i < dimensions_.size(); ++i) {
-    array_type += "[]";
+  // Gets the base type first.
+  HRESULT hr = empty_object_->GetTypeString(type_string);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  variable->set_type(array_type);
+  for (int i = 0; i < dimensions_.size(); ++i) {
+    *type_string += "[]";
+  }
+
   return S_OK;
 }
 

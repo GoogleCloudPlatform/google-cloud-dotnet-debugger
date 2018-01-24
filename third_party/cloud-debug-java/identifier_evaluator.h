@@ -19,86 +19,46 @@
 
 #include "common.h"
 #include "expression_evaluator.h"
+#include "../../google_cloud_debugger_lib/type_signature.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-class LocalVariableReader;
-class InstanceFieldReader;
-class StaticFieldReader;
+class DbgObject;
+class DbgClassProperty;
 
 // Evaluates local variables, static variables and member variables encountered
 // in Java expression.
 class IdentifierEvaluator : public ExpressionEvaluator {
  public:
-  explicit IdentifierEvaluator(string identifier_name);
+  explicit IdentifierEvaluator(std::string identifier_name);
 
-  ~IdentifierEvaluator() override;
+  virtual HRESULT Compile(
+      DbgStackFrame *stack_frame,
+      std::ostream *err_stream) override;
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  const TypeSignature& GetStaticType() const override { return result_type_; }
 
-  const JSignature& GetStaticType() const override { return result_type_; }
-
-  Nullable<jvalue> GetStaticValue() const override { return nullptr; }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
-
- private:
-  // Tries to creates a reader for the identifier as instance field. Returns
-  // false if no field was matched. This function supports following "this"
-  // reference chain in inner classes.
-  bool CreateInstanceFieldReader(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message);
-
-  // Evaluates the identifier as a local variable.
-  ErrorOr<JVariant> LocalVariableComputer(
-      const EvaluationContext& evaluation_context) const;
-
-  // Evaluates the identifier as implicit instance field.
-  ErrorOr<JVariant> ImplicitInstanceFieldComputer(
-      const EvaluationContext& evaluation_context) const;
-
-  // Evaluates the identifier as a static variable of a class containing the
-  // current evaluation point.
-  ErrorOr<JVariant> StaticFieldComputer(
-      const EvaluationContext& evaluation_context) const;
+  HRESULT Evaluate(
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override;
 
  private:
   // Name of the identifier (whether it is local variable or something else).
-  string identifier_name_;
+  std::string identifier_name_;
 
-  // Local variable reader.
-  std::unique_ptr<LocalVariableReader> variable_reader_;
+  std::shared_ptr<DbgObject> identifier_object_;
 
-  // Optional reader for instance field to handle the implicit field
-  // reference (e.g. "myInt" that's actually "this.myInt"). In case of
-  // an inner class this chain will follow inner classes references
-  // (e.g. this$3.this$2.this$1.myField).
-  std::vector<std::unique_ptr<InstanceFieldReader>> instance_fields_chain_;
-
-  // Reader for static fields.
-  std::unique_ptr<StaticFieldReader> static_field_reader_;
-
-  // Pointer to a member function of this class to do the actual evaluation
-  // based on whether it's local variable, implicit instance field, etc.
-  ErrorOr<JVariant> (IdentifierEvaluator::*computer_)(
-      const EvaluationContext&) const;
+  std::unique_ptr<DbgClassProperty> class_property_;
 
   // Statically computed resulting type of the expression. This is what
-  // computer_ is supposed product.
-  JSignature result_type_;
+  // computer_ is supposed to produce.
+  TypeSignature result_type_;
+
+  bool is_non_auto_property = false;
 
   DISALLOW_COPY_AND_ASSIGN(IdentifierEvaluator);
 };
 
-
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_IDENTIFIER_EVALUATOR_H_
-
-
