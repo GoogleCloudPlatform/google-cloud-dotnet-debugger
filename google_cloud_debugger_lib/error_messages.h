@@ -47,6 +47,12 @@ static const std::string kFailedToEvalSecondSubExpr =
 static const std::string kExpressionNotSupported =
     "Expression not supported.";
 
+static const std::string kFailedDebugFuncFromFrame =
+    "Failed to extract ICorDebugFunction from ICorDebugFrame.";
+
+static const std::string kFailedDebugModuleFromFunc =
+    "Failed to extract ICorDebugModule from ICorDebugFunction.";
+
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_

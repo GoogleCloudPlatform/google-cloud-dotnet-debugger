@@ -22,6 +22,7 @@
 #include "debugger_callback.h"
 #include "i_eval_coordinator.h"
 #include "variable_wrapper.h"
+#include "i_cor_debug_helper.h"
 
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
@@ -50,6 +51,30 @@ HRESULT DbgStackFrame::Initialize(
     cerr << "Null MetaDataImport.";
     return E_INVALIDARG;
   }
+
+  debug_frame_ = il_frame;
+  local_variables_info_ = variable_infos;
+  metadata_import_ = metadata_import;
+  method_token_ = method_token;
+
+  // We need to sets is_static.
+  ULONG method_name_len;
+  PCCOR_SIGNATURE method_signature;
+  ULONG method_signature_blob;
+  ULONG method_rva;
+  DWORD method_flag;
+  DWORD method_flags2;
+
+  HRESULT hr = metadata_import->GetMethodProps(
+      method_token, &class_token_, nullptr, 0, &method_name_len, &method_flag,
+      &method_signature, &method_signature_blob, &method_rva, &method_flags2);
+
+  if (FAILED(hr)) {
+    cerr << "Failed to retrieve method flags.";
+    return hr;
+  }
+
+  is_static_ = IsMdStatic(method_flag);
 
   HRESULT hr;
   CComPtr<ICorDebugValueEnum> local_enum;
@@ -172,27 +197,8 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   vector<string> method_argument_names;
   HCORENUM cor_enum = nullptr;
 
-  // We need to check whether this method is static or not.
-  // If it is not, then we add "this" to the first argument name.
-  mdTypeDef method_class;
-  ULONG method_name_len;
-  DWORD method_flag;
-  PCCOR_SIGNATURE method_signature;
-  ULONG method_signature_blob;
-  ULONG method_rva;
-  DWORD method_flags2;
-
-  hr = metadata_import->GetMethodProps(
-      method_token, &method_class, nullptr, 0, &method_name_len, &method_flag,
-      &method_signature, &method_signature_blob, &method_rva, &method_flags2);
-
-  if (FAILED(hr)) {
-    cerr << "Failed to retrieve method flags.";
-    return hr;
-  }
-
   // Add "this" if method is not static.
-  if ((method_flag & CorMethodAttr::mdStatic) == 0) {
+  if (!is_static_) {
     method_argument_names.push_back("this");
   }
 
@@ -205,6 +211,7 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
     if (FAILED(hr)) {
       cerr << "Failed to get method arguments for method: " << method_token
            << " with hr: " << std::hex << hr;
+      metadata_import->CloseEnum(cor_enum);
       return hr;
     }
 
@@ -216,36 +223,13 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
     method_args.resize(method_args_returned);
 
     for (auto const &method_arg_token : method_args) {
-      mdMethodDef method_token;
-      ULONG ordinal_position;
-      ULONG param_name_size;
-      DWORD param_attributes;
-      DWORD value_type_flag;
-      UVCP_CONSTANT const_string_value;
-      ULONG const_string_value_size;
-      std::vector<WCHAR> param_name;
-
-      hr = metadata_import->GetParamProps(
-          method_arg_token, &method_token, &ordinal_position, nullptr, 0,
-          &param_name_size, &param_attributes, &value_type_flag,
-          &const_string_value, &const_string_value_size);
-      if (FAILED(hr) || param_name_size == 0) {
-        cerr << "Failed to get length of name of method argument: "
-             << method_arg_token << " with hr: " << std::hex << hr;
-        continue;
-      }
-
-      param_name.resize(param_name_size);
-      hr = metadata_import->GetParamProps(
-          method_arg_token, &method_token, &ordinal_position, param_name.data(),
-          param_name.size(), &param_name_size, &param_attributes,
-          &value_type_flag, &const_string_value, &const_string_value_size);
+      std::string param_name;
+      hr = ExtractParamName(metadata_import, method_arg_token, &param_name, &cerr);
       if (FAILED(hr)) {
-        cerr << "Failed to get name of method argument: " << method_arg_token
-             << " with hr: " << std::hex << hr;
         continue;
       }
-      method_argument_names.push_back(ConvertWCharPtrToString(param_name));
+
+      method_argument_names.push_back(param_name);
     }
   }
 
@@ -347,6 +331,190 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   }
 
   return S_OK;
+}
+
+HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
+    std::unique_ptr<DbgObject> *dbg_object, std::ostream *err_stream) {
+  static const std::string this_var = "this";
+  HRESULT hr;
+
+  // Search the list of local variables to see whether any of them matches variable_name.
+  if (variable_name.compare(this_var) != 0) {
+    auto local_var = std::find_if(local_variables_info_.begin(), local_variables_info_.end(),
+        [&variable_name](const LocalVariableInfo &variable_info) {
+      return variable_name.compare(variable_info.name) == 0;
+    });
+
+    // If we found a match, we'll create a DbgObject and return it.
+    hr = S_OK;
+    if (local_var != local_variables_info_.end()) {
+      CComPtr<ICorDebugValue> debug_value;
+      hr = debug_frame_->GetLocalVariable(local_var->slot, &debug_value);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+    }
+  }
+
+  // Otherwise, we check the method argument and see which one matches.
+  HCORENUM cor_enum = nullptr;
+
+  // If variable_name is "this", then get the first argument.
+  // Also throws error if method is static.
+  if (variable_name.compare(this_var) == 0) {
+    if (is_static_) {
+      return E_FAIL;
+    }
+
+    CComPtr<ICorDebugValue> debug_value;
+    hr = debug_frame_->GetArgument(0, &debug_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+  }
+
+  // Loops through the method arguments and checks to see which matches variable_name.
+  vector<mdParamDef> method_args(100, 0);
+  // If the frame is non-static, the first argument is "this", so we will skip it.
+  DWORD argument_index = is_static_ ? 0 : 1;
+  while (hr == S_OK) {
+    ULONG method_args_returned = 0;
+    hr =
+        metadata_import_->EnumParams(&cor_enum, method_token_, method_args.data(),
+                                    method_args.size(), &method_args_returned);
+    if (FAILED(hr)) {
+      metadata_import_->CloseEnum(cor_enum);
+      return hr;
+    }
+
+    // No arguments to check.
+    if (method_args_returned == 0) {
+      break;
+    }
+
+    method_args.resize(method_args_returned);
+
+    for (auto const &method_arg_token : method_args) {
+      std::string param_name;
+      hr = ExtractParamName(metadata_import_, method_arg_token, &param_name, &cerr);
+      if (FAILED(hr)) {
+        ++argument_index;
+        continue;
+      }
+
+      if (variable_name.compare(param_name) == 0) {
+        metadata_import_->CloseEnum(cor_enum);
+        CComPtr<ICorDebugValue> debug_value;
+        hr = debug_frame_->GetArgument(argument_index, &debug_value);
+        ++argument_index;
+        if (FAILED(hr)) {
+          return hr;
+        }
+
+        return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+      }
+    }
+  }
+
+  metadata_import_->CloseEnum(cor_enum);
+  return S_FALSE;
+}
+
+// TODO(quoct): This only finds members defined directly in class or interface,
+// does not find inherited fields.
+HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
+    const std::string &member_name,
+    std::unique_ptr<DbgObject> *dbg_object,
+    std::ostream *err_stream) {
+
+  CComPtr<ICorDebugModule> debug_module;
+  HRESULT hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_,
+     &debug_module, &std::cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // First, we searches to see whether any field matches the name.
+  mdFieldDef field_def;
+  bool field_static;
+  std::string underlying_field_name = member_name;
+  hr = ExtractFieldInfo(metadata_import_, class_token_,
+    underlying_field_name, &field_def, &field_static, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+    // If no field matches the name, this may be an auto-implemented property.
+    // In that case, there will be a backing field. Let's search for that.
+    underlying_field_name = "<" + member_name + ">k__BackingField";
+    hr = ExtractFieldInfo(metadata_import_, class_token_,
+        underlying_field_name, &field_def, &field_static, err_stream);
+    if (FAILED(hr)) {
+      // Otherwise, this means we can't find the field.
+      // TODO(quoct): Only returns S_FALSE if hr indicates field
+      // not found.
+      return S_FALSE;
+    }
+  }
+
+  CComPtr<ICorDebugValue> field_value;
+  if (field_static) {
+    // Extracts out ICorDebugClass to get the static field value.
+    CComPtr<ICorDebugClass> debug_class;
+    hr = debug_module->GetClassFromToken(class_token_, &debug_class);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    hr = debug_class->GetStaticFieldValue(field_def, debug_frame_, &field_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+  }
+  else {
+    // We cannot get a non-static field in a static frame.
+    if (is_static_) {
+      *err_stream << "Cannot get non-static field in static frame.";
+      return E_FAIL;
+    }
+
+    // Otherwise, we have to get "this" object.
+    CComPtr<ICorDebugValue> this_value;
+    hr = debug_frame_->GetArgument(0, &this_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    CComPtr<ICorDebugObjectValue> object_value;
+    hr = this_value->QueryInterface(__uuidof(ICorDebugObjectValue),
+        reinterpret_cast<void **>(&object_value));
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    CComPtr<ICorDebugClass> debug_class;
+    hr = object_value->GetClass(&debug_class);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    hr = object_value->GetFieldValue(debug_class, field_def, &field_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+  }
+
+  return DbgObject::CreateDbgObject(field_value, object_depth_, dbg_object, err_stream);
+}
+
+HRESULT DbgStackFrame::ExtractPropertyFromFrame(
+    const std::string &property_name,
+    std::unique_ptr<DbgClassProperty> *property_object,
+    std::ostream *err_stream) {
+  return ExtractPropertyInfo(metadata_import_, class_token_, property_name,
+    property_object, err_stream);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {
