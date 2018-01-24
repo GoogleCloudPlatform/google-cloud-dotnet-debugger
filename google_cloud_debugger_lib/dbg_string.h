@@ -39,13 +39,15 @@ class DbgString : public DbgObject {
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable) override;
 
-  HRESULT ExtractStringFromReference();
-
   // Extracts string from DbgObject.
   // Fails if DbgObject is not a DbgString.
   static HRESULT GetString(DbgObject *object, std::string *returned_string);
 
  private:
+  // Dereferences the string handle and extracts out the string
+  // into string_obj_. Will not do anything if string_obj_set_ is true.
+  HRESULT ExtractStringFromReference();
+   
   // Handle to the underlying string object.
   CComPtr<ICorDebugHandleValue> string_handle_;
 

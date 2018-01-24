@@ -178,11 +178,20 @@ bool NumericCompilerHelper::IsNumericallyPromotedToInt(const CorElementType &sou
       || source == CorElementType::ELEMENT_TYPE_I2;
 }
 
+// Returns true for I1, I2, I4 and I8 types.
+inline bool IsSignedIntegralType(const CorElementType &element_type) {
+  return element_type == CorElementType::ELEMENT_TYPE_I1
+    || element_type == CorElementType::ELEMENT_TYPE_I2
+    || element_type == CorElementType::ELEMENT_TYPE_I4
+    || element_type == CorElementType::ELEMENT_TYPE_I8;
+}
+
 bool NumericCompilerHelper::BinaryNumericalPromotion(
   const CorElementType &arg1,
   const CorElementType &arg2,
-  CorElementType *result) {
+  CorElementType *result, std::ostream *err_stream) {
   if (!IsNumericalType(arg1) && !IsNumericalType(arg2)) {
+    *err_stream << "Both arguments has to be of numerical types.";
     return false;
   }
 
@@ -202,14 +211,9 @@ bool NumericCompilerHelper::BinaryNumericalPromotion(
     // If the other operand is of type sbyte, short, int or long,
     // an error will occur. This is because no integral type exists that can
     // represent the full range of ulong as well as the signed integral types.
-    if (arg1 == CorElementType::ELEMENT_TYPE_I1
-      || arg1 == CorElementType::ELEMENT_TYPE_I2
-      || arg1 == CorElementType::ELEMENT_TYPE_I4
-      || arg1 == CorElementType::ELEMENT_TYPE_I8
-      || arg2 == CorElementType::ELEMENT_TYPE_I1
-      || arg2 == CorElementType::ELEMENT_TYPE_I2
-      || arg2 == CorElementType::ELEMENT_TYPE_I4
-      || arg2 == CorElementType::ELEMENT_TYPE_I8) {
+    if (IsSignedIntegralType(arg1) || IsSignedIntegralType(arg2)) {
+      *err_stream << "If one of the argument is an unsigned long, "
+        << "the other cannot be a signed integral type.";
       return false;
     }
     *result = CorElementType::ELEMENT_TYPE_U8;
@@ -223,17 +227,15 @@ bool NumericCompilerHelper::BinaryNumericalPromotion(
   else if (arg1 == CorElementType::ELEMENT_TYPE_U4
     || arg2 == CorElementType::ELEMENT_TYPE_U4) {
     // If 1 of the operand is sbyte, short or int,
-    // the result will be long.
-    if (arg1 == CorElementType::ELEMENT_TYPE_I1
-      || arg1 == CorElementType::ELEMENT_TYPE_I2
-      || arg1 == CorElementType::ELEMENT_TYPE_I4) {
+    // the result will be long. We can simply call
+    // IsSignedIntegralType without worrying about arg1
+    // being an I8 type because that is already checked above.
+    if (IsSignedIntegralType(arg1)) {
       *result = CorElementType::ELEMENT_TYPE_I8;
       return true;
     }
 
-    if (arg2 == CorElementType::ELEMENT_TYPE_I1
-      || arg2 == CorElementType::ELEMENT_TYPE_I2
-      || arg2 == CorElementType::ELEMENT_TYPE_I4) {
+    if (IsSignedIntegralType(arg2)) {
       *result = CorElementType::ELEMENT_TYPE_I8;
       return true;
     }
@@ -242,6 +244,7 @@ bool NumericCompilerHelper::BinaryNumericalPromotion(
     return true;
   }
   else {
+    // Otherwise, both operands are converted to int.
     *result = CorElementType::ELEMENT_TYPE_I4;
     return true;
   }
