@@ -275,7 +275,7 @@ HRESULT ExtractStringFromICorDebugStringValue(
     ICorDebugStringValue *debug_string,
     std::string *returned_string,
     std::ostream *err_stream) {
-  if (!returned_string || !debug_string) {
+  if (!returned_string || !debug_string || !err_stream) {
     return E_INVALIDARG;
   }
 
