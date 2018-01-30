@@ -335,7 +335,7 @@ HRESULT DbgStackFrame::PopulateStackFrame(
   return S_OK;
 }
 
-HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
+HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
     std::unique_ptr<DbgObject> *dbg_object, std::ostream *err_stream) {
   static const std::string this_var = "this";
   HRESULT hr;
@@ -428,7 +428,7 @@ HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
 
 // TODO(quoct): This only finds members defined directly in a class or an interface.
 // Therefore, inherited fields won't be found.
-HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
+HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
     const std::string &member_name,
     std::unique_ptr<DbgObject> *dbg_object,
     std::ostream *err_stream) {
@@ -508,7 +508,7 @@ HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
   return DbgObject::CreateDbgObject(field_value, object_depth_, dbg_object, err_stream);
 }
 
-HRESULT DbgStackFrame::ExtractPropertyFromFrame(
+HRESULT DbgStackFrame::GetPropertyFromFrame(
     const std::string &property_name,
     std::unique_ptr<DbgClassProperty> *property_object,
     std::ostream *err_stream) {
