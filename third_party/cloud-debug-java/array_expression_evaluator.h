@@ -41,6 +41,9 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
       std::ostream *err_stream) override;
 
   // Returns the static type that the expression compiles to.
+  // This will be the type of the item in the collection.
+  // For example, if the expression is a[3] where a is System.Int32[],
+  // then this will return System.Int32.
   const TypeSignature& GetStaticType() const override { return return_type_; }
 
   // Evaluates the expression and returns the result in dbg_object.
