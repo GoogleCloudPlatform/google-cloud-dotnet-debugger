@@ -45,6 +45,16 @@ class NumericCompilerHelper {
   static bool BinaryNumericalPromotion(const CorElementType &arg1,
     const CorElementType &arg2, CorElementType *result, std::ostream *err_stream);
 
+  // Given a DbgObject, try to convert it into a DbgPrimitive and extract
+  // the underlying value of the DbgPrimitive object and cast it to
+  // type T.
+  template <typename T>
+  static HRESULT ExtractPrimitiveValue(DbgObject *dbg_object, T *cast_result);
+};
+
+// Contains functions to determine the type of a CorElementType.
+class TypeCompilerHelper {
+ public:
   // Returns true if CorElementType is a numerical type.
   // TODO(quoct): This does not handle Decimal.
   static bool IsNumericalType(const CorElementType &cor_type);
@@ -52,11 +62,12 @@ class NumericCompilerHelper {
   // Returns true if CorElementType is an integral type.
   static bool IsIntegralType(const CorElementType &cor_type);
 
-  // Given a DbgObject, try to convert it into a DbgPrimitive and extract
-  // the underlying value of the DbgPrimitive object and cast it to
-  // type T.
-  template <typename T>
-  static HRESULT ExtractPrimitiveValue(DbgObject *dbg_object, T *cast_result);
+  // Returns true if CorElementType is an array type.
+  static bool IsArrayType(const CorElementType &array_type);
+
+  // Converts string type_string to CorElementType.
+  // Returns Object by default.
+  static CorElementType ConvertStringToCorElementType(const std::string &type_string);
 };
 
 }  //  namespace google_cloud_debugger
