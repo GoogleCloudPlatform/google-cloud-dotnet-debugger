@@ -18,11 +18,11 @@
 
 #include <cmath>
 #include <limits>
-#include "../../google_cloud_debugger_lib/compiler_helpers.h"
-#include "../../google_cloud_debugger_lib/dbg_primitive.h"
-#include "../../google_cloud_debugger_lib/dbg_string.h"
-#include "../../google_cloud_debugger_lib/error_messages.h"
-#include "../../google_cloud_debugger_lib/type_signature.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/compiler_helpers.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_primitive.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_string.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/error_messages.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/type_signature.h"
 
 namespace google_cloud_debugger {
 

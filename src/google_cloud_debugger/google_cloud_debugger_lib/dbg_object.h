@@ -55,7 +55,7 @@ class DbgObject : public StringStreamWrapper {
   HRESULT PopulateType(
       google::cloud::diagnostics::debug::Variable *variable);
 
-  // Returns a string that spells out the type of the object.
+  // Gets a string of object type.
   virtual HRESULT GetTypeString(std::string *type_string) = 0;
 
   // Sets the value of proto variable to the value of this object.
