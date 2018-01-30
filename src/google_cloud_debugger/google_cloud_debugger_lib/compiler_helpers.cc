@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <map>
+
 #include "compiler_helpers.h"
 #include "type_signature.h"
 #include "dbg_primitive.h"
+#include "class_names.h"
 
 namespace google_cloud_debugger {
 
@@ -190,7 +193,8 @@ bool NumericCompilerHelper::BinaryNumericalPromotion(
   const CorElementType &arg1,
   const CorElementType &arg2,
   CorElementType *result, std::ostream *err_stream) {
-  if (!IsNumericalType(arg1) && !IsNumericalType(arg2)) {
+  if (!TypeCompilerHelper::IsNumericalType(arg1) &&
+    !TypeCompilerHelper::IsNumericalType(arg2)) {
     *err_stream << "Both arguments has to be of numerical types.";
     return false;
   }
@@ -250,13 +254,13 @@ bool NumericCompilerHelper::BinaryNumericalPromotion(
   }
 }
 
-bool NumericCompilerHelper::IsNumericalType(const CorElementType &cor_type) {
+bool TypeCompilerHelper::IsNumericalType(const CorElementType &cor_type) {
   return IsIntegralType(cor_type)
     || cor_type == CorElementType::ELEMENT_TYPE_R4
     || cor_type == CorElementType::ELEMENT_TYPE_R8;
 }
 
-bool NumericCompilerHelper::IsIntegralType(const CorElementType &cor_type) {
+bool TypeCompilerHelper::IsIntegralType(const CorElementType &cor_type) {
   return cor_type == CorElementType::ELEMENT_TYPE_I1
     || cor_type == CorElementType::ELEMENT_TYPE_U1
     || cor_type == CorElementType::ELEMENT_TYPE_I2
@@ -392,6 +396,53 @@ HRESULT NumericCompilerHelper::ExtractPrimitiveValue(DbgObject *dbg_object, T *c
     default: { 
       return E_FAIL;
     }
+  }
+}
+
+bool TypeCompilerHelper::IsArrayType(const CorElementType &array_type) {
+  return array_type == CorElementType::ELEMENT_TYPE_ARRAY
+    || array_type == CorElementType::ELEMENT_TYPE_SZARRAY;
+}
+
+CorElementType TypeCompilerHelper::ConvertStringToCorElementType(const std::string &type_string) {
+  static std::map<std::string, CorElementType> string_to_cor_type{
+    { kCharClassName, CorElementType::ELEMENT_TYPE_BOOLEAN },
+    { kSByteClassName, CorElementType::ELEMENT_TYPE_I1 },
+    { kCharClassName, CorElementType::ELEMENT_TYPE_CHAR },
+    { kByteClassName, CorElementType::ELEMENT_TYPE_U1 },
+    { kInt16ClassName, CorElementType::ELEMENT_TYPE_I2 },
+    { kUInt16ClassName, CorElementType::ELEMENT_TYPE_U2 },
+    { kInt32ClassName, CorElementType::ELEMENT_TYPE_I4 },
+    { kUInt32ClassName, CorElementType::ELEMENT_TYPE_U4 },
+    { kInt64ClassName, CorElementType::ELEMENT_TYPE_I8 },
+    { kUInt64ClassName, CorElementType::ELEMENT_TYPE_U8 },
+    { kStringClassName, CorElementType::ELEMENT_TYPE_STRING },
+    { kObjectClassName, CorElementType::ELEMENT_TYPE_OBJECT }
+  };
+
+  if (string_to_cor_type.find(type_string) != string_to_cor_type.end()) {
+    return string_to_cor_type[type_string];
+  }
+  else {
+    auto open_bracket = type_string.find("[");
+    if (open_bracket == std::string::npos) {
+      return CorElementType::ELEMENT_TYPE_OBJECT;
+    }
+
+    auto closing_bracket = type_string.find("]");
+    if (closing_bracket == std::string::npos || closing_bracket < open_bracket) {
+      return CorElementType::ELEMENT_TYPE_OBJECT;
+    }
+
+    // This means the type is something like System.Int32[],
+    // which represents a simple array.
+    if (open_bracket + 1 == closing_bracket) {
+      return CorElementType::ELEMENT_TYPE_SZARRAY;
+    }
+
+    // This means the type is something like System.Int32[,], which is
+    // a multidimensional array.
+    return CorElementType::ELEMENT_TYPE_ARRAY;
   }
 }
 

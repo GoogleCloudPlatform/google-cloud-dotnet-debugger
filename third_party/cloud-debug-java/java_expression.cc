@@ -708,8 +708,8 @@ CompiledExpression JavaExpressionIndexSelector::CreateEvaluator() {
   }
 
   return {
-    std::unique_ptr<ArrayExpressionEvaluator>(
-        new ArrayExpressionEvaluator(
+    std::unique_ptr<IndexerAccessExpressionEvaluator>(
+        new IndexerAccessExpressionEvaluator(
             std::move(source_evaluator.evaluator),
             std::move(index_evaluator.evaluator)))
   };
