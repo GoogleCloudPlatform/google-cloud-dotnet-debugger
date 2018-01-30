@@ -15,7 +15,8 @@
  */
 
 #include "identifier_evaluator.h"
-#include "../../google_cloud_debugger_lib/dbg_stack_frame.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_stack_frame.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_object.h"
 
 namespace google_cloud_debugger {
 
@@ -36,7 +37,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // S_FALSE means there is no match.
   if (SUCCEEDED(hr) && hr != S_FALSE) {
-    *identifier_object_ = std::move(identifier_obj);
+    identifier_object_ = std::move(identifier_obj);
     return identifier_object_->GetTypeSignature(&result_type_);
   }
 
@@ -49,7 +50,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // S_FALSE means there is no match.
   if (SUCCEEDED(hr) && hr != S_FALSE) {
-    *identifier_object_ = std::move(identifier_obj);
+    identifier_object_ = std::move(identifier_obj);
     return identifier_object_->GetTypeSignature(&result_type_);
   }
 
