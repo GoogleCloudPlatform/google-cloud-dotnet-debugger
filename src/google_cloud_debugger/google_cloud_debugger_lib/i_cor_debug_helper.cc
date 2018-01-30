@@ -392,7 +392,6 @@ HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
   }
 
   *is_static = IsFdStatic(field_attributes);
->>>>>>> dd8b132... Implement identifier evaluator:google_cloud_debugger_lib/i_cor_debug_helper.cc
   return S_OK;
 }
 
@@ -400,13 +399,13 @@ HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
     mdProperty class_token, const std::string &prop_name,
     std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream) {
   HRESULT hr;
-  std::vector<mdProperty> property_defs(100, 0);
+  std::vector<mdProperty> property_defs(kDefaultVectorSize, 0);
   HCORENUM cor_enum = nullptr;
-  ULONG property_defs_returned = 0;
+  ULONG property_defs_returned = 1;
 
   // Enumerates through the properties and extracts out
   // the one that matches prop_name.
-  while (true) {
+  while (property_defs_returned != 0) {
     hr = metadata_import->EnumProperties(
         &cor_enum, class_token, property_defs.data(), property_defs.size(),
         &property_defs_returned);
@@ -416,36 +415,32 @@ HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
       return hr;
     }
 
-    if (property_defs_returned != 0) {
-      for (int i = 0; i < property_defs_returned; ++i) {
-        // We creates DbgClassProperty object and calls the Initialize
-        // function to populate the name of the property.
-        std::unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
-                                                        DbgClassProperty());
-        if (!class_property) {
-          *err_stream <<
-              "Ran out of memory while trying to initialize class property ";
-          return E_OUTOFMEMORY;
-        }
-
-        class_property->Initialize(property_defs[i], metadata_import,
-            // The depth does not matter for now because we are
-            // not evaluating any object.
-            kDefaultObjectEvalDepth);
-        if (FAILED(class_property->GetInitializeHr())) {
-          *err_stream << "Failed to get property information.";
-          metadata_import->CloseEnum(cor_enum);
-          return class_property->GetInitializeHr();
-        }
-
-        if (prop_name.compare(class_property->GetMemberName()) == 0) {
-          *result = std::move(class_property);
-          metadata_import->CloseEnum(cor_enum);
-          return S_OK;
-        }
+    for (int i = 0; i < property_defs_returned; ++i) {
+      // We creates DbgClassProperty object and calls the Initialize
+      // function to populate the name of the property.
+      std::unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
+                                                      DbgClassProperty());
+      if (!class_property) {
+        *err_stream <<
+            "Ran out of memory while trying to initialize class property ";
+        return E_OUTOFMEMORY;
       }
-    } else {
-      break;
+
+      class_property->Initialize(property_defs[i], metadata_import,
+          // The depth does not matter for now because we are
+          // not evaluating any object.
+          kDefaultObjectEvalDepth);
+      if (FAILED(class_property->GetInitializeHr())) {
+        *err_stream << "Failed to get property information.";
+        metadata_import->CloseEnum(cor_enum);
+        return class_property->GetInitializeHr();
+      }
+
+      if (prop_name.compare(class_property->GetMemberName()) == 0) {
+        *result = std::move(class_property);
+        metadata_import->CloseEnum(cor_enum);
+        return S_OK;
+      }
     }
   }
 

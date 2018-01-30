@@ -62,7 +62,9 @@ class DbgArray : public DbgObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
-  // Sets type_string to type of variable to this array type.
+  // Gets the type of the array.
+  // For example, if this array represents an int array,
+  // type_string will be set to int[].
   HRESULT GetTypeString(std::string *type_string) override;
 
   // Sets the maximum amount of items that the array will retrieve
