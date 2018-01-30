@@ -63,18 +63,20 @@ class DbgStackFrame {
       int stack_frame_size,
       IEvalCoordinator *eval_coordinator) const;
 
-  // Extracts out local variable or method arguments with name
-  // variable_name
+  // Gets a local variable or method arguments with name
+  // variable_name.
   HRESULT ExtractLocalVariable(const std::string &variable_name,
       std::unique_ptr<DbgObject> *dbg_object,
       std::ostream *err_stream);
 
   // Extracts out any field or auto-implemented property with the name
-  // member_name of the class his frame is in.
+  // member_name of the class this frame is in.
   HRESULT ExtractFieldAndAutoPropFromFrame(const std::string &member_name,
       std::unique_ptr<DbgObject> *dbg_object,
       std::ostream *err_stream);
 
+  // Extracts out property with the name property_name of the class
+  // this frame is in.
   HRESULT ExtractPropertyFromFrame(const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
       std::ostream *err_stream);
@@ -137,8 +139,8 @@ class DbgStackFrame {
   // Returns true if this is a parsed IL frame.
   bool IsProcessedIlFrame() { return is_processed_il_frame_; }
 
-  // Returns true if this is a static frame.
-  bool IsStatic() { return is_static_; }
+  // Returns true if the method this frame is in is a static method.
+  bool IsStaticMethod() { return is_static_method_; }
 
  private:
   // Extract local variables from local_enum.
@@ -186,7 +188,7 @@ class DbgStackFrame {
   bool empty_ = false;
 
   // True if this frame is a static frame.
-  bool is_static_ = false;
+  bool is_static_method_ = false;
 
   // Returns true if this is an IL frame that has been processed.
   // This is set after a successful call to Initialize.

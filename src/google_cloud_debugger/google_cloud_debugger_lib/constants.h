@@ -43,6 +43,9 @@ static const std::string kDllExtension = ".dll";
 // File extension for pdb file.
 static const std::string kPdbExtension = ".pdb";
 
+// Default size of a vector that we use to retrieve objects from ICorDebugEnum.
+static const std::uint32_t kDefaultVectorSize = 100;
+
 }  // namespace google_cloud_debugger
 
 #endif  //  CONSTANTS_H_

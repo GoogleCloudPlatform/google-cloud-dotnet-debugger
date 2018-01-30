@@ -23,6 +23,7 @@
 #include "i_eval_coordinator.h"
 #include "variable_wrapper.h"
 #include "i_cor_debug_helper.h"
+#include "constants.h"
 
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
@@ -57,7 +58,8 @@ HRESULT DbgStackFrame::Initialize(
   metadata_import_ = metadata_import;
   method_token_ = method_token;
 
-  // We need to sets is_static.
+  // We need to determine whether this frame is in a static
+  // method or not and set is_static_method_ correspondingly.
   ULONG method_name_len;
   PCCOR_SIGNATURE method_signature;
   ULONG method_signature_blob;
@@ -74,9 +76,9 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
-  is_static_ = IsMdStatic(method_flag);
+  is_static_method_ = IsMdStatic(method_flag);
 
-  HRESULT hr;
+  // TODO(quoct): Moves the code below out of the Initialize function.
   CComPtr<ICorDebugValueEnum> local_enum;
   CComPtr<ICorDebugValueEnum> method_arg_enum;
 
@@ -86,7 +88,7 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
-  // The populate methods will write errors
+  // The populate methods will write errors.
   hr = ProcessLocalVariables(local_enum, variable_infos);
   if (FAILED(hr)) {
     return hr;
@@ -198,7 +200,7 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   HCORENUM cor_enum = nullptr;
 
   // Add "this" if method is not static.
-  if (!is_static_) {
+  if (!is_static_method_) {
     method_argument_names.push_back("this");
   }
 
@@ -358,13 +360,13 @@ HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
     }
   }
 
-  // Otherwise, we check the method argument and see which one matches.
+  // Otherwise, we check the method arguments and see which one matches variable_name.
   HCORENUM cor_enum = nullptr;
 
-  // If variable_name is "this", then get the first argument.
-  // Also throws error if method is static.
+  // If variable_name is "this", then gets the first argument.
   if (variable_name.compare(this_var) == 0) {
-    if (is_static_) {
+    // If the frame is static, we cannot get "this".
+    if (is_static_method_) {
       return E_FAIL;
     }
 
@@ -378,9 +380,9 @@ HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
   }
 
   // Loops through the method arguments and checks to see which matches variable_name.
-  vector<mdParamDef> method_args(100, 0);
+  vector<mdParamDef> method_args(kDefaultVectorSize, 0);
   // If the frame is non-static, the first argument is "this", so we will skip it.
-  DWORD argument_index = is_static_ ? 0 : 1;
+  DWORD argument_index = is_static_method_ ? 0 : 1;
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
     hr =
@@ -410,13 +412,13 @@ HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
         metadata_import_->CloseEnum(cor_enum);
         CComPtr<ICorDebugValue> debug_value;
         hr = debug_frame_->GetArgument(argument_index, &debug_value);
-        ++argument_index;
         if (FAILED(hr)) {
           return hr;
         }
 
         return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
       }
+      ++argument_index;
     }
   }
 
@@ -424,8 +426,8 @@ HRESULT DbgStackFrame::ExtractLocalVariable(const std::string &variable_name,
   return S_FALSE;
 }
 
-// TODO(quoct): This only finds members defined directly in class or interface,
-// does not find inherited fields.
+// TODO(quoct): This only finds members defined directly in a class or an interface.
+// Therefore, inherited fields won't be found.
 HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
     const std::string &member_name,
     std::unique_ptr<DbgObject> *dbg_object,
@@ -445,16 +447,13 @@ HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
   hr = ExtractFieldInfo(metadata_import_, class_token_,
     underlying_field_name, &field_def, &field_static, err_stream);
   if (FAILED(hr)) {
-    return hr;
     // If no field matches the name, this may be an auto-implemented property.
     // In that case, there will be a backing field. Let's search for that.
     underlying_field_name = "<" + member_name + ">k__BackingField";
     hr = ExtractFieldInfo(metadata_import_, class_token_,
         underlying_field_name, &field_def, &field_static, err_stream);
+    // Since we can't find the field, returns S_FALSE.
     if (FAILED(hr)) {
-      // Otherwise, this means we can't find the field.
-      // TODO(quoct): Only returns S_FALSE if hr indicates field
-      // not found.
       return S_FALSE;
     }
   }
@@ -475,7 +474,7 @@ HRESULT DbgStackFrame::ExtractFieldAndAutoPropFromFrame(
   }
   else {
     // We cannot get a non-static field in a static frame.
-    if (is_static_) {
+    if (is_static_method_) {
       *err_stream << "Cannot get non-static field in static frame.";
       return E_FAIL;
     }
