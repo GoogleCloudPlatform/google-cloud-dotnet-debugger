@@ -16,91 +16,119 @@
 
 #include "array_expression_evaluator.h"
 
-#include "jni_utils.h"
-#include "array_reader.h"
-#include "model.h"
-#include "messages.h"
 #include "numeric_cast_evaluator.h"
-#include "readers_factory.h"
 #include "type_util.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/error_messages.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/compiler_helpers.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_array.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/constants.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-ArrayExpressionEvaluator::ArrayExpressionEvaluator(
-    std::unique_ptr<ExpressionEvaluator> source_array,
+IndexerAccessExpressionEvaluator::IndexerAccessExpressionEvaluator(
+    std::unique_ptr<ExpressionEvaluator> source_collection,
     std::unique_ptr<ExpressionEvaluator> source_index)
-    : source_array_(std::move(source_array)),
+    : source_collection_(std::move(source_collection)),
       source_index_(std::move(source_index)) {
 }
 
+HRESULT IndexerAccessExpressionEvaluator::Compile(
+    DbgStackFrame *stack_frame,
+    std::ostream *err_stream) {
+  HRESULT hr = source_collection_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
-ArrayExpressionEvaluator::~ArrayExpressionEvaluator() {
+  hr = source_index_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  const TypeSignature &source_type = source_collection_->GetStaticType();
+  // We need to extract the type name from the base array type.
+  if (source_type.type_name.size() == 0) {
+    return E_FAIL;
+  }
+
+  // TODO(quoct): Implement logic for a[b] where a is not an array.
+  if (!TypeCompilerHelper::IsArrayType(source_type.cor_type)) {
+    return E_NOTIMPL;
+  }
+
+  // Gets the base type of the array.
+  auto last_open_bracket = source_type.type_name.find_last_of("[");
+  if (last_open_bracket == std::string::npos) {
+    return E_FAIL;
+  }
+
+  std::string base_type_string = source_type.type_name.substr(0, last_open_bracket);
+  CorElementType base_type_cor_type =
+      TypeCompilerHelper::ConvertStringToCorElementType(base_type_string);
+
+  return_type_ = {
+    base_type_cor_type,
+    base_type_string
+  };
+
+  return S_OK;
+}
+
+HRESULT IndexerAccessExpressionEvaluator::Evaluate(
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> source_obj;
+  HRESULT hr = source_collection_->Evaluate(&source_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (source_obj->GetIsNull()) {
+    return E_FAIL;
+  }
+
+  std::shared_ptr<DbgObject> index_obj;
+  hr = source_index_->Evaluate(&index_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // In the case that the source is an array, we retrieve the index as a long
+  // and use that index to access the item in the array.
+  if (TypeCompilerHelper::IsArrayType(source_obj->GetCorElementType())) {
+    int64_t index;
+    hr = NumericCompilerHelper::ExtractPrimitiveValue<int64_t>(index_obj.get(), &index);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    DbgArray *array_obj = dynamic_cast<DbgArray *>(index_obj.get());
+    if (array_obj == nullptr) {
+      return E_INVALIDARG;
+    }
+
+    CComPtr<ICorDebugValue> array_item;
+    hr = array_obj->GetArrayItem(index, &array_item);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    std::unique_ptr<DbgObject> target_object;
+    std::ostringstream err_stream;
+    hr = DbgObject::CreateDbgObject(array_item, kDefaultObjectEvalDepth, &target_object,
+        &err_stream);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    *dbg_object = std::move(target_object);
+    return hr;
+  }
+
+  // TODO(quoct): Implement logic for accessing item in Dictionary, List, etc.
+  // We can do this by calling get_Item function.
+  return E_NOTIMPL;
 }
 
 
-bool ArrayExpressionEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!source_array_->Compile(readers_factory, error_message) ||
-      !source_index_->Compile(readers_factory, error_message)) {
-    return false;
-  }
-
-  if (!IsArrayObjectType(source_array_->GetStaticType())) {
-    *error_message = {
-      ArrayTypeExpected,
-      { TypeNameFromSignature(source_array_->GetStaticType()) }
-    };
-    return false;
-  }
-
-  return_type_ = GetArrayElementJSignature(source_array_->GetStaticType());
-  if (return_type_.type == JType::Void) {
-    *error_message = INTERNAL_ERROR_MESSAGE;
-    return false;
-  }
-
-  array_reader_ = readers_factory->CreateArrayReader(
-      source_array_->GetStaticType());
-  if (array_reader_ == nullptr) {
-    *error_message = INTERNAL_ERROR_MESSAGE;
-    return false;
-  }
-
-  if (!IsIntegerType(source_index_->GetStaticType().type)) {
-    *error_message = {
-      ArrayIndexNotInteger,
-      { TypeNameFromSignature(source_index_->GetStaticType()) }
-    };
-    return false;
-  }
-
-  if (!ApplyNumericCast<jlong>(&source_index_, error_message)) {
-    *error_message = INTERNAL_ERROR_MESSAGE;
-    return false;
-  }
-
-  return true;
-}
-
-
-ErrorOr<JVariant> ArrayExpressionEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> array = source_array_->Evaluate(evaluation_context);
-  if (array.is_error()) {
-    return array;
-  }
-
-  ErrorOr<JVariant> index = source_index_->Evaluate(evaluation_context);
-  if (index.is_error()) {
-    return index;
-  }
-
-  return array_reader_->ReadValue(array.value(), index.value());
-}
-
-
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger
