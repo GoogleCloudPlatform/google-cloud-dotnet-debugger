@@ -175,8 +175,8 @@ HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
   result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN};
 
   // If both items are numerical type, perform numeric promotion.
-  if (NumericCompilerHelper::IsNumericalType(signature1.cor_type) &&
-      NumericCompilerHelper::IsNumericalType(signature2.cor_type)) {
+  if (TypeCompilerHelper::IsNumericalType(signature1.cor_type) &&
+      TypeCompilerHelper::IsNumericalType(signature2.cor_type)) {
     CorElementType result;
     if (!NumericCompilerHelper::BinaryNumericalPromotion(
             signature1.cor_type, signature1.cor_type, &result, err_stream)) {
@@ -239,8 +239,8 @@ HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
       signature2.type_name.compare(kStringClassName) == 0) {
     computer_ = &BinaryExpressionEvaluator::ConditionalStringComputer;
     return S_OK;
-  } else if (!NumericCompilerHelper::IsNumericalType(signature1.cor_type) &&
-             !NumericCompilerHelper::IsNumericalType(signature2.cor_type)) {
+  } else if (!TypeCompilerHelper::IsNumericalType(signature1.cor_type) &&
+             !TypeCompilerHelper::IsNumericalType(signature2.cor_type)) {
     // Compares address (only applies for non-numeric types.
     computer_ = &BinaryExpressionEvaluator::ConditionalObjectComputer;
     return S_OK;
@@ -270,8 +270,8 @@ HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
 
   // We support 2 cases, either both arguments are integers
   // or if both arguments are boolean.
-  if (NumericCompilerHelper::IsIntegralType(arg1_type) &&
-      NumericCompilerHelper::IsIntegralType(arg2_type)) {
+  if (TypeCompilerHelper::IsIntegralType(arg1_type) &&
+      TypeCompilerHelper::IsIntegralType(arg2_type)) {
     // For numerical type, perform binary numerical promotion.
     CorElementType result;
     if (!NumericCompilerHelper::BinaryNumericalPromotion(
@@ -313,8 +313,8 @@ HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
 HRESULT BinaryExpressionEvaluator::CompileShift(std::ostream *err_stream) {
   CorElementType arg1_type = arg1_->GetStaticType().cor_type;
   CorElementType arg2_type = arg2_->GetStaticType().cor_type;
-  if (!NumericCompilerHelper::IsIntegralType(arg1_type) &&
-      !NumericCompilerHelper::IsIntegralType(arg2_type)) {
+  if (!TypeCompilerHelper::IsIntegralType(arg1_type) &&
+      !TypeCompilerHelper::IsIntegralType(arg2_type)) {
     *err_stream << kTypeMismatch;
     return E_FAIL;
   }
