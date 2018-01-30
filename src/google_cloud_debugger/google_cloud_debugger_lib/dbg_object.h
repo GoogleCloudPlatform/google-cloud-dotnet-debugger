@@ -28,6 +28,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class VariableWrapper;
+class TypeSignature;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)
@@ -51,8 +52,11 @@ class DbgObject : public StringStreamWrapper {
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
   // Sets the type of proto variable to the type of this object.
-  virtual HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) = 0;
+  HRESULT PopulateType(
+      google::cloud::diagnostics::debug::Variable *variable);
+
+  // Gets a string of object type.
+  virtual HRESULT GetTypeString(std::string *type_string) = 0;
 
   // Sets the value of proto variable to the value of this object.
   // PopulateValue will return S_FALSE if this object has members.
@@ -60,6 +64,9 @@ class DbgObject : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Variable *variable) {
     return S_OK;
   }
+
+  // Extracts the type signature of this object.
+  HRESULT GetTypeSignature(TypeSignature *type_signature);
 
   // Populates the members vector using this object's members.
   // Returns S_FALSE by default (no members).

@@ -23,6 +23,8 @@
 
 namespace google_cloud_debugger {
 
+class DbgClassProperty;
+
 // Helper methods for various ICorDebug objects.
 
 // Given an ICorDebugClass, extracts out IMetaDataImport and stores it in
@@ -82,6 +84,35 @@ HRESULT ExtractStringFromICorDebugStringValue(
     ICorDebugStringValue *debug_string,
     std::string *returned_string,
     std::ostream *err_stream);
+
+// Given a metadata token for the parameter param_token,
+// extracts out the parameter name.
+// metadata_import is the MetaDataImport of the module
+// that contains the method with the param_token.
+HRESULT ExtractParamName(
+  IMetaDataImport *metadata_import, mdParamDef param_token,
+  std::string *param_name, std::ostream *err_stream);
+
+// Extracts out ICorDebugModule from ICorDebugFrame.
+HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
+                                             ICorDebugModule **debug_module,
+                                             std::ostream *err_stream);
+
+// Extracts out the metadata for field field_name
+// in class with metadata token class_token.
+// This method will also set *is_static based
+// on whether the field is static or not.
+HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
+    mdTypeDef class_token, const std::string &field_name,
+    mdFieldDef *field_def, bool *is_static, std::ostream *err_stream);
+
+// Creates a DbgClassProperty object that corresponds with
+// the property property_name in class with metadata token class_token.
+// This method will also set *is_static based
+// on whether the property is static or not.
+HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
+    mdProperty class_token, const std::string &prop_name,
+    std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream);
 
 }  // namespace google_cloud_debugger
 

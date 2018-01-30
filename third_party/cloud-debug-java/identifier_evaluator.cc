@@ -15,175 +15,73 @@
  */
 
 #include "identifier_evaluator.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_stack_frame.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_object.h"
 
-#include "field_evaluator.h"
-#include "instance_field_reader.h"
-#include "local_variable_reader.h"
-#include "messages.h"
-#include "model.h"
-#include "readers_factory.h"
-#include "static_field_reader.h"
+namespace google_cloud_debugger {
 
-namespace devtools {
-namespace cdbg {
-
-IdentifierEvaluator::IdentifierEvaluator(string identifier_name)
+IdentifierEvaluator::IdentifierEvaluator(std::string identifier_name)
     : identifier_name_(identifier_name) {
 }
 
-
-IdentifierEvaluator::~IdentifierEvaluator() {
-  if (static_field_reader_ != nullptr) {
-    static_field_reader_->ReleaseRef();
-  }
-}
-
-
-bool IdentifierEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  *error_message = FormatMessageModel();
-
+HRESULT IdentifierEvaluator::Compile(
+    DbgStackFrame *stack_frame,
+    std::ostream *err_stream) {
   // Case 1: this is a local variable.
-  FormatMessageModel local_variable_message;
-  variable_reader_ = readers_factory->CreateLocalVariableReader(
-      identifier_name_,
-      &local_variable_message);
-  if (variable_reader_ != nullptr) {
-    result_type_ = variable_reader_->GetStaticType();
-    computer_ = &IdentifierEvaluator::LocalVariableComputer;
-    return true;
+  std::unique_ptr<DbgObject> identifier_obj;
+  HRESULT hr = stack_frame->GetLocalVariable(identifier_name_,
+    &identifier_obj, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // Case 2: implicitly referenced instance field ("myInt" is equivalent to
-  // "this.myInt" unless we are in a static method).
-  FormatMessageModel local_instance_message;
-  std::unique_ptr<LocalVariableReader> local_instance_reader =
-      readers_factory->CreateLocalInstanceReader();
-  if (local_instance_reader != nullptr) {
-    auto chain = CreateInstanceFieldReadersChain(
-        readers_factory,
-        local_instance_reader->GetStaticType().object_signature,
-        identifier_name_,
-        &local_instance_message);
-
-    if (!chain.empty()) {
-      variable_reader_ = std::move(local_instance_reader);
-      instance_fields_chain_ = std::move(chain);
-
-      result_type_ = instance_fields_chain_.back()->GetStaticType();
-      computer_ = &IdentifierEvaluator::ImplicitInstanceFieldComputer;
-
-      return true;
-    }
-
-    // "Field not found" error is considered non-specific here.
-    if (local_instance_message.format == InstanceFieldNotFound) {
-      local_instance_message = FormatMessageModel();
-    }
+  // S_FALSE means there is no match.
+  if (SUCCEEDED(hr) && hr != S_FALSE) {
+    identifier_object_ = std::move(identifier_obj);
+    return identifier_object_->GetTypeSignature(&result_type_);
   }
 
-  // Case 3: static variable in the class containing the current evaluation
-  // point.
-  FormatMessageModel static_field_message;
-  std::unique_ptr<StaticFieldReader> static_field_reader =
-      readers_factory->CreateStaticFieldReader(
-          identifier_name_,
-          &static_field_message);
-  if (static_field_reader != nullptr) {
-    static_field_reader_ = std::move(static_field_reader);
-
-    result_type_ = static_field_reader_->GetStaticType();
-    computer_ = &IdentifierEvaluator::StaticFieldComputer;
-
-    return true;
+  // Case 2: static and non-static fields and auto-implemented properties.
+  hr = stack_frame->GetFieldAndAutoPropFromFrame(identifier_name_,
+    &identifier_obj, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // Choose the most specific message defaulting to "invalid
-  // identifier".
-  const FormatMessageModel* messages[] = {
-    &local_variable_message,
-    &local_instance_message,
-    &static_field_message
-  };
-
-  for (const FormatMessageModel* message : messages) {
-    if (!message->format.empty() &&
-        message->format != InvalidIdentifier) {
-      *error_message = *message;
-      break;
-    }
+  // S_FALSE means there is no match.
+  if (SUCCEEDED(hr) && hr != S_FALSE) {
+    identifier_object_ = std::move(identifier_obj);
+    return identifier_object_->GetTypeSignature(&result_type_);
   }
 
-  if (error_message->format.empty()) {
-    *error_message = { InvalidIdentifier, { identifier_name_ } };
+  // Case 3: static and non-static properties with getter.
+  hr = stack_frame->GetPropertyFromFrame(identifier_name_,
+    &class_property_, err_stream);
+  if (hr == S_FALSE) {
+    hr = E_FAIL;
   }
 
-  return false;
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // TODO(quoct): Extracts property type from class_property_
+  // to populate result_type_. We have to parse the signature
+  // of the class_property_ to get the type.
+  is_non_auto_property = true;
+  return S_OK;
 }
 
-
-ErrorOr<JVariant> IdentifierEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  return (this->*computer_)(evaluation_context);
-}
-
-
-ErrorOr<JVariant> IdentifierEvaluator::LocalVariableComputer(
-    const EvaluationContext& evaluation_context) const {
-  JVariant result;
-  FormatMessageModel error;
-  if (!variable_reader_->ReadValue(evaluation_context, &result, &error)) {
-    return error;
+HRESULT IdentifierEvaluator::Evaluate(
+    std::shared_ptr<DbgObject> *dbg_object,
+    IEvalCoordinator *eval_coordinator,
+    std::ostream * err_stream) const {
+  if (!is_non_auto_property) {
+    *dbg_object = identifier_object_;
+    return S_OK;
   }
 
-  return std::move(result);
+  // TODO(quoct): Evaluates the property.
 }
 
-
-ErrorOr<JVariant> IdentifierEvaluator::ImplicitInstanceFieldComputer(
-    const EvaluationContext& evaluation_context) const {
-  JVariant result;
-  FormatMessageModel error;
-  if (!variable_reader_->ReadValue(evaluation_context, &result, &error)) {
-    return error;
-  }
-
-  for (const auto& reader : instance_fields_chain_) {
-    jobject source_jobject = nullptr;
-    if (!result.get<jobject>(&source_jobject)) {
-      return INTERNAL_ERROR_MESSAGE;
-    }
-
-    if (source_jobject == nullptr) {
-      // Attempt to dereference null object.
-      return FormatMessageModel { NullPointerDereference };
-    }
-
-    JVariant next;
-    FormatMessageModel error;
-    if (!reader->ReadValue(source_jobject, &next, &error)) {
-      return error;
-    }
-
-    result = std::move(next);
-  }
-
-  return std::move(result);
-}
-
-
-ErrorOr<JVariant> IdentifierEvaluator::StaticFieldComputer(
-    const EvaluationContext& evaluation_context) const {
-  JVariant result;
-  FormatMessageModel error;
-  if (!static_field_reader_->ReadValue(&result, &error)) {
-    return error;
-  }
-
-  return std::move(result);
-}
-
-}  // namespace cdbg
-}  // namespace devtools
-
+}  // namespace google_cloud_debugger

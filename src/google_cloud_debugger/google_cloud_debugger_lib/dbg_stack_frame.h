@@ -36,6 +36,7 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
 
 class DebuggerCallback;
 class IEvalCoordinator;
+class DbgClassProperty;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
@@ -61,6 +62,24 @@ class DbgStackFrame {
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
       int stack_frame_size,
       IEvalCoordinator *eval_coordinator) const;
+
+  // Gets a local variable or method arguments with name
+  // variable_name.
+  HRESULT GetLocalVariable(const std::string &variable_name,
+      std::unique_ptr<DbgObject> *dbg_object,
+      std::ostream *err_stream);
+
+  // Gets out any field or auto-implemented property with the name
+  // member_name of the class this frame is in.
+  HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
+      std::unique_ptr<DbgObject> *dbg_object,
+      std::ostream *err_stream);
+
+  // Gets out property with the name property_name of the class
+  // this frame is in.
+  HRESULT GetPropertyFromFrame(const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *property_object,
+      std::ostream *err_stream);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -120,6 +139,9 @@ class DbgStackFrame {
   // Returns true if this is a parsed IL frame.
   bool IsProcessedIlFrame() { return is_processed_il_frame_; }
 
+  // Returns true if the method this frame is in is a static method.
+  bool IsStaticMethod() { return is_static_method_; }
+
  private:
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
@@ -165,9 +187,27 @@ class DbgStackFrame {
   // True if this is an empty frame with no information.
   bool empty_ = false;
 
+  // True if this frame is a static frame.
+  bool is_static_method_ = false;
+
   // Returns true if this is an IL frame that has been processed.
   // This is set after a successful call to Initialize.
   bool is_processed_il_frame_ = false;
+
+  // MetaData token of the method.
+  mdMethodDef method_token_;
+
+  // MetaData token of the class the frame is in.
+  mdTypeDef class_token_;
+
+  // The frame this stack frame is in.
+  CComPtr<ICorDebugILFrame> debug_frame_;
+
+  // The metadata import of this stack frame.
+  CComPtr<IMetaDataImport> metadata_import_;
+
+  // MetaData for local variables in this frame.
+  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo> local_variables_info_;
 };
 
 }  //  namespace google_cloud_debugger

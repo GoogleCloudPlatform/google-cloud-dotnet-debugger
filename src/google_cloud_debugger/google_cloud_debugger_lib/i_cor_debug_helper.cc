@@ -19,6 +19,9 @@
 
 #include "ccomptr.h"
 #include "string_stream_wrapper.h"
+#include "error_messages.h"
+#include "dbg_class_property.h"
+#include "constants.h"
 
 using std::cerr;
 using std::ostream;
@@ -280,6 +283,7 @@ HRESULT ExtractStringFromICorDebugStringValue(
   }
 
   HRESULT hr;
+  std::vector<WCHAR> string_value;
   ULONG32 str_len;
   ULONG32 str_returned_len;
 
@@ -307,6 +311,144 @@ HRESULT ExtractStringFromICorDebugStringValue(
 
   *returned_string = ConvertWCharPtrToString(string_value);
   return S_OK;
+}
+
+HRESULT ExtractParamName(IMetaDataImport *metadata_import,
+    mdParamDef param_token, std::string *param_name,
+    std::ostream *err_stream) {
+  mdMethodDef method_token;
+  ULONG ordinal_position;
+  ULONG param_name_size;
+  DWORD param_attributes;
+  DWORD value_type_flag;
+  UVCP_CONSTANT const_string_value;
+  ULONG const_string_value_size;
+  std::vector<WCHAR> wchar_param_name;
+
+  HRESULT hr = metadata_import->GetParamProps(
+      param_token, &method_token, &ordinal_position, nullptr, 0,
+      &param_name_size, &param_attributes, &value_type_flag,
+      &const_string_value, &const_string_value_size);
+  if (FAILED(hr) || param_name_size == 0) {
+    *err_stream << "Failed to get length of name of method argument: "
+          << method_token << " with hr: " << std::hex << hr;
+    return hr;
+  }
+
+  wchar_param_name.resize(param_name_size);
+  hr = metadata_import->GetParamProps(
+      param_token, &method_token, &ordinal_position, wchar_param_name.data(),
+      wchar_param_name.size(), &param_name_size, &param_attributes,
+      &value_type_flag, &const_string_value, &const_string_value_size);
+  if (FAILED(hr)) {
+    cerr << "Failed to get name of method argument: " << param_token
+          << " with hr: " << std::hex << hr;
+    return hr;
+  }
+
+  *param_name = ConvertWCharPtrToString(wchar_param_name);
+  return hr;
+}
+
+HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
+    ICorDebugModule **debug_module, std::ostream *err_stream) {
+  CComPtr<ICorDebugFunction> debug_function;
+  HRESULT hr = debug_frame->GetFunction(&debug_function);
+  if (FAILED(hr)) {
+    *err_stream << kFailedDebugFuncFromFrame;
+    return hr;
+  }
+
+  hr = debug_function->GetModule(debug_module);
+  if (FAILED(hr)) {
+    *err_stream << kFailedDebugModuleFromFunc;
+  }
+
+  return hr;
+}
+
+HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
+    mdTypeDef class_token, const std::string &field_name,
+    mdFieldDef *field_def, bool *is_static, std::ostream *err_stream) {
+  std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
+  HRESULT hr = metadata_import->FindField(class_token, wchar_field_name.data(), nullptr, 0, field_def);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  ULONG len_field;
+  DWORD field_attributes;
+  PCCOR_SIGNATURE field_sig;
+  ULONG sig_len = 0;
+  DWORD default_value_flags = 0;
+  UVCP_CONSTANT default_value;
+  ULONG default_value_len = 0;
+  // Now we need to sets whether the field is static.
+  hr = metadata_import->GetFieldProps(*field_def, &class_token, nullptr, 0,
+      &len_field, &field_attributes, &field_sig, &sig_len,
+      &default_value_flags, &default_value, &default_value_len);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *is_static = IsFdStatic(field_attributes);
+  return S_OK;
+}
+
+HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
+    mdProperty class_token, const std::string &prop_name,
+    std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream) {
+  HRESULT hr;
+  std::vector<mdProperty> property_defs(kDefaultVectorSize, 0);
+  HCORENUM cor_enum = nullptr;
+  ULONG property_defs_returned = 1;
+
+  // Enumerates through the properties and extracts out
+  // the one that matches prop_name.
+  while (property_defs_returned != 0) {
+    hr = metadata_import->EnumProperties(
+        &cor_enum, class_token, property_defs.data(), property_defs.size(),
+        &property_defs_returned);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to enumerate class properties.";
+      metadata_import->CloseEnum(cor_enum);
+      return hr;
+    }
+
+    for (int i = 0; i < property_defs_returned; ++i) {
+      // We creates DbgClassProperty object and calls the Initialize
+      // function to populate the name of the property.
+      std::unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
+                                                      DbgClassProperty());
+      if (!class_property) {
+        *err_stream <<
+            "Ran out of memory while trying to initialize class property ";
+        return E_OUTOFMEMORY;
+      }
+
+      class_property->Initialize(property_defs[i], metadata_import,
+          // The depth does not matter for now because we are
+          // not evaluating any object.
+          kDefaultObjectEvalDepth);
+      if (FAILED(class_property->GetInitializeHr())) {
+        *err_stream << "Failed to get property information.";
+        metadata_import->CloseEnum(cor_enum);
+        return class_property->GetInitializeHr();
+      }
+
+      if (prop_name.compare(class_property->GetMemberName()) == 0) {
+        *result = std::move(class_property);
+        metadata_import->CloseEnum(cor_enum);
+        return S_OK;
+      }
+    }
+  }
+
+  if (cor_enum != nullptr) {
+    metadata_import->CloseEnum(cor_enum);
+  }
+
+  return S_FALSE;
 }
 
 }  // namespace google_cloud_debugger
