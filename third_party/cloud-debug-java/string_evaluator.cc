@@ -15,12 +15,12 @@
  */
 
 #include "string_evaluator.h"
-#include "../../google_cloud_debugger_lib/ccomptr.h"
-#include "../../google_cloud_debugger_lib/i_eval_coordinator.h"
-#include "../../google_cloud_debugger_lib/error_messages.h"
-#include "../../google_cloud_debugger_lib/dbg_object.h"
-#include "../../google_cloud_debugger_lib/constants.h"
-#include "../../google_cloud_debugger_lib/type_signature.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/ccomptr.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/i_eval_coordinator.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/error_messages.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_object.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/constants.h"
+#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/type_signature.h"
 
 namespace google_cloud_debugger {
 
