@@ -65,19 +65,19 @@ class DbgStackFrame {
 
   // Gets a local variable or method arguments with name
   // variable_name.
-  HRESULT ExtractLocalVariable(const std::string &variable_name,
+  HRESULT GetLocalVariable(const std::string &variable_name,
       std::unique_ptr<DbgObject> *dbg_object,
       std::ostream *err_stream);
 
-  // Extracts out any field or auto-implemented property with the name
+  // Gets out any field or auto-implemented property with the name
   // member_name of the class this frame is in.
-  HRESULT ExtractFieldAndAutoPropFromFrame(const std::string &member_name,
+  HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
       std::unique_ptr<DbgObject> *dbg_object,
       std::ostream *err_stream);
 
-  // Extracts out property with the name property_name of the class
+  // Gets out property with the name property_name of the class
   // this frame is in.
-  HRESULT ExtractPropertyFromFrame(const std::string &property_name,
+  HRESULT GetPropertyFromFrame(const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
       std::ostream *err_stream);
 

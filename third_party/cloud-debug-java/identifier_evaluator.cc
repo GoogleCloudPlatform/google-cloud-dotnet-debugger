@@ -29,7 +29,7 @@ HRESULT IdentifierEvaluator::Compile(
     std::ostream *err_stream) {
   // Case 1: this is a local variable.
   std::unique_ptr<DbgObject> identifier_obj;
-  HRESULT hr = stack_frame->ExtractLocalVariable(identifier_name_,
+  HRESULT hr = stack_frame->GetLocalVariable(identifier_name_,
     &identifier_obj, err_stream);
   if (FAILED(hr)) {
     return hr;
@@ -42,7 +42,7 @@ HRESULT IdentifierEvaluator::Compile(
   }
 
   // Case 2: static and non-static fields and auto-implemented properties.
-  hr = stack_frame->ExtractFieldAndAutoPropFromFrame(identifier_name_,
+  hr = stack_frame->GetFieldAndAutoPropFromFrame(identifier_name_,
     &identifier_obj, err_stream);
   if (FAILED(hr)) {
     return hr;
@@ -55,7 +55,7 @@ HRESULT IdentifierEvaluator::Compile(
   }
 
   // Case 3: static and non-static properties with getter.
-  hr = stack_frame->ExtractPropertyFromFrame(identifier_name_,
+  hr = stack_frame->GetPropertyFromFrame(identifier_name_,
     &class_property_, err_stream);
   if (hr == S_FALSE) {
     hr = E_FAIL;
