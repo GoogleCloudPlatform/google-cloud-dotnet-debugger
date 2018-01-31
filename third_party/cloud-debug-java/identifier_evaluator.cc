@@ -56,7 +56,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // Case 3: static and non-static properties with getter.
   hr = stack_frame->GetPropertyFromFrame(identifier_name_,
-    &class_property_, err_stream);
+    &class_property_, &result_type_, err_stream);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
@@ -65,10 +65,6 @@ HRESULT IdentifierEvaluator::Compile(
     return hr;
   }
 
-  // TODO(quoct): Extracts property type from class_property_
-  // to populate result_type_. We have to parse the signature
-  // of the class_property_ to get the type.
-  is_non_auto_property = true;
   return S_OK;
 }
 
@@ -76,7 +72,7 @@ HRESULT IdentifierEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object,
     IEvalCoordinator *eval_coordinator,
     std::ostream * err_stream) const {
-  if (!is_non_auto_property) {
+  if (class_property_ != nullptr) {
     *dbg_object = identifier_object_;
     return S_OK;
   }
