@@ -15,8 +15,8 @@
  */
 
 #include "identifier_evaluator.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_stack_frame.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_object.h"
+#include "dbg_stack_frame.h"
+#include "dbg_object.h"
 
 namespace google_cloud_debugger {
 
