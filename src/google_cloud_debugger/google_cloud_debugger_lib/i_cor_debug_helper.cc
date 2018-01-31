@@ -16,15 +16,18 @@
 
 #include <assert.h>
 #include <iostream>
+#include <vector>
 
 #include "ccomptr.h"
 #include "string_stream_wrapper.h"
 #include "error_messages.h"
 #include "dbg_class_property.h"
 #include "constants.h"
+#include "class_names.h"
 
 using std::cerr;
 using std::ostream;
+using std::vector;
 
 namespace google_cloud_debugger {
 
@@ -367,9 +370,307 @@ HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
   return hr;
 }
 
-HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
+HRESULT ParseFieldSig(PCCOR_SIGNATURE signature,
+    ULONG *sig_len, IMetaDataImport *metadata_import,
+    std::string *field_type_name) {
+  // Field signature has the form: FIELD CustomModification* Type
+  // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
+  // I think this is not used in C#?
+  // Parses the first bit.
+  ULONG bytes_read;
+  ULONG field_bit;
+  HRESULT hr = CorSigUncompressData(signature, *sig_len,
+    &field_bit, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (bytes_read != 1 || field_bit & CorCallingConvention::IMAGE_CEE_CS_CALLCONV_FIELD == 0) {
+    return META_E_BAD_SIGNATURE;
+  }
+
+  *sig_len -= bytes_read;
+  
+  // We don't support custom modifiers.
+  return ParseTypeFromSig(signature, sig_len, metadata_import,
+    field_type_name);
+}
+
+HRESULT ParsePropertySig(PCCOR_SIGNATURE signature,
+    ULONG *sig_len, IMetaDataImport *metadata_import,
+    std::string *property_type_name) {
+  // Field signature has the form:
+  // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
+  // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
+  // I think this is not used in C#?
+  // Parses the first bit.
+  ULONG bytes_read = 0;
+  ULONG field_bit = 0;
+  HRESULT hr = CorSigUncompressData(signature, *sig_len,
+    &field_bit, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (bytes_read != 1 || field_bit & CorCallingConvention::IMAGE_CEE_CS_CALLCONV_PROPERTY == 0) {
+    return META_E_BAD_SIGNATURE;
+  }
+  *sig_len -= bytes_read;
+  
+  // Parses the number of parameters for the property.
+  ULONG bytes_read;
+  ULONG no_of_params;
+  HRESULT hr = CorSigUncompressData(signature, *sig_len,
+    &no_of_params, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+  *sig_len -= bytes_read;
+
+  // Parse the type.
+  return ParseTypeFromSig(signature, sig_len, metadata_import,
+    property_type_name);
+}
+
+HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+    IMetaDataImport *metadata_import, std::string *type_name) {
+  HRESULT hr;
+  CorElementType cor_type = CorSigUncompressElementType(signature);
+  *sig_len -= 1;
+  // TODO(quoct): We are not supporting custom mod for parameters
+  // CMOD_OPT and CMOD_REQ at the moment. Some quick research suggests
+  // that C# compiler does not generate modopt so maybe we don't need
+  // this yet?
+  switch (cor_type)
+  {
+    case CorElementType::ELEMENT_TYPE_BOOLEAN:
+    {
+      *type_name = kBooleanClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_CHAR:
+    {
+      *type_name = kCharClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I:
+    {
+      *type_name = kIntPtrClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U:
+    {
+      *type_name = kUIntPtrClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I1:
+    {
+      *type_name = kSByteClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U1:
+    {
+      *type_name = kByteClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I2:
+    {
+      *type_name = kInt16ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U2:
+    {
+      *type_name = kUInt16ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I4:
+    {
+      *type_name = kInt32ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4:
+    {
+      *type_name = kUInt32ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8:
+    {
+      *type_name = kInt64ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8:
+    {
+      *type_name = kUInt64ClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4:
+    {
+      *type_name = kSingleClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8:
+    {
+      *type_name = kDoubleClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_STRING:
+    {
+      *type_name = kStringClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_OBJECT:
+    {
+      *type_name = kObjectClassName;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_SZARRAY:
+    {
+      // Extracts the array type.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import,
+          type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *type_name += "[]";
+      return hr;
+    }
+    case CorElementType::ELEMENT_TYPE_ARRAY:
+    {
+      // First we read the type.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      // Now we read the array ranks.
+      ULONG array_rank = 0;
+      ULONG bytes_read = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &array_rank, &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // All we actually need is the rank but we have to skip
+      // the additional information about the array stored.
+
+      // Next byte will be number of sizes of the array.
+      ULONG number_of_sizes = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &number_of_sizes, &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // Skip the next number_of_sizes byte since we don't need
+      // to know the sizes.
+      for (size_t i = 0; i < number_of_sizes; ++i) {
+        ULONG array_size = 0;
+        hr = CorSigUncompressData(signature, *sig_len, &array_size, &bytes_read);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *sig_len -= bytes_read;
+      }
+
+      // Next, we do the same thing but for lower bounds.
+      ULONG number_of_lowerbounds = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &number_of_lowerbounds,
+          &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // Skip the next number_of_sizes byte since we don't need
+      // to know the sizes.
+      for (size_t i = 0; i < number_of_lowerbounds; ++i) {
+        ULONG array_lower_bound = 0;
+        hr = CorSigUncompressData(signature, *sig_len, &array_lower_bound, &bytes_read);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *sig_len -= bytes_read;
+      }
+
+      *type_name += "[";
+      for (int i = 0; i < array_rank - 1; ++i) {
+        *type_name += ",";
+      }
+      *type_name = "]";
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_GENERICINST:
+    {
+      // First we read the type without generics.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      // Next byte would be the number of generic arguments.
+      ULONG generic_param_count = 0;
+      ULONG bytes_read = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &generic_param_count, &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // Now we get the generic arguments.
+      *type_name += "<";
+      for (size_t i = 0; i < generic_param_count; ++i) {
+        std::string generic_type;
+        hr = ParseTypeFromSig(signature, sig_len, metadata_import, &generic_type);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *type_name += generic_type;
+        if (i != generic_param_count - 1) {
+          *type_name += ", ";
+        }
+      }
+      *type_name += "<";
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_CLASS:
+    case CorElementType::ELEMENT_TYPE_VALUETYPE:
+    {
+      ULONG bytes_read = 0;
+      mdToken extracted_token;
+      hr = CorSigUncompressToken(signature, *sig_len, &extracted_token,
+        &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+      // Checks whether this token is mdTypeDef or mdTypeRef. Don't support
+      // other types.
+      CorTokenType token_type = (CorTokenType)(TypeFromToken(extracted_token));
+      mdToken base_token;
+      if (token_type == CorTokenType::mdtTypeDef) {
+        return GetTypeNameFromMdTypeDef(extracted_token, metadata_import,
+          type_name, &base_token, &std::cerr);
+      }
+      else if (token_type == CorTokenType::mdtTypeRef) {
+        return GetTypeNameFromMdTypeRef(extracted_token, metadata_import,
+          type_name, &std::cerr);
+      }
+      else {
+        // Don't process this.
+        return E_FAIL;
+      }
+    }
+    default:
+      return E_NOTIMPL;
+  }
+}
+
+HRESULT GetFieldInfo(IMetaDataImport *metadata_import,
     mdTypeDef class_token, const std::string &field_name,
-    mdFieldDef *field_def, bool *is_static, std::ostream *err_stream) {
+    mdFieldDef *field_def, bool *is_static,
+    PCCOR_SIGNATURE *field_sig, ULONG *signature_len,
+    std::ostream *err_stream) {
   std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
   HRESULT hr = metadata_import->FindField(class_token, wchar_field_name.data(), nullptr, 0, field_def);
   if (FAILED(hr)) {
@@ -378,14 +679,12 @@ HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
 
   ULONG len_field;
   DWORD field_attributes;
-  PCCOR_SIGNATURE field_sig;
-  ULONG sig_len = 0;
   DWORD default_value_flags = 0;
   UVCP_CONSTANT default_value;
   ULONG default_value_len = 0;
   // Now we need to sets whether the field is static.
   hr = metadata_import->GetFieldProps(*field_def, &class_token, nullptr, 0,
-      &len_field, &field_attributes, &field_sig, &sig_len,
+      &len_field, &field_attributes, field_sig, signature_len,
       &default_value_flags, &default_value, &default_value_len);
   if (FAILED(hr)) {
     return hr;
@@ -395,7 +694,7 @@ HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
   return S_OK;
 }
 
-HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
+HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
     mdProperty class_token, const std::string &prop_name,
     std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream) {
   HRESULT hr;
@@ -449,6 +748,97 @@ HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
   }
 
   return S_FALSE;
+}
+
+HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
+    IMetaDataImport *metadata_import, std::string *type_name,
+    mdToken *base_token, std::ostream *err_stream) {
+  if (metadata_import == nullptr || type_name == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  vector<WCHAR> wchar_type_name;
+  ULONG type_name_len = 0;
+  DWORD type_flags = 0;
+  mdToken extend_tokens;
+  HRESULT hr = metadata_import->GetTypeDefProps(type_token, nullptr,
+      0, &type_name_len, &type_flags, &extend_tokens);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name's length.";
+    return hr;
+  }
+
+  wchar_type_name.resize(type_name_len);
+  hr = metadata_import->GetTypeDefProps(type_token, wchar_type_name.data(),
+      wchar_type_name.size(), &type_name_len, &type_flags, &extend_tokens);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name.";
+    return hr;
+  }
+
+  *type_name = ConvertWCharPtrToString(wchar_type_name);
+  return hr;
+}
+
+HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
+    IMetaDataImport *metadata_import, std::string *type_name,
+    std::ostream *err_stream) {
+  if (metadata_import == nullptr || type_name == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  vector<WCHAR> wchar_type_name;
+  ULONG type_name_len = 0;
+  HRESULT hr = metadata_import->GetTypeRefProps(type_token, nullptr,
+      nullptr, 0, &type_name_len);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name's length.";
+    return hr;
+  }
+
+  wchar_type_name.resize(type_name_len);
+  hr = metadata_import->GetTypeRefProps(type_token, nullptr,
+      wchar_type_name.data(), wchar_type_name.size(), &type_name_len);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name.";
+    return hr;
+  }
+
+  *type_name = ConvertWCharPtrToString(wchar_type_name);
+  return hr;
+}
+
+HRESULT GetAppDomainFromICorDebugFrame(
+    ICorDebugFrame *debug_frame,
+    ICorDebugAppDomain **app_domain,
+    std::ostream *err_stream) {
+  CComPtr<ICorDebugFunction> debug_function;
+  HRESULT hr = debug_frame->GetFunction(&debug_function);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugFunction from ICorDebugFrame.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugModule> debug_module;
+  hr = debug_function->GetModule(&debug_module);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugModule from ICorDebugFunction.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugAssembly> debug_assembly;
+  hr = debug_module->GetAssembly(&debug_assembly);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAssembly from ICorDebugModule.";
+    return hr;
+  }
+
+  hr = debug_assembly->GetAppDomain(app_domain);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAppDomain from ICorDebugAssembly.";
+  }
+
+  return hr;
 }
 
 }  // namespace google_cloud_debugger

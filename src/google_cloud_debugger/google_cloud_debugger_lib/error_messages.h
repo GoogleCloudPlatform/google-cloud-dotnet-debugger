@@ -53,6 +53,11 @@ static const std::string kFailedDebugFuncFromFrame =
 static const std::string kFailedDebugModuleFromFunc =
     "Failed to extract ICorDebugModule from ICorDebugFunction.";
 
+static const std::string kObjectTypeOnlyExpr =
+    "Expression needs to be either a class, a valuetype or an object.";
+
+static const std::string kTypeNameNotAvailable =
+    "Type name is unavailable.";
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_
