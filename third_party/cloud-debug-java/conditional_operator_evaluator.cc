@@ -17,11 +17,11 @@
 #include "conditional_operator_evaluator.h"
 
 #include "numeric_cast_evaluator.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_primitive.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/class_names.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/error_messages.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/compiler_helpers.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/type_signature.h"
+#include "dbg_primitive.h"
+#include "class_names.h"
+#include "error_messages.h"
+#include "compiler_helpers.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
