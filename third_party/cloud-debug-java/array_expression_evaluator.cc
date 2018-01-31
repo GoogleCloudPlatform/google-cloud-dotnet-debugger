@@ -16,12 +16,11 @@
 
 #include "array_expression_evaluator.h"
 
-#include "numeric_cast_evaluator.h"
 #include "type_util.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/error_messages.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/compiler_helpers.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/dbg_array.h"
-#include "../../src/google_cloud_debugger/google_cloud_debugger_lib/constants.h"
+#include "error_messages.h"
+#include "compiler_helpers.h"
+#include "dbg_array.h"
+#include "constants.h"
 
 namespace google_cloud_debugger {
 
