@@ -75,8 +75,9 @@ class TypeCompilerHelper {
 
   // Converts CorElementType cor_type to a string.
   // This function only works for numerical type, boolean and string.
-  // Returns an empty string otherwise.
-  static std::string ConvertCorElementTypeToString(const CorElementType &cor_type);
+  // Returns E_FAIL if conversion cannot be done.
+  HRESULT ConvertCorElementTypeToString(const CorElementType &cor_type,
+                                                    std::string *result);
 };
 
 }  //  namespace google_cloud_debugger
