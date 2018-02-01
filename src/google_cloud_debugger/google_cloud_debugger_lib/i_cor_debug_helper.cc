@@ -578,7 +578,7 @@ HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
     return hr;
   }
 
-  if (bytes_read != 1 || field_bit & calling_convention == 0) {
+  if (bytes_read != 1 || (field_bit & calling_convention) == 0) {
     return META_E_BAD_SIGNATURE;
   }
   *sig_len -= bytes_read;
