@@ -420,11 +420,10 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
   CorElementType cor_type = CorSigUncompressElementType(signature);
   *sig_len -= 1;
 
-  std::string type_name_string =
-      TypeCompilerHelper::ConvertCorElementTypeToString(cor_type);
-  if (!type_name_string.empty()) {
-    *type_name = type_name_string;
-    return S_OK;
+  // This handles "simple" type like numeric, boolean or string.
+  hr = TypeCompilerHelper::ConvertCorElementTypeToString(cor_type, type_name);
+  if (SUCCEEDED(hr)) {
+    return hr;
   }
 
   // TODO(quoct): We are not supporting custom mod for parameters

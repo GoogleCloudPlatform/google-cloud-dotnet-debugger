@@ -436,8 +436,9 @@ CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
   }
 }
 
-std::string TypeCompilerHelper::ConvertCorElementTypeToString(
-    const CorElementType &cor_type) {
+HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
+    const CorElementType &cor_type,
+    std::string *result) {
   static std::map<CorElementType, std::string> cor_type_to_string{
       {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName},
       {CorElementType::ELEMENT_TYPE_I1, kSByteClassName},
@@ -452,11 +453,16 @@ std::string TypeCompilerHelper::ConvertCorElementTypeToString(
       {CorElementType::ELEMENT_TYPE_STRING, kStringClassName},
       {CorElementType::ELEMENT_TYPE_OBJECT, kObjectClassName}};
 
-  if (cor_type_to_string.find(cor_type) != cor_type_to_string.end()) {
-    return cor_type_to_string[cor_type];
+  if (result == nullptr) {
+    return E_INVALIDARG;
   }
 
-  return std::string();
+  if (cor_type_to_string.find(cor_type) != cor_type_to_string.end()) {
+    *result = cor_type_to_string[cor_type];
+    return S_OK;
+  }
+
+  return E_FAIL;
 }
 
 }  //  namespace google_cloud_debugger
