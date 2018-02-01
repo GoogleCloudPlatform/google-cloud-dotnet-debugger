@@ -65,9 +65,19 @@ class TypeCompilerHelper {
   // Returns true if CorElementType is an array type.
   static bool IsArrayType(const CorElementType &array_type);
 
+  // Returns true if CorElementType is either an object,
+  // valuetype or class.
+  static bool IsObjectType(const CorElementType &cor_type);
+
   // Converts string type_string to CorElementType.
   // Returns Object by default.
   static CorElementType ConvertStringToCorElementType(const std::string &type_string);
+
+  // Converts CorElementType cor_type to a string.
+  // This function only works for numerical type, boolean and string.
+  // Returns E_FAIL if conversion cannot be done.
+  HRESULT ConvertCorElementTypeToString(const CorElementType &cor_type,
+                                                    std::string *result);
 };
 
 }  //  namespace google_cloud_debugger

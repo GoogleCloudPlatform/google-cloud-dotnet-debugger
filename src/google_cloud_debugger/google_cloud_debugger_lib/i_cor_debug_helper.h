@@ -15,6 +15,7 @@
 #ifndef I_CORDEBUG_HELPER_H_
 #define I_CORDEBUG_HELPER_H_
 
+#include <memory>
 #include <ostream>
 #include <vector>
 
@@ -46,8 +47,7 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
 
 // Extracts ICorDebugType from ICorDebug.
 HRESULT GetICorDebugType(ICorDebugValue *debug_value,
-                         ICorDebugType **debug_type,
-                         std::ostream *err_stream);
+                         ICorDebugType **debug_type, std::ostream *err_stream);
 
 // Given an ICorDebugValue, keep trying to dereference it until we cannot
 // anymore. This function will set is_null to true if this is a null
@@ -81,38 +81,85 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
 
 // Extracts out a string from ICorDebugStringValue.
 HRESULT ExtractStringFromICorDebugStringValue(
-    ICorDebugStringValue *debug_string,
-    std::string *returned_string,
+    ICorDebugStringValue *debug_string, std::string *returned_string,
     std::ostream *err_stream);
 
 // Given a metadata token for the parameter param_token,
 // extracts out the parameter name.
 // metadata_import is the MetaDataImport of the module
 // that contains the method with the param_token.
-HRESULT ExtractParamName(
-  IMetaDataImport *metadata_import, mdParamDef param_token,
-  std::string *param_name, std::ostream *err_stream);
+HRESULT ExtractParamName(IMetaDataImport *metadata_import,
+                         mdParamDef param_token, std::string *param_name,
+                         std::ostream *err_stream);
 
 // Extracts out ICorDebugModule from ICorDebugFrame.
 HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
                                              ICorDebugModule **debug_module,
                                              std::ostream *err_stream);
 
+// Parses the metadata signature of a field and retrieves
+// the field's type.
+HRESULT ParseFieldSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                      IMetaDataImport *metadata_import,
+                      std::string *field_type_name);
+
+// Parses the metadata signature of a property and retrieves
+// the property's type.
+HRESULT ParsePropertySig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                         IMetaDataImport *metadata_import,
+                         std::string *property_type_name);
+
+// Given a PCCOR_SIGNATURE signature, parses the type
+// and stores the result in type_name. Also update the sig_len.
+HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                         IMetaDataImport *metadata_import,
+                         std::string *type_name);
+
+// Given a PCCOR_SIGNATURE signature, parses the next byte A.
+// Then, parses and skips the next A bytes.
+HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
+                                              ULONG *sig_len);
+
+// Given a PCCOR_SIGNATURE, parses the first byte
+// and checks that with calling_convention.
+HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                               CorCallingConvention calling_convention);
+
 // Extracts out the metadata for field field_name
 // in class with metadata token class_token.
 // This method will also set *is_static based
 // on whether the field is static or not.
-HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
-    mdTypeDef class_token, const std::string &field_name,
-    mdFieldDef *field_def, bool *is_static, std::ostream *err_stream);
+// It will also return the signature of the field and its length.
+HRESULT GetFieldInfo(IMetaDataImport *metadata_import, mdTypeDef class_token,
+                     const std::string &field_name, mdFieldDef *field_def,
+                     bool *is_static, PCCOR_SIGNATURE *field_sig,
+                     ULONG *signature_len, std::ostream *err_stream);
 
 // Creates a DbgClassProperty object that corresponds with
 // the property property_name in class with metadata token class_token.
 // This method will also set *is_static based
 // on whether the property is static or not.
-HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
-    mdProperty class_token, const std::string &prop_name,
-    std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream);
+HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
+                        mdProperty class_token, const std::string &prop_name,
+                        std::unique_ptr<DbgClassProperty> *result,
+                        std::ostream *err_stream);
+
+// Gets name from mdTypeDef token type_token.
+HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
+                                 IMetaDataImport *metadata_import,
+                                 std::string *type_name, mdToken *base_token,
+                                 std::ostream *err_stream);
+
+// Gets name from mdTypeRef token type_token.
+HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
+                                 IMetaDataImport *metadata_import,
+                                 std::string *type_name,
+                                 std::ostream *err_stream);
+
+// Retrieves ICorDebugAppDomain from ICorDebugFrame.
+HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
+                                       ICorDebugAppDomain **app_domain,
+                                       std::ostream *err_stream);
 
 }  // namespace google_cloud_debugger
 

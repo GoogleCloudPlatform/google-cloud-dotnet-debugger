@@ -16,21 +16,25 @@
 
 #include <assert.h>
 #include <iostream>
+#include <vector>
 
 #include "ccomptr.h"
-#include "string_stream_wrapper.h"
-#include "error_messages.h"
-#include "dbg_class_property.h"
+#include "class_names.h"
+#include "compiler_helpers.h"
 #include "constants.h"
+#include "dbg_class_property.h"
+#include "error_messages.h"
+#include "string_stream_wrapper.h"
 
 using std::cerr;
 using std::ostream;
+using std::vector;
 
 namespace google_cloud_debugger {
 
 HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
-    IMetaDataImport **metadata_import,
-    ostream *err_stream) {
+                                            IMetaDataImport **metadata_import,
+                                            ostream *err_stream) {
   if (!debug_class) {
     *err_stream << "ICorDebugClass cannot be null.";
     return E_INVALIDARG;
@@ -47,9 +51,9 @@ HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
                                               err_stream);
 }
 
-HRESULT GetMetadataImportFromICorDebugModule(
-    ICorDebugModule *debug_module, IMetaDataImport **metadata_import,
-    ostream *err_stream) {
+HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
+                                             IMetaDataImport **metadata_import,
+                                             ostream *err_stream) {
   if (!debug_module) {
     *err_stream << "ICorDebugModule cannot be null.";
     return E_INVALIDARG;
@@ -100,8 +104,7 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
 }
 
 HRESULT GetICorDebugType(ICorDebugValue *debug_value,
-                         ICorDebugType **debug_type,
-                         ostream *err_stream) {
+                         ICorDebugType **debug_type, ostream *err_stream) {
   if (!debug_value || !debug_type) {
     return E_INVALIDARG;
   }
@@ -252,8 +255,7 @@ HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
 }
 
 HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
-                           ICorDebugHandleValue **handle,
-                           ostream *err_stream) {
+                           ICorDebugHandleValue **handle, ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!debug_value) {
@@ -275,8 +277,7 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
 }
 
 HRESULT ExtractStringFromICorDebugStringValue(
-    ICorDebugStringValue *debug_string,
-    std::string *returned_string,
+    ICorDebugStringValue *debug_string, std::string *returned_string,
     std::ostream *err_stream) {
   if (!returned_string || !debug_string || !err_stream) {
     return E_INVALIDARG;
@@ -302,8 +303,7 @@ HRESULT ExtractStringFromICorDebugStringValue(
   str_len += 1;
   std::vector<WCHAR> string_value(str_len, 0);
 
-  hr = debug_string->GetString(str_len, &str_returned_len,
-                               string_value.data());
+  hr = debug_string->GetString(str_len, &str_returned_len, string_value.data());
   if (FAILED(hr)) {
     *err_stream << "Failed to extract the string.";
     return hr;
@@ -314,8 +314,8 @@ HRESULT ExtractStringFromICorDebugStringValue(
 }
 
 HRESULT ExtractParamName(IMetaDataImport *metadata_import,
-    mdParamDef param_token, std::string *param_name,
-    std::ostream *err_stream) {
+                         mdParamDef param_token, std::string *param_name,
+                         std::ostream *err_stream) {
   mdMethodDef method_token;
   ULONG ordinal_position;
   ULONG param_name_size;
@@ -331,7 +331,7 @@ HRESULT ExtractParamName(IMetaDataImport *metadata_import,
       &const_string_value, &const_string_value_size);
   if (FAILED(hr) || param_name_size == 0) {
     *err_stream << "Failed to get length of name of method argument: "
-          << method_token << " with hr: " << std::hex << hr;
+                << method_token << " with hr: " << std::hex << hr;
     return hr;
   }
 
@@ -342,7 +342,7 @@ HRESULT ExtractParamName(IMetaDataImport *metadata_import,
       &value_type_flag, &const_string_value, &const_string_value_size);
   if (FAILED(hr)) {
     cerr << "Failed to get name of method argument: " << param_token
-          << " with hr: " << std::hex << hr;
+         << " with hr: " << std::hex << hr;
     return hr;
   }
 
@@ -351,7 +351,8 @@ HRESULT ExtractParamName(IMetaDataImport *metadata_import,
 }
 
 HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
-    ICorDebugModule **debug_module, std::ostream *err_stream) {
+                                             ICorDebugModule **debug_module,
+                                             std::ostream *err_stream) {
   CComPtr<ICorDebugFunction> debug_function;
   HRESULT hr = debug_frame->GetFunction(&debug_function);
   if (FAILED(hr)) {
@@ -367,26 +368,245 @@ HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
   return hr;
 }
 
-HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
-    mdTypeDef class_token, const std::string &field_name,
-    mdFieldDef *field_def, bool *is_static, std::ostream *err_stream) {
+HRESULT ParseFieldSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                      IMetaDataImport *metadata_import,
+                      std::string *field_type_name) {
+  // Field signature has the form: FIELD CustomModification* Type
+  // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
+  // I think this is not used in C#?
+  // Parses the first bit.
+  HRESULT hr = ParseAndCheckFirstByte(
+      signature, sig_len, CorCallingConvention::IMAGE_CEE_CS_CALLCONV_FIELD);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // We don't support custom modifiers.
+  return ParseTypeFromSig(signature, sig_len, metadata_import, field_type_name);
+}
+
+HRESULT ParsePropertySig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                         IMetaDataImport *metadata_import,
+                         std::string *property_type_name) {
+  // Field signature has the form:
+  // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
+  // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
+  // I think this is not used in C#?
+  // Parses the first bit.
+  HRESULT hr = ParseAndCheckFirstByte(
+      signature, sig_len, CorCallingConvention::IMAGE_CEE_CS_CALLCONV_PROPERTY);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // Parses the number of parameters for the property.
+  ULONG bytes_read;
+  ULONG no_of_params;
+  hr = CorSigUncompressData(signature, *sig_len, &no_of_params, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+  *sig_len -= bytes_read;
+
+  // Parses the type.
+  return ParseTypeFromSig(signature, sig_len, metadata_import,
+                          property_type_name);
+}
+
+HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                         IMetaDataImport *metadata_import,
+                         std::string *type_name) {
+  HRESULT hr;
+  CorElementType cor_type = CorSigUncompressElementType(signature);
+  *sig_len -= 1;
+
+  // This handles "simple" type like numeric, boolean or string.
+  hr = TypeCompilerHelper::ConvertCorElementTypeToString(cor_type, type_name);
+  if (SUCCEEDED(hr)) {
+    return hr;
+  }
+
+  // TODO(quoct): We are not supporting custom mod for parameters
+  // CMOD_OPT and CMOD_REQ at the moment. Some quick research suggests
+  // that C# compiler does not generate modopt so maybe we don't need
+  // this yet?
+  switch (cor_type) {
+    case CorElementType::ELEMENT_TYPE_SZARRAY: {
+      // Extracts the array type.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *type_name += "[]";
+      return hr;
+    }
+    case CorElementType::ELEMENT_TYPE_ARRAY: {
+      // First we read the type.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      // Now we read the array ranks.
+      ULONG array_rank = 0;
+      ULONG bytes_read = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &array_rank, &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // All we actually need is the rank but we have to skip
+      // the additional information about the array stored.
+
+      // Next byte will be number of sizes of the array.
+      hr = ParseAndSkipBasedOnFirstByteSignature(signature, sig_len);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      // Next, we do the same thing but for lower bounds.
+      hr = ParseAndSkipBasedOnFirstByteSignature(signature, sig_len);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      *type_name += "[";
+      for (int i = 0; i < array_rank - 1; ++i) {
+        *type_name += ",";
+      }
+      *type_name = "]";
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_GENERICINST: {
+      // First we read the type without generics.
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      // Next byte would be the number of generic arguments.
+      ULONG generic_param_count = 0;
+      ULONG bytes_read = 0;
+      hr = CorSigUncompressData(signature, *sig_len, &generic_param_count,
+                                &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+
+      // Now we get the generic arguments.
+      *type_name += "<";
+      for (size_t i = 0; i < generic_param_count; ++i) {
+        std::string generic_type;
+        hr = ParseTypeFromSig(signature, sig_len, metadata_import,
+                              &generic_type);
+        if (FAILED(hr)) {
+          return hr;
+        }
+        *type_name += generic_type;
+        if (i != generic_param_count - 1) {
+          *type_name += ", ";
+        }
+      }
+      *type_name += ">";
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_CLASS:
+    case CorElementType::ELEMENT_TYPE_VALUETYPE: {
+      ULONG bytes_read = 0;
+      mdToken extracted_token;
+      hr = CorSigUncompressToken(signature, *sig_len, &extracted_token,
+                                 &bytes_read);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      *sig_len -= bytes_read;
+      // Checks whether this token is mdTypeDef or mdTypeRef. Don't support
+      // other types.
+      CorTokenType token_type = (CorTokenType)(TypeFromToken(extracted_token));
+      mdToken base_token;
+      if (token_type == CorTokenType::mdtTypeDef) {
+        return GetTypeNameFromMdTypeDef(extracted_token, metadata_import,
+                                        type_name, &base_token, &std::cerr);
+      } else if (token_type == CorTokenType::mdtTypeRef) {
+        return GetTypeNameFromMdTypeRef(extracted_token, metadata_import,
+                                        type_name, &std::cerr);
+      } else {
+        // Don't process this.
+        return E_FAIL;
+      }
+    }
+    default:
+      return E_NOTIMPL;
+  }
+}
+
+HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
+                                              ULONG *sig_len) {
+  ULONG bytes_read = 0;
+  ULONG number_of_compressed_bytes_to_skip = 0;
+  hr = CorSigUncompressData(signature, *sig_len,
+                            &number_of_compressed_bytes_to_skip, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+  *sig_len -= bytes_read;
+
+  // Skip the next number_of_sizes byte since we don't need
+  // to know the sizes.
+  for (size_t i = 0; i < number_of_compressed_bytes_to_skip; ++i) {
+    ULONG compressed_byte = 0;
+    hr = CorSigUncompressData(signature, *sig_len, &compressed_byte,
+                              &bytes_read);
+    if (FAILED(hr)) {
+      return hr;
+    }
+    *sig_len -= bytes_read;
+  }
+
+  return S_OK;
+}
+
+HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                               CorCallingConvention calling_convention) {
+  ULONG bytes_read = 0;
+  ULONG field_bit = 0;
+  HRESULT hr =
+      CorSigUncompressData(signature, *sig_len, &field_bit, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (bytes_read != 1 || (field_bit & calling_convention) == 0) {
+    return META_E_BAD_SIGNATURE;
+  }
+  *sig_len -= bytes_read;
+
+  return S_OK;
+}
+
+HRESULT GetFieldInfo(IMetaDataImport *metadata_import, mdTypeDef class_token,
+                     const std::string &field_name, mdFieldDef *field_def,
+                     bool *is_static, PCCOR_SIGNATURE *field_sig,
+                     ULONG *signature_len, std::ostream *err_stream) {
   std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
-  HRESULT hr = metadata_import->FindField(class_token, wchar_field_name.data(), nullptr, 0, field_def);
+  HRESULT hr = metadata_import->FindField(class_token, wchar_field_name.data(),
+                                          nullptr, 0, field_def);
   if (FAILED(hr)) {
     return hr;
   }
 
   ULONG len_field;
   DWORD field_attributes;
-  PCCOR_SIGNATURE field_sig;
-  ULONG sig_len = 0;
   DWORD default_value_flags = 0;
   UVCP_CONSTANT default_value;
   ULONG default_value_len = 0;
   // Now we need to sets whether the field is static.
   hr = metadata_import->GetFieldProps(*field_def, &class_token, nullptr, 0,
-      &len_field, &field_attributes, &field_sig, &sig_len,
-      &default_value_flags, &default_value, &default_value_len);
+                                      &len_field, &field_attributes, field_sig,
+                                      signature_len, &default_value_flags,
+                                      &default_value, &default_value_len);
   if (FAILED(hr)) {
     return hr;
   }
@@ -395,9 +615,10 @@ HRESULT ExtractFieldInfo(IMetaDataImport *metadata_import,
   return S_OK;
 }
 
-HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
-    mdProperty class_token, const std::string &prop_name,
-    std::unique_ptr<DbgClassProperty> *result, std::ostream *err_stream) {
+HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
+                        mdProperty class_token, const std::string &prop_name,
+                        std::unique_ptr<DbgClassProperty> *result,
+                        std::ostream *err_stream) {
   HRESULT hr;
   std::vector<mdProperty> property_defs(kDefaultVectorSize, 0);
   HCORENUM cor_enum = nullptr;
@@ -419,17 +640,17 @@ HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
       // We creates DbgClassProperty object and calls the Initialize
       // function to populate the name of the property.
       std::unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
-                                                      DbgClassProperty());
+                                                           DbgClassProperty());
       if (!class_property) {
-        *err_stream <<
-            "Ran out of memory while trying to initialize class property ";
+        *err_stream
+            << "Ran out of memory while trying to initialize class property ";
         return E_OUTOFMEMORY;
       }
 
       class_property->Initialize(property_defs[i], metadata_import,
-          // The depth does not matter for now because we are
-          // not evaluating any object.
-          kDefaultObjectEvalDepth);
+                                 // The depth does not matter for now because we
+                                 // are not evaluating any object.
+                                 kDefaultObjectEvalDepth);
       if (FAILED(class_property->GetInitializeHr())) {
         *err_stream << "Failed to get property information.";
         metadata_import->CloseEnum(cor_enum);
@@ -449,6 +670,98 @@ HRESULT ExtractPropertyInfo(IMetaDataImport *metadata_import,
   }
 
   return S_FALSE;
+}
+
+HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
+                                 IMetaDataImport *metadata_import,
+                                 std::string *type_name, mdToken *base_token,
+                                 std::ostream *err_stream) {
+  if (metadata_import == nullptr || type_name == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  ULONG type_name_len = 0;
+  DWORD type_flags = 0;
+  mdToken extend_tokens;
+  HRESULT hr = metadata_import->GetTypeDefProps(
+      type_token, nullptr, 0, &type_name_len, &type_flags, &extend_tokens);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name's length.";
+    return hr;
+  }
+
+  vector<WCHAR> wchar_type_name(type_name_len, 0);
+  hr = metadata_import->GetTypeDefProps(type_token, wchar_type_name.data(),
+                                        wchar_type_name.size(), &type_name_len,
+                                        &type_flags, &extend_tokens);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name.";
+    return hr;
+  }
+
+  *type_name = ConvertWCharPtrToString(wchar_type_name);
+  return hr;
+}
+
+HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
+                                 IMetaDataImport *metadata_import,
+                                 std::string *type_name,
+                                 std::ostream *err_stream) {
+  if (metadata_import == nullptr || type_name == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  ULONG type_name_len = 0;
+  HRESULT hr = metadata_import->GetTypeRefProps(type_token, nullptr, nullptr, 0,
+                                                &type_name_len);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name's length.";
+    return hr;
+  }
+
+  vector<WCHAR> wchar_type_name(type_name_len, 0);
+  hr = metadata_import->GetTypeRefProps(type_token, nullptr,
+                                        wchar_type_name.data(),
+                                        wchar_type_name.size(), &type_name_len);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name.";
+    return hr;
+  }
+
+  *type_name = ConvertWCharPtrToString(wchar_type_name);
+  return hr;
+}
+
+HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
+                                       ICorDebugAppDomain **app_domain,
+                                       std::ostream *err_stream) {
+  CComPtr<ICorDebugFunction> debug_function;
+  HRESULT hr = debug_frame->GetFunction(&debug_function);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugFunction from ICorDebugFrame.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugModule> debug_module;
+  hr = debug_function->GetModule(&debug_module);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugModule from ICorDebugFunction.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugAssembly> debug_assembly;
+  hr = debug_module->GetAssembly(&debug_assembly);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAssembly from ICorDebugModule.";
+    return hr;
+  }
+
+  hr = debug_assembly->GetAppDomain(app_domain);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAppDomain from ICorDebugAssembly.";
+  }
+
+  return hr;
 }
 
 }  // namespace google_cloud_debugger

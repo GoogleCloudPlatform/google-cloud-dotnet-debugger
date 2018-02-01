@@ -388,6 +388,12 @@ bool TypeCompilerHelper::IsArrayType(const CorElementType &array_type) {
          array_type == CorElementType::ELEMENT_TYPE_SZARRAY;
 }
 
+bool TypeCompilerHelper::IsObjectType(const CorElementType &cor_type) {
+  return cor_type == CorElementType::ELEMENT_TYPE_OBJECT ||
+         cor_type == CorElementType::ELEMENT_TYPE_CLASS ||
+         cor_type == CorElementType::ELEMENT_TYPE_VALUETYPE;
+}
+
 CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
     const std::string &type_string) {
   static std::map<std::string, CorElementType> string_to_cor_type{
@@ -428,6 +434,35 @@ CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
     // a multidimensional array.
     return CorElementType::ELEMENT_TYPE_ARRAY;
   }
+}
+
+HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
+    const CorElementType &cor_type,
+    std::string *result) {
+  static std::map<CorElementType, std::string> cor_type_to_string{
+      {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName},
+      {CorElementType::ELEMENT_TYPE_I1, kSByteClassName},
+      {CorElementType::ELEMENT_TYPE_CHAR, kCharClassName},
+      {CorElementType::ELEMENT_TYPE_U1, kByteClassName},
+      {CorElementType::ELEMENT_TYPE_I2, kInt16ClassName},
+      {CorElementType::ELEMENT_TYPE_U2, kUInt16ClassName},
+      {CorElementType::ELEMENT_TYPE_I4, kInt32ClassName},
+      {CorElementType::ELEMENT_TYPE_U4, kUInt32ClassName},
+      {CorElementType::ELEMENT_TYPE_I8, kInt64ClassName},
+      {CorElementType::ELEMENT_TYPE_U8, kUInt64ClassName},
+      {CorElementType::ELEMENT_TYPE_STRING, kStringClassName},
+      {CorElementType::ELEMENT_TYPE_OBJECT, kObjectClassName}};
+
+  if (result == nullptr) {
+    return E_INVALIDARG;
+  }
+
+  if (cor_type_to_string.find(cor_type) != cor_type_to_string.end()) {
+    *result = cor_type_to_string[cor_type];
+    return S_OK;
+  }
+
+  return E_FAIL;
 }
 
 }  //  namespace google_cloud_debugger
