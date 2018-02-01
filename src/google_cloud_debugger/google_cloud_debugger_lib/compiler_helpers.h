@@ -65,6 +65,10 @@ class TypeCompilerHelper {
   // Returns true if CorElementType is an array type.
   static bool IsArrayType(const CorElementType &array_type);
 
+  // Returns true if CorElementType is either an object,
+  // valuetype or class.
+  static bool IsObjectType(const CorElementType &cor_type);
+
   // Converts string type_string to CorElementType.
   // Returns Object by default.
   static CorElementType ConvertStringToCorElementType(const std::string &type_string);

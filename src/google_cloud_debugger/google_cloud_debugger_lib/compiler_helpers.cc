@@ -388,6 +388,12 @@ bool TypeCompilerHelper::IsArrayType(const CorElementType &array_type) {
          array_type == CorElementType::ELEMENT_TYPE_SZARRAY;
 }
 
+bool TypeCompilerHelper::IsObjectType(const CorElementType &cor_type) {
+  return cor_type == CorElementType::ELEMENT_TYPE_OBJECT ||
+         cor_type == CorElementType::ELEMENT_TYPE_CLASS ||
+         cor_type == CorElementType::ELEMENT_TYPE_VALUETYPE;
+}
+
 CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
     const std::string &type_string) {
   static std::map<std::string, CorElementType> string_to_cor_type{
