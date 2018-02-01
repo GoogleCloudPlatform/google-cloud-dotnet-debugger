@@ -54,8 +54,6 @@ class IdentifierEvaluator : public ExpressionEvaluator {
   // computer_ is supposed to produce.
   TypeSignature result_type_;
 
-  bool is_non_auto_property = false;
-
   DISALLOW_COPY_AND_ASSIGN(IdentifierEvaluator);
 };
 
