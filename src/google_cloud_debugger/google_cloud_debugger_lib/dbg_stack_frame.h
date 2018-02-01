@@ -60,24 +60,39 @@ class DbgStackFrame {
   // information than stack_frame_size.
   HRESULT PopulateStackFrame(
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
-      int stack_frame_size,
-      IEvalCoordinator *eval_coordinator) const;
+      int stack_frame_size, IEvalCoordinator *eval_coordinator) const;
 
   // Gets a local variable or method arguments with name
   // variable_name.
   HRESULT GetLocalVariable(const std::string &variable_name,
-      std::unique_ptr<DbgObject> *dbg_object,
-      std::ostream *err_stream);
+                           std::unique_ptr<DbgObject> *dbg_object,
+                           std::ostream *err_stream);
 
   // Gets out any field or auto-implemented property with the name
   // member_name of the class this frame is in.
   HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
-      std::unique_ptr<DbgObject> *dbg_object,
-      std::ostream *err_stream);
+                                       std::unique_ptr<DbgObject> *dbg_object,
+                                       std::ostream *err_stream);
 
   // Gets out property with the name property_name of the class
-  // this frame is in.
-  HRESULT GetPropertyFromFrame(const std::string &property_name,
+  // this frame is in. This will also returns the TypeSignature
+  // of the property.
+  HRESULT GetPropertyFromFrame(
+      const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *property_object,
+      TypeSignature *type_signature,
+      std::ostream *err_stream);
+
+  // Given a class with name class_name, this function will try to find
+  // the field/property member_name. If found, this function will set
+  // type_signature to the TypeSignature of this member.
+  // In addition, if the member is a non-autoimplemented property,
+  // the function will also returns a DbgClassProperty that
+  // represents that property (this will be useful when we need
+  // to perform function evaluation to get the member).
+  HRESULT GetMemberFromClassName(
+      const std::string &class_name, std::string &member_name,
+      TypeSignature *type_signature,
       std::unique_ptr<DbgClassProperty> *property_object,
       std::ostream *err_stream);
 
@@ -157,6 +172,20 @@ class DbgStackFrame {
                                  mdMethodDef method_token,
                                  IMetaDataImport *metadata_import);
 
+  // Populates the type_def_dict_ and type_ref_dict_ with all
+  // classes that we can find.
+  HRESULT PopulateTypeDict();
+
+  // Given a fully qualified class name, this function find the
+  // metadata token mdTypeDef of the class. It will also
+  // return the ICorDebugModule and IMetaDataImport of the module
+  // the class is in.
+  // Returns S_FALSE if the class cannot be found.
+  HRESULT GetClassTokenAndModule(const std::string &class_name,
+                                 mdTypeDef *class_token,
+                                 ICorDebugModule **debug_module,
+                                 IMetaDataImport **metadata_import);
+
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
 
@@ -206,8 +235,28 @@ class DbgStackFrame {
   // The metadata import of this stack frame.
   CComPtr<IMetaDataImport> metadata_import_;
 
+  // The app domain this frame is in.
+  CComPtr<ICorDebugAppDomain> app_domain_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeDef of that class.
+  std::map<std::string, mdTypeDef> type_def_dict_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeRef of that class.
+  // The difference between mdTypeDef and mdTypeRef
+  // is that mdTypeDef type is found in the current module
+  // whereas mdTypeRef is found in other modules.
+  // Hence, mdTypeRef may needs to be resolved to mdTypeDef
+  // when needed.
+  std::map<std::string, mdTypeRef> type_ref_dict_;
+
+  // True if type_def_dict_ and type_ref_dict_ have been populated.
+  bool type_dict_populated_ = true;
+
   // MetaData for local variables in this frame.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo> local_variables_info_;
+  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
+      local_variables_info_;
 };
 
 }  //  namespace google_cloud_debugger
