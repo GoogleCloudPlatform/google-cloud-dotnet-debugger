@@ -401,6 +401,27 @@ HRESULT DbgStackFrame::GetClassTokenAndModule(
   return S_FALSE;
 }
 
+HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
+    IMetaDataImport *metadata_import, mdTypeDef class_token,
+    const std::string &member_name, mdFieldDef *field_def, bool *field_static,
+    PCCOR_SIGNATURE *signature, ULONG *signature_len,
+    std::ostream *err_stream) {
+  std::string underlying_field_name = member_name;
+  HRESULT hr = GetFieldInfo(metadata_import_, class_token_,
+                            underlying_field_name, field_def, field_static,
+                            signature, signature_len, err_stream);
+  if (FAILED(hr)) {
+    // If no field matches the name, this may be an auto-implemented property.
+    // In that case, there will be a backing field. Let's search for that.
+    underlying_field_name = "<" + member_name + ">k__BackingField";
+    return GetFieldInfo(metadata_import_, class_token_, underlying_field_name,
+                        field_def, field_static, signature, signature_len,
+                        err_stream);
+  }
+
+  return hr;
+}
+
 HRESULT DbgStackFrame::PopulateStackFrame(
     StackFrame *stack_frame, int stack_frame_size,
     IEvalCoordinator *eval_coordinator) const {
@@ -584,21 +605,12 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   bool field_static;
   PCCOR_SIGNATURE signature;
   ULONG signature_len = 0;
-  std::string underlying_field_name = member_name;
-  hr = GetFieldInfo(metadata_import_, class_token_, underlying_field_name,
-                    &field_def, &field_static, &signature, &signature_len,
-                    err_stream);
+  hr = GetFieldAndAutoPropertyInfo(metadata_import_, class_token_, member_name,
+                                   &field_def, &field_static, &signature,
+                                   &signature_len, err_stream);
   if (FAILED(hr)) {
-    // If no field matches the name, this may be an auto-implemented property.
-    // In that case, there will be a backing field. Let's search for that.
-    underlying_field_name = "<" + member_name + ">k__BackingField";
-    hr = GetFieldInfo(metadata_import_, class_token_, underlying_field_name,
-                      &field_def, &field_static, &signature, &signature_len,
-                      err_stream);
     // Since we can't find the field, returns S_FALSE.
-    if (FAILED(hr)) {
-      return S_FALSE;
-    }
+    return S_FALSE;
   }
 
   CComPtr<ICorDebugValue> field_value;
@@ -689,19 +701,14 @@ HRESULT DbgStackFrame::GetMemberFromClassName(
     return hr;
   }
 
-  // Gets the field information and signature.
+  // Gets the field/auto property information and signature.
   mdFieldDef field_def;
   bool field_static;
   PCCOR_SIGNATURE signature;
   ULONG signature_len = 0;
-  hr = GetFieldInfo(metadata_import_, class_token, member_name, &field_def,
-                    &field_static, &signature, &signature_len, err_stream);
-  if (FAILED(hr)) {
-    // Tries to find auto-implemented property by searching for backing field.
-    std::string backing_field = "<" + member_name + ">k__BackingField";
-    hr = GetFieldInfo(metadata_import_, class_token, backing_field, &field_def,
-                      &field_static, &signature, &signature_len, err_stream);
-  }
+  hr = GetFieldAndAutoPropertyInfo(metadata_import_, class_token_, member_name,
+                                   &field_def, &field_static, &signature,
+                                   &signature_len, err_stream);
 
   // This means we found the field/auto-implemented property.
   if (SUCCEEDED(hr)) {
