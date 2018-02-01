@@ -203,34 +203,9 @@ HRESULT DbgClass::ProcessClassName(mdTypeDef class_token,
     return E_INVALIDARG;
   }
 
-  HRESULT hr;
-  ULONG len_class_name;
-  DWORD class_flags = 0;
   mdToken parent_class = 0;
-
-  // We have to call this function twice, once to get the length of the class
-  // name and the second time to get the actual class name.
-  // len_class_name includes the \0 at the end.
-  hr = metadata_import->GetTypeDefProps(
-      class_token, nullptr, 0, &len_class_name, &class_flags, &parent_class);
-  if (FAILED(hr)) {
-    *err_stream << "Failed to get class name's length.";
-    return hr;
-  }
-
-  vector<WCHAR> wchar_class_name(len_class_name, 0);
-
-  hr = metadata_import->GetTypeDefProps(class_token, wchar_class_name.data(),
-                                        len_class_name, &len_class_name,
-                                        &class_flags, &parent_class);
-  if (FAILED(hr)) {
-    *err_stream << "Failed to get class name.";
-    return hr;
-  }
-
-  *class_name = ConvertWCharPtrToString(wchar_class_name);
-
-  return S_OK;
+  return GetTypeNameFromMdTypeDef(class_token, metadata_import,
+      class_name, &parent_class, err_stream);
 }
 
 HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
