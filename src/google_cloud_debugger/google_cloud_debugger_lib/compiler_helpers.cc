@@ -436,4 +436,27 @@ CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
   }
 }
 
+std::string TypeCompilerHelper::ConvertCorElementTypeToString(
+    const CorElementType &cor_type) {
+  static std::map<CorElementType, std::string> cor_type_to_string{
+      {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName},
+      {CorElementType::ELEMENT_TYPE_I1, kSByteClassName},
+      {CorElementType::ELEMENT_TYPE_CHAR, kCharClassName},
+      {CorElementType::ELEMENT_TYPE_U1, kByteClassName},
+      {CorElementType::ELEMENT_TYPE_I2, kInt16ClassName},
+      {CorElementType::ELEMENT_TYPE_U2, kUInt16ClassName},
+      {CorElementType::ELEMENT_TYPE_I4, kInt32ClassName},
+      {CorElementType::ELEMENT_TYPE_U4, kUInt32ClassName},
+      {CorElementType::ELEMENT_TYPE_I8, kInt64ClassName},
+      {CorElementType::ELEMENT_TYPE_U8, kUInt64ClassName},
+      {CorElementType::ELEMENT_TYPE_STRING, kStringClassName},
+      {CorElementType::ELEMENT_TYPE_OBJECT, kObjectClassName}};
+
+  if (cor_type_to_string.find(cor_type) != cor_type_to_string.end()) {
+    return cor_type_to_string[cor_type];
+  }
+
+  return std::string();
+}
+
 }  //  namespace google_cloud_debugger
