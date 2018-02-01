@@ -80,8 +80,7 @@ class DbgStackFrame {
   HRESULT GetPropertyFromFrame(
       const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
-      TypeSignature *type_signature,
-      std::ostream *err_stream);
+      TypeSignature *type_signature, std::ostream *err_stream);
 
   // Given a class with name class_name, this function will try to find
   // the field/property member_name. If found, this function will set
@@ -185,6 +184,23 @@ class DbgStackFrame {
                                  mdTypeDef *class_token,
                                  ICorDebugModule **debug_module,
                                  IMetaDataImport **metadata_import);
+
+  // Helper function to search for field or backing field of an
+  // auto-implemented property with the name member_name in class
+  // with metadata token class_token.
+  // metadata_import is the MetaDataImport of the module the class is in.
+  // field_def is set to the field metadata if it is found.
+  // field_static is set to true if the found field is static.
+  // signature is the PCCOR_SIGNATURE of the field.
+  // signature_len is the length of the signature.
+  // Any errors will be outputted to the error stream err_stream.
+  HRESULT GetFieldAndAutoPropertyInfo(IMetaDataImport *metadata_import,
+                                      mdTypeDef class_token,
+                                      const std::string &member_name,
+                                      mdFieldDef *field_def, bool *field_static,
+                                      PCCOR_SIGNATURE *signature,
+                                      ULONG *signature_len,
+                                      std::ostream *err_stream);
 
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
