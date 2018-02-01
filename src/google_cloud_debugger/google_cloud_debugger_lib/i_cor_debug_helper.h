@@ -115,26 +115,34 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
                          IMetaDataImport *metadata_import,
                          std::string *type_name);
 
+// Given a PCCOR_SIGNATURE signature, parses the next byte A.
+// Then, parses and skips the next A bytes.
+HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
+                                              ULONG *sig_len);
+
+// Given a PCCOR_SIGNATURE, parses the first byte
+// and checks that with calling_convention.
+HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
+                               CorCallingConvention calling_convention);
+
 // Extracts out the metadata for field field_name
 // in class with metadata token class_token.
 // This method will also set *is_static based
 // on whether the field is static or not.
 // It will also return the signature of the field and its length.
-HRESULT GetFieldInfo(IMetaDataImport *metadata_import,
-                         mdTypeDef class_token, const std::string &field_name,
-                         mdFieldDef *field_def, bool *is_static,
-                         PCCOR_SIGNATURE *field_sig, ULONG *signature_len,
-                         std::ostream *err_stream);
+HRESULT GetFieldInfo(IMetaDataImport *metadata_import, mdTypeDef class_token,
+                     const std::string &field_name, mdFieldDef *field_def,
+                     bool *is_static, PCCOR_SIGNATURE *field_sig,
+                     ULONG *signature_len, std::ostream *err_stream);
 
 // Creates a DbgClassProperty object that corresponds with
 // the property property_name in class with metadata token class_token.
 // This method will also set *is_static based
 // on whether the property is static or not.
 HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
-                            mdProperty class_token,
-                            const std::string &prop_name,
-                            std::unique_ptr<DbgClassProperty> *result,
-                            std::ostream *err_stream);
+                        mdProperty class_token, const std::string &prop_name,
+                        std::unique_ptr<DbgClassProperty> *result,
+                        std::ostream *err_stream);
 
 // Gets name from mdTypeDef token type_token.
 HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
