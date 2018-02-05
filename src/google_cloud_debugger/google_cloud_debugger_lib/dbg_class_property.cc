@@ -207,13 +207,7 @@ HRESULT DbgClassProperty::Evaluate(
   return PopulateVariableValueHelper(eval_coordinator);
 }
 
-HRESULT DbgClassProperty::GetTypeSignature(IMetaDataImport *metadata_import,
-    TypeSignature *type_signature) {
-  if (type_signature_set_) {
-    *type_signature = type_signature_;
-    return S_OK;
-  }
-
+HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
   ULONG sig_len = sig_metadata_length_;
   std::string type_name;
   HRESULT hr = ParseTypeFromSig(signature_metadata_, &sig_metadata_length_,
@@ -227,6 +221,18 @@ HRESULT DbgClassProperty::GetTypeSignature(IMetaDataImport *metadata_import,
     type_name
   };
   type_signature_set_ = true;
+  return S_OK;
+}
+
+HRESULT DbgClassProperty::GetTypeSignature(TypeSignature *type_signature) {
+  if (!type_signature_set_) {
+    return E_FAIL;
+  }
+
+  if (!type_signature) {
+    return E_INVALIDARG;
+  }
+
   *type_signature = type_signature_;
   return S_OK;
 }
