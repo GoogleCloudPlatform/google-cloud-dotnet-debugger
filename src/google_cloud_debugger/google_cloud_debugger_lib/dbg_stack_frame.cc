@@ -667,73 +667,61 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
 HRESULT DbgStackFrame::GetPropertyFromFrame(
     const std::string &property_name,
     std::unique_ptr<DbgClassProperty> *property_object,
-    TypeSignature *type_signature, std::ostream *err_stream) {
+    std::ostream *err_stream) {
   HRESULT hr = GetPropertyInfo(metadata_import_, class_token_, property_name,
                                property_object, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
-  return (*property_object)->GetTypeSignature(metadata_import_, type_signature);
+  return (*property_object)->SetTypeSignature(metadata_import_);
 }
 
-HRESULT DbgStackFrame::GetMemberFromClassName(
-    const std::string &class_name, std::string &member_name,
-    TypeSignature *type_signature,
-    std::unique_ptr<DbgClassProperty> *class_property,
-    std::ostream *err_stream) {
-  HRESULT hr = PopulateTypeDict();
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  // To find member of a class, we need the corresponding
-  // ICorDebugModule and IMetaDataImport of the module that class
-  // is in. We will also need the metadata token associated with
-  // that class.
-  CComPtr<ICorDebugModule> debug_module;
-  CComPtr<IMetaDataImport> metadata_import;
-  mdTypeDef class_token;
-
-  HRESULT hr = GetClassTokenAndModule(class_name, &class_token, &debug_module,
-                                      &metadata_import);
-  if (FAILED(hr) || hr == S_FALSE) {
-    return hr;
-  }
-
+HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
+                                         const std::string &field_name,
+                                         TypeSignature *type_signature,
+                                         IMetaDataImport *metadata_import,
+                                         std::ostream *err_stream) {
   // Gets the field/auto property information and signature.
   mdFieldDef field_def;
   bool field_static;
   PCCOR_SIGNATURE signature;
   ULONG signature_len = 0;
-  hr = GetFieldAndAutoPropertyInfo(metadata_import_, class_token_, member_name,
-                                   &field_def, &field_static, &signature,
-                                   &signature_len, err_stream);
-
-  // This means we found the field/auto-implemented property.
-  if (SUCCEEDED(hr)) {
-    // Parses the field signature to get the type name.
-    std::string field_type_name;
-    hr = ParseFieldSig(signature, &signature_len, metadata_import_,
-                       &field_type_name);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    *type_signature = TypeSignature{
-        TypeCompilerHelper::ConvertStringToCorElementType(field_type_name),
-        field_type_name};
-    return S_OK;
+  HRESULT hr = GetFieldAndAutoPropertyInfo(
+      metadata_import, class_token, field_name, &field_def, &field_static,
+      &signature, &signature_len, err_stream);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  // Otherwise, we need to search for non-autoimplemented property.
-  hr = GetPropertyInfo(metadata_import_, class_token, member_name,
-                       class_property, err_stream);
+  // This means we found the field/auto-implemented property.
+  // Parses the field signature to get the type name.
+  std::string field_type_name;
+  hr = ParseFieldSig(signature, &signature_len, metadata_import,
+                     &field_type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *type_signature = TypeSignature{
+      TypeCompilerHelper::ConvertStringToCorElementType(field_type_name),
+      field_type_name};
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::GetPropertyFromClass(
+    const mdTypeDef &class_token, const std::string &property_name,
+    std::unique_ptr<DbgClassProperty> *class_property,
+    IMetaDataImport *metadata_import, std::ostream *err_stream) {
+  // Search for non-autoimplemented property.
+  HRESULT hr = GetPropertyInfo(metadata_import, class_token, property_name,
+                               class_property, err_stream);
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
 
-  return (*class_property)->GetTypeSignature(metadata_import, type_signature);
+  // Sets the type signature of the property too.
+  return (*class_property)->SetTypeSignature(metadata_import);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {

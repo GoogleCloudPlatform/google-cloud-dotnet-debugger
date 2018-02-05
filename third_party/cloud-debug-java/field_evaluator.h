@@ -34,33 +34,35 @@ class FieldEvaluator : public ExpressionEvaluator {
   // 2. Static variable of a "possible_class_name" class (if specified). The
   // name should be fully qualified (e.g. "com.my.Green"). "instance_source"
   // is ignored in this case.
-  FieldEvaluator(
-      std::unique_ptr<ExpressionEvaluator> instance_source,
-      std::string identifier_name,
-      std::string possible_class_name,
-      std::string field_name);
+  FieldEvaluator(std::unique_ptr<ExpressionEvaluator> instance_source,
+                 std::string identifier_name, std::string possible_class_name,
+                 std::string field_name);
 
-  HRESULT Compile(
-      DbgStackFrame *stack_frame,
-      std::ostream *err_stream) override;
+  HRESULT Compile(DbgStackFrame *stack_frame,
+                  std::ostream *err_stream) override;
 
   const TypeSignature &GetStaticType() const override { return result_type_; }
 
-  HRESULT Evaluate(
-      std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator,
-      std::ostream *err_stream) const override;
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
+                   IEvalCoordinator *eval_coordinator,
+                   std::ostream *err_stream) const override;
 
  private:
   // Tries to compile the subexpression as a reader of instance field.
-  HRESULT CompileInstanceField(
-      DbgStackFrame *stack_frame,
-      std::ostream *err_stream);
+  HRESULT CompileInstanceField(DbgStackFrame *stack_frame,
+                               std::ostream *err_stream);
 
   // Tries to compile the subexpression as a reader of a static field.
-  HRESULT CompileStaticField(
-      DbgStackFrame *stack_frame,
-      std::ostream *err_stream);
+  HRESULT CompileStaticField(DbgStackFrame *stack_frame,
+                             std::ostream *err_stream);
+
+  // Helper function to find member_name in class_name.
+  // This will extract out the TypeSignature of the member
+  // and sets class_property if it is a non-auto class.
+  HRESULT CompileClassMemberHelper(const std::string &class_name,
+                                   const std::string &member_name,
+                                   DbgStackFrame *stack_frame,
+                                   std::ostream *err_stream);
 
  private:
   // Expression computing the source object to read field from.
@@ -82,7 +84,7 @@ class FieldEvaluator : public ExpressionEvaluator {
 
   // If the field is a non-autoimplemented property, this field will be set
   // to that property.
-  std::unique_ptr<DbgClassProperty> class_property;
+  std::unique_ptr<DbgClassProperty> class_property_;
 
   DISALLOW_COPY_AND_ASSIGN(FieldEvaluator);
 };
