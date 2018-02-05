@@ -17,6 +17,7 @@
 #include "field_evaluator.h"
 
 #include "compiler_helpers.h"
+#include "dbg_class_property.h"
 #include "dbg_object.h"
 #include "dbg_stack_frame.h"
 #include "error_messages.h"
@@ -66,9 +67,8 @@ HRESULT FieldEvaluator::CompileInstanceField(DbgStackFrame *stack_frame,
     return false;
   }
 
-  return stack_frame->GetMemberFromClassName(
-      instance_source_signature.type_name, field_name_, &result_type_,
-      &class_property, err_stream);
+  return CompileClassMemberHelper(instance_source_signature.type_name,
+                                  field_name_, stack_frame, err_stream);
 }
 
 HRESULT FieldEvaluator::CompileStaticField(DbgStackFrame *stack_frame,
@@ -77,9 +77,41 @@ HRESULT FieldEvaluator::CompileStaticField(DbgStackFrame *stack_frame,
     return E_FAIL;
   }
 
-  return stack_frame->GetMemberFromClassName(possible_class_name_, field_name_,
-                                             &result_type_, &class_property,
-                                             err_stream);
+  return CompileClassMemberHelper(possible_class_name_, field_name_,
+                                  stack_frame, err_stream);
+}
+
+HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
+                                                 const std::string &member_name,
+                                                 DbgStackFrame *stack_frame,
+                                                 std::ostream *err_stream) {
+  // To find member of a class, we need the corresponding
+  // ICorDebugModule and IMetaDataImport of the module that class
+  // is in. We will also need the metadata token associated with
+  // that class.
+  CComPtr<ICorDebugModule> debug_module;
+  CComPtr<IMetaDataImport> metadata_import;
+  mdTypeDef class_token;
+
+  HRESULT hr = stack_frame->GetClassTokenAndModule(
+      class_name, &class_token, &debug_module, &metadata_import);
+  if (hr == S_FALSE) {
+    return E_FAIL;
+  }
+
+  HRESULT hr = stack_frame->GetFieldFromClass(
+      class_token, member_name, &result_type_, metadata_import, err_stream);
+  if (SUCCEEDED(hr)) {
+    return hr;
+  }
+
+  hr = stack_frame->GetPropertyFromClass(
+      class_token, member_name, &class_property_, metadata_import, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return class_property_->GetTypeSignature(&result_type_);
 }
 
 HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,

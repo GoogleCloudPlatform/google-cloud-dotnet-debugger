@@ -51,9 +51,12 @@ class DbgClassProperty : public IDbgClassMember {
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
+  // Sets the TypeSignature of the property.
+  HRESULT SetTypeSignature(IMetaDataImport *metadata_import);
+
   // Retrieves the TypeSignature of the property.
-  HRESULT GetTypeSignature(IMetaDataImport *metadata_import,
-      TypeSignature *type_signature);
+  // Will fail if this is not set.
+  HRESULT GetTypeSignature(TypeSignature *type_signature);
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
