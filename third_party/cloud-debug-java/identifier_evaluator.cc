@@ -17,6 +17,7 @@
 #include "identifier_evaluator.h"
 #include "dbg_stack_frame.h"
 #include "dbg_object.h"
+#include "dbg_class_property.h"
 
 namespace google_cloud_debugger {
 
@@ -56,7 +57,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // Case 3: static and non-static properties with getter.
   hr = stack_frame->GetPropertyFromFrame(identifier_name_,
-    &class_property_, &result_type_, err_stream);
+    &class_property_, err_stream);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
@@ -65,7 +66,7 @@ HRESULT IdentifierEvaluator::Compile(
     return hr;
   }
 
-  return S_OK;
+  return class_property_->GetTypeSignature(&result_type_);
 }
 
 HRESULT IdentifierEvaluator::Evaluate(

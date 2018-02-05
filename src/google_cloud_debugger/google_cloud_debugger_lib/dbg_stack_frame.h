@@ -80,20 +80,39 @@ class DbgStackFrame {
   HRESULT GetPropertyFromFrame(
       const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
-      TypeSignature *type_signature, std::ostream *err_stream);
+      std::ostream *err_stream);
 
-  // Given a class with name class_name, this function will try to find
-  // the field/property member_name. If found, this function will set
-  // type_signature to the TypeSignature of this member.
-  // In addition, if the member is a non-autoimplemented property,
-  // the function will also returns a DbgClassProperty that
+  // This function will try to find the field/auto-implemented property
+  // field_name in the class with metadata token class_token.
+  // If found, this function will set type_signature to the
+  // TypeSignature of this member.
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetFieldFromClass(const mdTypeDef &class_token,
+                            const std::string &field_name,
+                            TypeSignature *type_signature,
+                            IMetaDataImport *metadata_import,
+                            std::ostream *err_stream);
+
+  // This function will try to find the property
+  // property_name in the class with metadata token class_token.
+  // The function will return a DbgClassProperty that
   // represents that property (this will be useful when we need
   // to perform function evaluation to get the member).
-  HRESULT GetMemberFromClassName(
-      const std::string &class_name, std::string &member_name,
-      TypeSignature *type_signature,
-      std::unique_ptr<DbgClassProperty> *property_object,
-      std::ostream *err_stream);
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetPropertyFromClass(
+      const mdTypeDef &class_token, const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *class_property,
+      IMetaDataImport *metadata_import, std::ostream *err_stream);
+
+  // Given a fully qualified class name, this function find the
+  // metadata token mdTypeDef of the class. It will also
+  // return the ICorDebugModule and IMetaDataImport of the module
+  // the class is in.
+  // Returns S_FALSE if the class cannot be found.
+  HRESULT GetClassTokenAndModule(const std::string &class_name,
+                                 mdTypeDef *class_token,
+                                 ICorDebugModule **debug_module,
+                                 IMetaDataImport **metadata_import);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -172,18 +191,8 @@ class DbgStackFrame {
                                  IMetaDataImport *metadata_import);
 
   // Populates the type_def_dict_ and type_ref_dict_ with all
-  // classes that we can find.
+  // the types loaded in this frame.
   HRESULT PopulateTypeDict();
-
-  // Given a fully qualified class name, this function find the
-  // metadata token mdTypeDef of the class. It will also
-  // return the ICorDebugModule and IMetaDataImport of the module
-  // the class is in.
-  // Returns S_FALSE if the class cannot be found.
-  HRESULT GetClassTokenAndModule(const std::string &class_name,
-                                 mdTypeDef *class_token,
-                                 ICorDebugModule **debug_module,
-                                 IMetaDataImport **metadata_import);
 
   // Helper function to search for field or backing field of an
   // auto-implemented property with the name member_name in class
