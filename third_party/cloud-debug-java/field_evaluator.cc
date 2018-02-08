@@ -39,12 +39,12 @@ FieldEvaluator::FieldEvaluator(
 
 HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
                                 std::ostream *err_stream) {
-  HRESULT hr = CompileInstanceField(stack_frame, err_stream);
+  HRESULT hr = CompileUsingInstanceSource(stack_frame, err_stream);
   if (SUCCEEDED(hr)) {
     return true;
   }
 
-  hr = CompileStaticField(stack_frame, err_stream);
+  hr = CompileUsingClassName(stack_frame, err_stream);
   if (SUCCEEDED(hr)) {
     return hr;
   }
@@ -52,7 +52,7 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
   return E_FAIL;
 }
 
-HRESULT FieldEvaluator::CompileInstanceField(DbgStackFrame *stack_frame,
+HRESULT FieldEvaluator::CompileUsingInstanceSource(DbgStackFrame *stack_frame,
                                              std::ostream *err_stream) {
   HRESULT hr = instance_source_->Compile(stack_frame, err_stream);
   if (FAILED(hr)) {
@@ -71,7 +71,7 @@ HRESULT FieldEvaluator::CompileInstanceField(DbgStackFrame *stack_frame,
                                   field_name_, stack_frame, err_stream);
 }
 
-HRESULT FieldEvaluator::CompileStaticField(DbgStackFrame *stack_frame,
+HRESULT FieldEvaluator::CompileUsingClassName(DbgStackFrame *stack_frame,
                                            std::ostream *err_stream) {
   if (possible_class_name_.empty()) {
     return E_FAIL;

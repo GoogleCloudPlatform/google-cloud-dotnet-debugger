@@ -48,13 +48,16 @@ class FieldEvaluator : public ExpressionEvaluator {
                    std::ostream *err_stream) const override;
 
  private:
-  // Tries to compile the subexpression as a reader of instance field.
-  HRESULT CompileInstanceField(DbgStackFrame *stack_frame,
-                               std::ostream *err_stream);
+  // Tries to compile the subexpression instance_source
+  // and then uses that to extract out information about field
+  // field_name_.
+  HRESULT CompileUsingInstanceSource(DbgStackFrame *stack_frame,
+                                     std::ostream *err_stream);
 
-  // Tries to compile the subexpression as a reader of a static field.
-  HRESULT CompileStaticField(DbgStackFrame *stack_frame,
-                             std::ostream *err_stream);
+  // Tries to use possible_class_name_ to extract out information
+  // about field field_name_.
+  HRESULT CompileUsingClassName(DbgStackFrame *stack_frame,
+                                std::ostream *err_stream);
 
   // Helper function to find member_name in class_name.
   // This will extract out the TypeSignature of the member
