@@ -1,4 +1,4 @@
-FROM gcr.io/csharp-debugger-eap/aspnetcore:1.1.4
+FROM gcr.io/csharp-debugger-eap/aspnetcore:2.0
 COPY . /app
 WORKDIR /app
 COPY ./source-context.json /usr/share/dotnet-debugger/agent/
