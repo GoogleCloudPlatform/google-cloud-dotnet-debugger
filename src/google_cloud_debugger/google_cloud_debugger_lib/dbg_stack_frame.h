@@ -85,10 +85,13 @@ class DbgStackFrame {
   // This function will try to find the field/auto-implemented property
   // field_name in the class with metadata token class_token.
   // If found, this function will set type_signature to the
-  // TypeSignature of this member.
+  // TypeSignature of this member, the metadata token of the field
+  // to field_def and is_static to whether the field is static or not.
   // metadata_import is the IMetaDataImport of the module the class is in.
   HRESULT GetFieldFromClass(const mdTypeDef &class_token,
                             const std::string &field_name,
+                            mdFieldDef *field_def,
+                            bool *is_static,
                             TypeSignature *type_signature,
                             IMetaDataImport *metadata_import,
                             std::ostream *err_stream);
@@ -174,6 +177,9 @@ class DbgStackFrame {
 
   // Returns true if the method this frame is in is a static method.
   bool IsStaticMethod() { return is_static_method_; }
+
+  // Returns the ICorDebugFrame this frame is in.
+  HRESULT GetFrame(ICorDebugILFrame **debug_frame);
 
  private:
   // Extract local variables from local_enum.

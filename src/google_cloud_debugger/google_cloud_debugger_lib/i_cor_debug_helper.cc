@@ -546,7 +546,7 @@ HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
                                               ULONG *sig_len) {
   ULONG bytes_read = 0;
   ULONG number_of_compressed_bytes_to_skip = 0;
-  hr = CorSigUncompressData(signature, *sig_len,
+  HRESULT hr = CorSigUncompressData(signature, *sig_len,
                             &number_of_compressed_bytes_to_skip, &bytes_read);
   if (FAILED(hr)) {
     return hr;

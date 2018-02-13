@@ -56,10 +56,10 @@ class DbgClass : public DbgObject {
 
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
-  // This function assumes that the class_fields_ and class_property_
-  // vector are populated.
-  HRESULT ExtractField(const std::string &field_name,
-                       std::shared_ptr<DbgObject> *field_value);
+  // If class_fields_ are not populated, then this will call the
+  // base class GetNonStaticField of DbgObject.
+  HRESULT GetNonStaticField(const std::string &field_name,
+                            std::shared_ptr<DbgObject> *field_value) override;
 
   // Various .NET class types that we need to process differently
   // rather than just printing out fields and properties.
@@ -209,9 +209,6 @@ class DbgClass : public DbgObject {
                        IMetaDataImport *metadata_import,
                        const std::string &field_name,
                        std::unique_ptr<DbgObject> *field_value);
-
-  // A strong handle to the class object.
-  CComPtr<ICorDebugHandleValue> class_handle_;
 
   // String that represents the name of the module this class is in.
   std::string module_name_;
