@@ -208,7 +208,6 @@ HRESULT DbgClassProperty::Evaluate(
 }
 
 HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
-  ULONG sig_len = sig_metadata_length_;
   std::string type_name;
   HRESULT hr = ParseTypeFromSig(signature_metadata_, &sig_metadata_length_,
     metadata_import, &type_name);

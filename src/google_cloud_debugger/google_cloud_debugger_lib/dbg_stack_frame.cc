@@ -413,7 +413,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
   if (FAILED(hr)) {
     // If no field matches the name, this may be an auto-implemented property.
     // In that case, there will be a backing field. Let's search for that.
-    underlying_field_name = "<" + member_name + ">k__BackingField";
+    underlying_field_name = "<" + member_name + kBackingField;
     return GetFieldInfo(metadata_import_, class_token_, underlying_field_name,
                         field_def, field_static, signature, signature_len,
                         err_stream);
