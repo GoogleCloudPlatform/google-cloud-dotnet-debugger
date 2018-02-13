@@ -17,6 +17,7 @@
 #include "identifier_evaluator.h"
 #include "dbg_stack_frame.h"
 #include "dbg_object.h"
+#include "dbg_class_property.h"
 
 namespace google_cloud_debugger {
 
@@ -65,18 +66,14 @@ HRESULT IdentifierEvaluator::Compile(
     return hr;
   }
 
-  // TODO(quoct): Extracts property type from class_property_
-  // to populate result_type_. We have to parse the signature
-  // of the class_property_ to get the type.
-  is_non_auto_property = true;
-  return S_OK;
+  return class_property_->GetTypeSignature(&result_type_);
 }
 
 HRESULT IdentifierEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object,
     IEvalCoordinator *eval_coordinator,
     std::ostream * err_stream) const {
-  if (!is_non_auto_property) {
+  if (class_property_ == nullptr) {
     *dbg_object = identifier_object_;
     return S_OK;
   }

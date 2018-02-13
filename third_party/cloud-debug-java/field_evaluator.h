@@ -19,12 +19,11 @@
 
 #include "common.h"
 #include "expression_evaluator.h"
+#include "type_signature.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-class InstanceFieldReader;
-class StaticFieldReader;
+class DbgClassProperty;
 
 // Evaluates class fields (either instance or static).
 class FieldEvaluator : public ExpressionEvaluator {
@@ -35,47 +34,38 @@ class FieldEvaluator : public ExpressionEvaluator {
   // 2. Static variable of a "possible_class_name" class (if specified). The
   // name should be fully qualified (e.g. "com.my.Green"). "instance_source"
   // is ignored in this case.
-  FieldEvaluator(
-      std::unique_ptr<ExpressionEvaluator> instance_source,
-      string identifier_name,
-      string possible_class_name,
-      string field_name);
+  FieldEvaluator(std::unique_ptr<ExpressionEvaluator> instance_source,
+                 std::string identifier_name, std::string possible_class_name,
+                 std::string field_name);
 
-  ~FieldEvaluator() override;
+  HRESULT Compile(DbgStackFrame *stack_frame,
+                  std::ostream *err_stream) override;
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  const TypeSignature &GetStaticType() const override { return result_type_; }
 
-  const JSignature& GetStaticType() const override { return result_type_; }
-
-  Nullable<jvalue> GetStaticValue() const override { return nullptr; }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
+                   IEvalCoordinator *eval_coordinator,
+                   std::ostream *err_stream) const override;
 
  private:
-  // Tries to compile the subexpression as a reader of instance field.
-  bool CompileInstanceField(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message);
+  // Tries to compile the subexpression instance_source
+  // and then uses that to extract out information about field
+  // field_name_.
+  HRESULT CompileUsingInstanceSource(DbgStackFrame *stack_frame,
+                                     std::ostream *err_stream);
 
-  // Tries to compile the subexpression as a reader of a static field.
-  bool CompileStaticField(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message);
+  // Tries to use possible_class_name_ to extract out information
+  // about field field_name_.
+  HRESULT CompileUsingClassName(DbgStackFrame *stack_frame,
+                                std::ostream *err_stream);
 
-  // Evaluation method when the expression refers to instance field.
-  ErrorOr<JVariant> InstanceFieldComputer(
-      const EvaluationContext& evaluation_context) const;
-
-  // Evaluates length of primitive or object array.
-  ErrorOr<JVariant> ArrayLengthComputer(
-      const EvaluationContext& evaluation_context) const;
-
-  // Evaluation method when the expression refers to a static field.
-  ErrorOr<JVariant> StaticFieldComputer(
-      const EvaluationContext& evaluation_context) const;
+  // Helper function to find member_name in class_name.
+  // This will extract out the TypeSignature of the member
+  // and sets class_property if it is a non-auto class.
+  HRESULT CompileClassMemberHelper(const std::string &class_name,
+                                   const std::string &member_name,
+                                   DbgStackFrame *stack_frame,
+                                   std::ostream *err_stream);
 
  private:
   // Expression computing the source object to read field from.
@@ -83,45 +73,25 @@ class FieldEvaluator : public ExpressionEvaluator {
 
   // Fully qualified identifier name we are trying to interpret. This should
   // be "possible_class_name_.identifier_name".
-  const string identifier_name_;
+  std::string identifier_name_;
 
   // Fully qualified class name to try to interpret "field_name_" as static.
-  const string possible_class_name_;
+  std::string possible_class_name_;
 
   // Name of the instance field to read.
-  const string field_name_;
-
-  // Reader for instance fields. In case of an inner class this chain will
-  // follow inner classes references (e.g. this$3.this$2.this$1.myField).
-  std::vector<std::unique_ptr<InstanceFieldReader>> instance_fields_chain_;
-
-  // Reader for a static field.
-  std::unique_ptr<StaticFieldReader> static_field_reader_;
+  std::string field_name_;
 
   // Statically computed resulting type of the expression. This is what
   // computer_ is supposed product.
-  JSignature result_type_;
+  TypeSignature result_type_;
 
-  // Pointer to a member function of this class to do the actual evaluation.
-  ErrorOr<JVariant> (FieldEvaluator::*computer_)(
-      const EvaluationContext&) const;
+  // If the field is a non-autoimplemented property, this field will be set
+  // to that property.
+  std::unique_ptr<DbgClassProperty> class_property_;
 
   DISALLOW_COPY_AND_ASSIGN(FieldEvaluator);
 };
 
-
-// Helper function to create a chain of instance field readers supporting
-// inner classes. Returns empty vector if no field was matched.
-std::vector<std::unique_ptr<InstanceFieldReader>>
-CreateInstanceFieldReadersChain(
-    ReadersFactory* readers_factory,
-    const string& class_signature,
-    const string& field_name,
-    FormatMessageModel* error_message);
-
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_FIELD_EVALUATOR_H_
-
-

@@ -60,26 +60,59 @@ class DbgStackFrame {
   // information than stack_frame_size.
   HRESULT PopulateStackFrame(
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
-      int stack_frame_size,
-      IEvalCoordinator *eval_coordinator) const;
+      int stack_frame_size, IEvalCoordinator *eval_coordinator) const;
 
   // Gets a local variable or method arguments with name
   // variable_name.
   HRESULT GetLocalVariable(const std::string &variable_name,
-      std::unique_ptr<DbgObject> *dbg_object,
-      std::ostream *err_stream);
+                           std::unique_ptr<DbgObject> *dbg_object,
+                           std::ostream *err_stream);
 
   // Gets out any field or auto-implemented property with the name
   // member_name of the class this frame is in.
   HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
-      std::unique_ptr<DbgObject> *dbg_object,
-      std::ostream *err_stream);
+                                       std::unique_ptr<DbgObject> *dbg_object,
+                                       std::ostream *err_stream);
 
   // Gets out property with the name property_name of the class
-  // this frame is in.
-  HRESULT GetPropertyFromFrame(const std::string &property_name,
+  // this frame is in. This will also returns the TypeSignature
+  // of the property.
+  HRESULT GetPropertyFromFrame(
+      const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
       std::ostream *err_stream);
+
+  // This function will try to find the field/auto-implemented property
+  // field_name in the class with metadata token class_token.
+  // If found, this function will set type_signature to the
+  // TypeSignature of this member.
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetFieldFromClass(const mdTypeDef &class_token,
+                            const std::string &field_name,
+                            TypeSignature *type_signature,
+                            IMetaDataImport *metadata_import,
+                            std::ostream *err_stream);
+
+  // This function will try to find the property
+  // property_name in the class with metadata token class_token.
+  // The function will return a DbgClassProperty that
+  // represents that property (this will be useful when we need
+  // to perform function evaluation to get the member).
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetPropertyFromClass(
+      const mdTypeDef &class_token, const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *class_property,
+      IMetaDataImport *metadata_import, std::ostream *err_stream);
+
+  // Given a fully qualified class name, this function find the
+  // metadata token mdTypeDef of the class. It will also
+  // return the ICorDebugModule and IMetaDataImport of the module
+  // the class is in.
+  // Returns S_FALSE if the class cannot be found.
+  HRESULT GetClassTokenAndModule(const std::string &class_name,
+                                 mdTypeDef *class_token,
+                                 ICorDebugModule **debug_module,
+                                 IMetaDataImport **metadata_import);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -157,6 +190,27 @@ class DbgStackFrame {
                                  mdMethodDef method_token,
                                  IMetaDataImport *metadata_import);
 
+  // Populates the type_def_dict_ and type_ref_dict_ with all
+  // the types loaded in this frame.
+  HRESULT PopulateTypeDict();
+
+  // Helper function to search for field or backing field of an
+  // auto-implemented property with the name member_name in class
+  // with metadata token class_token.
+  // metadata_import is the MetaDataImport of the module the class is in.
+  // field_def is set to the field metadata if it is found.
+  // field_static is set to true if the found field is static.
+  // signature is the PCCOR_SIGNATURE of the field.
+  // signature_len is the length of the signature.
+  // Any errors will be outputted to the error stream err_stream.
+  HRESULT GetFieldAndAutoPropertyInfo(IMetaDataImport *metadata_import,
+                                      mdTypeDef class_token,
+                                      const std::string &member_name,
+                                      mdFieldDef *field_def, bool *field_static,
+                                      PCCOR_SIGNATURE *signature,
+                                      ULONG *signature_len,
+                                      std::ostream *err_stream);
+
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
 
@@ -206,8 +260,28 @@ class DbgStackFrame {
   // The metadata import of this stack frame.
   CComPtr<IMetaDataImport> metadata_import_;
 
+  // The app domain this frame is in.
+  CComPtr<ICorDebugAppDomain> app_domain_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeDef of that class.
+  std::map<std::string, mdTypeDef> type_def_dict_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeRef of that class.
+  // The difference between mdTypeDef and mdTypeRef
+  // is that mdTypeDef type is found in the current module
+  // whereas mdTypeRef is found in other modules.
+  // Hence, mdTypeRef may needs to be resolved to mdTypeDef
+  // when needed.
+  std::map<std::string, mdTypeRef> type_ref_dict_;
+
+  // True if type_def_dict_ and type_ref_dict_ have been populated.
+  bool type_dict_populated_ = true;
+
   // MetaData for local variables in this frame.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo> local_variables_info_;
+  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
+      local_variables_info_;
 };
 
 }  //  namespace google_cloud_debugger

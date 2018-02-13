@@ -21,6 +21,9 @@
 #include "breakpoint.pb.h"
 #include "constants.h"
 #include "i_eval_coordinator.h"
+#include "i_cor_debug_helper.h"
+#include "type_signature.h"
+#include "compiler_helpers.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::vector;
@@ -202,6 +205,35 @@ HRESULT DbgClassProperty::Evaluate(
   member_value_ = std::move(member_value);
 
   return PopulateVariableValueHelper(eval_coordinator);
+}
+
+HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
+  std::string type_name;
+  HRESULT hr = ParseTypeFromSig(signature_metadata_, &sig_metadata_length_,
+    metadata_import, &type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  type_signature_ = TypeSignature {
+    TypeCompilerHelper::ConvertStringToCorElementType(type_name),
+    type_name
+  };
+  type_signature_set_ = true;
+  return S_OK;
+}
+
+HRESULT DbgClassProperty::GetTypeSignature(TypeSignature *type_signature) {
+  if (!type_signature_set_) {
+    return E_FAIL;
+  }
+
+  if (!type_signature) {
+    return E_INVALIDARG;
+  }
+
+  *type_signature = type_signature_;
+  return S_OK;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(

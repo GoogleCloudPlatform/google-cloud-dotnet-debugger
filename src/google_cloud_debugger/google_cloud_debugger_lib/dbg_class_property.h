@@ -23,6 +23,8 @@
 
 namespace google_cloud_debugger {
 
+struct TypeSignature;
+
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
 // function is called.
@@ -48,6 +50,13 @@ class DbgClassProperty : public IDbgClassMember {
       ICorDebugReferenceValue *reference_value,
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types) override;
+
+  // Sets the TypeSignature of the property.
+  HRESULT SetTypeSignature(IMetaDataImport *metadata_import);
+
+  // Retrieves the TypeSignature of the property.
+  // Will fail if this is not set.
+  HRESULT GetTypeSignature(TypeSignature *type_signature);
 
   // Returns true if the property is static.
   // If the property is static, the metadata won't have a bit mask
@@ -77,6 +86,12 @@ class DbgClassProperty : public IDbgClassMember {
 
   // Vector of tokens that represent other methods associated with the property.
   std::vector<mdMethodDef> other_methods_;
+
+  // True if type_signature_ is set.
+  bool type_signature_set_ = false;
+
+  // TypeSignature of the class property.
+  TypeSignature type_signature_;
 };
 
 }  //  namespace google_cloud_debugger

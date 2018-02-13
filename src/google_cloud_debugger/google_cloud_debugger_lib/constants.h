@@ -43,6 +43,10 @@ static const std::string kDllExtension = ".dll";
 // File extension for pdb file.
 static const std::string kPdbExtension = ".pdb";
 
+// If a field is a backing field of a property, its name will
+// end with this.
+static const std::string kBackingField = ">k__BackingField";
+
 // Default size of a vector that we use to retrieve objects from ICorDebugEnum.
 static const std::uint32_t kDefaultVectorSize = 100;
 

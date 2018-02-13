@@ -18,12 +18,15 @@
 #include <queue>
 #include <vector>
 
-#include "dbg_breakpoint.h"
-#include "debugger_callback.h"
-#include "i_eval_coordinator.h"
-#include "variable_wrapper.h"
-#include "i_cor_debug_helper.h"
+#include "compiler_helpers.h"
 #include "constants.h"
+#include "dbg_breakpoint.h"
+#include "dbg_class_property.h"
+#include "debugger_callback.h"
+#include "i_cor_debug_helper.h"
+#include "i_eval_coordinator.h"
+#include "type_signature.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
@@ -58,6 +61,12 @@ HRESULT DbgStackFrame::Initialize(
   metadata_import_ = metadata_import;
   method_token_ = method_token;
 
+  HRESULT hr =
+      GetAppDomainFromICorDebugFrame(debug_frame_, &app_domain_, &std::cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   // We need to determine whether this frame is in a static
   // method or not and set is_static_method_ correspondingly.
   ULONG method_name_len;
@@ -67,7 +76,7 @@ HRESULT DbgStackFrame::Initialize(
   DWORD method_flag;
   DWORD method_flags2;
 
-  HRESULT hr = metadata_import->GetMethodProps(
+  hr = metadata_import->GetMethodProps(
       method_token, &class_token_, nullptr, 0, &method_name_len, &method_flag,
       &method_signature, &method_signature_blob, &method_rva, &method_flags2);
 
@@ -226,7 +235,8 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
 
     for (auto const &method_arg_token : method_args) {
       std::string param_name;
-      hr = ExtractParamName(metadata_import, method_arg_token, &param_name, &cerr);
+      hr = ExtractParamName(metadata_import, method_arg_token, &param_name,
+                            &cerr);
       if (FAILED(hr)) {
         continue;
       }
@@ -270,6 +280,146 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   }
 
   return S_OK;
+}
+
+HRESULT DbgStackFrame::PopulateTypeDict() {
+  if (type_dict_populated_) {
+    return S_OK;
+  }
+
+  HRESULT hr = S_OK;
+  HCORENUM cor_enum = nullptr;
+
+  vector<mdTypeDef> type_defs(100, 0);
+  while (hr == S_OK) {
+    ULONG type_defs_returned = 0;
+    hr = metadata_import_->EnumTypeDefs(&cor_enum, type_defs.data(),
+                                        type_defs.size(), &type_defs_returned);
+    if (FAILED(hr)) {
+      cerr << "Failed to get enumerate types with hr: " << std::hex << hr;
+      metadata_import_->CloseEnum(cor_enum);
+      return hr;
+    }
+
+    // No type defs.
+    if (type_defs_returned == 0) {
+      break;
+    }
+    type_defs.resize(type_defs_returned);
+
+    for (auto const &type_def_token : type_defs) {
+      std::string type_name;
+      mdToken base_token;
+      hr = GetTypeNameFromMdTypeDef(type_def_token, metadata_import_,
+                                    &type_name, &base_token, &std::cerr);
+      if (FAILED(hr)) {
+        continue;
+      }
+      type_def_dict_[type_name] = type_def_token;
+    }
+  }
+
+  metadata_import_->CloseEnum(cor_enum);
+  cor_enum = nullptr;
+
+  vector<mdTypeRef> type_refs(100, 0);
+  while (hr == S_OK) {
+    ULONG type_refs_returned = 0;
+    hr = metadata_import_->EnumTypeRefs(&cor_enum, type_refs.data(),
+                                        type_refs.size(), &type_refs_returned);
+    if (FAILED(hr)) {
+      cerr << "Failed to get enumerate types with hr: " << std::hex << hr;
+      return hr;
+    }
+
+    // No type defs.
+    if (type_refs_returned == 0) {
+      break;
+    }
+    type_refs.resize(type_refs_returned);
+
+    for (auto const &type_ref_token : type_refs) {
+      std::string type_name;
+      hr = GetTypeNameFromMdTypeRef(type_ref_token, metadata_import_,
+                                    &type_name, &std::cerr);
+      type_ref_dict_[type_name] = type_ref_token;
+    }
+  }
+
+  metadata_import_->CloseEnum(cor_enum);
+  type_dict_populated_ = true;
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::GetClassTokenAndModule(
+    const std::string &class_name, mdTypeDef *class_token,
+    ICorDebugModule **debug_module, IMetaDataImport **metadata_import) {
+  HRESULT hr = PopulateTypeDict();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // First, we search the dictionary of mdTypeDef.
+  auto type_def_info = type_def_dict_.find(class_name);
+  if (type_def_info != type_def_dict_.end()) {
+    HRESULT hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_,
+                                                      debug_module, &std::cerr);
+    if (FAILED(hr)) {
+      return hr;
+    }
+    *metadata_import = metadata_import_;
+    metadata_import_->AddRef();
+    *class_token = type_def_info->second;
+    return S_OK;
+  }
+
+  // If we didn't find the class, we search the dictionary of mdTypeRef.
+  auto type_ref_info = type_ref_dict_.find(class_name);
+  if (type_ref_info != type_ref_dict_.end()) {
+    CComPtr<IUnknown> i_unknown;
+    // First, we have to get an IMetaDataImport that corresponds
+    // with the TypeRef.
+    hr = metadata_import_->ResolveTypeRef(
+        type_ref_info->second, IID_IMetaDataImport, &i_unknown, class_token);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    hr = i_unknown->QueryInterface(IID_IMetaDataImport,
+                                   reinterpret_cast<void **>(metadata_import));
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    // Then we have to get an ICorDebugModule that corresponds with that
+    // IMetaDataImport. We will first have to get ICorDebugAppDomain
+    // to help us with that.
+    return app_domain_->GetModuleFromMetaDataInterface(*metadata_import,
+                                                       debug_module);
+  }
+
+  return S_FALSE;
+}
+
+HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
+    IMetaDataImport *metadata_import, mdTypeDef class_token,
+    const std::string &member_name, mdFieldDef *field_def, bool *field_static,
+    PCCOR_SIGNATURE *signature, ULONG *signature_len,
+    std::ostream *err_stream) {
+  std::string underlying_field_name = member_name;
+  HRESULT hr = GetFieldInfo(metadata_import_, class_token_,
+                            underlying_field_name, field_def, field_static,
+                            signature, signature_len, err_stream);
+  if (FAILED(hr)) {
+    // If no field matches the name, this may be an auto-implemented property.
+    // In that case, there will be a backing field. Let's search for that.
+    underlying_field_name = "<" + member_name + kBackingField;
+    return GetFieldInfo(metadata_import_, class_token_, underlying_field_name,
+                        field_def, field_static, signature, signature_len,
+                        err_stream);
+  }
+
+  return hr;
 }
 
 HRESULT DbgStackFrame::PopulateStackFrame(
@@ -325,27 +475,32 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
   if (bfs_queue.size() != 0) {
     return VariableWrapper::PerformBFS(&bfs_queue,
-        [stack_frame, stack_frame_size]() { 
-          // Terminates the BFS if stack frame reaches the maximum size.
-          return stack_frame->ByteSize() > stack_frame_size;
-        },
-        eval_coordinator);
+                                       [stack_frame, stack_frame_size]() {
+                                         // Terminates the BFS if stack frame
+                                         // reaches the maximum size.
+                                         return stack_frame->ByteSize() >
+                                                stack_frame_size;
+                                       },
+                                       eval_coordinator);
   }
 
   return S_OK;
 }
 
 HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
-    std::unique_ptr<DbgObject> *dbg_object, std::ostream *err_stream) {
+                                        std::unique_ptr<DbgObject> *dbg_object,
+                                        std::ostream *err_stream) {
   static const std::string this_var = "this";
   HRESULT hr;
 
-  // Search the list of local variables to see whether any of them matches variable_name.
+  // Search the list of local variables to see whether any of them matches
+  // variable_name.
   if (variable_name.compare(this_var) != 0) {
-    auto local_var = std::find_if(local_variables_info_.begin(), local_variables_info_.end(),
-        [&variable_name](const LocalVariableInfo &variable_info) {
-      return variable_name.compare(variable_info.name) == 0;
-    });
+    auto local_var =
+        std::find_if(local_variables_info_.begin(), local_variables_info_.end(),
+                     [&variable_name](const LocalVariableInfo &variable_info) {
+                       return variable_name.compare(variable_info.name) == 0;
+                     });
 
     // If we found a match, we'll create a DbgObject and return it.
     hr = S_OK;
@@ -356,11 +511,13 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
         return hr;
       }
 
-      return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+      return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object,
+                                        err_stream);
     }
   }
 
-  // Otherwise, we check the method arguments and see which one matches variable_name.
+  // Otherwise, we check the method arguments and see which one matches
+  // variable_name.
   HCORENUM cor_enum = nullptr;
 
   // If variable_name is "this", then gets the first argument.
@@ -376,18 +533,21 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
       return hr;
     }
 
-    return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+    return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object,
+                                      err_stream);
   }
 
-  // Loops through the method arguments and checks to see which matches variable_name.
+  // Loops through the method arguments and checks to see which matches
+  // variable_name.
   vector<mdParamDef> method_args(kDefaultVectorSize, 0);
-  // If the frame is non-static, the first argument is "this", so we will skip it.
+  // If the frame is non-static, the first argument is "this", so we will skip
+  // it.
   DWORD argument_index = is_static_method_ ? 0 : 1;
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
-    hr =
-        metadata_import_->EnumParams(&cor_enum, method_token_, method_args.data(),
-                                    method_args.size(), &method_args_returned);
+    hr = metadata_import_->EnumParams(&cor_enum, method_token_,
+                                      method_args.data(), method_args.size(),
+                                      &method_args_returned);
     if (FAILED(hr)) {
       metadata_import_->CloseEnum(cor_enum);
       return hr;
@@ -402,7 +562,8 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
 
     for (auto const &method_arg_token : method_args) {
       std::string param_name;
-      hr = ExtractParamName(metadata_import_, method_arg_token, &param_name, &cerr);
+      hr = ExtractParamName(metadata_import_, method_arg_token, &param_name,
+                            &cerr);
       if (FAILED(hr)) {
         ++argument_index;
         continue;
@@ -416,7 +577,8 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
           return hr;
         }
 
-        return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object, err_stream);
+        return DbgObject::CreateDbgObject(debug_value, object_depth_,
+                                          dbg_object, err_stream);
       }
       ++argument_index;
     }
@@ -426,16 +588,14 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
   return S_FALSE;
 }
 
-// TODO(quoct): This only finds members defined directly in a class or an interface.
-// Therefore, inherited fields won't be found.
+// TODO(quoct): This only finds members defined directly in a class or an
+// interface. Therefore, inherited fields won't be found.
 HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
-    const std::string &member_name,
-    std::unique_ptr<DbgObject> *dbg_object,
+    const std::string &member_name, std::unique_ptr<DbgObject> *dbg_object,
     std::ostream *err_stream) {
-
   CComPtr<ICorDebugModule> debug_module;
-  HRESULT hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_,
-     &debug_module, &std::cerr);
+  HRESULT hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_, &debug_module,
+                                                    &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -443,19 +603,14 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   // First, we searches to see whether any field matches the name.
   mdFieldDef field_def;
   bool field_static;
-  std::string underlying_field_name = member_name;
-  hr = ExtractFieldInfo(metadata_import_, class_token_,
-    underlying_field_name, &field_def, &field_static, err_stream);
+  PCCOR_SIGNATURE signature;
+  ULONG signature_len = 0;
+  hr = GetFieldAndAutoPropertyInfo(metadata_import_, class_token_, member_name,
+                                   &field_def, &field_static, &signature,
+                                   &signature_len, err_stream);
   if (FAILED(hr)) {
-    // If no field matches the name, this may be an auto-implemented property.
-    // In that case, there will be a backing field. Let's search for that.
-    underlying_field_name = "<" + member_name + ">k__BackingField";
-    hr = ExtractFieldInfo(metadata_import_, class_token_,
-        underlying_field_name, &field_def, &field_static, err_stream);
     // Since we can't find the field, returns S_FALSE.
-    if (FAILED(hr)) {
-      return S_FALSE;
-    }
+    return S_FALSE;
   }
 
   CComPtr<ICorDebugValue> field_value;
@@ -467,12 +622,12 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
       return hr;
     }
 
-    hr = debug_class->GetStaticFieldValue(field_def, debug_frame_, &field_value);
+    hr =
+        debug_class->GetStaticFieldValue(field_def, debug_frame_, &field_value);
     if (FAILED(hr)) {
       return hr;
     }
-  }
-  else {
+  } else {
     // We cannot get a non-static field in a static frame.
     if (is_static_method_) {
       *err_stream << "Cannot get non-static field in static frame.";
@@ -488,7 +643,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
 
     CComPtr<ICorDebugObjectValue> object_value;
     hr = this_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-        reinterpret_cast<void **>(&object_value));
+                                    reinterpret_cast<void **>(&object_value));
     if (FAILED(hr)) {
       return hr;
     }
@@ -505,15 +660,68 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
     }
   }
 
-  return DbgObject::CreateDbgObject(field_value, object_depth_, dbg_object, err_stream);
+  return DbgObject::CreateDbgObject(field_value, object_depth_, dbg_object,
+                                    err_stream);
 }
 
 HRESULT DbgStackFrame::GetPropertyFromFrame(
     const std::string &property_name,
     std::unique_ptr<DbgClassProperty> *property_object,
     std::ostream *err_stream) {
-  return ExtractPropertyInfo(metadata_import_, class_token_, property_name,
-    property_object, err_stream);
+  HRESULT hr = GetPropertyInfo(metadata_import_, class_token_, property_name,
+                               property_object, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return (*property_object)->SetTypeSignature(metadata_import_);
+}
+
+HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
+                                         const std::string &field_name,
+                                         TypeSignature *type_signature,
+                                         IMetaDataImport *metadata_import,
+                                         std::ostream *err_stream) {
+  // Gets the field/auto property information and signature.
+  mdFieldDef field_def;
+  bool field_static;
+  PCCOR_SIGNATURE signature;
+  ULONG signature_len = 0;
+  HRESULT hr = GetFieldAndAutoPropertyInfo(
+      metadata_import, class_token, field_name, &field_def, &field_static,
+      &signature, &signature_len, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // This means we found the field/auto-implemented property.
+  // Parses the field signature to get the type name.
+  std::string field_type_name;
+  hr = ParseFieldSig(signature, &signature_len, metadata_import,
+                     &field_type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *type_signature = TypeSignature{
+      TypeCompilerHelper::ConvertStringToCorElementType(field_type_name),
+      field_type_name};
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::GetPropertyFromClass(
+    const mdTypeDef &class_token, const std::string &property_name,
+    std::unique_ptr<DbgClassProperty> *class_property,
+    IMetaDataImport *metadata_import, std::ostream *err_stream) {
+  // Search for non-autoimplemented property.
+  HRESULT hr = GetPropertyInfo(metadata_import, class_token, property_name,
+                               class_property, err_stream);
+  if (FAILED(hr) || hr == S_FALSE) {
+    return hr;
+  }
+
+  // Sets the type signature of the property too.
+  return (*class_property)->SetTypeSignature(metadata_import);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {
