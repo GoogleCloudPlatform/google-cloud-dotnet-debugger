@@ -81,6 +81,10 @@ class FieldEvaluator : public ExpressionEvaluator {
   // Name of the instance field to read.
   std::string field_name_;
 
+  // The metadata token associated with this field. Not applicable
+  // for non-autoimplemented property.
+  mdFieldDef field_def_;
+
   // Statically computed resulting type of the expression. This is what
   // computer_ is supposed product.
   TypeSignature result_type_;
@@ -88,6 +92,21 @@ class FieldEvaluator : public ExpressionEvaluator {
   // If the field is a non-autoimplemented property, this field will be set
   // to that property.
   std::unique_ptr<DbgClassProperty> class_property_;
+
+  // True if this field is a static field.
+  bool is_static_;
+
+  // The token of the class this field is in.
+  mdTypeDef class_token_;
+
+  // The metadata import of the module the class this field is in.
+  CComPtr<IMetaDataImport> metadata_import_;
+
+  // Module that contains the class this field is in.
+  CComPtr<ICorDebugModule> debug_module_;
+
+  // Gets the frame this field is in.
+  CComPtr<ICorDebugILFrame> debug_frame_;
 
   DISALLOW_COPY_AND_ASSIGN(FieldEvaluator);
 };
