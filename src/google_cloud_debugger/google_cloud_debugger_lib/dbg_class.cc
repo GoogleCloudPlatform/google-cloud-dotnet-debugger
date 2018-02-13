@@ -246,7 +246,7 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
   }
 
   CComPtr<ICorDebugModule> base_debug_module;
-https://github.com/GoogleCloudPlatform/google-cloud-dotnet-debugger/blob/quoct/conditionalbp/google_cloud_debugger_lib/dbg_class.cc  hr = base_class->GetModule(&base_debug_module);
+  hr = base_class->GetModule(&base_debug_module);
   if (FAILED(hr)) {
     *err_stream << "Failed to get module for base class.";
     return hr;
