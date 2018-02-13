@@ -74,7 +74,7 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   }
 
   initialize_hr_ =
-      CreateStrongHandle(debug_value, &array_handle_, GetErrorStream());
+      CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create a handle for the array.");
     return;
@@ -114,12 +114,12 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
   CComPtr<ICorDebugArrayValue> array_value;
   CComPtr<ICorDebugValue> dereferenced_value;
 
-  if (!array_handle_) {
+  if (!object_handle_) {
     WriteError("Cannot retrieve the array.");
     return E_FAIL;
   }
 
-  hr = array_handle_->Dereference(&dereferenced_value);
+  hr = object_handle_->Dereference(&dereferenced_value);
   if (FAILED(hr)) {
     WriteError("Failed to dereference array handle.");
     return hr;

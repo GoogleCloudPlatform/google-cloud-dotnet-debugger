@@ -246,7 +246,7 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
   }
 
   CComPtr<ICorDebugModule> base_debug_module;
-  hr = base_class->GetModule(&base_debug_module);
+https://github.com/GoogleCloudPlatform/google-cloud-dotnet-debugger/blob/quoct/conditionalbp/google_cloud_debugger_lib/dbg_class.cc  hr = base_class->GetModule(&base_debug_module);
   if (FAILED(hr)) {
     *err_stream << "Failed to get module for base class.";
     return hr;
@@ -264,28 +264,32 @@ HRESULT DbgClass::ProcessBaseClassName(ICorDebugType *debug_type,
                           err_stream);
 }
 
-HRESULT DbgClass::ExtractField(const std::string &field_name,
-                               std::shared_ptr<DbgObject> *field_value) {
-  // Try to find the field field_name of this object.
-  const auto &find_field = std::find_if(
-      class_fields_.begin(), class_fields_.end(),
-      [&](std::shared_ptr<IDbgClassMember> &class_field) {
-        return class_field->GetMemberName().compare(field_name) == 0;
-      });
-  if (find_field == class_fields_.end()) {
-    WriteError("Class does not have field " + field_name);
-    return E_FAIL;
+HRESULT DbgClass::GetNonStaticField(const std::string &field_name,
+                                    std::shared_ptr<DbgObject> *field_value) {
+  if (!class_fields_.empty()) {
+    // Try to find the field field_name of this object.
+    const auto &find_field = std::find_if(
+        class_fields_.begin(), class_fields_.end(),
+        [&](std::shared_ptr<IDbgClassMember> &class_field) {
+          return class_field->GetMemberName().compare(field_name) == 0;
+        });
+    if (find_field == class_fields_.end()) {
+      WriteError("Class does not have field " + field_name);
+      return E_FAIL;
+    }
+
+    // Gets the underlying DbgObject that represents the field field_name
+    // of this object.
+    *field_value = (*find_field)->GetMemberValue();
+    if (!field_value) {
+      WriteError("Failed to evaluate value for field " + field_name);
+      return E_FAIL;
+    }
+
+    return S_OK;
   }
 
-  // Gets the underlying DbgObject that represents the field field_name
-  // of this object.
-  *field_value = (*find_field)->GetMemberValue();
-  if (!field_value) {
-    WriteError("Failed to evaluate value for field " + field_name);
-    return E_FAIL;
-  }
-
-  return S_OK;
+  return DbgObject::GetNonStaticField(field_name, field_value);
 }
 
 HRESULT DbgClass::ProcessParameterizedType() {
@@ -486,7 +490,7 @@ HRESULT DbgClass::ProcessClassMembers() {
 
   BOOL is_null = FALSE;
   CComPtr<ICorDebugValue> debug_value;
-  HRESULT hr = Dereference(class_handle_, &debug_value, 
+  HRESULT hr = Dereference(object_handle_, &debug_value, 
                             &is_null, GetErrorStream());
   // Error already written into the error stream.
   if (FAILED(hr)) {
@@ -672,7 +676,7 @@ void DbgClass::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     // Create a handle if it is a class so we won't lose the object.
     if (cor_type_ != CorElementType::ELEMENT_TYPE_VALUETYPE && !is_null) {
       initialize_hr_ =
-          CreateStrongHandle(debug_value, &class_handle_, GetErrorStream());
+          CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
       // E_NOINTERFACE is returned if object is a value type. In that
       // case, we don't need to create a handle.
       if (FAILED(initialize_hr_)) {
@@ -754,7 +758,7 @@ void DbgClass::PopulateClassMembers(
       Variable *class_member_var = variable_proto->add_members();
       class_member_var->set_name((*it)->GetMemberName());
 
-      HRESULT hr = (*it)->Evaluate(class_handle_, eval_coordinator,
+      HRESULT hr = (*it)->Evaluate(object_handle_, eval_coordinator,
                                    &generic_types_);
       if (FAILED(hr)) {
         SetErrorStatusMessage(class_member_var, (*it).get());

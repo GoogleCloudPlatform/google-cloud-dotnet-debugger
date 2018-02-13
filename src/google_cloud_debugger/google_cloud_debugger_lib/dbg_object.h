@@ -80,6 +80,11 @@ class DbgObject : public StringStreamWrapper {
     return S_FALSE;
   }
 
+  // Searches the object for non-static field field_name and returns
+  // the value in field_value.
+  virtual HRESULT GetNonStaticField(const std::string &field_name,
+                                    std::shared_ptr<DbgObject> *field_value);
+
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
                                  std::unique_ptr<DbgObject> *result_object,
@@ -114,6 +119,10 @@ class DbgObject : public StringStreamWrapper {
   CORDB_ADDRESS GetAddress() { return address_; }
 
  protected:
+  // Handle for the object.
+  // Only applicable for class, array and string.
+  CComPtr<ICorDebugHandleValue> object_handle_;
+
    // The CorElementType of the underlying .NET object.
    CorElementType cor_element_type_;
 
