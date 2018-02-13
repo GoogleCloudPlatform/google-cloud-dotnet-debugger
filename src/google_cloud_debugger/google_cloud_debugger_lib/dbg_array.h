@@ -74,9 +74,6 @@ class DbgArray : public DbgObject {
   }
 
  private:
-  // A strong handle to the underlying array object.
-  CComPtr<ICorDebugHandleValue> array_handle_;
-
   // The type of the array.
   CComPtr<ICorDebugType> array_type_;
 
