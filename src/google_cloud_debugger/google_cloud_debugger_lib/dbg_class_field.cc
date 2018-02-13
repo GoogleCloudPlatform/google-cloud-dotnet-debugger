@@ -31,10 +31,6 @@ void DbgClassField::Initialize(mdFieldDef field_def,
                                ICorDebugObjectValue *debug_obj_value,
                                ICorDebugClass *debug_class,
                                ICorDebugType *class_type, int creation_depth) {
-  // If a field is a backing field of a property, its name will
-  // end with this.
-  static const string kBackingField = ">k__BackingField";
-
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
