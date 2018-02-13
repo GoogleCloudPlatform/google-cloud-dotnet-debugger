@@ -119,6 +119,16 @@ HRESULT DbgStackFrame::Initialize(
   return S_OK;
 }
 
+HRESULT DbgStackFrame::GetFrame(ICorDebugILFrame **debug_frame) {
+  if (!debug_frame_) {
+    return E_FAIL;
+  }
+
+  *debug_frame = debug_frame_;
+  debug_frame_->AddRef();
+  return S_OK;
+}
+
 HRESULT DbgStackFrame::ProcessLocalVariables(
     ICorDebugValueEnum *local_enum,
     const vector<LocalVariableInfo> &variable_infos) {
@@ -679,16 +689,15 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
 
 HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
                                          const std::string &field_name,
+                                         mdFieldDef *field_def, bool *is_static,
                                          TypeSignature *type_signature,
                                          IMetaDataImport *metadata_import,
                                          std::ostream *err_stream) {
   // Gets the field/auto property information and signature.
-  mdFieldDef field_def;
-  bool field_static;
   PCCOR_SIGNATURE signature;
   ULONG signature_len = 0;
   HRESULT hr = GetFieldAndAutoPropertyInfo(
-      metadata_import, class_token, field_name, &field_def, &field_static,
+      metadata_import, class_token, field_name, field_def, is_static,
       &signature, &signature_len, err_stream);
   if (FAILED(hr)) {
     return hr;
