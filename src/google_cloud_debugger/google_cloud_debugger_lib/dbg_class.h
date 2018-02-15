@@ -22,7 +22,7 @@
 
 #include "dbg_class_field.h"
 #include "dbg_class_property.h"
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 #include "dbg_primitive.h"
 
 namespace google_cloud_debugger {
@@ -33,10 +33,10 @@ namespace google_cloud_debugger {
 // HashSet and Dictionary, see DbgEnum and DbgBuiltinCollection class.
 // IMPORTANT: This class is not thread-safe and is only supposed
 // to be used in 1 thread.
-class DbgClass : public DbgObject {
+class DbgClass : public DbgReferenceObject {
  public:
   DbgClass(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+      : DbgReferenceObject(debug_type, depth) {}
 
   // This function populates parameterized type of the class if needed.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
