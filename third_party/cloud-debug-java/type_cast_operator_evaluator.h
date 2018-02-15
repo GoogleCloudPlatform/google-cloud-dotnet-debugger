@@ -18,29 +18,26 @@
 #define DEVTOOLS_CDBG_DEBUGLETS_JAVA_TYPE_CAST_OPERATOR_EVALUATOR_H_
 
 #include "common.h"
-#include "jni_utils.h"
 #include "expression_evaluator.h"
 #include "java_expression.h"
+#include "type_signature.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
-// Implements Type cast Java operator. The details of this operator are
-// explained in Java Language Specification section 15.16.
+// Implements Type cast C# operator.
+// Logic is based on:
+// https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#cast-expressions
 class TypeCastOperatorEvaluator : public ExpressionEvaluator {
  public:
   // Class constructor. The instance will own "source".
   TypeCastOperatorEvaluator(
       std::unique_ptr<ExpressionEvaluator> source,
-      const string& target_type);
+      const std::string& target_type);
 
-  ~TypeCastOperatorEvaluator() override;
+  HRESULT Compile(
+      DbgStackFrame *stack_frame, std::ostream *err_stream) override;
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
-
-  const JSignature& GetStaticType() const override {
+  const TypeSignature& GetStaticType() const override {
     return result_type_;
   }
 
@@ -53,14 +50,22 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
 
  private:
   // No-op Computer.
-  ErrorOr<JVariant> DoNothingComputer(const JVariant& source) const;
+   HRESULT DoNothingComputer(std::shared_ptr<DbgObject> source,
+     std::shared_ptr<DbgObject> *result) const;
+
+  // Numerical-cast Computer.
+  template <typename T>
+  HRESULT NumericalCastComputer(
+    std::shared_ptr<DbgObject> source,
+    std::shared_ptr<DbgObject> *result) const;
 
   // Evaluation method when the type cast is of Object type.
   ErrorOr<JVariant> ObjectTypeComputer(const JVariant& source) const;
 
   // Returns true if it is invalid boolean type conversion from boolean
   // to primitive numeric type and vice versa
-  bool IsInvalidPrimitiveBooleanTypeConversion() const;
+  bool IsInvalidPrimitiveBooleanTypeConversion(const CorElementType &source,
+    const CorElementType &target) const;
 
   // Returns true if both source and target types are primitive boolean.
   bool AreBothTypesPrimitiveBoolean() const;
@@ -75,22 +80,20 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
   JSignature result_type_;
 
   // Target type of the expression.
-  const string target_type_;
+  TypeSignature target_type_;
 
   // Target class derived by looking up the target_type_;
   jobject target_class_ = { nullptr };
 
   // Pointer to a member function of this class to do the actual evaluation.
-  ErrorOr<JVariant> (TypeCastOperatorEvaluator::*computer_)(
-      const JVariant&) const;
+  HRESULT (TypeCastOperatorEvaluator::*computer_)(
+      std::shared_ptr<DbgObject> source,
+      std::shared_ptr<DbgObject> *result) const;
 
   DISALLOW_COPY_AND_ASSIGN(TypeCastOperatorEvaluator);
 };
 
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_TYPE_CAST_OPERATOR_EVALUATOR_H_
-
-
