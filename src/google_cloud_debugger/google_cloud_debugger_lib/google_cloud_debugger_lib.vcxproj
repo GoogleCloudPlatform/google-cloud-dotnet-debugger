@@ -207,6 +207,7 @@
     <ClInclude Include="dbg_class_field.h" />
     <ClInclude Include="dbg_class_property.h" />
     <ClInclude Include="dbg_enum.h" />
+    <ClInclude Include="dbg_reference_object.h" />
     <ClInclude Include="dbg_stack_frame.h" />
     <ClInclude Include="dbg_string.h" />
     <ClInclude Include="dbg_builtin_collection.h" />
@@ -260,6 +261,7 @@
     <ClCompile Include="dbg_class_field.cc" />
     <ClCompile Include="dbg_class_property.cc" />
     <ClCompile Include="dbg_enum.cc" />
+    <ClCompile Include="dbg_reference_object.cc" />
     <ClCompile Include="dbg_stack_frame.cc" />
     <ClCompile Include="dbg_string.cc" />
     <ClCompile Include="dbg_builtin_collection.cc" />
