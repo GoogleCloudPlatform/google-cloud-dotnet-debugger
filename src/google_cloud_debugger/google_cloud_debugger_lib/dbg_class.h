@@ -22,7 +22,7 @@
 
 #include "dbg_class_field.h"
 #include "dbg_class_property.h"
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 #include "dbg_primitive.h"
 
 namespace google_cloud_debugger {
@@ -33,10 +33,10 @@ namespace google_cloud_debugger {
 // HashSet and Dictionary, see DbgEnum and DbgBuiltinCollection class.
 // IMPORTANT: This class is not thread-safe and is only supposed
 // to be used in 1 thread.
-class DbgClass : public DbgObject {
+class DbgClass : public DbgReferenceObject {
  public:
   DbgClass(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+      : DbgReferenceObject(debug_type, depth) {}
 
   // This function populates parameterized type of the class if needed.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
@@ -56,10 +56,10 @@ class DbgClass : public DbgObject {
 
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
-  // This function assumes that the class_fields_ and class_property_
-  // vector are populated.
-  HRESULT ExtractField(const std::string &field_name,
-                       std::shared_ptr<DbgObject> *field_value);
+  // If class_fields_ are not populated, then this will call the
+  // base class GetNonStaticField of DbgObject.
+  HRESULT GetNonStaticField(const std::string &field_name,
+                            std::shared_ptr<DbgObject> *field_value) override;
 
   // Various .NET class types that we need to process differently
   // rather than just printing out fields and properties.
@@ -209,9 +209,6 @@ class DbgClass : public DbgObject {
                        IMetaDataImport *metadata_import,
                        const std::string &field_name,
                        std::unique_ptr<DbgObject> *field_value);
-
-  // A strong handle to the class object.
-  CComPtr<ICorDebugHandleValue> class_handle_;
 
   // String that represents the name of the module this class is in.
   std::string module_name_;

@@ -127,6 +127,9 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\unary_expression_evaluator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dbg_reference_object.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -298,6 +301,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\unary_expression_evaluator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_reference_object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

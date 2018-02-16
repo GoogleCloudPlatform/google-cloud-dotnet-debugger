@@ -18,7 +18,7 @@
 #include <memory>
 #include <vector>
 
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 
 namespace google_cloud_debugger {
 
@@ -26,10 +26,10 @@ class EvalCoordinator;
 
 // This class represents a .NET array object.
 // This includes multi-dimensional as well as jagged arrays.
-class DbgArray : public DbgObject {
+class DbgArray : public DbgReferenceObject {
  public:
   DbgArray(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+      : DbgReferenceObject(debug_type, depth) {}
 
   // Retrieves information about array rank, array dimensions, array type and
   // creates a strong handle to the array.
@@ -74,9 +74,6 @@ class DbgArray : public DbgObject {
   }
 
  private:
-  // A strong handle to the underlying array object.
-  CComPtr<ICorDebugHandleValue> array_handle_;
-
   // The type of the array.
   CComPtr<ICorDebugType> array_type_;
 
