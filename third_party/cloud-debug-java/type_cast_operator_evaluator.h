@@ -30,69 +30,80 @@ namespace google_cloud_debugger {
 class TypeCastOperatorEvaluator : public ExpressionEvaluator {
  public:
   // Class constructor. The instance will own "source".
-  TypeCastOperatorEvaluator(
-      std::unique_ptr<ExpressionEvaluator> source,
-      const std::string& target_type);
+  TypeCastOperatorEvaluator(std::unique_ptr<ExpressionEvaluator> source,
+                            const std::string &target_type);
 
-  HRESULT Compile(
-      DbgStackFrame *stack_frame, std::ostream *err_stream) override;
+  // Compiles the expression.
+  // If both source and target are boolean, this will set result_type_
+  // to target_type_ and do nothing.
+  // If both source and target are numerical types, this will set
+  // the computer_ function to NumericalCastComputer.
+  // If both source and target are object types, this will check whether
+  // either of them is base class of the other. If not, this function will
+  // fail. Otherwise, sets result_type_ to target_type_ and do nothing.
+  HRESULT Compile(DbgStackFrame *stack_frame,
+                  std::ostream *err_stream) override;
 
-  const TypeSignature& GetStaticType() const override {
-    return result_type_;
-  }
+  // Returns the static type of the expression.
+  const TypeSignature &GetStaticType() const override { return result_type_; }
 
-  Nullable<jvalue> GetStaticValue() const override {
-    return nullptr;
-  }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
+  // Evalutes the expression by calling the appropriate computer_.
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
+                   IEvalCoordinator *eval_coordinator,
+                   std::ostream *err_stream) const override;
 
  private:
+  // Returns S_OK if source_type is a child class of target_type.
+  HRESULT IsBaseType(DbgStackFrame *stack_frame, const std::string &source_type,
+                     const std::string &target_type,
+                     std::ostream *err_stream) const;
+
   // No-op Computer.
-   HRESULT DoNothingComputer(std::shared_ptr<DbgObject> source,
-     std::shared_ptr<DbgObject> *result) const;
+  HRESULT DoNothingComputer(std::shared_ptr<DbgObject> source,
+                            std::shared_ptr<DbgObject> *result) const;
 
   // Numerical-cast Computer.
+  // Gets T value from source and creates a DbgPrimitive object
+  // of type T with that value.
   template <typename T>
-  HRESULT NumericalCastComputer(
-    std::shared_ptr<DbgObject> source,
-    std::shared_ptr<DbgObject> *result) const;
+  HRESULT NumericalCastComputer(std::shared_ptr<DbgObject> source,
+                                std::shared_ptr<DbgObject> *result) const {
+    if (!source || !result) {
+      return E_INVALIDARG;
+    }
 
-  // Evaluation method when the type cast is of Object type.
-  ErrorOr<JVariant> ObjectTypeComputer(const JVariant& source) const;
+    T value;
+    HRESULT hr =
+        NumericCompilerHelper::ExtractPrimitiveValue<T>(source.get(), &value);
+
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value));
+    return S_OK;
+  }
 
   // Returns true if it is invalid boolean type conversion from boolean
   // to primitive numeric type and vice versa
-  bool IsInvalidPrimitiveBooleanTypeConversion(const CorElementType &source,
-    const CorElementType &target) const;
-
-  // Returns true if both source and target types are primitive boolean.
-  bool AreBothTypesPrimitiveBoolean() const;
-
-  // Returns true if either source or target type is Object Array.
-  bool IsEitherTypeObjectArray();
+  bool IsInvalidPrimitiveBooleanTypeConversion(
+      const CorElementType &source, const CorElementType &target) const;
 
   // Compiled expression corresponding to the source.
   std::unique_ptr<ExpressionEvaluator> source_;
 
   // Statically computed resulting type of the expression.
-  JSignature result_type_;
+  TypeSignature result_type_;
 
   // Target type of the expression.
   TypeSignature target_type_;
 
-  // Target class derived by looking up the target_type_;
-  jobject target_class_ = { nullptr };
-
   // Pointer to a member function of this class to do the actual evaluation.
-  HRESULT (TypeCastOperatorEvaluator::*computer_)(
-      std::shared_ptr<DbgObject> source,
-      std::shared_ptr<DbgObject> *result) const;
+  HRESULT (TypeCastOperatorEvaluator::*computer_)
+  (std::shared_ptr<DbgObject> source, std::shared_ptr<DbgObject> *result) const;
 
   DISALLOW_COPY_AND_ASSIGN(TypeCastOperatorEvaluator);
 };
-
 
 }  // namespace google_cloud_debugger
 

@@ -17,6 +17,7 @@
 #include "class_names.h"
 #include "compiler_helpers.h"
 #include "dbg_primitive.h"
+#include "i_cor_debug_helper.h"
 #include "type_signature.h"
 
 namespace google_cloud_debugger {
@@ -460,6 +461,63 @@ HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
   if (cor_type_to_string.find(cor_type) != cor_type_to_string.end()) {
     *result = cor_type_to_string[cor_type];
     return S_OK;
+  }
+
+  return E_FAIL;
+}
+
+HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
+                                        IMetaDataImport *source_class_metadata,
+                                        const std::string &target_class,
+                                        std::ostream *err_stream) {
+  HRESULT hr;
+  mdTypeDef current_class_token;
+  mdToken current_base_class_token;
+  CComPtr<IMetaDataImport> current_metadata_import;
+  std::string current_class_name;
+
+  current_class_token = source_class;
+  current_metadata_import = source_class_metadata;
+  while (true) {
+    hr = GetTypeNameFromMdTypeDef(current_class_token, current_metadata_import,
+                                  &current_class_name,
+                                  &current_base_class_token, err_stream);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    if (current_class_name.compare(target_class) == 0) {
+      return S_OK;
+    }
+
+    if (current_class_name.compare(kObjectClassName)) {
+      return E_FAIL;
+    }
+
+    // Retrieves the base class token and metadata import.
+    CorTokenType token_type =
+        (CorTokenType)(TypeFromToken(current_base_class_token));
+    if (token_type == CorTokenType::mdtTypeDef) {
+      // No need to change the IMetaDataImport since we are still in the same
+      // module.
+      current_class_token = current_base_class_token;
+    } else if (token_type == CorTokenType::mdtTypeRef) {
+      CComPtr<IMetaDataImport> resolved_metadata_import;
+      mdTypeDef resolved_class_token;
+      hr = GetMdTypeDefAndMetaDataFromTypeRef(
+          current_base_class_token, current_metadata_import,
+          &resolved_class_token, &resolved_metadata_import);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      current_class_token = resolved_class_token;
+      current_metadata_import = resolved_metadata_import;
+    } else {
+      // Not supported.
+      *err_stream << "Only mdTypeDef and mdTypeRef tokens are supported.";
+      return E_NOTIMPL;
+    }
   }
 
   return E_FAIL;
