@@ -386,17 +386,8 @@ HRESULT DbgStackFrame::GetClassTokenAndModule(
   // If we didn't find the class, we search the dictionary of mdTypeRef.
   auto type_ref_info = type_ref_dict_.find(class_name);
   if (type_ref_info != type_ref_dict_.end()) {
-    CComPtr<IUnknown> i_unknown;
-    // First, we have to get an IMetaDataImport that corresponds
-    // with the TypeRef.
-    hr = metadata_import_->ResolveTypeRef(
-        type_ref_info->second, IID_IMetaDataImport, &i_unknown, class_token);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    hr = i_unknown->QueryInterface(IID_IMetaDataImport,
-                                   reinterpret_cast<void **>(metadata_import));
+    hr = GetMdTypeDefAndMetaDataFromTypeRef(
+        type_ref_info->second, metadata_import_, class_token, metadata_import);
     if (FAILED(hr)) {
       return hr;
     }

@@ -156,6 +156,13 @@ HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
                                  std::string *type_name,
                                  std::ostream *err_stream);
 
+// Given a TypeRef token and its MetaDataImport, this function
+// converts it into a TypeDef token. The function will also return
+// the corresponding MetaDataImport for that token.
+HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
+    mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
+    mdTypeDef *result_type_def, IMetaDataImport **result_type_def_metadata);
+
 // Retrieves ICorDebugAppDomain from ICorDebugFrame.
 HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
                                        ICorDebugAppDomain **app_domain,
