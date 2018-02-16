@@ -25,7 +25,7 @@ class DbgReferenceObject : public DbgObject {
   DbgReferenceObject(ICorDebugType *debug_type, int depth)
       : DbgObject(debug_type, depth) {}
    
-   // Searches the object for non-static field field_name and returns
+  // Searches the object for non-static field field_name and returns
   // the value in field_value.
   virtual HRESULT GetNonStaticField(const std::string &field_name,
                                     std::shared_ptr<DbgObject> *field_value);
