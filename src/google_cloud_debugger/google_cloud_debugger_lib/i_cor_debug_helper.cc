@@ -732,6 +732,20 @@ HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
   return hr;
 }
 
+HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
+    mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
+    mdTypeDef *result_type_def, IMetaDataImport **result_type_def_metadata) {
+  CComPtr<IUnknown> i_unknown;
+  HRESULT hr = type_ref_token_metadata->ResolveTypeRef(
+      type_ref_token, IID_IMetaDataImport, &i_unknown, result_type_def);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return i_unknown->QueryInterface(
+      IID_IMetaDataImport, reinterpret_cast<void **>(result_type_def_metadata));
+}
+
 HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
                                        ICorDebugAppDomain **app_domain,
                                        std::ostream *err_stream) {
