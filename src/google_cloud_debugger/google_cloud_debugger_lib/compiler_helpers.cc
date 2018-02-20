@@ -472,13 +472,14 @@ HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
                                         std::ostream *err_stream) {
   HRESULT hr;
   mdTypeDef current_class_token;
-  mdToken current_base_class_token;
   CComPtr<IMetaDataImport> current_metadata_import;
   std::string current_class_name;
+  mdToken current_base_class_token = source_class;
 
-  current_class_token = source_class;
   current_metadata_import = source_class_metadata;
-  while (true) {
+  int max_class_to_traverse = 10;
+  while (max_class_to_traverse >= 0) {
+    max_class_to_traverse -= 1;
     hr = GetTypeNameFromMdTypeDef(current_class_token, current_metadata_import,
                                   &current_class_name,
                                   &current_base_class_token, err_stream);

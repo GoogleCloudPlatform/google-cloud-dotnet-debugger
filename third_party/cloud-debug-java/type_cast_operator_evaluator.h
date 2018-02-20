@@ -39,7 +39,7 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
   // If both source and target are numerical types, this will set
   // the computer_ function to NumericalCastComputer.
   // If both source and target are object types, this will check whether
-  // either of them is base class of the other. If not, this function will
+  // either of them is a base class of the other. If not, this function will
   // fail. Otherwise, sets result_type_ to target_type_ and do nothing.
   HRESULT Compile(DbgStackFrame *stack_frame,
                   std::ostream *err_stream) override;
@@ -53,6 +53,12 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
                    std::ostream *err_stream) const override;
 
  private:
+  // Compiles type cast expression when both the source
+  // and target are numeric types.
+  HRESULT CompileNumericalCast(const CorElementType &source_type,
+                               const CorElementType &target_type,
+                               std::ostream *err_stream);
+
   // Returns S_OK if source_type is a child class of target_type.
   HRESULT IsBaseType(DbgStackFrame *stack_frame, const std::string &source_type,
                      const std::string &target_type,
@@ -84,9 +90,9 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
     return S_OK;
   }
 
-  // Returns true if it is invalid boolean type conversion from boolean
-  // to primitive numeric type and vice versa
-  bool IsInvalidPrimitiveBooleanTypeConversion(
+  // Returns true if this expression is a valid boolean type conversion from boolean
+  // to primitive numeric type and vice versa.
+  bool IsValidPrimitiveBooleanTypeConversion(
       const CorElementType &source, const CorElementType &target) const;
 
   // Compiled expression corresponding to the source.
