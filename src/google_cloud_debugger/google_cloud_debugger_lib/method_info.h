@@ -36,7 +36,7 @@ struct MethodInfo {
   mdMethodDef method_token;
 
   // The types of the arguments.
-  const std::vector<std::string> argument_types;
+  std::vector<std::string> argument_types;
 
   // True if the function is static.
   bool is_static;
