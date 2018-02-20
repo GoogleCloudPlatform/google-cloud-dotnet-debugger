@@ -168,6 +168,10 @@ HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
                                        ICorDebugAppDomain **app_domain,
                                        std::ostream *err_stream);
 
+// Count generic params of method/class referred to by mdToken.
+HRESULT CountGenericParams(IMetaDataImport *metadata_import,
+                           const mdToken &token, uint32_t *result);
+
 }  // namespace google_cloud_debugger
 
 #endif  //  I_CORDEBUG_HELPER_H_
