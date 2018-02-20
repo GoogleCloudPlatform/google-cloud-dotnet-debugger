@@ -37,6 +37,7 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
 class DebuggerCallback;
 class IEvalCoordinator;
 class DbgClassProperty;
+struct MethodInfo;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
@@ -117,6 +118,11 @@ class DbgStackFrame {
                                  ICorDebugModule **debug_module,
                                  IMetaDataImport **metadata_import);
 
+  // Returns S_OK if source_type is a child class of target_type.
+  HRESULT IsBaseType(const std::string &source_type,
+                     const std::string &target_type,
+                     std::ostream *err_stream);
+
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
 
@@ -180,6 +186,26 @@ class DbgStackFrame {
 
   // Returns the ICorDebugFrame this frame is in.
   HRESULT GetFrame(ICorDebugILFrame **debug_frame);
+
+  // Gets the ICorDebugFunction that corresponds with method represented by
+  // method_info in the class class_token. This function will
+  // also check the methods against the arguments vector to
+  // select the appropriate method. Besides returning the debug_function,
+  // the function will also populate properties like is_static or has_generic_types
+  // of method_info if succeeded.
+  HRESULT GetDebugFunctionFromClass(IMetaDataImport *metadata_import,
+                                    const mdTypeDef &class_token,
+                                    MethodInfo *method_info,
+                                    ICorDebugFunction **debug_function);
+
+  // Similar to GetDebugFunctionFromClass except the class_token is the class
+  // that the frame is in.
+  HRESULT GetDebugFunctionFromCurrentClass(MethodInfo *method_info,
+                                           ICorDebugFunction **debug_function);
+
+  // Extract out generic type parameters for the class the frame is in.
+  HRESULT GetClassGenericTypeParameters(
+      std::vector<CComPtr<ICorDebugType>> *debug_types);
 
  private:
   // Extract local variables from local_enum.
