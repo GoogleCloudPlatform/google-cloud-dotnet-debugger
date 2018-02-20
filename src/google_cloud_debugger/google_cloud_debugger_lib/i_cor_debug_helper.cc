@@ -23,6 +23,7 @@
 #include "compiler_helpers.h"
 #include "constants.h"
 #include "dbg_class_property.h"
+#include "dbg_stack_frame.h"
 #include "error_messages.h"
 #include "string_stream_wrapper.h"
 
@@ -776,6 +777,40 @@ HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
   }
 
   return hr;
+}
+
+HRESULT CountGenericParams(IMetaDataImport *metadata_import,
+                           const mdToken &token, uint32_t *result) {
+  HRESULT hr;
+  CComPtr<IMetaDataImport2> metadata_import_2;
+
+  hr = metadata_import->QueryInterface(
+      IID_IMetaDataImport2, reinterpret_cast<void **>(&metadata_import_2));
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  HCORENUM cor_enum = nullptr;
+  *result = 0;
+  vector<mdGenericParam> generic_params(100, 0);
+  while (true) {
+    ULONG generic_params_returned = 0;
+    hr = metadata_import_2->EnumGenericParams(
+        &cor_enum, token, generic_params.data(), generic_params.size(),
+        &generic_params_returned);
+    if (FAILED(hr)) {
+      metadata_import_2->CloseEnum(cor_enum);
+      return hr;
+    }
+
+    if (generic_params_returned == 0) {
+      break;
+    }
+    *result += generic_params_returned;
+  }
+
+  metadata_import_2->CloseEnum(cor_enum);
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger

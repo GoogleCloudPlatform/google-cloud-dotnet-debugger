@@ -59,11 +59,6 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
                                const CorElementType &target_type,
                                std::ostream *err_stream);
 
-  // Returns S_OK if source_type is a child class of target_type.
-  HRESULT IsBaseType(DbgStackFrame *stack_frame, const std::string &source_type,
-                     const std::string &target_type,
-                     std::ostream *err_stream) const;
-
   // No-op Computer.
   HRESULT DoNothingComputer(std::shared_ptr<DbgObject> source,
                             std::shared_ptr<DbgObject> *result) const;
