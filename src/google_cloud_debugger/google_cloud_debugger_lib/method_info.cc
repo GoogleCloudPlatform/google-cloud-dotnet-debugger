@@ -21,18 +21,6 @@
 #include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
 
-/*
-#include "compiler_helpers.h"
-#include "constants.h"
-#include "dbg_breakpoint.h"
-#include "dbg_class_property.h"
-#include "debugger_callback.h"
-#include "i_cor_debug_helper.h"
-#include "i_eval_coordinator.h"
-#include "type_signature.h"
-#include "variable_wrapper.h"
-*/
-
 namespace google_cloud_debugger {
 
 HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
@@ -43,7 +31,7 @@ HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
   }
 
   std::vector<mdMethodDef> method_defs;
-  HRESULT hr = GetMethodDefsFromName(metadata_import, class_token, method_name,
+  HRESULT hr = GetMethodDefsFromName(metadata_import, class_token,
                                      &method_defs, &std::cerr);
   if (FAILED(hr)) {
     return hr;
