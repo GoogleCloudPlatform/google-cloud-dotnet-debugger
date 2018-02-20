@@ -76,11 +76,13 @@ HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
   // class of target_type or target_type is a base class of source_type.
   if (TypeCompilerHelper::IsObjectType(target_type_.cor_type) &&
       TypeCompilerHelper::IsObjectType(source_type.cor_type)) {
-    hr = IsBaseType(stack_frame, source_type.type_name, target_type_.type_name,
-                    err_stream);
+    hr = stack_frame->IsBaseType(source_type.type_name,
+                                 target_type_.type_name,
+                                 err_stream);
     if (FAILED(hr)) {
-      hr = IsBaseType(stack_frame, target_type_.type_name,
-                      source_type.type_name, err_stream);
+      hr = stack_frame->IsBaseType(target_type_.type_name,
+                                   source_type.type_name,
+                                   err_stream);
       if (FAILED(hr)) {
         return hr;
       }
@@ -150,25 +152,6 @@ HRESULT TypeCastOperatorEvaluator::CompileNumericalCast(
       *err_stream << "Unknown Numeric type.";
       return E_NOTIMPL;
   }
-}
-
-HRESULT TypeCastOperatorEvaluator::IsBaseType(DbgStackFrame *stack_frame,
-                                              const std::string &source_type,
-                                              const std::string &target_type,
-                                              std::ostream *err_stream) const {
-  HRESULT hr;
-  CComPtr<ICorDebugModule> debug_module;
-  CComPtr<IMetaDataImport> source_metadata_import;
-  mdToken source_token;
-
-  hr = stack_frame->GetClassTokenAndModule(
-      source_type, &source_token, &debug_module, &source_metadata_import);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  return TypeCompilerHelper::IsBaseClass(source_token, source_metadata_import,
-                                         target_type, err_stream);
 }
 
 HRESULT TypeCastOperatorEvaluator::Evaluate(

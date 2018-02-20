@@ -225,6 +225,7 @@
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="i_portable_pdb_file.h" />
     <ClInclude Include="i_stack_frame_collection.h" />
+    <ClInclude Include="method_info.h" />
     <ClInclude Include="named_pipe_client.h" />
     <ClInclude Include="named_pipe_client_unix.h" />
     <ClInclude Include="named_pipe_client_windows.h" />
@@ -273,6 +274,7 @@
     <ClCompile Include="i_cor_debug_helper.cc" />
     <ClCompile Include="metadata_headers.cc" />
     <ClCompile Include="metadata_tables.cc" />
+    <ClCompile Include="method_info.cc" />
     <ClCompile Include="named_pipe_client_unix.cc" />
     <ClCompile Include="named_pipe_client_windows.cc" />
     <ClCompile Include="portable_pdb_file.cc" />
