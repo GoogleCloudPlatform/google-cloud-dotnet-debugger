@@ -373,25 +373,6 @@ HRESULT DbgStackFrame::GetClassGenericTypeParameters(
   return S_OK;
 }
 
-void DbgStackFrame::SetObjectInspectionDepth(int depth) {
-  object_depth_ = depth;
-}
-
-string DbgStackFrame::GetShortModuleName() const {
-  string module_name = GetModule();
-  size_t slash_idx = module_name.find_last_of('\\');
-  if (slash_idx != string::npos) {
-    module_name = module_name.substr(slash_idx + 1);
-  }
-
-  slash_idx = module_name.find_last_of('/');
-  if (slash_idx != string::npos) {
-    module_name = module_name.substr(slash_idx + 1);
-  }
-
-  return module_name;
-}
-
 HRESULT DbgStackFrame::PopulateTypeDict() {
   if (type_dict_populated_) {
     return S_OK;
