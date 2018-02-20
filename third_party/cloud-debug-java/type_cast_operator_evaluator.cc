@@ -16,227 +16,196 @@
 
 #include "type_cast_operator_evaluator.h"
 
+#include "class_names.h"
 #include "common.h"
-#include "class_indexer.h"
-#include "jvmti_buffer.h"
-#include "readers_factory.h"
-#include "messages.h"
-#include "model.h"
-#include "numeric_cast_evaluator.h"
-#include "type_util.h"
+#include "compiler_helpers.h"
+#include "dbg_stack_frame.h"
+#include "i_cor_debug_helper.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 TypeCastOperatorEvaluator::TypeCastOperatorEvaluator(
-    std::unique_ptr<ExpressionEvaluator> source,
-    const string& target_type)
-    : source_(std::move(source)),
-      target_type_(target_type),
-      target_class_(nullptr),
-      computer_(nullptr) {
-  result_type_.type = JType::Object;
+    std::unique_ptr<ExpressionEvaluator> source, const std::string &target_type)
+    : source_(std::move(source)), computer_(nullptr) {
+  result_type_ = TypeSignature::Object;
+  CorElementType target_cor_type =
+      TypeCompilerHelper::ConvertStringToCorElementType(target_type);
+  target_type_ = TypeSignature{target_cor_type, target_type};
 }
 
+HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
+                                           std::ostream *err_stream) {
+  HRESULT hr = source_->Compile(stack_frame, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
-TypeCastOperatorEvaluator::~TypeCastOperatorEvaluator() {
-  if (target_class_ != nullptr) {
-    jni()->DeleteGlobalRef(target_class_);
-    target_class_ = nullptr;
+  TypeSignature source_type = source_->GetStaticType();
+  result_type_ = source_type;
+
+  // Checks that if only one of the source and target is boolean,
+  // then the other cannot be a numerical type.
+  if (!IsValidPrimitiveBooleanTypeConversion(source_type.cor_type,
+                                             target_type_.cor_type)) {
+    *err_stream << "Invalid type cast.";
+    return E_FAIL;
+  }
+
+  if (source_type.cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN &&
+      target_type_.cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
+    computer_ = &TypeCastOperatorEvaluator::DoNothingComputer;
+    return S_OK;
+  }
+
+  // TODO(quoct): Test unbox scenario.
+  if (TypeCompilerHelper::IsNumericalType(source_type.cor_type) &&
+      TypeCompilerHelper::IsNumericalType(target_type_.cor_type)) {
+    return CompileNumericalCast(source_type.cor_type,
+                                target_type_.cor_type,
+                                err_stream);
+  }
+
+  // TODO(quoct): Array type not supported.
+  // Investigate how much work to support it.
+  if (TypeCompilerHelper::IsArrayType(target_type_.cor_type)) {
+    *err_stream << "Casting to array type is not supported.";
+    return E_NOTIMPL;
+  }
+
+  // If both are object type, checks that either source_type is a base
+  // class of target_type or target_type is a base class of source_type.
+  if (TypeCompilerHelper::IsObjectType(target_type_.cor_type) &&
+      TypeCompilerHelper::IsObjectType(source_type.cor_type)) {
+    hr = IsBaseType(stack_frame, source_type.type_name, target_type_.type_name,
+                    err_stream);
+    if (FAILED(hr)) {
+      hr = IsBaseType(stack_frame, target_type_.type_name,
+                      source_type.type_name, err_stream);
+      if (FAILED(hr)) {
+        return hr;
+      }
+    }
+
+    result_type_ = target_type_;
+    computer_ = &TypeCastOperatorEvaluator::DoNothingComputer;
+    return hr;
+  }
+
+  *err_stream << "Unsupported cast.";
+  return E_NOTIMPL;
+}
+
+HRESULT TypeCastOperatorEvaluator::CompileNumericalCast(
+    const CorElementType &source_type,
+    const CorElementType &target_type,
+    std::ostream *err_stream) {
+  // In this case, we cast to target_type_.
+  result_type_ = target_type_;
+  switch (target_type_.cor_type) {
+    case CorElementType::ELEMENT_TYPE_CHAR: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<char>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U1: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint8_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I1: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int8_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U2: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint16_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I2: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int16_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<float_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<double_t>;
+      return S_OK;
+    }
+    default:
+      *err_stream << "Unknown Numeric type.";
+      return E_NOTIMPL;
   }
 }
 
+HRESULT TypeCastOperatorEvaluator::IsBaseType(DbgStackFrame *stack_frame,
+                                              const std::string &source_type,
+                                              const std::string &target_type,
+                                              std::ostream *err_stream) const {
+  HRESULT hr;
+  CComPtr<ICorDebugModule> debug_module;
+  CComPtr<IMetaDataImport> source_metadata_import;
+  mdToken source_token;
 
-bool TypeCastOperatorEvaluator::Compile(
-    ReadersFactory* readers_factory,
-    FormatMessageModel* error_message) {
-  if (!source_->Compile(readers_factory, error_message)) {
+  hr = stack_frame->GetClassTokenAndModule(
+      source_type, &source_token, &debug_module, &source_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return TypeCompilerHelper::IsBaseClass(source_token, source_metadata_import,
+                                         target_type, err_stream);
+}
+
+HRESULT TypeCastOperatorEvaluator::Evaluate(
+    std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
+    std::ostream *err_stream) const {
+  std::shared_ptr<DbgObject> source_obj;
+  HRESULT hr = source_->Evaluate(&source_obj, eval_coordinator, err_stream);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return (this->*computer_)(source_obj, dbg_object);
+}
+
+bool TypeCastOperatorEvaluator::IsValidPrimitiveBooleanTypeConversion(
+    const CorElementType &source, const CorElementType &target) const {
+  if (target == CorElementType::ELEMENT_TYPE_BOOLEAN &&
+      TypeCompilerHelper::IsNumericalType(source)) {
     return false;
   }
 
-  result_type_ = source_->GetStaticType();
-
-  // Checks if only one of the source and target is boolean.
-  if (IsInvalidPrimitiveBooleanTypeConversion()) {
-    // Currently, it is going to say Invalid for boolean unbox cases.
-    // TODO(pratibhap) : Fix this soon.
-    *error_message = {
-        TypeCastCompileInvalid,
-        { target_type_, TypeNameFromSignature(source_->GetStaticType()) }
-    };
+  if ((TypeCompilerHelper::IsNumericalType(target)) &&
+      (source == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
     return false;
   }
-
-  if (AreBothTypesPrimitiveBoolean()) {
-    computer_ = &TypeCastOperatorEvaluator::DoNothingComputer;
-    return true;
-  }
-
-  // TODO(pratibhap): Handle unbox. Or at least put the unsupported information
-  // clearly in the error_message.
-  if (IsNumericJType(source_->GetStaticType().type) &&
-      NumericTypeNameToJType(target_type_, &(result_type_.type))) {
-    switch (result_type_.type) {
-      case JType::Byte:
-        if (!ApplyNumericCast<jbyte>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Char:
-        if (!ApplyNumericCast<jchar>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Short:
-        if (!ApplyNumericCast<jshort>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Int:
-        if (!ApplyNumericCast<jint>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Long:
-        if (!ApplyNumericCast<jlong>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Float:
-        if (!ApplyNumericCast<jfloat>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      case JType::Double:
-        if (!ApplyNumericCast<jdouble>(&source_, error_message)) {
-          return false;
-        }
-        break;
-
-      default:
-        LOG(ERROR) << "Unknown Numeric type.";
-        return false;
-    }
-
-    computer_ = &TypeCastOperatorEvaluator::DoNothingComputer;
-    return true;
-  }
-
-  if (!IsNumericTypeName(target_type_) &&
-      (source_->GetStaticType().type == JType::Object)) {
-    // Both source and target are Objects.
-    computer_ = &TypeCastOperatorEvaluator::ObjectTypeComputer;
-
-    JniLocalRef target_class_local_ref =
-        readers_factory->FindClassByName(target_type_, error_message);
-    if (target_class_local_ref == nullptr) {
-      return false;
-    }
-
-    target_class_ = jni()->NewGlobalRef(target_class_local_ref.get());
-
-    JvmtiBuffer<char> signature;
-    if (jvmti()->GetClassSignature(
-          static_cast<jclass>(target_class_),
-          signature.ref(),
-          nullptr) != JVMTI_ERROR_NONE) {
-      *error_message = INTERNAL_ERROR_MESSAGE;
-      return false;
-    }
-
-    result_type_.object_signature = signature.get();
-
-    if (IsEitherTypeObjectArray()) {
-      *error_message = {
-          TypeCastUnsupported,
-          { TypeNameFromSignature(source_->GetStaticType()), target_type_ }
-      };
-      return false;
-    }
-
-    return true;
-  }
-
-  *error_message = {
-      TypeCastUnsupported,
-      { TypeNameFromSignature(source_->GetStaticType()), target_type_ }
-  };
-  return false;
+  return true;
 }
 
-
-ErrorOr<JVariant> TypeCastOperatorEvaluator::Evaluate(
-    const EvaluationContext& evaluation_context) const {
-  ErrorOr<JVariant> source_result = source_->Evaluate(evaluation_context);
-  if (source_result.is_error()) {
-    return source_result;
+HRESULT TypeCastOperatorEvaluator::DoNothingComputer(
+    std::shared_ptr<DbgObject> source,
+    std::shared_ptr<DbgObject> *result) const {
+  if (!source || !result) {
+    return E_INVALIDARG;
   }
 
-  return (this->*computer_)(source_result.value());
+  *result = source;
+  return S_OK;
 }
 
-
-bool TypeCastOperatorEvaluator::IsInvalidPrimitiveBooleanTypeConversion()
-  const {
-  if (target_type_ == "boolean" &&
-      IsNumericJType(source_->GetStaticType().type)) {
-    return true;
-  }
-
-  if ((IsNumericTypeName(target_type_)) &&
-     (IsBooleanType(source_->GetStaticType().type))) {
-      return true;
-  }
-  return false;
-}
-
-
-bool TypeCastOperatorEvaluator::AreBothTypesPrimitiveBoolean() const {
-  return (target_type_ == "boolean")
-      && IsBooleanType(source_->GetStaticType().type);
-}
-
-
-bool TypeCastOperatorEvaluator::IsEitherTypeObjectArray() {
-  return IsArrayObjectType(result_type_) ||
-      IsArrayObjectType(source_->GetStaticType());
-}
-
-
-ErrorOr<JVariant> TypeCastOperatorEvaluator::DoNothingComputer(
-    const JVariant& source) const {
-  return JVariant(source);
-}
-
-
-ErrorOr<JVariant> TypeCastOperatorEvaluator::ObjectTypeComputer(
-    const JVariant& source) const {
-  jobject source_value = nullptr;
-  if (!source.get<jobject>(&source_value)) {
-    LOG(ERROR) << "Couldn't extract the source value as an Object: "
-               << source.ToString(false);
-    return INTERNAL_ERROR_MESSAGE;
-  }
-
-  if (!jni()->IsInstanceOf(source_value,
-                           static_cast<jclass>(target_class_))) {
-    return FormatMessageModel {
-        TypeCastEvaluateInvalid,
-        { TypeNameFromSignature(source_->GetStaticType()), target_type_ }
-    };
-  }
-
-  JVariant result;
-  result.assign_new_ref(JVariant::ReferenceKind::Local, source_value);
-
-  return std::move(result);
-}
-
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger

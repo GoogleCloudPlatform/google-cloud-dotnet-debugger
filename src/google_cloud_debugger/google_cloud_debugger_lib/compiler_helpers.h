@@ -78,6 +78,18 @@ class TypeCompilerHelper {
   // Returns E_FAIL if conversion cannot be done.
   static HRESULT ConvertCorElementTypeToString(const CorElementType &cor_type,
                                                std::string *result);
+
+  // Given a source class token and its metadata import,
+  // this function will traverse its base class all the way
+  // to System.Object to check whether any of them matches
+  // target_class.
+  // Returns S_OK if there is a match and E_FAIL otherwise.
+  // TODO(quoct): Verify that whether this works on multiple
+  // interfaces.
+  static HRESULT IsBaseClass(mdTypeDef source_class,
+    IMetaDataImport *source_class_metadata,
+    const std::string &target_class,
+    std::ostream *err_stream);
 };
 
 }  //  namespace google_cloud_debugger
