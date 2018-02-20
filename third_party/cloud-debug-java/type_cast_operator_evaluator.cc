@@ -43,9 +43,10 @@ HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
   TypeSignature source_type = source_->GetStaticType();
   result_type_ = source_type;
 
-  // Checks if only one of the source and target is boolean.
-  if (IsInvalidPrimitiveBooleanTypeConversion(source_type.cor_type,
-                                              target_type_.cor_type)) {
+  // Checks that if only one of the source and target is boolean,
+  // then the other cannot be a numerical type.
+  if (!IsValidPrimitiveBooleanTypeConversion(source_type.cor_type,
+                                             target_type_.cor_type)) {
     *err_stream << "Invalid type cast.";
     return E_FAIL;
   }
@@ -59,62 +60,14 @@ HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
   // TODO(quoct): Test unbox scenario.
   if (TypeCompilerHelper::IsNumericalType(source_type.cor_type) &&
       TypeCompilerHelper::IsNumericalType(target_type_.cor_type)) {
-    // In this case, we cast to target_type_.
-    result_type_ = target_type_;
-    switch (target_type_.cor_type) {
-      case CorElementType::ELEMENT_TYPE_CHAR: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<char>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_U1: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint8_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_I1: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int8_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_U2: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint16_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_I2: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int16_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_U4: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint32_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_I4: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int32_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_U8: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint64_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_I8: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int64_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_R4: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<float_t>;
-        return S_OK;
-      }
-      case CorElementType::ELEMENT_TYPE_R8: {
-        computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<double_t>;
-        return S_OK;
-      }
-      default:
-        *err_stream << "Unknown Numeric type.";
-        return E_NOTIMPL;
-    }
+    return CompileNumericalCast(source_type.cor_type,
+                                target_type_.cor_type,
+                                err_stream);
   }
 
-  // Array type not supported.
-  if (TypeCompilerHelper::IsArrayType(target_type_.cor_type) &&
-      TypeCompilerHelper::IsArrayType(source_type.cor_type)) {
+  // TODO(quoct): Array type not supported.
+  // Investigate how much work to support it.
+  if (TypeCompilerHelper::IsArrayType(target_type_.cor_type)) {
     *err_stream << "Casting to array type is not supported.";
     return E_NOTIMPL;
   }
@@ -140,6 +93,63 @@ HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
 
   *err_stream << "Unsupported cast.";
   return E_NOTIMPL;
+}
+
+HRESULT TypeCastOperatorEvaluator::CompileNumericalCast(
+    const CorElementType &source_type,
+    const CorElementType &target_type,
+    std::ostream *err_stream) {
+  // In this case, we cast to target_type_.
+  result_type_ = target_type_;
+  switch (target_type_.cor_type) {
+    case CorElementType::ELEMENT_TYPE_CHAR: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<char>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U1: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint8_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I1: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int8_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U2: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint16_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I2: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int16_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int32_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<uint64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<int64_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<float_t>;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8: {
+      computer_ = &TypeCastOperatorEvaluator::NumericalCastComputer<double_t>;
+      return S_OK;
+    }
+    default:
+      *err_stream << "Unknown Numeric type.";
+      return E_NOTIMPL;
+  }
 }
 
 HRESULT TypeCastOperatorEvaluator::IsBaseType(DbgStackFrame *stack_frame,
@@ -173,18 +183,18 @@ HRESULT TypeCastOperatorEvaluator::Evaluate(
   return (this->*computer_)(source_obj, dbg_object);
 }
 
-bool TypeCastOperatorEvaluator::IsInvalidPrimitiveBooleanTypeConversion(
+bool TypeCastOperatorEvaluator::IsValidPrimitiveBooleanTypeConversion(
     const CorElementType &source, const CorElementType &target) const {
   if (target == CorElementType::ELEMENT_TYPE_BOOLEAN &&
       TypeCompilerHelper::IsNumericalType(source)) {
-    return true;
+    return false;
   }
 
   if ((TypeCompilerHelper::IsNumericalType(target)) &&
       (source == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
-    return true;
+    return false;
   }
-  return false;
+  return true;
 }
 
 HRESULT TypeCastOperatorEvaluator::DoNothingComputer(
