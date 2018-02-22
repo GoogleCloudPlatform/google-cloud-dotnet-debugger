@@ -61,6 +61,15 @@ struct MethodInfo {
                                 const mdTypeDef &class_token,
                                 std::vector<mdMethodDef> *methods_matched,
                                 std::ostream *err_stream);
+
+  // Given a method represented by metadata token method_def,
+  // this function will return S_OK if the method has matching
+  // argument types with argument_types.
+  // It will also populate is_static, has_generic_types
+  // and method_token if the method matched.
+  HRESULT MatchMethodArgument(IMetaDataImport *metadata_import,
+                              mdMethodDef method_def,
+                              DbgStackFrame *stack_frame);
 };
 
 }  //  namespace google_cloud_debugger
