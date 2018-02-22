@@ -793,8 +793,8 @@ HRESULT CountGenericParams(IMetaDataImport *metadata_import,
   HCORENUM cor_enum = nullptr;
   *result = 0;
   vector<mdGenericParam> generic_params(100, 0);
-  while (true) {
-    ULONG generic_params_returned = 0;
+  ULONG generic_params_returned = -1;
+  while (generic_params_returned != 0) {
     hr = metadata_import_2->EnumGenericParams(
         &cor_enum, token, generic_params.data(), generic_params.size(),
         &generic_params_returned);
