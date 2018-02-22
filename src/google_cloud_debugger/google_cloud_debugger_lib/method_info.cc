@@ -42,128 +42,9 @@ HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
   }
 
   for (const mdMethodDef &method_def : method_defs) {
-    mdTypeDef class_type;
-    ULONG method_name_len;
-    DWORD method_attribute;
-    PCCOR_SIGNATURE method_sig;
-    ULONG method_sig_len;
-    ULONG method_rva;
-    DWORD method_impl_flags;
-    hr = metadata_import->GetMethodProps(method_def, &class_type, nullptr, 0,
-                                         &method_name_len, &method_attribute,
-                                         &method_sig, &method_sig_len,
-                                         &method_rva, &method_impl_flags);
+    hr = MatchMethodArgument(metadata_import, method_def, stack_frame);
     if (FAILED(hr)) {
       continue;
-    }
-
-    ULONG bytes_read;
-    ULONG calling_convention;
-    hr = CorSigUncompressData(method_sig, method_sig_len, &calling_convention,
-                              &bytes_read);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    if (bytes_read != 1) {
-      return META_E_BAD_SIGNATURE;
-    }
-
-    method_sig_len -= bytes_read;
-    // If generic method, the next bytes would be the number of generic
-    // parameters.
-    if (calling_convention &
-        CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC != 0) {
-      ULONG generic_param_count = 0;
-      hr = CorSigUncompressData(method_sig, method_sig_len,
-                                &generic_param_count, &bytes_read);
-      if (FAILED(hr)) {
-        return hr;
-      }
-      method_sig_len -= bytes_read;
-    }
-
-    // Now we get the number of parameters in the signature.
-    ULONG param_count = 0;
-    hr = CorSigUncompressData(method_sig, method_sig_len, &param_count,
-                              &bytes_read);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    // This is true if there is an explicit this parameter.
-    bool explicitThis =
-        calling_convention &
-        CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0;
-    if (explicitThis) {
-      param_count -= 1;
-    }
-
-    method_sig_len -= bytes_read;
-    // The param count has to match. Otherwise, this is not
-    // the method we are looking for.
-    if (param_count != argument_types.size()) {
-      continue;
-    }
-
-    // Now we can extract the return type.
-    std::string returned_type;
-    hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
-                          &returned_type);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    // If there is an explicit this, there will be a this parameter.
-    if (calling_convention &
-        CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0) {
-      // Extracts out this "this" parameter.
-      std::string this_type;
-      hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
-                            &returned_type);
-      if (FAILED(hr)) {
-        return hr;
-      }
-      --param_count;
-    }
-
-    bool matched_method = true;
-    // Now we extracts the parameters and compares their types with arguments'
-    // types.
-    for (size_t i = 0; i < param_count; ++i) {
-      std::string parameter_type;
-      hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
-                            &parameter_type);
-      if (FAILED(hr)) {
-        return hr;
-      }
-
-      // Moves on if we can't find matching parameters.
-      // Matching here means the parameter type is the same as the
-      // type of the actual or if the argument type is a child class
-      // of the parameter type.
-      if (argument_types[i].compare(parameter_type) != 0 ||
-          !stack_frame->IsBaseType(argument_types[i], parameter_type,
-                                   &std::cerr)) {
-        matched_method = false;
-        break;
-      }
-    }
-
-    if (matched_method) {
-      // Now we match the params type with arguments type.
-      is_static = IsMdStatic(method_attribute);
-      method_token = method_def;
-      // Checks the generic types.
-      uint32_t method_generic_types = 0;
-      hr = CountGenericParams(metadata_import, method_def,
-                              &method_generic_types);
-      if (FAILED(hr)) {
-        return hr;
-      }
-      has_generic_types = method_generic_types != 0;
-
-      return S_OK;
     }
   }
 
@@ -201,6 +82,136 @@ HRESULT MethodInfo::GetMethodDefsFromName(
   }
 
   metadata_import->CloseEnum(cor_enum);
+  return S_OK;
+}
+
+HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
+                                        mdMethodDef method_def,
+                                        DbgStackFrame *stack_frame) {
+  mdTypeDef class_type;
+  ULONG method_name_len;
+  DWORD method_attribute;
+  PCCOR_SIGNATURE method_sig;
+  ULONG method_sig_len;
+  ULONG method_rva;
+  DWORD method_impl_flags;
+  hr = metadata_import->GetMethodProps(method_def, &class_type, nullptr, 0,
+                                       &method_name_len, &method_attribute,
+                                       &method_sig, &method_sig_len,
+                                       &method_rva, &method_impl_flags);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  ULONG bytes_read;
+  ULONG calling_convention;
+  hr = CorSigUncompressData(method_sig, method_sig_len, &calling_convention,
+                            &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (bytes_read != 1) {
+    return META_E_BAD_SIGNATURE;
+  }
+
+  method_sig_len -= bytes_read;
+  // If generic method, the next bytes would be the number of generic
+  // parameters.
+  if (calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC != 0) {
+    ULONG generic_param_count = 0;
+    hr = CorSigUncompressData(method_sig, method_sig_len,
+                              &generic_param_count, &bytes_read);
+    if (FAILED(hr)) {
+      return hr;
+    }
+    method_sig_len -= bytes_read;
+  }
+
+  // Now we get the number of parameters in the signature.
+  ULONG param_count = 0;
+  hr = CorSigUncompressData(method_sig, method_sig_len, &param_count,
+                            &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // This is true if there is an explicit this parameter.
+  bool explicitThis =
+      calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0;
+  if (explicitThis) {
+    param_count -= 1;
+  }
+
+  method_sig_len -= bytes_read;
+  // The param count has to match. Otherwise, this is not
+  // the method we are looking for.
+  if (param_count != argument_types.size()) {
+    return E_FAIL;
+  }
+
+  // Now we can extract the return type.
+  std::string returned_type;
+  hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+                        &returned_type);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // If there is an explicit this, there will be a this parameter.
+  if (calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0) {
+    // Extracts out this "this" parameter.
+    std::string this_type;
+    hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+                          &returned_type);
+    if (FAILED(hr)) {
+      return hr;
+    }
+    --param_count;
+  }
+
+  bool matched_method = true;
+  // Now we extracts the parameters and compares their types with arguments'
+  // types.
+  for (size_t i = 0; i < param_count; ++i) {
+    std::string parameter_type;
+    hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+                          &parameter_type);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    // Moves on if we can't find matching parameters.
+    // Matching here means the parameter type is the same as the
+    // type of the actual or if the argument type is a child class
+    // of the parameter type.
+    if (argument_types[i].compare(parameter_type) != 0 ||
+        !stack_frame->IsBaseType(argument_types[i], parameter_type,
+                                  &std::cerr)) {
+      matched_method = false;
+      break;
+    }
+  }
+  
+  if (!matched_method) {
+    return E_FAIL;
+  }
+
+  // Now we sets the other properties.
+  is_static = IsMdStatic(method_attribute);
+  method_token = method_def;
+  // Checks the generic types.
+  uint32_t method_generic_types = 0;
+  hr = CountGenericParams(metadata_import, method_def,
+                          &method_generic_types);
+  if (FAILED(hr)) {
+    return hr;
+  }
+  has_generic_types = method_generic_types != 0;
+
   return S_OK;
 }
 

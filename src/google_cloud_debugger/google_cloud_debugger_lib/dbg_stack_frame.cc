@@ -308,7 +308,7 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
     return hr;
   }
 
-  // Then, finds the ICorDebugFunction of the method.
+  // Then finds the ICorDebugFunction of the method.
   CComPtr<ICorDebugModule> debug_module;
   hr = app_domain_->GetModuleFromMetaDataInterface(metadata_import,
                                                    &debug_module);
