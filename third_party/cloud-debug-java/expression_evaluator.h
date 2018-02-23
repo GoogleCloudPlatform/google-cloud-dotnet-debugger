@@ -22,7 +22,6 @@
 
 #include "cor.h"
 #include "common.h"
-#include "type_util.h"
 
 namespace google_cloud_debugger {
 

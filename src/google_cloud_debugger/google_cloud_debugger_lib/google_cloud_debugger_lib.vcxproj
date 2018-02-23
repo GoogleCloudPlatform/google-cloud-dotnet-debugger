@@ -191,7 +191,6 @@
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\object_evaluator.h" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\string_evaluator.h" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\type_cast_operator_evaluator.h" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\type_util.h" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\unary_expression_evaluator.h" />
     <ClInclude Include="breakpoint.pb.h" />
     <ClInclude Include="breakpoint_client.h" />
