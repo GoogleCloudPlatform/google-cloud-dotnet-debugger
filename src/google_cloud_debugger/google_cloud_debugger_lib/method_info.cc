@@ -88,6 +88,7 @@ HRESULT MethodInfo::GetMethodDefsFromName(
 HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
                                         mdMethodDef method_def,
                                         DbgStackFrame *stack_frame) {
+  HRESULT hr;
   mdTypeDef class_type;
   ULONG method_name_len;
   DWORD method_attribute;
