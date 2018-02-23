@@ -25,6 +25,7 @@
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
+#include "method_info.h"
 #include "type_signature.h"
 #include "variable_wrapper.h"
 
@@ -292,6 +293,86 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   return S_OK;
 }
 
+HRESULT DbgStackFrame::GetDebugFunctionFromClass(
+    IMetaDataImport *metadata_import, const mdTypeDef &class_token,
+    MethodInfo *method_info, ICorDebugFunction **debug_function) {
+  if (!method_info || !metadata_import || !debug_function) {
+    return E_INVALIDARG;
+  }
+
+  // First, finds the metadata token of the method.
+  mdMethodDef method_def;
+  HRESULT hr = method_info->PopulateMethodDefFromNameAndArguments(
+      metadata_import, class_token, this);
+  if (FAILED(hr) || hr == S_FALSE) {
+    return hr;
+  }
+
+  // Then finds the ICorDebugFunction of the method.
+  CComPtr<ICorDebugModule> debug_module;
+  hr = app_domain_->GetModuleFromMetaDataInterface(metadata_import,
+                                                   &debug_module);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return debug_module->GetFunctionFromToken(method_def, debug_function);
+}
+
+HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
+    MethodInfo *method_info, ICorDebugFunction **debug_function) {
+  return GetDebugFunctionFromClass(metadata_import_, class_token_, method_info,
+                                   debug_function);
+}
+
+HRESULT DbgStackFrame::GetClassGenericTypeParameters(
+    std::vector<CComPtr<ICorDebugType>> *debug_types) {
+  if (!debug_types) {
+    return E_INVALIDARG;
+  }
+
+  uint32_t class_generic_params = 0;
+  HRESULT hr =
+      CountGenericParams(metadata_import_, class_token_, &class_generic_params);
+
+  if (class_generic_params == 0) {
+    return S_OK;
+  }
+
+  CComPtr<ICorDebugILFrame2> debug_frame_2;
+  hr = debug_frame_->QueryInterface(__uuidof(ICorDebugILFrame2),
+                                    reinterpret_cast<void **>(&debug_frame_2));
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  CComPtr<ICorDebugTypeEnum> type_enum;
+  // This will return generic types for both the class and the method
+  // the frame is in (class generic types first, followed by method).
+  hr = debug_frame_2->EnumerateTypeParameters(&type_enum);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  vector<CComPtr<ICorDebugType>> class_and_method_generic_types;
+  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
+                                                         ICorDebugType>(
+      type_enum, &class_and_method_generic_types);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (class_and_method_generic_types.size() < class_generic_params) {
+    return E_FAIL;
+  }
+
+  for (size_t i = 0; i < class_generic_params; ++i) {
+    debug_types->push_back(class_and_method_generic_types[i]);
+  }
+
+  return S_OK;
+}
+
 HRESULT DbgStackFrame::PopulateTypeDict() {
   if (type_dict_populated_) {
     return S_OK;
@@ -400,6 +481,25 @@ HRESULT DbgStackFrame::GetClassTokenAndModule(
   }
 
   return S_FALSE;
+}
+
+// TODO(quoct): Checks that this logic work with Generic Type.
+HRESULT DbgStackFrame::IsBaseType(const std::string &source_type,
+                                  const std::string &target_type,
+                                  std::ostream *err_stream) {
+  HRESULT hr;
+  CComPtr<ICorDebugModule> debug_module;
+  CComPtr<IMetaDataImport> source_metadata_import;
+  mdToken source_token;
+
+  hr = GetClassTokenAndModule(
+      source_type, &source_token, &debug_module, &source_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return TypeCompilerHelper::IsBaseClass(source_token, source_metadata_import,
+                                         target_type, err_stream);
 }
 
 HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
