@@ -17,86 +17,40 @@
 #ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
 #define DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
 
+#include <vector>
+
 #include "common.h"
-#include "class_metadata_reader.h"
 #include "expression_evaluator.h"
+#include "type_signature.h"
 
-namespace devtools {
-namespace cdbg {
-
-class LocalVariableReader;
-class MethodCaller;
+namespace google_cloud_debugger {
 
 // Invokes methods specified in expressions.
 class MethodCallEvaluator : public ExpressionEvaluator {
  public:
   MethodCallEvaluator(
-      string method_name,
+      std::string method_name,
       std::unique_ptr<ExpressionEvaluator> instance_source,
-      string possible_class_name,
+      std::string possible_class_name,
       std::vector<std::unique_ptr<ExpressionEvaluator>> arguments);
 
-  ~MethodCallEvaluator() override;
+  // Compiles the expression.
+  // If there are no instance_source_ and possible_class_name_,
+  // then treat this expression as a method with name method_name_
+  // in the class the current stack frame is in.
+  // If instance_source_ is null, use possible_class_name_ as
+  // a fully qualified class and search for method with name method_name_
+  // in this class.
+  // If instance_source_ is not null, search for method with name
+  // method_name_ in this class.
+  HRESULT Compile(DbgStackFrame *stack_frame,
+                  std::ostream *err_stream) override;
 
-  bool Compile(
-      ReadersFactory* readers_factory,
-      FormatMessageModel* error_message) override;
+  const TypeSignature& GetStaticType() const override { return return_type_; }
 
-  const JSignature& GetStaticType() const override { return return_type_; }
-
-  Nullable<jvalue> GetStaticValue() const override { return nullptr; }
-
-  ErrorOr<JVariant> Evaluate(
-      const EvaluationContext& evaluation_context) const override;
-
- private:
-  // Gets the list of potential methods that the expression might be trying to
-  // invoke. These are all the overloaded static/instance methods with name of
-  // "method_name_". "MatchMethods" looks for methods with signature matching
-  // "arguments_". If none were found, returns "matched = false". If more than
-  // one match was found returns "matched = true" with an appropriate error
-  // message. Otherwise if a single match was found, completes the compilation
-  // and returns "matched = true" with empty error message.
-  void MatchMethods(
-      ReadersFactory* readers_factory,
-      const std::vector<ClassMetadataReader::Method>& candidate_methods,
-      bool* matched,
-      FormatMessageModel* error_message);
-
-  // Checks whether the signature of "candidate_method" matches expressions
-  // in "arguments_".
-  bool MatchMethod(
-      ReadersFactory* readers_factory,
-      const ClassMetadataReader::Method& candidate_method);
-
-  // Matches single method argument. Returns converter if successful.
-  bool MatchArgument(
-      ReadersFactory* readers_factory,
-      const JSignature& expected_signature,
-      const ExpressionEvaluator& evaluated_signature);
-
-  // Tries to compile evaluation of a method on the object returned by
-  // prior evaluation.
-  void MatchInstanceSourceMethod(
-      ReadersFactory* readers_factory,
-      bool* matched,
-      FormatMessageModel* error_message);
-
-  // Tries to compile evaluation of a static method invoked on explicitly
-  // specified class ("possible_class_name_"). We support:
-  // 1. Fully qualified names (e.g. com.myprod.MyClass.myMethod).
-  // 2. Classes in lava.lang namespace (e.g. Integer.valueOf).
-  // 3. Names relative to the current scope (e.g. OtherClass.myMethod
-  //    or OtherClass.StaticClass.myMethod).
-  void MatchExplicitStaticMethod(
-      ReadersFactory* readers_factory,
-      bool* matched,
-      FormatMessageModel* error_message);
-
-  // Obtains the source object for method call evaluation if we are calling
-  // an instance method. Does nothing if calling static method.
-  ErrorOr<JVariant> EvaluateSourceObject(
-      const EvaluationContext& evaluation_context) const;
+  HRESULT Evaluate(std::shared_ptr<DbgObject>* dbg_object,
+                   IEvalCoordinator* eval_coordinator,
+                   std::ostream* err_stream) const override;
 
  private:
   // Method name (whether it's an instance method or a static method).
@@ -110,28 +64,22 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // method.
   const string possible_class_name_;
 
-  // Reader for local instance object (i.e. "this") for implicit instance
-  // method calls (example: "1+getSomething()", where "getSomething" is an
-  // instance method).
-  std::unique_ptr<LocalVariableReader> local_instance_reader_;
-
   // Arguments to the method call.
   std::vector<std::unique_ptr<ExpressionEvaluator>> arguments_;
 
-  // Signature of the invoked method (e.g. "(IZ)Ljava/lang/Object;"). This
-  // class selects the best match among all overloaded methods.
-  ClassMetadataReader::Method method_;
+  // Debug frame that the method call is in.
+  // This is needed to get "this" object.
+  CComPtr<ICorDebugILFrame> debug_frame_;
+
+  // The ICorDebugFunction that represents the method being called.
+  CComPtr<ICorDebugFunction> matched_method_;
 
   // Return value of the method.
-  JSignature return_type_;
+  TypeSignature return_type_;
 
   DISALLOW_COPY_AND_ASSIGN(MethodCallEvaluator);
 };
 
-
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
 #endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
-
-
