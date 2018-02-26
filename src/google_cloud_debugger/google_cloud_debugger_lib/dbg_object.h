@@ -80,10 +80,9 @@ class DbgObject : public StringStreamWrapper {
     return S_FALSE;
   }
 
-  // Searches the object for non-static field field_name and returns
-  // the value in field_value.
-  virtual HRESULT GetNonStaticField(const std::string &field_name,
-                                    std::shared_ptr<DbgObject> *field_value);
+  // Returns an ICorDebugValue representing the object.
+  virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+    ICorDebugEval *debug_eval) = 0;
 
   // Create a DbgObject with an evaluation depth of depth.
   static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
