@@ -46,6 +46,7 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame* stack_frame,
   const int max_argument_supported = 10;
 
   if (arguments_.size() > max_argument_supported) {
+    *err_stream << "Method call with more than 10 arguments are not supported.";
     return E_FAIL;
   }
 
@@ -81,6 +82,8 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame* stack_frame,
     hr = stack_frame->GetDebugFunctionFromCurrentClass(&method_info,
       &matched_method_);
     if (FAILED(hr)) {
+      *err_stream << "Failed to retrieve ICorDebugFunction "
+        << method_info.method_name << " from the current class.";
       return hr;
     }
   }
@@ -91,10 +94,13 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame* stack_frame,
     hr = stack_frame->GetMethodFromStaticClass(
       possible_class_name_, &method_info, &matched_method_);
     if (FAILED(hr)) {
+      *err_stream << "Failed to retrieve ICorDebugFunction "
+        << method_info.method_name << " from class " << possible_class_name_;
       return hr;
     }
 
     if (!method_info.is_static) {
+      *err_stream << "Method call from fully qualified class name has to be static.";
       return E_FAIL;
     }
   }
