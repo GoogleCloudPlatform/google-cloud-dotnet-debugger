@@ -101,4 +101,25 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   return hr;
 }
 
+HRESULT DbgReferenceObject::GetICorDebugValue(
+    ICorDebugValue **debug_value,
+    ICorDebugEval *debug_eval) {
+  if (object_handle_) {
+    *debug_value = object_handle_;
+    object_handle_->AddRef();
+    return S_OK;
+  }
+  return E_INVALIDARG;
+}
+
+HRESULT DbgReferenceObject::GetDebugHandle(ICorDebugHandleValue **result) {
+  if (!object_handle_) {
+    return E_FAIL;
+  }
+
+  *result = object_handle_;
+  object_handle_->AddRef();
+  return S_OK;
+}
+
 }

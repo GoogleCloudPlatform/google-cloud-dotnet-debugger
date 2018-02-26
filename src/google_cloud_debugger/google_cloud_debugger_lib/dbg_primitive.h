@@ -117,6 +117,31 @@ class DbgPrimitive : public DbgObject {
     return S_OK;
   }
 
+  // Creates a value in memory that corresponds with value_
+  // and returns an ICorDebugValue for that value.
+  HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+    ICorDebugEval *debug_eval) override {
+    if (debug_eval == nullptr) {
+      return E_INVALIDARG;
+    }
+
+    SetCorElementType(value_);
+    HRESULT hr = debug_eval->CreateValue(element_type_, nullptr,
+        debug_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    CComPtr<ICorDebugGenericValue> generic_value;
+    hr = (*debug_value)->QueryInterface(__uuidof(ICorDebugGenericValue),
+      reinterpret_cast<void **>(&generic_value));
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    return generic_value->SetValue(&value_);
+  }
+
  private:
   const std::string GetTypeCore(char value) {
     return kCharClassName;

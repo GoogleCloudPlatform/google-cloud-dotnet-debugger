@@ -192,6 +192,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // All the enumerated items will be stored in vector result.
   // Even if HRESULT returned is not SUCCEED, the result array may
   // be filled too.
+  // TODO(quoct): Move this to i_cor_debug_helper file.
   template <typename ICorDebugSpecifiedTypeEnum,
             typename ICorDebugSpecifiedType>
   static HRESULT EnumerateICorDebugSpecifiedType(
