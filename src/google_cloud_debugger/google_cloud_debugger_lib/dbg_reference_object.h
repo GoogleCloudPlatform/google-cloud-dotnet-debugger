@@ -32,7 +32,7 @@ class DbgReferenceObject : public DbgObject {
 
   // Returns object_handle_.
   virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
-      ICorDebugEval *debug_eval) override;
+                                    ICorDebugEval *debug_eval) override;
 
   // Returns the underlying ICorDebugHandleValue for this object.
   HRESULT GetDebugHandle(ICorDebugHandleValue **result);
