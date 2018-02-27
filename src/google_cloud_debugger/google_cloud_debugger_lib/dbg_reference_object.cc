@@ -109,17 +109,11 @@ HRESULT DbgReferenceObject::GetICorDebugValue(
     object_handle_->AddRef();
     return S_OK;
   }
-  return E_INVALIDARG;
+  return E_FAIL;
 }
 
 HRESULT DbgReferenceObject::GetDebugHandle(ICorDebugHandleValue **result) {
-  if (!object_handle_) {
-    return E_FAIL;
-  }
-
-  *result = object_handle_;
-  object_handle_->AddRef();
-  return S_OK;
+  return GetICorDebugValue(reinterpret_cast<ICorDebugValue **>(result), nullptr);
 }
 
 }

@@ -80,6 +80,7 @@ class DbgPrimitive : public DbgObject {
       return hr;
     }
 
+    SetCorElementType(value_);
     return generic_value->GetValue(&value_);
   }
 
@@ -125,7 +126,6 @@ class DbgPrimitive : public DbgObject {
       return E_INVALIDARG;
     }
 
-    SetCorElementType(value_);
     HRESULT hr = debug_eval->CreateValue(element_type_, nullptr,
         debug_value);
     if (FAILED(hr)) {
