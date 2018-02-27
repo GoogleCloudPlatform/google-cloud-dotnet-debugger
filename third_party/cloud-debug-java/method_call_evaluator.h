@@ -19,8 +19,9 @@
 
 #include <vector>
 
-#include "cordebug.h"
+#include "ccomptr.h"
 #include "common.h"
+#include "cordebug.h"
 #include "expression_evaluator.h"
 #include "method_info.h"
 #include "type_signature.h"
@@ -48,18 +49,29 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   HRESULT Compile(DbgStackFrame *stack_frame,
                   std::ostream *err_stream) override;
 
-  const TypeSignature& GetStaticType() const override { return return_type_; }
+  const TypeSignature &GetStaticType() const override { return return_type_; }
 
-  HRESULT Evaluate(std::shared_ptr<DbgObject>* dbg_object,
-                   IEvalCoordinator* eval_coordinator,
-                   std::ostream* err_stream) const override;
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
+                   IEvalCoordinator *eval_coordinator,
+                   std::ostream *err_stream) const override;
 
  private:
-  // Gets method method_name_ from class with name class_name.
-  // This will set ICorDebugFunction matched_method_ if such a method
+  // Helper method to evaluate arguments of the method call
+  // and return the result in arg_debug_values.
+  HRESULT EvaluateArgumentsHelper(
+      std::vector<ICorDebugValue *> *arg_debug_values,
+      ICorDebugEval *debug_eval,
+      IEvalCoordinator *eval_coordinator,
+      std::ostream *err_stream);
+
+  // Gets method method_info from class with name class_name.
+  // This will set ICorDebugFunction result_method if such a method
   // is found.
-  HRESULT GetMethodFromClassNameHelper(const std::string &class_name,
-     DbgStackFrame *stack_frame, std::ostream *err_stream);
+  HRESULT GetDebugFunctionFromClassNameHelper(const std::string &class_name,
+                                              DbgStackFrame *stack_frame,
+                                              MethodInfo *method_info,
+                                              ICorDebugFunction **result_method,
+                                              std::ostream *err_stream);
 
   // Gets the ICorDebugValue that represents the invoking object of
   // this method call.
