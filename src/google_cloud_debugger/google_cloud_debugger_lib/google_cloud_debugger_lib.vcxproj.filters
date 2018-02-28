@@ -82,9 +82,6 @@
     <ClCompile Include="variable_wrapper.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\cloud-debug-java\expression_util.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="compiler_helpers.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,9 +106,6 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\identifier_evaluator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\java_expression.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\method_call_evaluator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,9 +115,6 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\type_cast_operator_evaluator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\type_util.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\unary_expression_evaluator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -131,6 +122,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="method_info.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\csharp_expression.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -282,25 +276,16 @@
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\identifier_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\java_expression.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\literal_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\method_call_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\object_evaluator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\string_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\type_cast_operator_evaluator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\type_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\unary_expression_evaluator.h">
@@ -310,6 +295,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="method_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\csharp_expression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
