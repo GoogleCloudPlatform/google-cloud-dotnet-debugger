@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_EVALUATOR_H_
+#ifndef EXPRESSION_EVALUATOR_H_
+#define EXPRESSION_EVALUATOR_H_
 
 #include <memory>
 #include <string>
@@ -67,6 +67,6 @@ class ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_EVALUATOR_H_
+#endif  // EXPRESSION_EVALUATOR_H_
 
 

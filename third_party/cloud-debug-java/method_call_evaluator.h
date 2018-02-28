@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
+#ifndef METHOD_CALL_EVALUATOR_H_
+#define METHOD_CALL_EVALUATOR_H_
 
 #include <vector>
 
@@ -127,4 +127,4 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
+#endif  // METHOD_CALL_EVALUATOR_H_
