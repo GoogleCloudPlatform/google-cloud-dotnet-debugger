@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_TYPE_CAST_OPERATOR_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_TYPE_CAST_OPERATOR_EVALUATOR_H_
+#ifndef TYPE_CAST_OPERATOR_EVALUATOR_H_
+#define TYPE_CAST_OPERATOR_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
-#include "java_expression.h"
+#include "csharp_expression.h"
 #include "type_signature.h"
 
 namespace google_cloud_debugger {
@@ -108,4 +108,4 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_TYPE_CAST_OPERATOR_EVALUATOR_H_
+#endif  // TYPE_CAST_OPERATOR_EVALUATOR_H_

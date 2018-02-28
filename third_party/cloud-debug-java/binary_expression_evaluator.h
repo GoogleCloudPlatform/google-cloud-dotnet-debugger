@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_BINARY_EXPRESSION_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_BINARY_EXPRESSION_EVALUATOR_H_
+#ifndef BINARY_EXPRESSION_EVALUATOR_H_
+#define BINARY_EXPRESSION_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
-#include "java_expression.h"
+#include "csharp_expression.h"
 
 namespace google_cloud_debugger {
 
-// Implements all Java binary operators.
+// Implements all CSharp binary operators.
 class BinaryExpressionEvaluator : public ExpressionEvaluator {
  public:
   // Class constructor. The instance will own "arg1" and "arg2". These are
   // expected to be uninitialized at this point.
   BinaryExpressionEvaluator(
-      BinaryJavaExpression::Type type,
+      BinaryCSharpExpression::Type type,
       std::unique_ptr<ExpressionEvaluator> arg1,
       std::unique_ptr<ExpressionEvaluator> arg2);
 
@@ -132,7 +132,7 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
 
  private:
   // Binary expression type (e.g. + or <<).
-  const BinaryJavaExpression::Type type_;
+  const BinaryCSharpExpression::Type type_;
 
   // Compiled expression corresponding to the first operand.
   std::unique_ptr<ExpressionEvaluator> arg1_;
@@ -157,4 +157,4 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_BINARY_EXPRESSION_EVALUATOR_H_
+#endif  // BINARY_EXPRESSION_EVALUATOR_H_

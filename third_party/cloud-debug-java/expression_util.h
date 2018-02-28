@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_UTIL_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_UTIL_H_
+#ifndef EXPRESSION_UTIL_H_
+#define EXPRESSION_UTIL_H_
 
 #include <memory>
+#include <string>
 #include "common.h"
-#include "model.h"
 
-namespace devtools {
-namespace cdbg {
+namespace google_cloud_debugger {
 
 class ExpressionEvaluator;
-class ReadersFactory;
+class DbgStackFrame;
 
 // Some limit on expression length to prevent DoS inadvertently caused by
 // expressions that take too much time and memory to compile and evaluate.
@@ -39,12 +38,8 @@ struct CompiledExpression {
   // expression could not be compiled, "evaluator" will be set to null.
   std::unique_ptr<ExpressionEvaluator> evaluator;
 
-  // Error message explaining why the expression could not be compiled. Only
-  // relevant if "evaluator" is null.
-  FormatMessageModel error_message;
-
   // Original expression text.
-  string expression;
+  std::string expression;
 };
 
 // Shortcut method to tokenize, parse, tree-walk and compile the specified
@@ -52,13 +47,9 @@ struct CompiledExpression {
 // semantically incorrect expression). In such cases, "error_message" is
 // populated with a human readable parameterized description of why the
 // expression could not be compiled.
-CompiledExpression CompileExpression(
-    const string& string_expression,
-    ReadersFactory* readers_factory);
+CompiledExpression CompileExpression(const std::string& string_expression,
+                                     DbgStackFrame* stack_frame);
 
-}  // namespace cdbg
-}  // namespace devtools
+}  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_EXPRESSION_UTIL_H_
-
-
+#endif  // EXPRESSION_UTIL_H_

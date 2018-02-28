@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "java_expression.h"
+#include "csharp_expression.h"
 
 #include <iomanip>
 #include "array_expression_evaluator.h"
@@ -24,23 +24,24 @@
 #include "field_evaluator.h"
 #include "identifier_evaluator.h"
 #include "literal_evaluator.h"
-#include "messages.h"
 #include "method_call_evaluator.h"
-#include "model.h"
 #include "string_evaluator.h"
 #include "type_cast_operator_evaluator.h"
 #include "unary_expression_evaluator.h"
+#include "dbg_primitive.h"
+
+using std::string;
 
 namespace google_cloud_debugger {
 
-// Single character de-escaping for "UnescapeJavaString". Returns the de-escaped
+// Single character de-escaping for "UnescapeCSharpString". Returns the de-escaped
 // character and iterator to the next byte in the input sequence.
 static void UnescapeCharacter(
     string::const_iterator it,
     string::const_iterator end,
-    jchar* unicode_character,
+    char* unicode_character,
     string::const_iterator* next) {
-  DCHECK(it < end);
+  assert(it < end);
 
   if ((*it == '\\') && (it + 1 != end)) {
     switch (*(it + 1)) {
@@ -141,17 +142,17 @@ static void UnescapeCharacter(
   *next = it + 1;
 }
 
-// Converts escaped ASCII string to Java Unicode string. Escaping includes:
+// Converts escaped ASCII string to CSharp Unicode string. Escaping includes:
 //    1. C-style escape codes: \r, \n, \\.
 //    2. Octal escape codes: \3, \71, \152.
 //    3. Uncode escape codes: \u883C.
-static std::vector<jchar> UnescapeJavaString(const string& escaped_string) {
-  std::vector<jchar> unicode_string;
+static std::vector<char> UnescapeCSharpString(const string& escaped_string) {
+  std::vector<char> unicode_string;
   unicode_string.reserve(escaped_string.size());  // Pessimistic estimation.
 
   auto it = escaped_string.begin();
   while (it != escaped_string.end()) {
-    jchar unicode_character = 0;
+    char unicode_character = 0;
     string::const_iterator next;
     UnescapeCharacter(it, escaped_string.end(), &unicode_character, &next);
 
@@ -166,9 +167,9 @@ static std::vector<jchar> UnescapeJavaString(const string& escaped_string) {
 // Prints single expression to a stream.
 static void SafePrintChild(
     std::ostream* os,
-    JavaExpression* expression,
+    CSharpExpression* expression,
     bool concise) {
-  DCHECK(expression != nullptr);
+  assert(expression != nullptr);
   if (expression == nullptr) {
     (*os) << "<NULL>";
   } else {
@@ -177,9 +178,9 @@ static void SafePrintChild(
 }
 
 
-// Escapes and prints a single Java Unicode character. This function is only
+// Escapes and prints a single CSharp Unicode character. This function is only
 // used for debugging purposes.
-static void PrintCharacter(std::ostream* os, jchar ch) {
+static void PrintCharacter(std::ostream* os, char ch) {
   if ((ch >= ' ') &&
       (ch < 127) &&
       (ch != '\\') &&
@@ -198,17 +199,17 @@ static void PrintCharacter(std::ostream* os, jchar ch) {
 }
 
 
-ConditionalJavaExpression::ConditionalJavaExpression(
-    JavaExpression* condition,
-    JavaExpression* if_true,
-    JavaExpression* if_false)
+ConditionalCSharpExpression::ConditionalCSharpExpression(
+    CSharpExpression* condition,
+    CSharpExpression* if_true,
+    CSharpExpression* if_false)
     : condition_(condition),
       if_true_(if_true),
       if_false_(if_false) {
 }
 
 
-void ConditionalJavaExpression::Print(std::ostream* os, bool concise) {
+void ConditionalCSharpExpression::Print(std::ostream* os, bool concise) {
   if (!concise) {
     (*os) << '(';
   }
@@ -225,7 +226,7 @@ void ConditionalJavaExpression::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression ConditionalJavaExpression::CreateEvaluator() {
+CompiledExpression ConditionalCSharpExpression::CreateEvaluator() {
   CompiledExpression comp_condition = condition_->CreateEvaluator();
   if (comp_condition.evaluator == nullptr) {
     return comp_condition;
@@ -251,17 +252,17 @@ CompiledExpression ConditionalJavaExpression::CreateEvaluator() {
 }
 
 
-BinaryJavaExpression::BinaryJavaExpression(
+BinaryCSharpExpression::BinaryCSharpExpression(
     Type type,
-    JavaExpression* a,
-    JavaExpression* b)
+    CSharpExpression* a,
+    CSharpExpression* b)
     : type_(type),
       a_(a),
       b_(b) {
 }
 
 
-void BinaryJavaExpression::Print(std::ostream* os, bool concise) {
+void BinaryCSharpExpression::Print(std::ostream* os, bool concise) {
   if (!concise) {
     (*os) << '(';
   }
@@ -356,7 +357,7 @@ void BinaryJavaExpression::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression BinaryJavaExpression::CreateEvaluator() {
+CompiledExpression BinaryCSharpExpression::CreateEvaluator() {
   CompiledExpression arg1 = a_->CreateEvaluator();
   if (arg1.evaluator == nullptr) {
     return arg1;
@@ -377,13 +378,13 @@ CompiledExpression BinaryJavaExpression::CreateEvaluator() {
 }
 
 
-UnaryJavaExpression::UnaryJavaExpression(Type type, JavaExpression* a)
+UnaryCSharpExpression::UnaryCSharpExpression(Type type, CSharpExpression* a)
     : type_(type),
       a_(a) {
 }
 
 
-void UnaryJavaExpression::Print(std::ostream* os, bool concise) {
+void UnaryCSharpExpression::Print(std::ostream* os, bool concise) {
   switch (type_) {
     case Type::plus:
       (*os) << '+';
@@ -406,7 +407,7 @@ void UnaryJavaExpression::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression UnaryJavaExpression::CreateEvaluator() {
+CompiledExpression UnaryCSharpExpression::CreateEvaluator() {
   CompiledExpression arg = a_->CreateEvaluator();
   if (arg.evaluator == nullptr) {
     return arg;
@@ -419,15 +420,15 @@ CompiledExpression UnaryJavaExpression::CreateEvaluator() {
 }
 
 
-bool JavaIntLiteral::ParseString(const string& str, int base) {
+bool CSharpIntLiteral::ParseString(const string& str, int base) {
   const char* node_cstr = str.c_str();
   char* literal_end = nullptr;
 
   errno = 0;
   n_ = strtoll(node_cstr, &literal_end, base);  // NOLINT
   if (errno == ERANGE) {
-    LOG(WARNING) << "Number " << str << " in base " << base
-                 << " could not be parsed";
+    std::cerr << "Number " << str << " in base " << base
+              << " could not be parsed";
     return false;
   }
 
@@ -437,14 +438,14 @@ bool JavaIntLiteral::ParseString(const string& str, int base) {
   }
 
   if (*literal_end != '\0') {
-    LOG(WARNING) << "Unexpected trailing characters after number parser: "
-                 << str;
+    std::cerr << "Unexpected trailing characters after number parser: "
+              << str;
     return false;
   }
 
   if (!is_long_) {
-    if (static_cast<jint>(n_) != n_) {
-      LOG(WARNING) << "Number can't be represented as jint: " << str;
+    if (static_cast<std::int32_t>(n_) != n_) {
+      std::cerr << "Number can't be represented as int32: " << str;
       return false;
     }
   }
@@ -453,7 +454,7 @@ bool JavaIntLiteral::ParseString(const string& str, int base) {
 }
 
 
-void JavaIntLiteral::Print(std::ostream* os, bool concise) {
+void CSharpIntLiteral::Print(std::ostream* os, bool concise) {
   if (!concise) {
     if (is_long_) {
       (*os) << "<long>";
@@ -470,22 +471,22 @@ void JavaIntLiteral::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaIntLiteral::CreateEvaluator() {
+CompiledExpression CSharpIntLiteral::CreateEvaluator() {
   if (is_long_) {
-    JVariant value = JVariant::Long(n_);
+    std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<int64_t>(n_));
     return {
-      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
     };
-  } else {
-    JVariant value = JVariant::Int(static_cast<jint>(n_));
+  }
+  else {
+    std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<int32_t>(n_));
     return {
-      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
     };
   }
 }
 
-
-bool JavaFloatLiteral::ParseString(const string& str) {
+bool CSharpFloatLiteral::ParseString(const string& str) {
   const char* node_cstr = str.c_str();
   char* literal_end = nullptr;
 
@@ -506,7 +507,7 @@ bool JavaFloatLiteral::ParseString(const string& str) {
 }
 
 
-void JavaFloatLiteral::Print(std::ostream* os, bool concise) {
+void CSharpFloatLiteral::Print(std::ostream* os, bool concise) {
   if (!concise) {
     if (!is_double_) {
       (*os) << "<float>";
@@ -523,34 +524,34 @@ void JavaFloatLiteral::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaFloatLiteral::CreateEvaluator() {
+CompiledExpression CSharpFloatLiteral::CreateEvaluator() {
   if (is_double_) {
-    JVariant value = JVariant::Double(d_);
+    std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<double_t>(d_));
     return {
-      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
     };
   } else {
-    JVariant value = JVariant::Float(static_cast<jfloat>(d_));
+    std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<float_t>(d_));
     return {
-      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+      std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
     };
   }
 }
 
 
-bool JavaCharLiteral::ParseString(const string& str) {
-  std::vector<jchar> java_str = UnescapeJavaString(str);
-  if (java_str.size() != 1) {
+bool CSharpCharLiteral::ParseString(const string& str) {
+  std::vector<char> CSharp_str = UnescapeCSharpString(str);
+  if (CSharp_str.size() != 1) {
     return false;
   }
 
-  ch_ = java_str[0];
+  ch_ = CSharp_str[0];
 
   return true;
 }
 
 
-void JavaCharLiteral::Print(std::ostream* os, bool concise) {
+void CSharpCharLiteral::Print(std::ostream* os, bool concise) {
   if (!concise) {
     (*os) << "<char>'";
   } else {
@@ -567,24 +568,25 @@ void JavaCharLiteral::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaCharLiteral::CreateEvaluator() {
-  JVariant value = JVariant::Char(ch_);
+CompiledExpression CSharpCharLiteral::CreateEvaluator() {
+  std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<char>(ch_));
   return {
-    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
   };
 }
 
 
-bool JavaStringLiteral::ParseString(const string& str) {
-  str_ = UnescapeJavaString(str);
+bool CSharpStringLiteral::ParseString(const string& str) {
+  std::vector<char> unescaped_char_vec = UnescapeCSharpString(str);
+  str_ = std::string(unescaped_char_vec.begin(), unescaped_char_vec.end());
   return true;
 }
 
 
-void JavaStringLiteral::Print(std::ostream* os, bool concise) {
+void CSharpStringLiteral::Print(std::ostream* os, bool concise) {
   (*os) << '"';
 
-  for (jchar ch : str_) {
+  for (char ch : str_) {
     PrintCharacter(os, ch);
   }
 
@@ -592,20 +594,20 @@ void JavaStringLiteral::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaStringLiteral::CreateEvaluator() {
+CompiledExpression CSharpStringLiteral::CreateEvaluator() {
   return {
     std::unique_ptr<ExpressionEvaluator>(new StringEvaluator(str_))
   };
 }
 
 
-void JavaBooleanLiteral::Print(std::ostream* os, bool concise) {
+void CSharpBooleanLiteral::Print(std::ostream* os, bool concise) {
   switch (n_) {
-    case JNI_FALSE:
+    case false:
       (*os) << "false";
       break;
 
-    case JNI_TRUE:
+    case true:
       (*os) << "true";
       break;
 
@@ -616,28 +618,28 @@ void JavaBooleanLiteral::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaBooleanLiteral::CreateEvaluator() {
-  JVariant value = JVariant::Boolean(n_);
+CompiledExpression CSharpBooleanLiteral::CreateEvaluator() {
+  std::shared_ptr<DbgObject> literal_obj(new DbgPrimitive<bool>(n_));
   return {
-    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(literal_obj))
   };
 }
 
 
-void JavaNullLiteral::Print(std::ostream* os, bool concise) {
+void CSharpNullLiteral::Print(std::ostream* os, bool concise) {
   (*os) << "null";
 }
 
 
-CompiledExpression JavaNullLiteral::CreateEvaluator() {
-  JVariant value = JVariant::Null();
+CompiledExpression CSharpNullLiteral::CreateEvaluator() {
+  std::shared_ptr<DbgObject> null_obj(new DbgNullObject());
   return {
-    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(&value))
+    std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(null_obj))
   };
 }
 
 
-void JavaIdentifier::Print(std::ostream* os, bool concise) {
+void CSharpIdentifier::Print(std::ostream* os, bool concise) {
   if (concise) {
     (*os) << identifier_;
   } else {
@@ -646,20 +648,20 @@ void JavaIdentifier::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaIdentifier::CreateEvaluator() {
+CompiledExpression CSharpIdentifier::CreateEvaluator() {
   return {
     std::unique_ptr<ExpressionEvaluator>(new IdentifierEvaluator(identifier_))
   };
 }
 
 
-bool JavaIdentifier::TryGetTypeName(string* name) const {
+bool CSharpIdentifier::TryGetTypeName(string* name) const {
   *name = identifier_;
   return true;
 }
 
 
-void TypeCastJavaExpression::Print(std::ostream* os, bool concise) {
+void TypeCastCSharpExpression::Print(std::ostream* os, bool concise) {
   if (concise) {
     (*os) << '(' << type_ << ") ";
   } else {
@@ -674,7 +676,7 @@ void TypeCastJavaExpression::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression TypeCastJavaExpression::CreateEvaluator() {
+CompiledExpression TypeCastCSharpExpression::CreateEvaluator() {
   CompiledExpression arg = source_->CreateEvaluator();
   if (arg.evaluator == nullptr) {
     return arg;
@@ -687,7 +689,7 @@ CompiledExpression TypeCastJavaExpression::CreateEvaluator() {
 }
 
 
-void JavaExpressionIndexSelector::Print(std::ostream* os, bool concise) {
+void CSharpExpressionIndexSelector::Print(std::ostream* os, bool concise) {
   SafePrintChild(os, source_.get(), concise);
 
   (*os) << '[';
@@ -696,7 +698,7 @@ void JavaExpressionIndexSelector::Print(std::ostream* os, bool concise) {
 }
 
 
-CompiledExpression JavaExpressionIndexSelector::CreateEvaluator() {
+CompiledExpression CSharpExpressionIndexSelector::CreateEvaluator() {
   CompiledExpression source_evaluator = source_->CreateEvaluator();
   if (source_evaluator.evaluator == nullptr) {
     return source_evaluator;
@@ -716,14 +718,14 @@ CompiledExpression JavaExpressionIndexSelector::CreateEvaluator() {
 }
 
 
-void JavaExpressionMemberSelector::Print(std::ostream* os, bool concise) {
+void CSharpExpressionMemberSelector::Print(std::ostream* os, bool concise) {
   SafePrintChild(os, source_.get(), concise);
 
   (*os) << '.' << member_;
 }
 
 
-CompiledExpression JavaExpressionMemberSelector::CreateEvaluator() {
+CompiledExpression CSharpExpressionMemberSelector::CreateEvaluator() {
   CompiledExpression source_evaluator = source_->CreateEvaluator();
   if (source_evaluator.evaluator == nullptr) {
     return source_evaluator;
@@ -750,7 +752,7 @@ CompiledExpression JavaExpressionMemberSelector::CreateEvaluator() {
 }
 
 
-bool JavaExpressionMemberSelector::TryGetTypeName(
+bool CSharpExpressionMemberSelector::TryGetTypeName(
     string* name) const {
   if (!source_->TryGetTypeName(name)) {
     return false;
@@ -811,13 +813,13 @@ CompiledExpression MethodCallExpression::CreateEvaluator() {
     }
 
     if (!source_->TryGetTypeName(&possible_class_name)) {
-      VLOG(1) << "Couldn't retrieve type name, method: " << method_;
+      std::cerr << "Couldn't retrieve type name, method: " << method_;
       possible_class_name.clear();
     }
   }
 
   std::vector<std::unique_ptr<ExpressionEvaluator>> argument_evaluators;
-  for (std::unique_ptr<JavaExpression>& argument : *arguments_) {
+  for (std::unique_ptr<CSharpExpression>& argument : *arguments_) {
     CompiledExpression argument_evaluator = argument->CreateEvaluator();
     if (argument_evaluator.evaluator == nullptr) {
       return argument_evaluator;

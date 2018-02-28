@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_LITERAL_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_LITERAL_EVALUATOR_H_
+#ifndef LITERAL_EVALUATOR_H_
+#define LITERAL_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
@@ -57,6 +57,6 @@ class LiteralEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_LITERAL_EVALUATOR_H_
+#endif  // LITERAL_EVALUATOR_H_
 
 

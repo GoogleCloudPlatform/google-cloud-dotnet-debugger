@@ -68,7 +68,7 @@ static bool IsDivisionOverflow(double_t value1, double_t value2) {
 }
 
 BinaryExpressionEvaluator::BinaryExpressionEvaluator(
-    BinaryJavaExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg1,
+    BinaryCSharpExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg1,
     std::unique_ptr<ExpressionEvaluator> arg2)
     : type_(type),
       arg1_(std::move(arg1)),
@@ -91,33 +91,33 @@ HRESULT BinaryExpressionEvaluator::Compile(DbgStackFrame *readers_factory,
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::add:
-    case BinaryJavaExpression::Type::sub:
-    case BinaryJavaExpression::Type::mul:
-    case BinaryJavaExpression::Type::div:
-    case BinaryJavaExpression::Type::mod:
+    case BinaryCSharpExpression::Type::add:
+    case BinaryCSharpExpression::Type::sub:
+    case BinaryCSharpExpression::Type::mul:
+    case BinaryCSharpExpression::Type::div:
+    case BinaryCSharpExpression::Type::mod:
       return CompileArithmetical(error_stream);
 
-    case BinaryJavaExpression::Type::eq:
-    case BinaryJavaExpression::Type::ne:
-    case BinaryJavaExpression::Type::le:
-    case BinaryJavaExpression::Type::ge:
-    case BinaryJavaExpression::Type::lt:
-    case BinaryJavaExpression::Type::gt:
+    case BinaryCSharpExpression::Type::eq:
+    case BinaryCSharpExpression::Type::ne:
+    case BinaryCSharpExpression::Type::le:
+    case BinaryCSharpExpression::Type::ge:
+    case BinaryCSharpExpression::Type::lt:
+    case BinaryCSharpExpression::Type::gt:
       return CompileRelational(error_stream);
 
-    case BinaryJavaExpression::Type::conditional_and:
-    case BinaryJavaExpression::Type::conditional_or:
+    case BinaryCSharpExpression::Type::conditional_and:
+    case BinaryCSharpExpression::Type::conditional_or:
       return CompileBooleanConditional(error_stream);
 
-    case BinaryJavaExpression::Type::bitwise_and:
-    case BinaryJavaExpression::Type::bitwise_or:
-    case BinaryJavaExpression::Type::bitwise_xor:
+    case BinaryCSharpExpression::Type::bitwise_and:
+    case BinaryCSharpExpression::Type::bitwise_or:
+    case BinaryCSharpExpression::Type::bitwise_xor:
       return CompileLogical(error_stream);
 
-    case BinaryJavaExpression::Type::shl:
-    case BinaryJavaExpression::Type::shr_s:
-    case BinaryJavaExpression::Type::shr_u:
+    case BinaryCSharpExpression::Type::shl:
+    case BinaryCSharpExpression::Type::shr_s:
+    case BinaryCSharpExpression::Type::shr_u:
       return CompileShift(error_stream);
     default:
       // Compiler should catch any missing enums. We should never get here.
@@ -223,8 +223,8 @@ HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
   }
 
   // We don't support the other expressions if the types are not numeric.
-  if (type_ != BinaryJavaExpression::Type::eq &&
-      type_ != BinaryJavaExpression::Type::ne) {
+  if (type_ != BinaryCSharpExpression::Type::eq &&
+      type_ != BinaryCSharpExpression::Type::ne) {
     *err_stream << kExpressionNotSupported;
     return E_NOTIMPL;
   }
@@ -366,7 +366,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
   }
 
   // For this special case, don't evaluate the second obj.
-  if (type_ == BinaryJavaExpression::Type::conditional_and) {
+  if (type_ == BinaryCSharpExpression::Type::conditional_and) {
     bool boolean1;
     HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
         arg1_obj.get(), &boolean1);
@@ -381,7 +381,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
     }
     // Otherwise, proceeds to evaluate the second operand.
   }
-  else if (type_ == BinaryJavaExpression::Type::conditional_or) {
+  else if (type_ == BinaryCSharpExpression::Type::conditional_or) {
     bool boolean1;
     HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
         arg1_obj.get(), &boolean1);
@@ -426,23 +426,23 @@ HRESULT BinaryExpressionEvaluator::ArithmeticComputer(
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::add: {
+    case BinaryCSharpExpression::Type::add: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 + value2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::sub: {
+    case BinaryCSharpExpression::Type::sub: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 - value2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::mul: {
+    case BinaryCSharpExpression::Type::mul: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 * value2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::mod:
-    case BinaryJavaExpression::Type::div:
+    case BinaryCSharpExpression::Type::mod:
+    case BinaryCSharpExpression::Type::div:
       if (IsDivisionByZero(value2)) {
         return E_INVALIDARG;
       }
@@ -451,7 +451,7 @@ HRESULT BinaryExpressionEvaluator::ArithmeticComputer(
         return E_INVALIDARG;
       }
 
-      if (type_ == BinaryJavaExpression::Type::div) {
+      if (type_ == BinaryCSharpExpression::Type::div) {
         *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 / value2));
         return S_OK;
       } else {
@@ -483,17 +483,17 @@ HRESULT BinaryExpressionEvaluator::BitwiseComputer(
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::bitwise_and: {
+    case BinaryCSharpExpression::Type::bitwise_and: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 & value2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::bitwise_or: {
+    case BinaryCSharpExpression::Type::bitwise_or: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 | value2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::bitwise_xor: {
+    case BinaryCSharpExpression::Type::bitwise_xor: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 ^ value2));
       return S_OK;
     }
@@ -533,13 +533,13 @@ HRESULT BinaryExpressionEvaluator::ShiftComputer(
   value2 &= Bitmask;
 
   switch (type_) {
-    case BinaryJavaExpression::Type::shl: {
+    case BinaryCSharpExpression::Type::shl: {
       value1 = value1 << value2;
       break;
     }
 
-    case BinaryJavaExpression::Type::shr_s:
-    case BinaryJavaExpression::Type::shr_u: {
+    case BinaryCSharpExpression::Type::shr_s:
+    case BinaryCSharpExpression::Type::shr_u: {
       value1 = value1 >> value2;
       break;
     }
@@ -558,12 +558,12 @@ HRESULT BinaryExpressionEvaluator::ConditionalObjectComputer(
   bool has_same_address = arg1->GetAddress() == arg2->GetAddress();
 
   switch (type_) {
-    case BinaryJavaExpression::Type::eq: {
+    case BinaryCSharpExpression::Type::eq: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(has_same_address));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::ne: {
+    case BinaryCSharpExpression::Type::ne: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(has_same_address));
       return S_OK;
     }
@@ -592,12 +592,12 @@ HRESULT BinaryExpressionEvaluator::ConditionalStringComputer(
   const bool is_equal = first_string.compare(second_string) == 0;
 
   switch (type_) {
-    case BinaryJavaExpression::Type::eq: {
+    case BinaryCSharpExpression::Type::eq: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(is_equal));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::ne: {
+    case BinaryCSharpExpression::Type::ne: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(!is_equal));
       return S_OK;
     }
@@ -626,25 +626,25 @@ HRESULT BinaryExpressionEvaluator::ConditionalBooleanComputer(
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::conditional_and:
-    case BinaryJavaExpression::Type::bitwise_and: {
+    case BinaryCSharpExpression::Type::conditional_and:
+    case BinaryCSharpExpression::Type::bitwise_and: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 && boolean2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::conditional_or:
-    case BinaryJavaExpression::Type::bitwise_or: {
+    case BinaryCSharpExpression::Type::conditional_or:
+    case BinaryCSharpExpression::Type::bitwise_or: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 || boolean2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::eq: {
+    case BinaryCSharpExpression::Type::eq: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 == boolean2));
       return S_OK;
     }
 
-    case BinaryJavaExpression::Type::ne:
-    case BinaryJavaExpression::Type::bitwise_xor: {
+    case BinaryCSharpExpression::Type::ne:
+    case BinaryCSharpExpression::Type::bitwise_xor: {
       *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(boolean1 != boolean2));
       return S_OK;
     }
@@ -673,23 +673,23 @@ HRESULT BinaryExpressionEvaluator::NumericalComparisonComputer(
   }
 
   switch (type_) {
-    case BinaryJavaExpression::Type::eq:
+    case BinaryCSharpExpression::Type::eq:
       return JVariant::Boolean(value1 == value2);
 
-    case BinaryJavaExpression::Type::ne:
-    case BinaryJavaExpression::Type::bitwise_xor:
+    case BinaryCSharpExpression::Type::ne:
+    case BinaryCSharpExpression::Type::bitwise_xor:
       return JVariant::Boolean(value1 != value2);
 
-    case BinaryJavaExpression::Type::le:
+    case BinaryCSharpExpression::Type::le:
       return JVariant::Boolean(value1 <= value2);
 
-    case BinaryJavaExpression::Type::ge:
+    case BinaryCSharpExpression::Type::ge:
       return JVariant::Boolean(value1 >= value2);
 
-    case BinaryJavaExpression::Type::lt:
+    case BinaryCSharpExpression::Type::lt:
       return JVariant::Boolean(value1 < value2);
 
-    case BinaryJavaExpression::Type::gt:
+    case BinaryCSharpExpression::Type::gt:
       return JVariant::Boolean(value1 > value2);
 
     default:
