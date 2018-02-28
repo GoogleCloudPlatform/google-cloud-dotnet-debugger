@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_ARRAY_EXPRESSION_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_ARRAY_EXPRESSION_EVALUATOR_H_
+#ifndef ARRAY_EXPRESSION_EVALUATOR_H_
+#define ARRAY_EXPRESSION_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
@@ -69,6 +69,4 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_ARRAY_EXPRESSION_EVALUATOR_H_
-
-
+#endif  // ARRAY_EXPRESSION_EVALUATOR_H_

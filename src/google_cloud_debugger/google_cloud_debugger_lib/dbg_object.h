@@ -163,6 +163,27 @@ class DbgObject : public StringStreamWrapper {
   static const std::int32_t collection_size_;
 };
 
+class DbgNullObject : public DbgObject {
+ public:
+  DbgNullObject() : DbgObject(nullptr, 0) {
+    SetIsNull(TRUE);
+  }
+
+  // Inherited via DbgObject
+  virtual void Initialize(ICorDebugValue * debug_value, BOOL is_null) {}
+
+  HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+    ICorDebugEval *debug_eval) override {
+    return E_FAIL;
+  }
+
+  // Inherited via DbgObject
+  HRESULT GetTypeString(std::string *type_string) override {
+    *type_string = kObjectClassName;
+    return S_OK;
+  }
+};
+
 }  //  namespace google_cloud_debugger
 
 #endif  //  DBG_OBJECT_H_

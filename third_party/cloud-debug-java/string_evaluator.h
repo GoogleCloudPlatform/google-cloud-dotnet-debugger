@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_STRING_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_STRING_EVALUATOR_H_
+#ifndef STRING_EVALUATOR_H_
+#define STRING_EVALUATOR_H_
 
 #include <vector>
 
@@ -54,6 +54,6 @@ class StringEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_STRING_EVALUATOR_H_
+#endif  // STRING_EVALUATOR_H_
 
 
