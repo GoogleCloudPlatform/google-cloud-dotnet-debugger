@@ -21,12 +21,11 @@
 #include "dbg_primitive.h"
 #include "error_messages.h"
 #include "type_signature.h"
-#include "numeric_cast_evaluator.h"
 
 namespace google_cloud_debugger {
 
 UnaryExpressionEvaluator::UnaryExpressionEvaluator(
-    UnaryJavaExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg)
+    UnaryCSharpExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg)
     : type_(type), arg_(std::move(arg)), computer_(nullptr) {
   result_type_ = TypeSignature::Object;
 }
@@ -40,14 +39,14 @@ HRESULT UnaryExpressionEvaluator::Compile(DbgStackFrame *stack_frame,
   }
 
   switch (type_) {
-    case UnaryJavaExpression::Type::plus:
-    case UnaryJavaExpression::Type::minus:
+    case UnaryCSharpExpression::Type::plus:
+    case UnaryCSharpExpression::Type::minus:
       return CompilePlusMinusOperators(err_stream);
 
-    case UnaryJavaExpression::Type::bitwise_complement:
+    case UnaryCSharpExpression::Type::bitwise_complement:
       return CompileBitwiseComplement(err_stream);
 
-    case UnaryJavaExpression::Type::logical_complement:
+    case UnaryCSharpExpression::Type::logical_complement:
       return CompileLogicalComplement(err_stream);
   }
 
@@ -56,9 +55,9 @@ HRESULT UnaryExpressionEvaluator::Compile(DbgStackFrame *stack_frame,
 
 HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
     std::ostream *err_stream) {
-  assert((type_ == UnaryJavaExpression::Type::plus) ||
-         (type_ == UnaryJavaExpression::Type::minus));
-  const bool is_plus = (type_ == UnaryJavaExpression::Type::plus);
+  assert((type_ == UnaryCSharpExpression::Type::plus) ||
+         (type_ == UnaryCSharpExpression::Type::minus));
+  const bool is_plus = (type_ == UnaryCSharpExpression::Type::plus);
   CorElementType cor_type = arg_->GetStaticType().cor_type;
 
   // Promote sbyte, byte, short, ushort or char to int.
@@ -117,7 +116,7 @@ HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
 
 HRESULT UnaryExpressionEvaluator::CompileBitwiseComplement(
     std::ostream *err_stream) {
-  assert(type_ == UnaryJavaExpression::Type::bitwise_complement);
+  assert(type_ == UnaryCSharpExpression::Type::bitwise_complement);
   CorElementType cor_type = arg_->GetStaticType().cor_type;
 
   // Promote sbyte, byte, short, ushort or char to int.
@@ -153,7 +152,7 @@ HRESULT UnaryExpressionEvaluator::CompileBitwiseComplement(
 
 HRESULT UnaryExpressionEvaluator::CompileLogicalComplement(
     std::ostream *err_stream) {
-  assert(type_ == UnaryJavaExpression::Type::logical_complement);
+  assert(type_ == UnaryCSharpExpression::Type::logical_complement);
   if (arg_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
     computer_ = LogicalComplementComputer;
     result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
