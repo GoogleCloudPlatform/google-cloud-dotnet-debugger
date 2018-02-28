@@ -19,8 +19,11 @@
 
 #include <vector>
 
+#include "ccomptr.h"
 #include "common.h"
+#include "cordebug.h"
 #include "expression_evaluator.h"
+#include "method_info.h"
 #include "type_signature.h"
 
 namespace google_cloud_debugger {
@@ -46,19 +49,54 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   HRESULT Compile(DbgStackFrame *stack_frame,
                   std::ostream *err_stream) override;
 
-  const TypeSignature& GetStaticType() const override { return return_type_; }
+  const TypeSignature &GetStaticType() const override { return return_type_; }
 
-  HRESULT Evaluate(std::shared_ptr<DbgObject>* dbg_object,
-                   IEvalCoordinator* eval_coordinator,
-                   std::ostream* err_stream) const override;
+  HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
+                   IEvalCoordinator *eval_coordinator,
+                   std::ostream *err_stream) const override;
 
  private:
+  // Helper method to evaluate arguments of the method call
+  // and return the result in arg_debug_values.
+  HRESULT EvaluateArgumentsHelper(
+      std::vector<ICorDebugValue *> *arg_debug_values,
+      ICorDebugEval *debug_eval,
+      IEvalCoordinator *eval_coordinator,
+      std::ostream *err_stream);
+
+  // Gets method method_info from class with name class_name.
+  // This will set ICorDebugFunction result_method if such a method
+  // is found.
+  HRESULT GetDebugFunctionFromClassNameHelper(const std::string &class_name,
+                                              DbgStackFrame *stack_frame,
+                                              MethodInfo *method_info,
+                                              ICorDebugFunction **result_method,
+                                              std::ostream *err_stream);
+
+  // Gets the ICorDebugValue that represents the invoking object of
+  // this method call.
+  HRESULT GetInvokingObject(ICorDebugValue **invoking_object,
+                            IEvalCoordinator *eval_coordinator,
+                            std::ostream *err_stream) const;
+
+  // Given a class object, populates generic_class_types_
+  // with the generic types from the class object.
+  HRESULT PopulateGenericClassTypesFromClassObject(
+      ICorDebugValue *class_object,
+      std::vector<CComPtr<ICorDebugType>> *generic_types,
+      std::ostream *err_stream) const;
+
   // Method name (whether it's an instance method or a static method).
   const string method_name_;
 
   // Source object on which the instance method is invoked. Ignored if the
   // call turns out to be to a static method.
   std::unique_ptr<ExpressionEvaluator> instance_source_;
+
+  // This only applies for non-static method.
+  // True if the instance_source_ is the invoking object.
+  // Otherwise, "this" will be the invoking object.
+  bool instance_source_is_invoking_obj_ = false;
 
   // Fully qualified class name to try to interpret "method_name_" as a static
   // method.
@@ -73,6 +111,13 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
   // The ICorDebugFunction that represents the method being called.
   CComPtr<ICorDebugFunction> matched_method_;
+
+  // Generic type parameters for the class that the method is in.
+  // TODO(quoct): Add support for generic method.
+  std::vector<CComPtr<ICorDebugType>> generic_class_types_;
+
+  // The MethodInfo that represents the method being invoked.
+  MethodInfo method_info_;
 
   // Return value of the method.
   TypeSignature return_type_;

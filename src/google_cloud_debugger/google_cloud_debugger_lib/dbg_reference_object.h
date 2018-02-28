@@ -30,6 +30,13 @@ class DbgReferenceObject : public DbgObject {
   virtual HRESULT GetNonStaticField(const std::string &field_name,
                                     std::shared_ptr<DbgObject> *field_value);
 
+  // Returns object_handle_.
+  virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+                                    ICorDebugEval *debug_eval) override;
+
+  // Returns the underlying ICorDebugHandleValue for this object.
+  HRESULT GetDebugHandle(ICorDebugHandleValue **result);
+
  protected:
   // Handle for the object.
   // Only applicable for class, array and string.

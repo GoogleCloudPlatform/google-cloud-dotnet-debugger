@@ -289,7 +289,7 @@ HRESULT DbgClass::GetNonStaticField(const std::string &field_name,
     return S_OK;
   }
 
-  return DbgObject::GetNonStaticField(field_name, field_value);
+  return DbgReferenceObject::GetNonStaticField(field_name, field_value);
 }
 
 HRESULT DbgClass::ProcessParameterizedType() {
