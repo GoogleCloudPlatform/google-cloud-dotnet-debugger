@@ -18,7 +18,7 @@
 
 #include "compiler_helpers.h"
 #include "dbg_class_property.h"
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 #include "dbg_stack_frame.h"
 #include "error_messages.h"
 
@@ -165,7 +165,12 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
 
   // We can directly get the field/non-auto property without function evaluation.
   if (class_property_ == nullptr) {
-    return source_obj->GetNonStaticField(field_name_, dbg_object);
+    DbgReferenceObject *reference_object = dynamic_cast<DbgReferenceObject *>(source_obj.get());
+    if (!reference_object) {
+      return E_FAIL;
+    }
+
+    return reference_object->GetNonStaticField(field_name_, dbg_object);
   }
 
   // TODO(quoct): OTHERWISE, HANDLE FUNCTION EVALUATION FOR STATIC PROPERTY.

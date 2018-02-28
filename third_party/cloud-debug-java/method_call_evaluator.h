@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
+#ifndef METHOD_CALL_EVALUATOR_H_
+#define METHOD_CALL_EVALUATOR_H_
 
 #include <vector>
 
@@ -87,7 +87,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
       std::ostream *err_stream) const;
 
   // Method name (whether it's an instance method or a static method).
-  const string method_name_;
+  const std::string method_name_;
 
   // Source object on which the instance method is invoked. Ignored if the
   // call turns out to be to a static method.
@@ -100,7 +100,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
   // Fully qualified class name to try to interpret "method_name_" as a static
   // method.
-  const string possible_class_name_;
+  const std::string possible_class_name_;
 
   // Arguments to the method call.
   std::vector<std::unique_ptr<ExpressionEvaluator>> arguments_;
@@ -127,4 +127,4 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_METHOD_CALL_EVALUATOR_H_
+#endif  // METHOD_CALL_EVALUATOR_H_

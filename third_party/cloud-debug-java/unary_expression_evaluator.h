@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_UNARY_EXPRESSION_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_UNARY_EXPRESSION_EVALUATOR_H_
+#ifndef UNARY_EXPRESSION_EVALUATOR_H_
+#define UNARY_EXPRESSION_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
-#include "java_expression.h"
+#include "csharp_expression.h"
 
 namespace google_cloud_debugger {
 
-// Implements all Java unary operators.
+// Implements all CSharp unary operators.
 class UnaryExpressionEvaluator : public ExpressionEvaluator {
  public:
   // Class constructor. The instance will own "arg". "arg" is expected to be
   // uninitialized at this point.
   UnaryExpressionEvaluator(
-      UnaryJavaExpression::Type type,
+      UnaryCSharpExpression::Type type,
       std::unique_ptr<ExpressionEvaluator> arg);
 
   // Compiles and extracts the static type of the expression into result_type_.
@@ -96,7 +96,7 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
 
  private:
   // Binary expression type (e.g. +, -, ~, !).
-  const UnaryJavaExpression::Type type_;
+  const UnaryCSharpExpression::Type type_;
 
   // Compiled expression corresponding to the unary operator argument.
   std::unique_ptr<ExpressionEvaluator> arg_;
@@ -116,4 +116,4 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_UNARY_EXPRESSION_EVALUATOR_H_
+#endif  // UNARY_EXPRESSION_EVALUATOR_H_

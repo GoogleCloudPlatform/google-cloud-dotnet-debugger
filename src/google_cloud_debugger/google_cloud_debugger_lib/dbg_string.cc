@@ -36,7 +36,7 @@ void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
   CComPtr<ICorDebugHeapValue2> heap_value;
 
   initialize_hr_ =
-      CreateStrongHandle(debug_value, &string_handle_, GetErrorStream());
+      CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create a handle for the string.");
   }
@@ -98,7 +98,7 @@ HRESULT DbgString::ExtractStringFromReference() {
     return S_OK;
   }
 
-  if (!string_handle_) {
+  if (!object_handle_) {
     return E_INVALIDARG;
   }
 
@@ -106,7 +106,7 @@ HRESULT DbgString::ExtractStringFromReference() {
   CComPtr<ICorDebugValue> debug_value;
   CComPtr<ICorDebugStringValue> debug_string;
 
-  hr = string_handle_->Dereference(&debug_value);
+  hr = object_handle_->Dereference(&debug_value);
 
   if (FAILED(hr)) {
     WriteError("Failed to dereference string reference.");

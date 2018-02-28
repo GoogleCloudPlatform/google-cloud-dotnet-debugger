@@ -17,42 +17,29 @@
 #include "expression_util.h"
 
 #include <sstream>
-#include "java_expression.h"
+#include "CSharpExpressionCompiler.hpp"
+#include "CSharpExpressionLexer.hpp"
+#include "CSharpExpressionParser.hpp"
+#include "csharp_expression.h"
+#include "dbg_stack_frame.h"
 #include "expression_evaluator.h"
-#include "messages.h"
-#include "model_util.h"
-#include "readers_factory.h"
-#include "JavaExpressionLexer.hpp"
-#include "JavaExpressionParser.hpp"
-#include "JavaExpressionCompiler.hpp"
 
-namespace devtools {
-namespace cdbg {
+using std::cerr;
 
-static CompiledExpression EnsureDefaultErrorMessage(
-    CompiledExpression compiled_expression) {
-  if (compiled_expression.evaluator == nullptr) {
-    if (compiled_expression.error_message.format.empty()) {
-      compiled_expression.error_message = { GeneralExpressionError };
-    }
-  }
+namespace google_cloud_debugger {
 
-  return compiled_expression;
-}
-
-CompiledExpression CompileExpression(
-    const string& string_expression,
-    ReadersFactory* readers_factory) {
+CompiledExpression CompileExpression(const std::string& string_expression,
+                                     DbgStackFrame* stack_frame) {
   if (string_expression.size() > kMaxExpressionLength) {
-    LOG(WARNING) << "Expression can't be compiled because it is too long: "
-                 << string_expression.size();
-    return { nullptr, { ExpressionTooLong }, string_expression };
+    std::cerr << "Expression can't be compiled because it is too long: "
+              << string_expression.size();
+    return {nullptr, string_expression};
   }
 
   // Parse the expression.
   std::istringstream input_stream(string_expression);
-  JavaExpressionLexer lexer(input_stream);
-  JavaExpressionParser parser(lexer);
+  CSharpExpressionLexer lexer(input_stream);
+  CSharpExpressionParser parser(lexer);
   parser.Init();
 
   parser.statement();
@@ -61,58 +48,51 @@ CompiledExpression CompileExpression(
   }
 
   if (parser.num_errors() > 0) {
-    LOG(WARNING) << "Expression parsing failed" << std::endl
-                 << "Input: " << string_expression << std::endl
-                 << "Parser error: " << parser.errors()[0];
-    return { nullptr, { ExpressionParserError }, string_expression };
+    std::cerr << "Expression parsing failed" << std::endl
+              << "Input: " << string_expression << std::endl
+              << "Parser error: " << parser.errors()[0];
+    return {nullptr, string_expression};
   }
 
-  // Transform ANTLR AST into "JavaExpression" tree.
-  JavaExpressionCompiler compiler;
+  // Transform ANTLR AST into "CSharpExpression" tree.
+  CSharpExpressionCompiler compiler;
   compiler.Init();
 
-  std::unique_ptr<JavaExpression> expression = compiler.Walk(parser.getAST());
+  std::unique_ptr<CSharpExpression> expression = compiler.Walk(parser.getAST());
   if (expression == nullptr) {
-    LOG(WARNING) << "Tree walking on parsed expression failed" << std::endl
-                 << "Input: " << string_expression << std::endl
-                 << "AST: " << parser.getAST()->toStringTree();
+    cerr << "Tree walking on parsed expression failed" << std::endl
+         << "Input: " << string_expression << std::endl
+         << "AST: " << parser.getAST()->toStringTree();
 
-    return { nullptr, compiler.error_message(), string_expression };
+    return {nullptr, string_expression};
   }
 
   // Compile the expression.
   CompiledExpression compiled_expression = expression->CreateEvaluator();
   compiled_expression.expression = string_expression;
   if (compiled_expression.evaluator == nullptr) {
-    LOG(WARNING) << "Expression not supported by the evaluator" << std::endl
-                 << "Input: " << string_expression << std::endl
-                 << "AST: " << parser.getAST()->toStringTree();
+    cerr << "Expression not supported by the evaluator" << std::endl
+         << "Input: " << string_expression << std::endl
+         << "AST: " << parser.getAST()->toStringTree();
 
-    return EnsureDefaultErrorMessage(std::move(compiled_expression));
+    return compiled_expression;
   }
 
-  if (!compiled_expression.evaluator->Compile(
-        readers_factory,
-        &compiled_expression.error_message)) {
-    LOG(WARNING) << "Expression could not be compiled" << std::endl
-                 << "Input: " << string_expression << std::endl
-                 << "AST: " << parser.getAST()->toStringTree() << std::endl
-                 << "Error message: " << compiled_expression.error_message;
+  HRESULT hr = compiled_expression.evaluator->Compile(stack_frame, &cerr);
+  if (FAILED(hr)) {
+    cerr << "Expression could not be compiled" << std::endl
+         << "Input: " << string_expression << std::endl
+         << "AST: " << parser.getAST()->toStringTree();
     compiled_expression.evaluator = nullptr;
 
-    return EnsureDefaultErrorMessage(std::move(compiled_expression));
+    return compiled_expression;
   }
 
-  VLOG(1) << "Expression compiled successfully" << std::endl
-          << "Input: " << string_expression << std::endl
-          << "AST: " << parser.getAST()->toStringTree();
+  std::cout << "Expression compiled successfully" << std::endl
+            << "Input: " << string_expression << std::endl
+            << "AST: " << parser.getAST()->toStringTree();
 
   return compiled_expression;
 }
 
-
-}  // namespace cdbg
-}  // namespace devtools
-
-
-
+}  // namespace google_cloud_debugger

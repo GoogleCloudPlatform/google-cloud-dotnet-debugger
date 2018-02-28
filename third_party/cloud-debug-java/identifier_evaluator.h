@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_IDENTIFIER_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_IDENTIFIER_EVALUATOR_H_
+#ifndef IDENTIFIER_EVALUATOR_H_
+#define IDENTIFIER_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
@@ -27,7 +27,7 @@ class DbgObject;
 class DbgClassProperty;
 
 // Evaluates local variables, static variables and member variables encountered
-// in Java expression.
+// in CSharp expression.
 class IdentifierEvaluator : public ExpressionEvaluator {
  public:
   explicit IdentifierEvaluator(std::string identifier_name);
@@ -59,4 +59,4 @@ class IdentifierEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_IDENTIFIER_EVALUATOR_H_
+#endif  // IDENTIFIER_EVALUATOR_H_
