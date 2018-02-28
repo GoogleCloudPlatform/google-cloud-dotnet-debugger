@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_FIELD_EVALUATOR_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_FIELD_EVALUATOR_H_
+#ifndef FIELD_EVALUATOR_H_
+#define FIELD_EVALUATOR_H_
 
 #include "common.h"
 #include "expression_evaluator.h"
@@ -113,4 +113,4 @@ class FieldEvaluator : public ExpressionEvaluator {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_FIELD_EVALUATOR_H_
+#endif  // FIELD_EVALUATOR_H_

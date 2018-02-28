@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_JAVA_EXPRESSION_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_JAVA_EXPRESSION_H_
+#ifndef DEVTOOLS_CDBG_DEBUGLETS_CSharp_CSharp_EXPRESSION_H_
+#define DEVTOOLS_CDBG_DEBUGLETS_CSharp_CSharp_EXPRESSION_H_
 
 #include <list>
 #include <memory>
@@ -28,20 +28,20 @@ class ExpressionEvaluator;
 struct FormatMessageModel;
 
 // Interface representing a node in parsed expression tree.
-class JavaExpression {
+class CSharpExpression {
  public:
-  virtual ~JavaExpression() { }
+  virtual ~CSharpExpression() { }
 
   // Prints the expression subtree to the stream. When "concise" is true, the
-  // function prints expression in Java format. When "concise" is false, a
+  // function prints expression in CSharp format. When "concise" is false, a
   // much more verbose format is used (this mode is used by unit test to
   // disambiguate different types of expressions that might look the same in
   // concise format).
   virtual void Print(std::ostream* os, bool concise) = 0;
 
   // Tries to convert the expression subtree into a type name. For
-  // example: Member("String", Member("lang", Identifier("java")) can be
-  // converted to "java.lang.String". At the same time (a+b) cannot.
+  // example: Member("String", Member("lang", Identifier("CSharp")) can be
+  // converted to "CSharp.lang.String". At the same time (a+b) cannot.
   virtual bool TryGetTypeName(string* name) const = 0;
 
   // Compiles the expression into executable format. The caller owns the
@@ -52,13 +52,13 @@ class JavaExpression {
 
 
 // Represents (a ? b : c) conditional expression.
-class ConditionalJavaExpression : public JavaExpression {
+class ConditionalCSharpExpression : public CSharpExpression {
  public:
-  // Takes ownership over the passed instances of "JavaExpression";
-  ConditionalJavaExpression(
-      JavaExpression* condition,
-      JavaExpression* if_true,
-      JavaExpression* if_false);
+  // Takes ownership over the passed instances of "CSharpExpression";
+  ConditionalCSharpExpression(
+      CSharpExpression* condition,
+      CSharpExpression* if_true,
+      CSharpExpression* if_false);
 
   void Print(std::ostream* os, bool concise) override;
 
@@ -67,16 +67,16 @@ class ConditionalJavaExpression : public JavaExpression {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  std::unique_ptr<JavaExpression> condition_;
-  std::unique_ptr<JavaExpression> if_true_;
-  std::unique_ptr<JavaExpression> if_false_;
+  std::unique_ptr<CSharpExpression> condition_;
+  std::unique_ptr<CSharpExpression> if_true_;
+  std::unique_ptr<CSharpExpression> if_false_;
 
-  DISALLOW_COPY_AND_ASSIGN(ConditionalJavaExpression);
+  DISALLOW_COPY_AND_ASSIGN(ConditionalCSharpExpression);
 };
 
 
 // Represents any kind of binary expression (like a + b).
-class BinaryJavaExpression : public JavaExpression {
+class BinaryCSharpExpression : public CSharpExpression {
  public:
   enum class Type {
     add,
@@ -101,7 +101,7 @@ class BinaryJavaExpression : public JavaExpression {
   };
 
   // Takes ownership over "a" and "b" expression subtrees.
-  BinaryJavaExpression(Type type, JavaExpression* a, JavaExpression* b);
+  BinaryCSharpExpression(Type type, CSharpExpression* a, CSharpExpression* b);
 
   void Print(std::ostream* os, bool concise) override;
 
@@ -111,15 +111,15 @@ class BinaryJavaExpression : public JavaExpression {
 
  private:
   const Type type_;
-  std::unique_ptr<JavaExpression> a_;
-  std::unique_ptr<JavaExpression> b_;
+  std::unique_ptr<CSharpExpression> a_;
+  std::unique_ptr<CSharpExpression> b_;
 
-  DISALLOW_COPY_AND_ASSIGN(BinaryJavaExpression);
+  DISALLOW_COPY_AND_ASSIGN(BinaryCSharpExpression);
 };
 
 
 // Represents unary expression (like ~a).
-class UnaryJavaExpression : public JavaExpression {
+class UnaryCSharpExpression : public CSharpExpression {
  public:
   enum class Type {
     plus,
@@ -129,7 +129,7 @@ class UnaryJavaExpression : public JavaExpression {
   };
 
   // Takes ownership over "a" expression subtree.
-  UnaryJavaExpression(Type type, JavaExpression* a);
+  UnaryCSharpExpression(Type type, CSharpExpression* a);
 
   void Print(std::ostream* os, bool concise) override;
 
@@ -139,15 +139,15 @@ class UnaryJavaExpression : public JavaExpression {
 
  private:
   const Type type_;
-  std::unique_ptr<JavaExpression> a_;
+  std::unique_ptr<CSharpExpression> a_;
 
-  DISALLOW_COPY_AND_ASSIGN(UnaryJavaExpression);
+  DISALLOW_COPY_AND_ASSIGN(UnaryCSharpExpression);
 };
 
 
-class JavaIntLiteral : public JavaExpression {
+class CSharpIntLiteral : public CSharpExpression {
  public:
-  JavaIntLiteral() : is_long_(false) { }
+  CSharpIntLiteral() : is_long_(false) { }
 
   // Parses an integer in the given base from the given string.
   bool ParseString(const string& str, int base);
@@ -166,15 +166,15 @@ class JavaIntLiteral : public JavaExpression {
   // Indicates whether this is an int or a long.
   bool is_long_;
 
-  jlong n_;
+  std::int64_t n_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaIntLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpIntLiteral);
 };
 
 
-class JavaFloatLiteral : public JavaExpression {
+class CSharpFloatLiteral : public CSharpExpression {
  public:
-  JavaFloatLiteral() : is_double_(true) { }
+  CSharpFloatLiteral() : is_double_(true) { }
 
   // Parses a floating point number from the given string.
   bool ParseString(const string& str);
@@ -192,16 +192,16 @@ class JavaFloatLiteral : public JavaExpression {
   // Indicates whether this is an float or a double.
   bool is_double_;
 
-  jdouble d_;
+  std::double_t d_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaFloatLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpFloatLiteral);
 };
 
-// Represents character constant. All characters in Java are Unicode, so
+// Represents character constant. All characters in CSharp are Unicode, so
 // this is a 16 bit integer.
-class JavaCharLiteral : public JavaExpression {
+class CSharpCharLiteral : public CSharpExpression {
  public:
-  JavaCharLiteral() : ch_('\0') { }
+  CSharpCharLiteral() : ch_('\0') { }
 
   // Decodes the potentially escaped character into a Unicode character.
   // Examples for encoding are: '\n', '\\', '\293', '\u5C7f'.
@@ -214,18 +214,18 @@ class JavaCharLiteral : public JavaExpression {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  jchar ch_;
+  char ch_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaCharLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpCharLiteral);
 };
 
 
-// Represents a Java string constant.
-class JavaStringLiteral : public JavaExpression {
+// Represents a CSharp string constant.
+class CSharpStringLiteral : public CSharpExpression {
  public:
-  JavaStringLiteral() { }
+  CSharpStringLiteral() { }
 
-  // Decodes the potentially escaped characters sequence into Java string.
+  // Decodes the potentially escaped characters sequence into CSharp string.
   // Example of encoded string: "This\n is\t an\" \u1E3B encoded \88 string".
   bool ParseString(const string& str);
 
@@ -236,16 +236,16 @@ class JavaStringLiteral : public JavaExpression {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  std::vector<jchar> str_;
+  std::string str_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaStringLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpStringLiteral);
 };
 
 
 // Represents a boolean constant.
-class JavaBooleanLiteral : public JavaExpression {
+class CSharpBooleanLiteral : public CSharpExpression {
  public:
-  explicit JavaBooleanLiteral(jboolean n) : n_(n) { }
+  explicit CSharpBooleanLiteral(bool n) : n_(n) { }
 
   void Print(std::ostream* os, bool concise) override;
 
@@ -254,16 +254,16 @@ class JavaBooleanLiteral : public JavaExpression {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  const jboolean n_;
+  const bool n_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaBooleanLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpBooleanLiteral);
 };
 
 
-// Represents Java "null".
-class JavaNullLiteral : public JavaExpression {
+// Represents CSharp "null".
+class CSharpNullLiteral : public CSharpExpression {
  public:
-  JavaNullLiteral() { }
+  CSharpNullLiteral() { }
 
   void Print(std::ostream* os, bool concise) override;
 
@@ -272,14 +272,14 @@ class JavaNullLiteral : public JavaExpression {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(JavaNullLiteral);
+  DISALLOW_COPY_AND_ASSIGN(CSharpNullLiteral);
 };
 
 
 // Represents a local or a static variable.
-class JavaIdentifier : public JavaExpression {
+class CSharpIdentifier : public CSharpExpression {
  public:
-  explicit JavaIdentifier(string identifier)
+  explicit CSharpIdentifier(string identifier)
       : identifier_(identifier) {
   }
 
@@ -292,16 +292,16 @@ class JavaIdentifier : public JavaExpression {
  private:
   const string identifier_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaIdentifier);
+  DISALLOW_COPY_AND_ASSIGN(CSharpIdentifier);
 };
 
 
 // Represents a type cast for classes or interfaces.
-class TypeCastJavaExpression : public JavaExpression {
+class TypeCastCSharpExpression : public CSharpExpression {
  public:
-  explicit TypeCastJavaExpression(string type, JavaExpression* source)
+  explicit TypeCastCSharpExpression(string type, CSharpExpression* source)
       : type_(type),
-        source_(std::unique_ptr<JavaExpression>(source)) {
+        source_(std::unique_ptr<CSharpExpression>(source)) {
   }
 
   void Print(std::ostream* os, bool concise) override;
@@ -312,9 +312,9 @@ class TypeCastJavaExpression : public JavaExpression {
 
  private:
   const string type_;
-  std::unique_ptr<JavaExpression> source_;
+  std::unique_ptr<CSharpExpression> source_;
 
-  DISALLOW_COPY_AND_ASSIGN(TypeCastJavaExpression);
+  DISALLOW_COPY_AND_ASSIGN(TypeCastCSharpExpression);
 };
 
 
@@ -322,11 +322,11 @@ class TypeCastJavaExpression : public JavaExpression {
 // types of selectors are currently supported:
 //    1. Array indexer: a[8].
 //    2. Dereferencing a member: a.member.
-class JavaExpressionSelector : public JavaExpression {
+class CSharpExpressionSelector : public CSharpExpression {
  public:
   // Setter for "source_". See "source_" comments for explanation. Takes
   // ownership over the "source" expression subtree.
-  void set_source(JavaExpression* source) {
+  void set_source(CSharpExpression* source) {
     source_.reset(source);
   }
 
@@ -336,16 +336,16 @@ class JavaExpressionSelector : public JavaExpression {
   //    (flag ? a1 : a2)[8]
   // In this case "source_" will be the expression corresponding to
   // "flag ? a1 : a2".
-  std::unique_ptr<JavaExpression> source_;
+  std::unique_ptr<CSharpExpression> source_;
 };
 
 
 // Selector for array item. The index is also expression to support
 // constructions like a[x + y].
-class JavaExpressionIndexSelector : public JavaExpressionSelector {
+class CSharpExpressionIndexSelector : public CSharpExpressionSelector {
  public:
   // Takes ownership over the "index" expression subtree.
-  explicit JavaExpressionIndexSelector(JavaExpression* index) : index_(index) {
+  explicit CSharpExpressionIndexSelector(CSharpExpression* index) : index_(index) {
   }
 
   void Print(std::ostream* os, bool concise) override;
@@ -355,16 +355,16 @@ class JavaExpressionIndexSelector : public JavaExpressionSelector {
   CompiledExpression CreateEvaluator() override;
 
  private:
-  std::unique_ptr<JavaExpression> index_;
+  std::unique_ptr<CSharpExpression> index_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaExpressionIndexSelector);
+  DISALLOW_COPY_AND_ASSIGN(CSharpExpressionIndexSelector);
 };
 
 
 // Selector for a class member.
-class JavaExpressionMemberSelector : public JavaExpressionSelector {
+class CSharpExpressionMemberSelector : public CSharpExpressionSelector {
  public:
-  explicit JavaExpressionMemberSelector(const string& member)
+  explicit CSharpExpressionMemberSelector(const string& member)
       : member_(member) {
   }
 
@@ -377,7 +377,7 @@ class JavaExpressionMemberSelector : public JavaExpressionSelector {
  private:
   const string member_;
 
-  DISALLOW_COPY_AND_ASSIGN(JavaExpressionMemberSelector);
+  DISALLOW_COPY_AND_ASSIGN(CSharpExpressionMemberSelector);
 };
 
 
@@ -388,25 +388,25 @@ class MethodArguments {
   MethodArguments() {}
 
   // Single argument. Takes ownership over "argument".
-  MethodArguments(JavaExpression* argument, MethodArguments* tail) {
+  MethodArguments(CSharpExpression* argument, MethodArguments* tail) {
     if (tail) {
       arguments_.swap(tail->arguments_);
       delete tail;
     }
 
-    arguments_.push_front(std::unique_ptr<JavaExpression>(argument));
+    arguments_.push_front(std::unique_ptr<CSharpExpression>(argument));
   }
 
-  std::list<std::unique_ptr<JavaExpression>>::iterator begin() {
+  std::list<std::unique_ptr<CSharpExpression>>::iterator begin() {
     return arguments_.begin();
   }
 
-  std::list<std::unique_ptr<JavaExpression>>::iterator end() {
+  std::list<std::unique_ptr<CSharpExpression>>::iterator end() {
     return arguments_.end();
   }
 
  private:
-  std::list<std::unique_ptr<JavaExpression>> arguments_;
+  std::list<std::unique_ptr<CSharpExpression>> arguments_;
 
   DISALLOW_COPY_AND_ASSIGN(MethodArguments);
 };
@@ -415,7 +415,7 @@ class MethodArguments {
 // Represents method call (with arguments). The method call can be either
 // direct like f(1) or through selectors like my.util.f(1) or a.getY().f(1).
 // In case of direct method call, "source_" will be null.
-class MethodCallExpression : public JavaExpressionSelector {
+class MethodCallExpression : public CSharpExpressionSelector {
  public:
   // Takes ownership over "method" and "arguments".
   MethodCallExpression(const string& method, MethodArguments* arguments)
@@ -439,6 +439,6 @@ class MethodCallExpression : public JavaExpressionSelector {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_JAVA_EXPRESSION_H_
+#endif  // DEVTOOLS_CDBG_DEBUGLETS_CSharp_CSharp_EXPRESSION_H_
 
 
