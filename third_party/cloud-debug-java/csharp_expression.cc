@@ -29,6 +29,7 @@
 #include "type_cast_operator_evaluator.h"
 #include "unary_expression_evaluator.h"
 #include "dbg_primitive.h"
+#include "dbg_null_object.h"
 
 using std::string;
 
@@ -632,7 +633,7 @@ void CSharpNullLiteral::Print(std::ostream* os, bool concise) {
 
 
 CompiledExpression CSharpNullLiteral::CreateEvaluator() {
-  std::shared_ptr<DbgObject> null_obj(new DbgNullObject());
+  std::shared_ptr<DbgObject> null_obj(new DbgNullObject(nullptr));
   return {
     std::unique_ptr<ExpressionEvaluator>(new LiteralEvaluator(null_obj))
   };
