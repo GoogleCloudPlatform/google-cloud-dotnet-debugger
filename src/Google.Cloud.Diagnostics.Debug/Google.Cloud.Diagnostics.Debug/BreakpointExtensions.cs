@@ -40,6 +40,8 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0,
                     Path = breakpoint.Location?.Path,
                 },
+                Condition = breakpoint.Condition,
+                Expressions = { breakpoint.Expressions }
             };
         }
 
@@ -62,7 +64,12 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
-                StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() }
+                StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() },
+
+                EvaluatedExpressions =
+                {
+                    breakpoint.EvaluatedExpressions?.Select(variable => variable.Convert()).ToList()
+                }
             };
         }
 
