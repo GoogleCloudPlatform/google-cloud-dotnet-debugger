@@ -59,17 +59,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
             foreach (var breakpoint in bpmResponse.New)
             {
-                if (!string.IsNullOrWhiteSpace(breakpoint.Condition) || breakpoint.Expressions.Count() != 0)
-                {
-                    breakpoint.Status = Common.CreateStatusMessage(
-                        Messages.CondExpNotSupported, isError: true);
-                    breakpoint.IsFinalState = true;
-                    _client.UpdateBreakpoint(breakpoint);
-                }
-                else
-                {
-                    _server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
-                }
+                _server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
             }
         }
     }
