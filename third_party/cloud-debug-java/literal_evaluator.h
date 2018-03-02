@@ -20,7 +20,6 @@
 #include "common.h"
 #include "expression_evaluator.h"
 #include "dbg_object.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 

@@ -1,9 +1,9 @@
-#ifndef INC_JavaExpressionCompiler_hpp_
-#define INC_JavaExpressionCompiler_hpp_
+#ifndef INC_CSharpExpressionCompiler_hpp_
+#define INC_CSharpExpressionCompiler_hpp_
 
 #include "third_party/antlr/lib/cpp/antlr/config.hpp"
-#include "JavaExpressionCompilerTokenTypes.hpp"
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionCompiler.hpp"$ */
+#include "CSharpExpressionCompilerTokenTypes.hpp"
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionCompiler.hpp"$ */
 #include "third_party/antlr/lib/cpp/antlr/TreeParser.hpp"
 
 #line 21 "csharp_expression.g"
@@ -15,9 +15,9 @@
   #include "../../cloud-debug-java/csharp_expression.h"
   #include "../../cloud-debug-java/messages.h"
 
-#line 19 "JavaExpressionCompiler.hpp"
+#line 19 "CSharpExpressionCompiler.hpp"
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
-class JavaExpressionCompiler : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public JavaExpressionCompilerTokenTypes
+class CSharpExpressionCompiler : public ANTLR_USE_NAMESPACE(antlr)TreeParser, public CSharpExpressionCompilerTokenTypes
 {
 #line 433 "csharp_expression.g"
 
@@ -30,7 +30,7 @@ class JavaExpressionCompiler : public ANTLR_USE_NAMESPACE(antlr)TreeParser, publ
   void Init() {
   }
 
-  std::unique_ptr<JavaExpression> Walk(antlr::RefAST ast) {
+  std::unique_ptr<CSharpExpression> Walk(antlr::RefAST ast) {
     ResetErrorMessage();
 
     if (!VerifyMaxDepth(ast, kMaxTreeDepth)) {
@@ -39,7 +39,7 @@ class JavaExpressionCompiler : public ANTLR_USE_NAMESPACE(antlr)TreeParser, publ
       return nullptr;
     }
 
-    std::unique_ptr<JavaExpression> expression(statement(ast));
+    std::unique_ptr<CSharpExpression> expression(statement(ast));
     if (expression == nullptr) {
       // Set generic error message if specific error wasn't set.
       SetErrorMessage(ExpressionParserError);
@@ -95,35 +95,35 @@ class JavaExpressionCompiler : public ANTLR_USE_NAMESPACE(antlr)TreeParser, publ
   // Only first error message encountered is captured. Subsequent error 
   // messages are ignored.
   std::string error_message_;
-#line 24 "JavaExpressionCompiler.hpp"
+#line 24 "CSharpExpressionCompiler.hpp"
 public:
-	JavaExpressionCompiler();
+	CSharpExpressionCompiler();
 	void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
 	int getNumTokens() const
 	{
-		return JavaExpressionCompiler::NUM_TOKENS;
+		return CSharpExpressionCompiler::NUM_TOKENS;
 	}
 	const char* getTokenName( int type ) const
 	{
 		if( type > getNumTokens() ) return 0;
-		return JavaExpressionCompiler::tokenNames[type];
+		return CSharpExpressionCompiler::tokenNames[type];
 	}
 	//DBG genRuleHeader(statement)
-	public: JavaExpression*  statement(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: CSharpExpression*  statement(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(expression)
-	public: JavaExpression*  expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: CSharpExpression*  expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(binary_expression_token)
-	public: BinaryJavaExpression::Type  binary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: BinaryCSharpExpression::Type  binary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(unary_expression_token)
-	public: UnaryJavaExpression::Type  unary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: UnaryCSharpExpression::Type  unary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(selector)
-	public: JavaExpressionSelector*  selector(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: CSharpExpressionSelector*  selector(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(type_name)
 	public: std::string  type_name(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(arguments)
 	public: MethodArguments*  arguments(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 	//DBG genRuleHeader(dotSelector)
-	public: JavaExpressionSelector*  dotSelector(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
+	public: CSharpExpressionSelector*  dotSelector(ANTLR_USE_NAMESPACE(antlr)RefAST _t);
 private:
 	static const char* tokenNames[];
 #ifndef NO_STATIC_CONSTS
@@ -137,4 +137,4 @@ private:
 };
 
 ANTLR_END_NAMESPACE
-#endif /*INC_JavaExpressionCompiler_hpp_*/
+#endif /*INC_CSharpExpressionCompiler_hpp_*/

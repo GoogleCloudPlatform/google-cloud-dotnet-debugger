@@ -22,10 +22,11 @@
 #include "common.h"
 #include "expression_util.h"
 
+using std::string;
+
 namespace google_cloud_debugger {
 
 class ExpressionEvaluator;
-struct FormatMessageModel;
 
 // Interface representing a node in parsed expression tree.
 class CSharpExpression {

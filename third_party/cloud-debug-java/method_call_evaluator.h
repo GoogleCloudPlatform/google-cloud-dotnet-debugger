@@ -24,7 +24,6 @@
 #include "cordebug.h"
 #include "expression_evaluator.h"
 #include "method_info.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -62,7 +61,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
       std::vector<ICorDebugValue *> *arg_debug_values,
       ICorDebugEval *debug_eval,
       IEvalCoordinator *eval_coordinator,
-      std::ostream *err_stream);
+      std::ostream *err_stream) const;
 
   // Gets method method_info from class with name class_name.
   // This will set ICorDebugFunction result_method if such a method

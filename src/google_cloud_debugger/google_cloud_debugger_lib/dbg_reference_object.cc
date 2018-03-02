@@ -29,8 +29,8 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   // Dereferences the object to get ICorDebugObjectValue.
   BOOL is_null = FALSE;
   CComPtr<ICorDebugValue> debug_value;
-  HRESULT hr = Dereference(object_handle_, &debug_value, 
-                           &is_null, GetErrorStream());
+  hr = Dereference(object_handle_, &debug_value,
+                   &is_null, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
   }
