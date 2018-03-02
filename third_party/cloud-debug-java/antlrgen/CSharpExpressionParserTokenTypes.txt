@@ -1,5 +1,5 @@
-// $ANTLR 2.7.2: csharp_expression.g -> JavaExpressionLexerTokenTypes.txt$
-JavaExpressionLexer    // output token vocab name
+// $ANTLR 2.7.2: csharp_expression.g -> CSharpExpressionParserTokenTypes.txt$
+CSharpExpressionParser    // output token vocab name
 STATEMENT=4
 BINARY_EXPRESSION=5
 UNARY_EXPRESSION=6

@@ -1,12 +1,12 @@
-#ifndef INC_JavaExpressionLexer_hpp_
-#define INC_JavaExpressionLexer_hpp_
+#ifndef INC_CSharpExpressionLexer_hpp_
+#define INC_CSharpExpressionLexer_hpp_
 
 #include "third_party/antlr/lib/cpp/antlr/config.hpp"
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionLexer.hpp"$ */
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionLexer.hpp"$ */
 #include "third_party/antlr/lib/cpp/antlr/CommonToken.hpp"
 #include "third_party/antlr/lib/cpp/antlr/InputBuffer.hpp"
 #include "third_party/antlr/lib/cpp/antlr/BitSet.hpp"
-#include "JavaExpressionLexerTokenTypes.hpp"
+#include "CSharpExpressionLexerTokenTypes.hpp"
 #include "third_party/antlr/lib/cpp/antlr/CharScanner.hpp"
 #line 21 "csharp_expression.g"
 
@@ -17,12 +17,12 @@
   #include "../../cloud-debug-java/csharp_expression.h"
   #include "../../cloud-debug-java/messages.h"
 
-#line 21 "JavaExpressionLexer.hpp"
+#line 21 "CSharpExpressionLexer.hpp"
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
-class JavaExpressionLexer : public ANTLR_USE_NAMESPACE(antlr)CharScanner, public JavaExpressionLexerTokenTypes
+class CSharpExpressionLexer : public ANTLR_USE_NAMESPACE(antlr)CharScanner, public CSharpExpressionLexerTokenTypes
 {
 #line 1 "csharp_expression.g"
-#line 26 "JavaExpressionLexer.hpp"
+#line 26 "CSharpExpressionLexer.hpp"
 private:
 	void initLiterals();
 public:
@@ -31,9 +31,9 @@ public:
 		return true;
 	}
 public:
-	JavaExpressionLexer(ANTLR_USE_NAMESPACE(std)istream& in);
-	JavaExpressionLexer(ANTLR_USE_NAMESPACE(antlr)InputBuffer& ib);
-	JavaExpressionLexer(const ANTLR_USE_NAMESPACE(antlr)LexerSharedInputState& state);
+	CSharpExpressionLexer(ANTLR_USE_NAMESPACE(std)istream& in);
+	CSharpExpressionLexer(ANTLR_USE_NAMESPACE(antlr)InputBuffer& ib);
+	CSharpExpressionLexer(const ANTLR_USE_NAMESPACE(antlr)LexerSharedInputState& state);
 	ANTLR_USE_NAMESPACE(antlr)RefToken nextToken();
 	//DBG genRuleHeader(mHexDigit)
 	protected: void mHexDigit(bool _createToken);
@@ -156,4 +156,4 @@ private:
 };
 
 ANTLR_END_NAMESPACE
-#endif /*INC_JavaExpressionLexer_hpp_*/
+#endif /*INC_CSharpExpressionLexer_hpp_*/
