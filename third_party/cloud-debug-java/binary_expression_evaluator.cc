@@ -398,7 +398,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
   }
 
   std::shared_ptr<DbgObject> arg2_obj;
-  HRESULT hr = arg2_->Evaluate(&arg2_obj, eval_coordinator, err_stream);
+  hr = arg2_->Evaluate(&arg2_obj, eval_coordinator, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToEvalSecondSubExpr;
     return hr;
@@ -584,7 +584,7 @@ HRESULT BinaryExpressionEvaluator::ConditionalStringComputer(
   }
 
   std::string second_string;
-  HRESULT hr = DbgString::GetString(arg2.get(), &second_string);
+  hr = DbgString::GetString(arg2.get(), &second_string);
   if (FAILED(hr)) {
     return hr;
   }
@@ -619,7 +619,7 @@ HRESULT BinaryExpressionEvaluator::ConditionalBooleanComputer(
   }
 
   bool boolean2;
-  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+  hr = NumericCompilerHelper::ExtractPrimitiveValue<bool>(
       arg2.get(), &boolean2);
   if (FAILED(hr)) {
     return hr;
