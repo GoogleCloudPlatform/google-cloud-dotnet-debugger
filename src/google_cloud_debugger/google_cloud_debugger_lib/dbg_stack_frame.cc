@@ -182,15 +182,14 @@ HRESULT DbgStackFrame::ProcessLocalVariables(
     }
 
     hr = DbgObject::CreateDbgObject(debug_values[i], object_depth_,
-                                    &variable_value, err_stream.get());
+                                    &variable_value, &std::cerr);
 
     if (FAILED(hr)) {
       variable_value = nullptr;
     }
 
     variables_.push_back(std::make_tuple(std::move(variable_name),
-                                         std::move(variable_value),
-                                         std::move(err_stream)));
+                                         std::move(variable_value)));
   }
 
   return S_OK;
@@ -265,11 +264,6 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   for (size_t i = 0; i < method_arg_values.size(); ++i) {
     unique_ptr<DbgObject> method_arg_value;
     string method_arg_name;
-    unique_ptr<ostringstream> err_stream(new (std::nothrow) ostringstream);
-    if (!err_stream) {
-      cerr << "Failed to create an error stream.";
-      return E_OUTOFMEMORY;
-    }
 
     if (i >= method_argument_names.size()) {
       // Default name if we can't get the name.
@@ -279,15 +273,14 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
     }
 
     hr = DbgObject::CreateDbgObject(method_arg_values[i], object_depth_,
-                                    &method_arg_value, err_stream.get());
+                                    &method_arg_value, &std::cerr);
 
     if (FAILED(hr)) {
       method_arg_value = nullptr;
     }
 
     method_arguments_.push_back(std::make_tuple(std::move(method_arg_name),
-                                                std::move(method_arg_value),
-                                                std::move(err_stream)));
+                                                std::move(method_arg_value)));
   }
 
   return S_OK;
@@ -301,7 +294,7 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
   }
 
   // First, finds the metadata token of the method.
-  mdMethodDef method_def;
+  mdMethodDef method_def = 0;
   HRESULT hr = method_info->PopulateMethodDefFromNameAndArguments(
       metadata_import, class_token, this);
   if (FAILED(hr) || hr == S_FALSE) {
@@ -548,10 +541,8 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
     variable_proto->set_name(std::get<0>(variable_tuple));
     const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
-    const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 
@@ -564,10 +555,8 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 
     variable_proto->set_name(std::get<0>(variable_tuple));
     const shared_ptr<DbgObject> &variable_value = std::get<1>(variable_tuple);
-    const unique_ptr<ostringstream> &err_stream = std::get<2>(variable_tuple);
 
     if (!variable_value) {
-      SetErrorStatusMessage(variable_proto, err_stream->str());
       continue;
     }
 

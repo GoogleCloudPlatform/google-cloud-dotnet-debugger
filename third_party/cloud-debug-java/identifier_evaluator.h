@@ -17,7 +17,6 @@
 #ifndef IDENTIFIER_EVALUATOR_H_
 #define IDENTIFIER_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 
 namespace google_cloud_debugger {
