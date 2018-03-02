@@ -127,6 +127,15 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\csharp_expression.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -298,6 +307,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\csharp_expression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompilerTokenTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexerTokenTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParserTokenTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
