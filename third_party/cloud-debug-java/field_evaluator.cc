@@ -44,7 +44,7 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
     return hr;
   }
 
-  HRESULT hr = CompileUsingInstanceSource(stack_frame, err_stream);
+  hr = CompileUsingInstanceSource(stack_frame, err_stream);
   if (SUCCEEDED(hr)) {
     return hr;
   }
@@ -100,7 +100,7 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
     return E_FAIL;
   }
 
-  HRESULT hr = stack_frame->GetFieldFromClass(
+  hr = stack_frame->GetFieldFromClass(
       class_token_, member_name, &field_def_, &is_static_,
       &result_type_, metadata_import_, err_stream);
   if (SUCCEEDED(hr)) {

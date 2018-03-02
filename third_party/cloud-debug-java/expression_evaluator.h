@@ -22,13 +22,13 @@
 
 #include "cor.h"
 #include "common.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
 class DbgObject;
 class DbgStackFrame;
 class IEvalCoordinator;
-struct TypeSignature;
 
 // Interface representing compiled expression or subexpression.
 class ExpressionEvaluator {
