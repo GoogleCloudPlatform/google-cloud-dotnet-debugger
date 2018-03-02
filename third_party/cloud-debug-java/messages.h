@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef DEVTOOLS_CDBG_DEBUGLETS_JAVA_MESSAGES_H_
-#define DEVTOOLS_CDBG_DEBUGLETS_JAVA_MESSAGES_H_
+#ifndef MESSAGES_H_
+#define MESSAGES_H_
 
 #include <cstring>
 
+// These are messages output by the parser when errors occur.
 namespace google_cloud_debugger {
 
 constexpr char ExpressionTooLong[] =
@@ -215,14 +216,6 @@ constexpr char CanaryBreakpointUnhealthy[] =
     "again at a later time."
 ;
 
-#define INTERNAL_ERROR_MESSAGE (devtools::cdbg::FormatMessageModel { \
-      "Internal error at $0:$1", \
-      { \
-        devtools::cdbg::ShortFileName(__FILE__), \
-        STRINGIFY(__LINE__) \
-      } \
-    })
-
 // Gets the file name portion from the full path.
 inline const char* ShortFileName(const char* long_file_name) {
   if (long_file_name == nullptr) {
@@ -239,4 +232,4 @@ inline const char* ShortFileName(const char* long_file_name) {
 
 }  // namespace google_cloud_debugger
 
-#endif  // DEVTOOLS_CDBG_DEBUGLETS_JAVA_MESSAGES_H_
+#endif  // MESSAGES_H_
