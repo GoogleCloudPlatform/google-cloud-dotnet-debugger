@@ -148,7 +148,7 @@ extern ANTLR_API RefAST nullAST;
 extern ANTLR_API AST* const nullASTptr;
 
 #ifdef NEEDS_OPERATOR_LESS_THAN
-inline operator<(RefAST l,RefAST r); // {return true;}
+inline bool operator<(RefAST l,RefAST r); // {return true;}
 #endif
 
 #ifdef ANTLR_CXX_SUPPORTS_NAMESPACE
