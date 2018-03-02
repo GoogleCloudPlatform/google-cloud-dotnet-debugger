@@ -25,32 +25,32 @@
 
 namespace google_cloud_debugger {
 
-// Implementation of Java modulo (%) operator for int data type.
+// Implementation of C# modulo (%) operator for int data type.
 static int32_t ComputeModulo(int32_t x, int32_t y) {
   return x % y;
 }
 
-// Implementation of Java modulo (%) operator for int data type.
+// Implementation of C# modulo (%) operator for unsigned int data type.
 static uint32_t ComputeModulo(uint32_t x, uint32_t y) {
   return x % y;
 }
 
-// Implementation of Java modulo (%) operator for long data type.
+// Implementation of C# modulo (%) operator for long data type.
 static int64_t ComputeModulo(int64_t x, int64_t y) {
   return x % y;
 }
 
-// Implementation of Java modulo (%) operator for long data type.
-static int64_t ComputeModulo(uint64_t x, uint64_t y) {
+// Implementation of C# modulo (%) operator for unsigned long data type.
+static uint64_t ComputeModulo(uint64_t x, uint64_t y) {
   return x % y;
 }
 
-// Implementation of Java modulo (%) operator for float data type.
+// Implementation of C# modulo (%) operator for float data type.
 static float_t ComputeModulo(float_t x, float_t y) {
   return std::fmod(x, y);
 }
 
-// Implementation of Java modulo (%) operator for double data type.
+// Implementation of C# modulo (%) operator for double data type.
 static double_t ComputeModulo(double_t x, double_t y) {
   return std::fmod(x, y);
 }
