@@ -15,14 +15,14 @@
 #ifndef COMPILER_HELPERS_H_
 #define COMPILER_HELPERS_H_
 
-#include "cor.h"
+#include "common_headers.h"
 #include <iostream>
 
 // Various helper functions for compiling such as numeric conversions,
 // numeric promotions, etc.
 namespace google_cloud_debugger {
 
-struct TypeSignature;
+class DbgObject;
 
 class NumericCompilerHelper {
  public:

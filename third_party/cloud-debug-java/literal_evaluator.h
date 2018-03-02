@@ -17,7 +17,6 @@
 #ifndef LITERAL_EVALUATOR_H_
 #define LITERAL_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 #include "dbg_object.h"
 

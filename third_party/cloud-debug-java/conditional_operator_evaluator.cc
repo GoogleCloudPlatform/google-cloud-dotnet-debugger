@@ -16,12 +16,10 @@
 
 #include "conditional_operator_evaluator.h"
 
-#include "numeric_cast_evaluator.h"
 #include "dbg_primitive.h"
 #include "class_names.h"
 #include "error_messages.h"
 #include "compiler_helpers.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 

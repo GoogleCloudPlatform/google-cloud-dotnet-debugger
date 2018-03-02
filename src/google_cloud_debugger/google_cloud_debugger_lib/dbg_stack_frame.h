@@ -30,8 +30,7 @@
 
 namespace google_cloud_debugger {
 
-typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
-                   std::unique_ptr<std::ostringstream>>
+typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
     VariableTuple;
 
 class DebuggerCallback;
