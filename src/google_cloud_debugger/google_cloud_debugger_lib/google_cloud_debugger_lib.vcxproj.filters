@@ -327,7 +327,9 @@
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\common_headers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\messages.h" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
