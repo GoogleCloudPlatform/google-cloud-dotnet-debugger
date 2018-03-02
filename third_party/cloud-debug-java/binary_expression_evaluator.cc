@@ -22,7 +22,6 @@
 #include "dbg_primitive.h"
 #include "dbg_string.h"
 #include "error_messages.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 

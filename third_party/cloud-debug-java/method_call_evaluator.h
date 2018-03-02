@@ -24,7 +24,6 @@
 #include "cordebug.h"
 #include "expression_evaluator.h"
 #include "method_info.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
