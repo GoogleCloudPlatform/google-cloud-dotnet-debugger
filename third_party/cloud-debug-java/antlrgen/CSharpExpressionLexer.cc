@@ -1,5 +1,5 @@
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionLexer.cc"$ */
-#include "JavaExpressionLexer.hpp"
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionLexer.cc"$ */
+#include "CSharpExpressionLexer.hpp"
 #include "third_party/antlr/lib/cpp/antlr/CharBuffer.hpp"
 #include "third_party/antlr/lib/cpp/antlr/TokenStreamException.hpp"
 #include "third_party/antlr/lib/cpp/antlr/TokenStreamIOException.hpp"
@@ -11,33 +11,33 @@
 
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
 #line 1 "csharp_expression.g"
-#line 15 "JavaExpressionLexer.cc"
-JavaExpressionLexer::JavaExpressionLexer(ANTLR_USE_NAMESPACE(std)istream& in)
+#line 15 "CSharpExpressionLexer.cc"
+CSharpExpressionLexer::CSharpExpressionLexer(ANTLR_USE_NAMESPACE(std)istream& in)
 	: ANTLR_USE_NAMESPACE(antlr)CharScanner(new ANTLR_USE_NAMESPACE(antlr)CharBuffer(in),true)
 {
 	initLiterals();
 }
 
-JavaExpressionLexer::JavaExpressionLexer(ANTLR_USE_NAMESPACE(antlr)InputBuffer& ib)
+CSharpExpressionLexer::CSharpExpressionLexer(ANTLR_USE_NAMESPACE(antlr)InputBuffer& ib)
 	: ANTLR_USE_NAMESPACE(antlr)CharScanner(ib,true)
 {
 	initLiterals();
 }
 
-JavaExpressionLexer::JavaExpressionLexer(const ANTLR_USE_NAMESPACE(antlr)LexerSharedInputState& state)
+CSharpExpressionLexer::CSharpExpressionLexer(const ANTLR_USE_NAMESPACE(antlr)LexerSharedInputState& state)
 	: ANTLR_USE_NAMESPACE(antlr)CharScanner(state,true)
 {
 	initLiterals();
 }
 
-void JavaExpressionLexer::initLiterals()
+void CSharpExpressionLexer::initLiterals()
 {
 	literals["null"] = 14;
 	literals["true"] = 15;
 	literals["false"] = 16;
 }
 
-ANTLR_USE_NAMESPACE(antlr)RefToken JavaExpressionLexer::nextToken()
+ANTLR_USE_NAMESPACE(antlr)RefToken CSharpExpressionLexer::nextToken()
 {
 	ANTLR_USE_NAMESPACE(antlr)RefToken theRetToken;
 	for (;;) {
@@ -456,7 +456,7 @@ tryAgain:;
 }
 
 //DBG genRule(mHexDigit)
-void JavaExpressionLexer::mHexDigit(bool _createToken) {
+void CSharpExpressionLexer::mHexDigit(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = HexDigit;
 	int _saveIndex;
@@ -517,7 +517,7 @@ void JavaExpressionLexer::mHexDigit(bool _createToken) {
 }
 
 //DBG genRule(mDecDigit)
-void JavaExpressionLexer::mDecDigit(bool _createToken) {
+void CSharpExpressionLexer::mDecDigit(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = DecDigit;
 	int _saveIndex;
@@ -533,7 +533,7 @@ void JavaExpressionLexer::mDecDigit(bool _createToken) {
 }
 
 //DBG genRule(mOctDigit)
-void JavaExpressionLexer::mOctDigit(bool _createToken) {
+void CSharpExpressionLexer::mOctDigit(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = OctDigit;
 	int _saveIndex;
@@ -549,7 +549,7 @@ void JavaExpressionLexer::mOctDigit(bool _createToken) {
 }
 
 //DBG genRule(mNumericLiteral)
-void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
+void CSharpExpressionLexer::mNumericLiteral(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = NumericLiteral;
 	int _saveIndex;
@@ -631,7 +631,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 		if ( inputState->guessing==0 ) {
 #line 92 "csharp_expression.g"
 			_ttype = HEX_NUMERIC_LITERAL;
-#line 635 "JavaExpressionLexer.cc"
+#line 635 "CSharpExpressionLexer.cc"
 		}
 	}
 	else {
@@ -714,7 +714,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 			if ( inputState->guessing==0 ) {
 #line 95 "csharp_expression.g"
 				_ttype = OCT_NUMERIC_LITERAL;
-#line 718 "JavaExpressionLexer.cc"
+#line 718 "CSharpExpressionLexer.cc"
 			}
 		}
 		else {
@@ -845,7 +845,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 				if ( inputState->guessing==0 ) {
 #line 98 "csharp_expression.g"
 					_ttype = FP_NUMERIC_LITERAL;
-#line 849 "JavaExpressionLexer.cc"
+#line 849 "CSharpExpressionLexer.cc"
 				}
 			}
 			else {
@@ -996,7 +996,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 					if ( inputState->guessing==0 ) {
 #line 101 "csharp_expression.g"
 						_ttype = FP_NUMERIC_LITERAL;
-#line 1000 "JavaExpressionLexer.cc"
+#line 1000 "CSharpExpressionLexer.cc"
 					}
 				}
 				else if (((LA(1) >= static_cast<unsigned char>('0') && LA(1) <= static_cast<unsigned char>('9'))) && (true) && (true)) {
@@ -1047,7 +1047,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 					if ( inputState->guessing==0 ) {
 #line 104 "csharp_expression.g"
 						_ttype = DEC_NUMERIC_LITERAL;
-#line 1051 "JavaExpressionLexer.cc"
+#line 1051 "CSharpExpressionLexer.cc"
 					}
 				}
 				else if ((LA(1) == static_cast<unsigned char>('.')) && (true)) {
@@ -1058,7 +1058,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 					if ( inputState->guessing==0 ) {
 #line 106 "csharp_expression.g"
 						_ttype = DOT;
-#line 1062 "JavaExpressionLexer.cc"
+#line 1062 "CSharpExpressionLexer.cc"
 					}
 				}
 	else {
@@ -1074,7 +1074,7 @@ void JavaExpressionLexer::mNumericLiteral(bool _createToken) {
 }
 
 //DBG genRule(mCharacterLiteral)
-void JavaExpressionLexer::mCharacterLiteral(bool _createToken) {
+void CSharpExpressionLexer::mCharacterLiteral(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CharacterLiteral;
 	int _saveIndex;
@@ -1123,7 +1123,7 @@ void JavaExpressionLexer::mCharacterLiteral(bool _createToken) {
 }
 
 //DBG genRule(mSingleCharacter)
-void JavaExpressionLexer::mSingleCharacter(bool _createToken) {
+void CSharpExpressionLexer::mSingleCharacter(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SingleCharacter;
 	int _saveIndex;
@@ -1143,7 +1143,7 @@ void JavaExpressionLexer::mSingleCharacter(bool _createToken) {
 }
 
 //DBG genRule(mEscapeSequence)
-void JavaExpressionLexer::mEscapeSequence(bool _createToken) {
+void CSharpExpressionLexer::mEscapeSequence(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = EscapeSequence;
 	int _saveIndex;
@@ -1251,7 +1251,7 @@ void JavaExpressionLexer::mEscapeSequence(bool _createToken) {
 }
 
 //DBG genRule(mStringLiteral)
-void JavaExpressionLexer::mStringLiteral(bool _createToken) {
+void CSharpExpressionLexer::mStringLiteral(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = StringLiteral;
 	int _saveIndex;
@@ -1290,7 +1290,7 @@ void JavaExpressionLexer::mStringLiteral(bool _createToken) {
 }
 
 //DBG genRule(mStringCharacters)
-void JavaExpressionLexer::mStringCharacters(bool _createToken) {
+void CSharpExpressionLexer::mStringCharacters(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = StringCharacters;
 	int _saveIndex;
@@ -1322,7 +1322,7 @@ void JavaExpressionLexer::mStringCharacters(bool _createToken) {
 }
 
 //DBG genRule(mStringCharacter)
-void JavaExpressionLexer::mStringCharacter(bool _createToken) {
+void CSharpExpressionLexer::mStringCharacter(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = StringCharacter;
 	int _saveIndex;
@@ -1354,7 +1354,7 @@ void JavaExpressionLexer::mStringCharacter(bool _createToken) {
 }
 
 //DBG genRule(mOctalEscape)
-void JavaExpressionLexer::mOctalEscape(bool _createToken) {
+void CSharpExpressionLexer::mOctalEscape(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = OctalEscape;
 	int _saveIndex;
@@ -1466,7 +1466,7 @@ void JavaExpressionLexer::mOctalEscape(bool _createToken) {
 }
 
 //DBG genRule(mUnicodeEscape)
-void JavaExpressionLexer::mUnicodeEscape(bool _createToken) {
+void CSharpExpressionLexer::mUnicodeEscape(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = UnicodeEscape;
 	int _saveIndex;
@@ -1498,7 +1498,7 @@ void JavaExpressionLexer::mUnicodeEscape(bool _createToken) {
 }
 
 //DBG genRule(mZeroToThree)
-void JavaExpressionLexer::mZeroToThree(bool _createToken) {
+void CSharpExpressionLexer::mZeroToThree(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ZeroToThree;
 	int _saveIndex;
@@ -1518,7 +1518,7 @@ void JavaExpressionLexer::mZeroToThree(bool _createToken) {
 }
 
 //DBG genRule(mIdentifier)
-void JavaExpressionLexer::mIdentifier(bool _createToken) {
+void CSharpExpressionLexer::mIdentifier(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = Identifier;
 	int _saveIndex;
@@ -1731,7 +1731,7 @@ void JavaExpressionLexer::mIdentifier(bool _createToken) {
 }
 
 //DBG genRule(mLPAREN)
-void JavaExpressionLexer::mLPAREN(bool _createToken) {
+void CSharpExpressionLexer::mLPAREN(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LPAREN;
 	int _saveIndex;
@@ -1748,7 +1748,7 @@ void JavaExpressionLexer::mLPAREN(bool _createToken) {
 }
 
 //DBG genRule(mRPAREN)
-void JavaExpressionLexer::mRPAREN(bool _createToken) {
+void CSharpExpressionLexer::mRPAREN(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RPAREN;
 	int _saveIndex;
@@ -1765,7 +1765,7 @@ void JavaExpressionLexer::mRPAREN(bool _createToken) {
 }
 
 //DBG genRule(mLBRACE)
-void JavaExpressionLexer::mLBRACE(bool _createToken) {
+void CSharpExpressionLexer::mLBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LBRACE;
 	int _saveIndex;
@@ -1782,7 +1782,7 @@ void JavaExpressionLexer::mLBRACE(bool _createToken) {
 }
 
 //DBG genRule(mRBRACE)
-void JavaExpressionLexer::mRBRACE(bool _createToken) {
+void CSharpExpressionLexer::mRBRACE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RBRACE;
 	int _saveIndex;
@@ -1799,7 +1799,7 @@ void JavaExpressionLexer::mRBRACE(bool _createToken) {
 }
 
 //DBG genRule(mLBRACK)
-void JavaExpressionLexer::mLBRACK(bool _createToken) {
+void CSharpExpressionLexer::mLBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LBRACK;
 	int _saveIndex;
@@ -1816,7 +1816,7 @@ void JavaExpressionLexer::mLBRACK(bool _createToken) {
 }
 
 //DBG genRule(mRBRACK)
-void JavaExpressionLexer::mRBRACK(bool _createToken) {
+void CSharpExpressionLexer::mRBRACK(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = RBRACK;
 	int _saveIndex;
@@ -1833,7 +1833,7 @@ void JavaExpressionLexer::mRBRACK(bool _createToken) {
 }
 
 //DBG genRule(mSEMI)
-void JavaExpressionLexer::mSEMI(bool _createToken) {
+void CSharpExpressionLexer::mSEMI(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SEMI;
 	int _saveIndex;
@@ -1850,7 +1850,7 @@ void JavaExpressionLexer::mSEMI(bool _createToken) {
 }
 
 //DBG genRule(mCOMMA)
-void JavaExpressionLexer::mCOMMA(bool _createToken) {
+void CSharpExpressionLexer::mCOMMA(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = COMMA;
 	int _saveIndex;
@@ -1867,7 +1867,7 @@ void JavaExpressionLexer::mCOMMA(bool _createToken) {
 }
 
 //DBG genRule(mASSIGN)
-void JavaExpressionLexer::mASSIGN(bool _createToken) {
+void CSharpExpressionLexer::mASSIGN(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ASSIGN;
 	int _saveIndex;
@@ -1884,7 +1884,7 @@ void JavaExpressionLexer::mASSIGN(bool _createToken) {
 }
 
 //DBG genRule(mCMP_GT)
-void JavaExpressionLexer::mCMP_GT(bool _createToken) {
+void CSharpExpressionLexer::mCMP_GT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CMP_GT;
 	int _saveIndex;
@@ -1901,7 +1901,7 @@ void JavaExpressionLexer::mCMP_GT(bool _createToken) {
 }
 
 //DBG genRule(mCMP_LT)
-void JavaExpressionLexer::mCMP_LT(bool _createToken) {
+void CSharpExpressionLexer::mCMP_LT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CMP_LT;
 	int _saveIndex;
@@ -1918,7 +1918,7 @@ void JavaExpressionLexer::mCMP_LT(bool _createToken) {
 }
 
 //DBG genRule(mBANG)
-void JavaExpressionLexer::mBANG(bool _createToken) {
+void CSharpExpressionLexer::mBANG(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = BANG;
 	int _saveIndex;
@@ -1935,7 +1935,7 @@ void JavaExpressionLexer::mBANG(bool _createToken) {
 }
 
 //DBG genRule(mTILDE)
-void JavaExpressionLexer::mTILDE(bool _createToken) {
+void CSharpExpressionLexer::mTILDE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = TILDE;
 	int _saveIndex;
@@ -1952,7 +1952,7 @@ void JavaExpressionLexer::mTILDE(bool _createToken) {
 }
 
 //DBG genRule(mQUESTION)
-void JavaExpressionLexer::mQUESTION(bool _createToken) {
+void CSharpExpressionLexer::mQUESTION(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = QUESTION;
 	int _saveIndex;
@@ -1969,7 +1969,7 @@ void JavaExpressionLexer::mQUESTION(bool _createToken) {
 }
 
 //DBG genRule(mCOLON)
-void JavaExpressionLexer::mCOLON(bool _createToken) {
+void CSharpExpressionLexer::mCOLON(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = COLON;
 	int _saveIndex;
@@ -1986,7 +1986,7 @@ void JavaExpressionLexer::mCOLON(bool _createToken) {
 }
 
 //DBG genRule(mEQUAL)
-void JavaExpressionLexer::mEQUAL(bool _createToken) {
+void CSharpExpressionLexer::mEQUAL(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = EQUAL;
 	int _saveIndex;
@@ -2003,7 +2003,7 @@ void JavaExpressionLexer::mEQUAL(bool _createToken) {
 }
 
 //DBG genRule(mCMP_LE)
-void JavaExpressionLexer::mCMP_LE(bool _createToken) {
+void CSharpExpressionLexer::mCMP_LE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CMP_LE;
 	int _saveIndex;
@@ -2020,7 +2020,7 @@ void JavaExpressionLexer::mCMP_LE(bool _createToken) {
 }
 
 //DBG genRule(mCMP_GE)
-void JavaExpressionLexer::mCMP_GE(bool _createToken) {
+void CSharpExpressionLexer::mCMP_GE(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CMP_GE;
 	int _saveIndex;
@@ -2037,7 +2037,7 @@ void JavaExpressionLexer::mCMP_GE(bool _createToken) {
 }
 
 //DBG genRule(mNOTEQUAL)
-void JavaExpressionLexer::mNOTEQUAL(bool _createToken) {
+void CSharpExpressionLexer::mNOTEQUAL(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = NOTEQUAL;
 	int _saveIndex;
@@ -2054,7 +2054,7 @@ void JavaExpressionLexer::mNOTEQUAL(bool _createToken) {
 }
 
 //DBG genRule(mAND)
-void JavaExpressionLexer::mAND(bool _createToken) {
+void CSharpExpressionLexer::mAND(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = AND;
 	int _saveIndex;
@@ -2071,7 +2071,7 @@ void JavaExpressionLexer::mAND(bool _createToken) {
 }
 
 //DBG genRule(mOR)
-void JavaExpressionLexer::mOR(bool _createToken) {
+void CSharpExpressionLexer::mOR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = OR;
 	int _saveIndex;
@@ -2088,7 +2088,7 @@ void JavaExpressionLexer::mOR(bool _createToken) {
 }
 
 //DBG genRule(mADD)
-void JavaExpressionLexer::mADD(bool _createToken) {
+void CSharpExpressionLexer::mADD(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = ADD;
 	int _saveIndex;
@@ -2105,7 +2105,7 @@ void JavaExpressionLexer::mADD(bool _createToken) {
 }
 
 //DBG genRule(mSUB)
-void JavaExpressionLexer::mSUB(bool _createToken) {
+void CSharpExpressionLexer::mSUB(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SUB;
 	int _saveIndex;
@@ -2122,7 +2122,7 @@ void JavaExpressionLexer::mSUB(bool _createToken) {
 }
 
 //DBG genRule(mMUL)
-void JavaExpressionLexer::mMUL(bool _createToken) {
+void CSharpExpressionLexer::mMUL(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = MUL;
 	int _saveIndex;
@@ -2139,7 +2139,7 @@ void JavaExpressionLexer::mMUL(bool _createToken) {
 }
 
 //DBG genRule(mDIV)
-void JavaExpressionLexer::mDIV(bool _createToken) {
+void CSharpExpressionLexer::mDIV(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = DIV;
 	int _saveIndex;
@@ -2156,7 +2156,7 @@ void JavaExpressionLexer::mDIV(bool _createToken) {
 }
 
 //DBG genRule(mBITAND)
-void JavaExpressionLexer::mBITAND(bool _createToken) {
+void CSharpExpressionLexer::mBITAND(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = BITAND;
 	int _saveIndex;
@@ -2173,7 +2173,7 @@ void JavaExpressionLexer::mBITAND(bool _createToken) {
 }
 
 //DBG genRule(mBITOR)
-void JavaExpressionLexer::mBITOR(bool _createToken) {
+void CSharpExpressionLexer::mBITOR(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = BITOR;
 	int _saveIndex;
@@ -2190,7 +2190,7 @@ void JavaExpressionLexer::mBITOR(bool _createToken) {
 }
 
 //DBG genRule(mCARET)
-void JavaExpressionLexer::mCARET(bool _createToken) {
+void CSharpExpressionLexer::mCARET(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = CARET;
 	int _saveIndex;
@@ -2207,7 +2207,7 @@ void JavaExpressionLexer::mCARET(bool _createToken) {
 }
 
 //DBG genRule(mMOD)
-void JavaExpressionLexer::mMOD(bool _createToken) {
+void CSharpExpressionLexer::mMOD(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = MOD;
 	int _saveIndex;
@@ -2224,7 +2224,7 @@ void JavaExpressionLexer::mMOD(bool _createToken) {
 }
 
 //DBG genRule(mSHIFT_LEFT)
-void JavaExpressionLexer::mSHIFT_LEFT(bool _createToken) {
+void CSharpExpressionLexer::mSHIFT_LEFT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SHIFT_LEFT;
 	int _saveIndex;
@@ -2241,7 +2241,7 @@ void JavaExpressionLexer::mSHIFT_LEFT(bool _createToken) {
 }
 
 //DBG genRule(mSHIFT_RIGHT_S)
-void JavaExpressionLexer::mSHIFT_RIGHT_S(bool _createToken) {
+void CSharpExpressionLexer::mSHIFT_RIGHT_S(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SHIFT_RIGHT_S;
 	int _saveIndex;
@@ -2258,7 +2258,7 @@ void JavaExpressionLexer::mSHIFT_RIGHT_S(bool _createToken) {
 }
 
 //DBG genRule(mSHIFT_RIGHT_U)
-void JavaExpressionLexer::mSHIFT_RIGHT_U(bool _createToken) {
+void CSharpExpressionLexer::mSHIFT_RIGHT_U(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = SHIFT_RIGHT_U;
 	int _saveIndex;
@@ -2275,7 +2275,7 @@ void JavaExpressionLexer::mSHIFT_RIGHT_U(bool _createToken) {
 }
 
 //DBG genRule(mWS)
-void JavaExpressionLexer::mWS(bool _createToken) {
+void CSharpExpressionLexer::mWS(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = WS;
 	int _saveIndex;
@@ -2331,7 +2331,7 @@ void JavaExpressionLexer::mWS(bool _createToken) {
 	if ( inputState->guessing==0 ) {
 #line 197 "csharp_expression.g"
 		_ttype = antlr::Token::SKIP;
-#line 2335 "JavaExpressionLexer.cc"
+#line 2335 "CSharpExpressionLexer.cc"
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -2342,7 +2342,7 @@ void JavaExpressionLexer::mWS(bool _createToken) {
 }
 
 //DBG genRule(mCOMMENT)
-void JavaExpressionLexer::mCOMMENT(bool _createToken) {
+void CSharpExpressionLexer::mCOMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = COMMENT;
 	int _saveIndex;
@@ -2381,7 +2381,7 @@ void JavaExpressionLexer::mCOMMENT(bool _createToken) {
 	if ( inputState->guessing==0 ) {
 #line 202 "csharp_expression.g"
 		_ttype = antlr::Token::SKIP;
-#line 2385 "JavaExpressionLexer.cc"
+#line 2385 "CSharpExpressionLexer.cc"
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -2392,7 +2392,7 @@ void JavaExpressionLexer::mCOMMENT(bool _createToken) {
 }
 
 //DBG genRule(mLINE_COMMENT)
-void JavaExpressionLexer::mLINE_COMMENT(bool _createToken) {
+void CSharpExpressionLexer::mLINE_COMMENT(bool _createToken) {
 	int _ttype; ANTLR_USE_NAMESPACE(antlr)RefToken _token; int _begin=text.length();
 	_ttype = LINE_COMMENT;
 	int _saveIndex;
@@ -2427,7 +2427,7 @@ void JavaExpressionLexer::mLINE_COMMENT(bool _createToken) {
 	if ( inputState->guessing==0 ) {
 #line 207 "csharp_expression.g"
 		_ttype = antlr::Token::SKIP;
-#line 2431 "JavaExpressionLexer.cc"
+#line 2431 "CSharpExpressionLexer.cc"
 	}
 	if ( _createToken && _token==ANTLR_USE_NAMESPACE(antlr)nullToken && _ttype!=ANTLR_USE_NAMESPACE(antlr)Token::SKIP ) {
 	   _token = makeToken(_ttype);
@@ -2438,17 +2438,17 @@ void JavaExpressionLexer::mLINE_COMMENT(bool _createToken) {
 }
 
 
-const unsigned long JavaExpressionLexer::_tokenSet_0_data_[] = { 0UL, 67043328UL, 126UL, 126UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const unsigned long CSharpExpressionLexer::_tokenSet_0_data_[] = { 0UL, 67043328UL, 126UL, 126UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // TILDE QUESTION COLON EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD SHIFT_LEFT 
 // SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_0(_tokenSet_0_data_,10);
-const unsigned long JavaExpressionLexer::_tokenSet_1_data_[] = { 0UL, 67059712UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_0(_tokenSet_0_data_,10);
+const unsigned long CSharpExpressionLexer::_tokenSet_1_data_[] = { 0UL, 67059712UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // CMP_LT TILDE QUESTION COLON EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_1(_tokenSet_1_data_,10);
-const unsigned long JavaExpressionLexer::_tokenSet_2_data_[] = { 0UL, 67043328UL, 80UL, 80UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_1(_tokenSet_1_data_,10);
+const unsigned long CSharpExpressionLexer::_tokenSet_2_data_[] = { 0UL, 67043328UL, 80UL, 80UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // TILDE QUESTION COLON EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD WS LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_2(_tokenSet_2_data_,10);
-const unsigned long JavaExpressionLexer::_tokenSet_3_data_[] = { 4294967288UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_2(_tokenSet_2_data_,10);
+const unsigned long CSharpExpressionLexer::_tokenSet_3_data_[] = { 4294967288UL, 4294967167UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD STATEMENT BINARY_EXPRESSION UNARY_EXPRESSION PARENTHESES_EXPRESSION 
 // TYPE_CAST TYPE_NAME PRIMARY_SELECTOR DOT_SELECTOR METHOD_CALL EXPRESSION_LIST 
 // "null" "true" "false" DOT HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL 
@@ -2458,11 +2458,11 @@ const unsigned long JavaExpressionLexer::_tokenSet_3_data_[] = { 4294967288UL, 4
 // LBRACK RBRACK SEMI COMMA ASSIGN CMP_GT CMP_LT BANG TILDE QUESTION COLON 
 // EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET 
 // MOD SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_3(_tokenSet_3_data_,16);
-const unsigned long JavaExpressionLexer::_tokenSet_4_data_[] = { 0UL, 132UL, 268435456UL, 1327172UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_3(_tokenSet_3_data_,16);
+const unsigned long CSharpExpressionLexer::_tokenSet_4_data_[] = { 0UL, 132UL, 268435456UL, 1327172UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // ZeroToThree RBRACE 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_4(_tokenSet_4_data_,10);
-const unsigned long JavaExpressionLexer::_tokenSet_5_data_[] = { 4294967288UL, 4294967291UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_4(_tokenSet_4_data_,10);
+const unsigned long CSharpExpressionLexer::_tokenSet_5_data_[] = { 4294967288UL, 4294967291UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD STATEMENT BINARY_EXPRESSION UNARY_EXPRESSION PARENTHESES_EXPRESSION 
 // TYPE_CAST TYPE_NAME PRIMARY_SELECTOR DOT_SELECTOR METHOD_CALL EXPRESSION_LIST 
 // "null" "true" "false" DOT HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL 
@@ -2472,8 +2472,8 @@ const unsigned long JavaExpressionLexer::_tokenSet_5_data_[] = { 4294967288UL, 4
 // RBRACK SEMI COMMA ASSIGN CMP_GT CMP_LT BANG TILDE QUESTION COLON EQUAL 
 // CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET MOD 
 // SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_5(_tokenSet_5_data_,16);
-const unsigned long JavaExpressionLexer::_tokenSet_6_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_5(_tokenSet_5_data_,16);
+const unsigned long CSharpExpressionLexer::_tokenSet_6_data_[] = { 4294967288UL, 4294967291UL, 4026531839UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD STATEMENT BINARY_EXPRESSION UNARY_EXPRESSION PARENTHESES_EXPRESSION 
 // TYPE_CAST TYPE_NAME PRIMARY_SELECTOR DOT_SELECTOR METHOD_CALL EXPRESSION_LIST 
 // "null" "true" "false" DOT HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL 
@@ -2483,8 +2483,8 @@ const unsigned long JavaExpressionLexer::_tokenSet_6_data_[] = { 4294967288UL, 4
 // RBRACK SEMI COMMA ASSIGN CMP_GT CMP_LT BANG TILDE QUESTION COLON EQUAL 
 // CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET MOD 
 // SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_6(_tokenSet_6_data_,16);
-const unsigned long JavaExpressionLexer::_tokenSet_7_data_[] = { 4294967288UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_6(_tokenSet_6_data_,16);
+const unsigned long CSharpExpressionLexer::_tokenSet_7_data_[] = { 4294967288UL, 4294966271UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD STATEMENT BINARY_EXPRESSION UNARY_EXPRESSION PARENTHESES_EXPRESSION 
 // TYPE_CAST TYPE_NAME PRIMARY_SELECTOR DOT_SELECTOR METHOD_CALL EXPRESSION_LIST 
 // "null" "true" "false" DOT HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL 
@@ -2494,8 +2494,8 @@ const unsigned long JavaExpressionLexer::_tokenSet_7_data_[] = { 4294967288UL, 4
 // RBRACE LBRACK RBRACK COMMA ASSIGN CMP_GT CMP_LT BANG TILDE QUESTION 
 // COLON EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR 
 // CARET MOD SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_7(_tokenSet_7_data_,16);
-const unsigned long JavaExpressionLexer::_tokenSet_8_data_[] = { 4294958072UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_7(_tokenSet_7_data_,16);
+const unsigned long CSharpExpressionLexer::_tokenSet_8_data_[] = { 4294958072UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 4294967295UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // NULL_TREE_LOOKAHEAD STATEMENT BINARY_EXPRESSION UNARY_EXPRESSION PARENTHESES_EXPRESSION 
 // TYPE_CAST TYPE_NAME DOT_SELECTOR METHOD_CALL "null" "true" "false" DOT 
 // HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL DEC_NUMERIC_LITERAL 
@@ -2505,6 +2505,6 @@ const unsigned long JavaExpressionLexer::_tokenSet_8_data_[] = { 4294958072UL, 4
 // RBRACK SEMI COMMA ASSIGN CMP_GT CMP_LT BANG TILDE QUESTION COLON EQUAL 
 // CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET MOD 
 // SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U WS COMMENT LINE_COMMENT 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionLexer::_tokenSet_8(_tokenSet_8_data_,16);
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionLexer::_tokenSet_8(_tokenSet_8_data_,16);
 
 ANTLR_END_NAMESPACE

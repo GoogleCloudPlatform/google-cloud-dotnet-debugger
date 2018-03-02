@@ -1,38 +1,38 @@
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionParser.cc"$ */
-#include "JavaExpressionParser.hpp"
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionParser.cc"$ */
+#include "CSharpExpressionParser.hpp"
 #include "third_party/antlr/lib/cpp/antlr/NoViableAltException.hpp"
 #include "third_party/antlr/lib/cpp/antlr/SemanticException.hpp"
 #include "third_party/antlr/lib/cpp/antlr/ASTFactory.hpp"
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
 #line 1 "csharp_expression.g"
-#line 9 "JavaExpressionParser.cc"
-JavaExpressionParser::JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf, int k)
+#line 9 "CSharpExpressionParser.cc"
+CSharpExpressionParser::CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf, int k)
 : ANTLR_USE_NAMESPACE(antlr)LLkParser(tokenBuf,k)
 {
 }
 
-JavaExpressionParser::JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf)
+CSharpExpressionParser::CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf)
 : ANTLR_USE_NAMESPACE(antlr)LLkParser(tokenBuf,2)
 {
 }
 
-JavaExpressionParser::JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer, int k)
+CSharpExpressionParser::CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer, int k)
 : ANTLR_USE_NAMESPACE(antlr)LLkParser(lexer,k)
 {
 }
 
-JavaExpressionParser::JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer)
+CSharpExpressionParser::CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer)
 : ANTLR_USE_NAMESPACE(antlr)LLkParser(lexer,2)
 {
 }
 
-JavaExpressionParser::JavaExpressionParser(const ANTLR_USE_NAMESPACE(antlr)ParserSharedInputState& state)
+CSharpExpressionParser::CSharpExpressionParser(const ANTLR_USE_NAMESPACE(antlr)ParserSharedInputState& state)
 : ANTLR_USE_NAMESPACE(antlr)LLkParser(state,2)
 {
 }
 
 //DBG genRule(statement)
-void JavaExpressionParser::statement() {
+void CSharpExpressionParser::statement() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST statement_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -53,7 +53,7 @@ void JavaExpressionParser::statement() {
 			statement_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 251 "csharp_expression.g"
 			statement_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(STATEMENT,"statement"))->add(statement_AST)));
-#line 57 "JavaExpressionParser.cc"
+#line 57 "CSharpExpressionParser.cc"
 			currentAST.root = statement_AST;
 			if ( statement_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 				statement_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -98,7 +98,7 @@ void JavaExpressionParser::statement() {
 }
 
 //DBG genRule(expression)
-void JavaExpressionParser::expression() {
+void CSharpExpressionParser::expression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST expression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -147,7 +147,7 @@ void JavaExpressionParser::expression() {
 }
 
 //DBG genRule(conditionalExpression)
-void JavaExpressionParser::conditionalExpression() {
+void CSharpExpressionParser::conditionalExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST conditionalExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -248,7 +248,7 @@ void JavaExpressionParser::conditionalExpression() {
 }
 
 //DBG genRule(expressionList)
-void JavaExpressionParser::expressionList() {
+void CSharpExpressionParser::expressionList() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST expressionList_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -298,7 +298,7 @@ void JavaExpressionParser::expressionList() {
 			expressionList_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 264 "csharp_expression.g"
 			expressionList_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(EXPRESSION_LIST,"expression_list"))->add(expressionList_AST)));
-#line 302 "JavaExpressionParser.cc"
+#line 302 "CSharpExpressionParser.cc"
 			currentAST.root = expressionList_AST;
 			if ( expressionList_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 				expressionList_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -340,7 +340,7 @@ void JavaExpressionParser::expressionList() {
 }
 
 //DBG genRule(conditionalOrExpression)
-void JavaExpressionParser::conditionalOrExpression() {
+void CSharpExpressionParser::conditionalOrExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST conditionalOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -366,7 +366,7 @@ void JavaExpressionParser::conditionalOrExpression() {
 					conditionalOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 275 "csharp_expression.g"
 					conditionalOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(conditionalOrExpression_AST)));
-#line 370 "JavaExpressionParser.cc"
+#line 370 "CSharpExpressionParser.cc"
 					currentAST.root = conditionalOrExpression_AST;
 					if ( conditionalOrExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						conditionalOrExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -430,7 +430,7 @@ void JavaExpressionParser::conditionalOrExpression() {
 }
 
 //DBG genRule(conditionalAndExpression)
-void JavaExpressionParser::conditionalAndExpression() {
+void CSharpExpressionParser::conditionalAndExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST conditionalAndExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -456,7 +456,7 @@ void JavaExpressionParser::conditionalAndExpression() {
 					conditionalAndExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 283 "csharp_expression.g"
 					conditionalAndExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(conditionalAndExpression_AST)));
-#line 460 "JavaExpressionParser.cc"
+#line 460 "CSharpExpressionParser.cc"
 					currentAST.root = conditionalAndExpression_AST;
 					if ( conditionalAndExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						conditionalAndExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -520,7 +520,7 @@ void JavaExpressionParser::conditionalAndExpression() {
 }
 
 //DBG genRule(inclusiveOrExpression)
-void JavaExpressionParser::inclusiveOrExpression() {
+void CSharpExpressionParser::inclusiveOrExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST inclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -546,7 +546,7 @@ void JavaExpressionParser::inclusiveOrExpression() {
 					inclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 291 "csharp_expression.g"
 					inclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(inclusiveOrExpression_AST)));
-#line 550 "JavaExpressionParser.cc"
+#line 550 "CSharpExpressionParser.cc"
 					currentAST.root = inclusiveOrExpression_AST;
 					if ( inclusiveOrExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						inclusiveOrExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -610,7 +610,7 @@ void JavaExpressionParser::inclusiveOrExpression() {
 }
 
 //DBG genRule(exclusiveOrExpression)
-void JavaExpressionParser::exclusiveOrExpression() {
+void CSharpExpressionParser::exclusiveOrExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST exclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -636,7 +636,7 @@ void JavaExpressionParser::exclusiveOrExpression() {
 					exclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 299 "csharp_expression.g"
 					exclusiveOrExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(exclusiveOrExpression_AST)));
-#line 640 "JavaExpressionParser.cc"
+#line 640 "CSharpExpressionParser.cc"
 					currentAST.root = exclusiveOrExpression_AST;
 					if ( exclusiveOrExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						exclusiveOrExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -700,7 +700,7 @@ void JavaExpressionParser::exclusiveOrExpression() {
 }
 
 //DBG genRule(andExpression)
-void JavaExpressionParser::andExpression() {
+void CSharpExpressionParser::andExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST andExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -726,7 +726,7 @@ void JavaExpressionParser::andExpression() {
 					andExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 307 "csharp_expression.g"
 					andExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(andExpression_AST)));
-#line 730 "JavaExpressionParser.cc"
+#line 730 "CSharpExpressionParser.cc"
 					currentAST.root = andExpression_AST;
 					if ( andExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						andExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -790,7 +790,7 @@ void JavaExpressionParser::andExpression() {
 }
 
 //DBG genRule(equalityExpression)
-void JavaExpressionParser::equalityExpression() {
+void CSharpExpressionParser::equalityExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST equalityExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -816,7 +816,7 @@ void JavaExpressionParser::equalityExpression() {
 					equalityExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 315 "csharp_expression.g"
 					equalityExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(equalityExpression_AST)));
-#line 820 "JavaExpressionParser.cc"
+#line 820 "CSharpExpressionParser.cc"
 					currentAST.root = equalityExpression_AST;
 					if ( equalityExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						equalityExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -908,7 +908,7 @@ void JavaExpressionParser::equalityExpression() {
 }
 
 //DBG genRule(relationalExpression)
-void JavaExpressionParser::relationalExpression() {
+void CSharpExpressionParser::relationalExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST relationalExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -934,7 +934,7 @@ void JavaExpressionParser::relationalExpression() {
 					relationalExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 323 "csharp_expression.g"
 					relationalExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(relationalExpression_AST)));
-#line 938 "JavaExpressionParser.cc"
+#line 938 "CSharpExpressionParser.cc"
 					currentAST.root = relationalExpression_AST;
 					if ( relationalExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						relationalExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1052,7 +1052,7 @@ void JavaExpressionParser::relationalExpression() {
 }
 
 //DBG genRule(shiftExpression)
-void JavaExpressionParser::shiftExpression() {
+void CSharpExpressionParser::shiftExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST shiftExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1078,7 +1078,7 @@ void JavaExpressionParser::shiftExpression() {
 					shiftExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 331 "csharp_expression.g"
 					shiftExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(shiftExpression_AST)));
-#line 1082 "JavaExpressionParser.cc"
+#line 1082 "CSharpExpressionParser.cc"
 					currentAST.root = shiftExpression_AST;
 					if ( shiftExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						shiftExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1183,7 +1183,7 @@ void JavaExpressionParser::shiftExpression() {
 }
 
 //DBG genRule(additiveExpression)
-void JavaExpressionParser::additiveExpression() {
+void CSharpExpressionParser::additiveExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST additiveExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1209,7 +1209,7 @@ void JavaExpressionParser::additiveExpression() {
 					additiveExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 339 "csharp_expression.g"
 					additiveExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(additiveExpression_AST)));
-#line 1213 "JavaExpressionParser.cc"
+#line 1213 "CSharpExpressionParser.cc"
 					currentAST.root = additiveExpression_AST;
 					if ( additiveExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						additiveExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1301,7 +1301,7 @@ void JavaExpressionParser::additiveExpression() {
 }
 
 //DBG genRule(multiplicativeExpression)
-void JavaExpressionParser::multiplicativeExpression() {
+void CSharpExpressionParser::multiplicativeExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST multiplicativeExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1327,7 +1327,7 @@ void JavaExpressionParser::multiplicativeExpression() {
 					multiplicativeExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 347 "csharp_expression.g"
 					multiplicativeExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(BINARY_EXPRESSION,"binary_expression"))->add(multiplicativeExpression_AST)));
-#line 1331 "JavaExpressionParser.cc"
+#line 1331 "CSharpExpressionParser.cc"
 					currentAST.root = multiplicativeExpression_AST;
 					if ( multiplicativeExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						multiplicativeExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1432,7 +1432,7 @@ void JavaExpressionParser::multiplicativeExpression() {
 }
 
 //DBG genRule(unaryExpression)
-void JavaExpressionParser::unaryExpression() {
+void CSharpExpressionParser::unaryExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST unaryExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1495,7 +1495,7 @@ void JavaExpressionParser::unaryExpression() {
 				unaryExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 354 "csharp_expression.g"
 				unaryExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(UNARY_EXPRESSION,"unary_expression"))->add(unaryExpression_AST)));
-#line 1499 "JavaExpressionParser.cc"
+#line 1499 "CSharpExpressionParser.cc"
 				currentAST.root = unaryExpression_AST;
 				if ( unaryExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 					unaryExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1568,7 +1568,7 @@ void JavaExpressionParser::unaryExpression() {
 }
 
 //DBG genRule(unaryExpressionNotPlusMinus)
-void JavaExpressionParser::unaryExpressionNotPlusMinus() {
+void CSharpExpressionParser::unaryExpressionNotPlusMinus() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST unaryExpressionNotPlusMinus_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1627,7 +1627,7 @@ void JavaExpressionParser::unaryExpressionNotPlusMinus() {
 				unaryExpressionNotPlusMinus_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 360 "csharp_expression.g"
 				unaryExpressionNotPlusMinus_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(UNARY_EXPRESSION,"unary_expression"))->add(unaryExpressionNotPlusMinus_AST)));
-#line 1631 "JavaExpressionParser.cc"
+#line 1631 "CSharpExpressionParser.cc"
 				currentAST.root = unaryExpressionNotPlusMinus_AST;
 				if ( unaryExpressionNotPlusMinus_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 					unaryExpressionNotPlusMinus_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1690,7 +1690,7 @@ void JavaExpressionParser::unaryExpressionNotPlusMinus() {
 							unaryExpressionNotPlusMinus_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 364 "csharp_expression.g"
 							unaryExpressionNotPlusMinus_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(PRIMARY_SELECTOR,"primary_selector"))->add(unaryExpressionNotPlusMinus_AST)));
-#line 1694 "JavaExpressionParser.cc"
+#line 1694 "CSharpExpressionParser.cc"
 							currentAST.root = unaryExpressionNotPlusMinus_AST;
 							if ( unaryExpressionNotPlusMinus_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 								unaryExpressionNotPlusMinus_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1751,7 +1751,7 @@ void JavaExpressionParser::unaryExpressionNotPlusMinus() {
 }
 
 //DBG genRule(castExpression)
-void JavaExpressionParser::castExpression() {
+void CSharpExpressionParser::castExpression() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST castExpression_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1784,7 +1784,7 @@ void JavaExpressionParser::castExpression() {
 			castExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 371 "csharp_expression.g"
 			castExpression_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(TYPE_CAST,"type_cast"))->add(castExpression_AST)));
-#line 1788 "JavaExpressionParser.cc"
+#line 1788 "CSharpExpressionParser.cc"
 			currentAST.root = castExpression_AST;
 			if ( castExpression_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 				castExpression_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1826,7 +1826,7 @@ void JavaExpressionParser::castExpression() {
 }
 
 //DBG genRule(primary)
-void JavaExpressionParser::primary() {
+void CSharpExpressionParser::primary() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST primary_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1858,7 +1858,7 @@ void JavaExpressionParser::primary() {
 				primary_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 376 "csharp_expression.g"
 				primary_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(PARENTHESES_EXPRESSION,"parentheses_expression"))->add(primary_AST)));
-#line 1862 "JavaExpressionParser.cc"
+#line 1862 "CSharpExpressionParser.cc"
 				currentAST.root = primary_AST;
 				if ( primary_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 					primary_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -1899,7 +1899,7 @@ void JavaExpressionParser::primary() {
 					primary_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 380 "csharp_expression.g"
 					primary_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(METHOD_CALL,"method_call"))->add(primary_AST)));
-#line 1903 "JavaExpressionParser.cc"
+#line 1903 "CSharpExpressionParser.cc"
 					currentAST.root = primary_AST;
 					if ( primary_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						primary_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -2007,7 +2007,7 @@ void JavaExpressionParser::primary() {
 }
 
 //DBG genRule(selector)
-void JavaExpressionParser::selector() {
+void CSharpExpressionParser::selector() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST selector_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2051,7 +2051,7 @@ void JavaExpressionParser::selector() {
 					selector_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 394 "csharp_expression.g"
 					selector_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(METHOD_CALL,"method_call"))->add(selector_AST)));
-#line 2055 "JavaExpressionParser.cc"
+#line 2055 "CSharpExpressionParser.cc"
 					currentAST.root = selector_AST;
 					if ( selector_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 						selector_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -2104,7 +2104,7 @@ void JavaExpressionParser::selector() {
 				selector_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 396 "csharp_expression.g"
 				selector_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(DOT_SELECTOR,"dot_selector"))->add(selector_AST)));
-#line 2108 "JavaExpressionParser.cc"
+#line 2108 "CSharpExpressionParser.cc"
 				currentAST.root = selector_AST;
 				if ( selector_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 					selector_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -2181,7 +2181,7 @@ void JavaExpressionParser::selector() {
 }
 
 //DBG genRule(classOrInterfaceType)
-void JavaExpressionParser::classOrInterfaceType() {
+void CSharpExpressionParser::classOrInterfaceType() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST classOrInterfaceType_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2233,7 +2233,7 @@ void JavaExpressionParser::classOrInterfaceType() {
 			classOrInterfaceType_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(currentAST.root);
 #line 419 "csharp_expression.g"
 			classOrInterfaceType_AST = ANTLR_USE_NAMESPACE(antlr)RefAST(astFactory->make((new ANTLR_USE_NAMESPACE(antlr)ASTArray(2))->add(astFactory->create(TYPE_NAME,"type_name"))->add(classOrInterfaceType_AST)));
-#line 2237 "JavaExpressionParser.cc"
+#line 2237 "CSharpExpressionParser.cc"
 			currentAST.root = classOrInterfaceType_AST;
 			if ( classOrInterfaceType_AST!=ANTLR_USE_NAMESPACE(antlr)nullAST &&
 				classOrInterfaceType_AST->getFirstChild() != ANTLR_USE_NAMESPACE(antlr)nullAST )
@@ -2275,7 +2275,7 @@ void JavaExpressionParser::classOrInterfaceType() {
 }
 
 //DBG genRule(arguments)
-void JavaExpressionParser::arguments() {
+void CSharpExpressionParser::arguments() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST arguments_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2364,7 +2364,7 @@ void JavaExpressionParser::arguments() {
 }
 
 //DBG genRule(literal)
-void JavaExpressionParser::literal() {
+void CSharpExpressionParser::literal() {
 	returnAST = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)ASTPair currentAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST literal_AST = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -2538,11 +2538,11 @@ void JavaExpressionParser::literal() {
 	returnAST = literal_AST;
 }
 
-void JavaExpressionParser::initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory )
+void CSharpExpressionParser::initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory )
 {
 	factory.setMaxNodeType(70);
 }
-const char* JavaExpressionParser::tokenNames[] = {
+const char* CSharpExpressionParser::tokenNames[] = {
 	"<0>",
 	"EOF",
 	"<2>",
@@ -2617,74 +2617,74 @@ const char* JavaExpressionParser::tokenNames[] = {
 	0
 };
 
-const unsigned long JavaExpressionParser::_tokenSet_0_data_[] = { 2UL, 0UL, 0UL, 0UL };
+const unsigned long CSharpExpressionParser::_tokenSet_0_data_[] = { 2UL, 0UL, 0UL, 0UL };
 // EOF 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_0(_tokenSet_0_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_1_data_[] = { 2UL, 264736UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_0(_tokenSet_0_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_1_data_[] = { 2UL, 264736UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA COLON 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_1(_tokenSet_1_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_2_data_[] = { 0UL, 32UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_1(_tokenSet_1_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_2_data_[] = { 0UL, 32UL, 0UL, 0UL };
 // RPAREN 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_2(_tokenSet_2_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_3_data_[] = { 2UL, 395808UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_2(_tokenSet_2_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_3_data_[] = { 2UL, 395808UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_3(_tokenSet_3_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_4_data_[] = { 2UL, 17173024UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_3(_tokenSet_3_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_4_data_[] = { 2UL, 17173024UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON OR 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_4(_tokenSet_4_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_5_data_[] = { 2UL, 25561632UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_4(_tokenSet_4_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_5_data_[] = { 2UL, 25561632UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON AND OR 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_5(_tokenSet_5_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_6_data_[] = { 2UL, 1099303456UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_5(_tokenSet_5_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_6_data_[] = { 2UL, 1099303456UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON AND OR BITOR 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_6(_tokenSet_6_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_7_data_[] = { 2UL, 3246787104UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_6(_tokenSet_6_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_7_data_[] = { 2UL, 3246787104UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON AND OR BITOR CARET 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_7(_tokenSet_7_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_8_data_[] = { 2UL, 3783658016UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_7(_tokenSet_7_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_8_data_[] = { 2UL, 3783658016UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON AND OR BITAND BITOR CARET 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_8(_tokenSet_8_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_9_data_[] = { 0UL, 3170304UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_8(_tokenSet_8_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_9_data_[] = { 0UL, 3170304UL, 0UL, 0UL };
 // CMP_GT CMP_LT CMP_LE CMP_GE 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_9(_tokenSet_9_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_10_data_[] = { 2UL, 3788376608UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_9(_tokenSet_9_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_10_data_[] = { 2UL, 3788376608UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA QUESTION COLON EQUAL NOTEQUAL AND OR BITAND 
 // BITOR CARET 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_10(_tokenSet_10_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_11_data_[] = { 2UL, 3791546912UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_10(_tokenSet_10_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_11_data_[] = { 2UL, 3791546912UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA CMP_GT CMP_LT QUESTION COLON EQUAL CMP_LE CMP_GE 
 // NOTEQUAL AND OR BITAND BITOR CARET 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_11(_tokenSet_11_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_12_data_[] = { 2UL, 3791546912UL, 14UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_11(_tokenSet_11_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_12_data_[] = { 2UL, 3791546912UL, 14UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA CMP_GT CMP_LT QUESTION COLON EQUAL CMP_LE CMP_GE 
 // NOTEQUAL AND OR BITAND BITOR CARET SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_12(_tokenSet_12_data_,8);
-const unsigned long JavaExpressionParser::_tokenSet_13_data_[] = { 2UL, 3892210208UL, 14UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_12(_tokenSet_12_data_,8);
+const unsigned long CSharpExpressionParser::_tokenSet_13_data_[] = { 2UL, 3892210208UL, 14UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA CMP_GT CMP_LT QUESTION COLON EQUAL CMP_LE CMP_GE 
 // NOTEQUAL AND OR ADD SUB BITAND BITOR CARET SHIFT_LEFT SHIFT_RIGHT_S 
 // SHIFT_RIGHT_U 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_13(_tokenSet_13_data_,8);
-const unsigned long JavaExpressionParser::_tokenSet_14_data_[] = { 2UL, 4294863392UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_13(_tokenSet_13_data_,8);
+const unsigned long CSharpExpressionParser::_tokenSet_14_data_[] = { 2UL, 4294863392UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // EOF RPAREN RBRACK COMMA CMP_GT CMP_LT QUESTION COLON EQUAL CMP_LE CMP_GE 
 // NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET MOD SHIFT_LEFT SHIFT_RIGHT_S 
 // SHIFT_RIGHT_U 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_14(_tokenSet_14_data_,8);
-const unsigned long JavaExpressionParser::_tokenSet_15_data_[] = { 339591168UL, 24UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_14(_tokenSet_14_data_,8);
+const unsigned long CSharpExpressionParser::_tokenSet_15_data_[] = { 339591168UL, 24UL, 0UL, 0UL };
 // "null" "true" "false" HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL FP_NUMERIC_LITERAL 
 // DEC_NUMERIC_LITERAL CharacterLiteral StringLiteral Identifier LPAREN 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_15(_tokenSet_15_data_,4);
-const unsigned long JavaExpressionParser::_tokenSet_16_data_[] = { 339722242UL, 4294961976UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_15(_tokenSet_15_data_,4);
+const unsigned long CSharpExpressionParser::_tokenSet_16_data_[] = { 339722242UL, 4294961976UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // EOF "null" "true" "false" DOT HEX_NUMERIC_LITERAL OCT_NUMERIC_LITERAL 
 // FP_NUMERIC_LITERAL DEC_NUMERIC_LITERAL CharacterLiteral StringLiteral 
 // Identifier LPAREN RPAREN LBRACK RBRACK COMMA CMP_GT CMP_LT BANG TILDE 
 // QUESTION COLON EQUAL CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND 
 // BITOR CARET MOD SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_16(_tokenSet_16_data_,8);
-const unsigned long JavaExpressionParser::_tokenSet_17_data_[] = { 131074UL, 4294863648UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_16(_tokenSet_16_data_,8);
+const unsigned long CSharpExpressionParser::_tokenSet_17_data_[] = { 131074UL, 4294863648UL, 15UL, 0UL, 0UL, 0UL, 0UL, 0UL };
 // EOF DOT RPAREN LBRACK RBRACK COMMA CMP_GT CMP_LT QUESTION COLON EQUAL 
 // CMP_LE CMP_GE NOTEQUAL AND OR ADD SUB MUL DIV BITAND BITOR CARET MOD 
 // SHIFT_LEFT SHIFT_RIGHT_S SHIFT_RIGHT_U 
-const ANTLR_USE_NAMESPACE(antlr)BitSet JavaExpressionParser::_tokenSet_17(_tokenSet_17_data_,8);
+const ANTLR_USE_NAMESPACE(antlr)BitSet CSharpExpressionParser::_tokenSet_17(_tokenSet_17_data_,8);
 
 
 ANTLR_END_NAMESPACE

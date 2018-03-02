@@ -1,10 +1,10 @@
-#ifndef INC_JavaExpressionParserTokenTypes_hpp_
-#define INC_JavaExpressionParserTokenTypes_hpp_
+#ifndef INC_CSharpExpressionLexerTokenTypes_hpp_
+#define INC_CSharpExpressionLexerTokenTypes_hpp_
 #include "third_party/antlr/lib/cpp/antlr/config.hpp"
 
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionParserTokenTypes.hpp"$ */
-struct JavaExpressionParserTokenTypes {
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionLexerTokenTypes.hpp"$ */
+struct CSharpExpressionLexerTokenTypes {
 	enum {
 		EOF_ = 1,
 		STATEMENT = 4,
@@ -78,4 +78,4 @@ struct JavaExpressionParserTokenTypes {
 	};
 };
 ANTLR_END_NAMESPACE
-#endif /*INC_JavaExpressionParserTokenTypes_hpp_*/
+#endif /*INC_CSharpExpressionLexerTokenTypes_hpp_*/
