@@ -12,6 +12,8 @@
 #include <antlr/RefCount.hpp>
 #include <string>
 
+using std::string;
+
 #ifdef ANTLR_CXX_SUPPORTS_NAMESPACE
 namespace antlr {
 #endif
@@ -74,7 +76,7 @@ private:
 };
 
 #ifdef NEEDS_OPERATOR_LESS_THAN
-inline operator<(RefToken l,RefToken r); //{return true;}
+inline bool operator<(RefToken l,RefToken r); //{return true;}
 #endif
 
 extern ANTLR_API RefToken nullToken;

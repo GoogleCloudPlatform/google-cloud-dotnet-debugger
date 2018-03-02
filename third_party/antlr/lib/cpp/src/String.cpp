@@ -23,7 +23,7 @@ ANTLR_C_USING(sprintf)
 string operator+( const string& lhs, const int rhs )
 {
 	char tmp[100];
-	sprintf(tmp,"%d",rhs);
+	sprintf_s(tmp,"%d",rhs);
 	return lhs+tmp;
 }
 

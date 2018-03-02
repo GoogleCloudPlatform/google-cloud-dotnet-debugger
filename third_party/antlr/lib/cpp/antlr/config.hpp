@@ -10,7 +10,7 @@
 
 // We assume std::string is defined in global namespace.
 #include <memory>
-using std::string;
+#include <string>
 
 /*
  * Just a simple configuration file to differentiate between the
@@ -43,13 +43,13 @@ using std::string;
 # pragma warning( disable : 4786 )
 
 // For the DLL support contributed by Stephen Naughton
-# ifdef ANTLR_EXPORTS
+//# ifdef ANTLR_EXPORTS
 #	undef ANTLR_API
 #	define ANTLR_API __declspec(dllexport)
-# else
-#	undef ANTLR_API
-#	define ANTLR_API __declspec(dllimport)
-# endif
+//# else
+//#	undef ANTLR_API
+//#	define ANTLR_API __declspec(dllimport)
+//# endif
 
 // Now, some defines for shortcomings in the MS compiler:
 //
