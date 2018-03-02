@@ -27,6 +27,8 @@
 #include "i_eval_coordinator.h"
 #include "method_info.h"
 
+using std::string;
+
 namespace google_cloud_debugger {
 
 MethodCallEvaluator::MethodCallEvaluator(
@@ -175,8 +177,8 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
     arg_debug_values.push_back(invoking_object);
   }
 
-  hr = EvaluateArgumentsHelper(&arg_debug_values, eval_coordinator,
-    debug_eval, err_stream);
+  hr = EvaluateArgumentsHelper(&arg_debug_values, debug_eval,
+    eval_coordinator, err_stream);
   if (FAILED(hr)) {
     *err_stream << "Failed to evaluate arguments.";
     return hr;
@@ -242,7 +244,8 @@ HRESULT MethodCallEvaluator::EvaluateArgumentsHelper(
       std::vector<ICorDebugValue*>* arg_debug_values,
       ICorDebugEval *debug_eval,
       IEvalCoordinator *eval_coordinator,
-      std::ostream *err_stream) {
+      std::ostream *err_stream) const {
+  HRESULT hr;
   for (auto &argument : arguments_) {
     std::shared_ptr<DbgObject> arg_obj;
     hr = argument->Evaluate(&arg_obj, eval_coordinator, err_stream);

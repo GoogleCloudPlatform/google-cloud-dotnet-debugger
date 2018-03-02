@@ -20,10 +20,9 @@
 
 #include "dbg_object.h"
 #include "i_dbg_class_member.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
-
-struct TypeSignature;
 
 // This class represents a property in a .NET class.
 // The property is not evaluated by default unless EvaluateProperty
