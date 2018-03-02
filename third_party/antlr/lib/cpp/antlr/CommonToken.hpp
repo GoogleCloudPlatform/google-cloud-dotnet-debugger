@@ -12,6 +12,8 @@
 #include <antlr/Token.hpp>
 #include <string>
 
+using std::string;
+
 #ifdef ANTLR_CXX_SUPPORTS_NAMESPACE
 namespace antlr {
 #endif
