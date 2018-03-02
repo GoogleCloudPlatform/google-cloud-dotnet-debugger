@@ -1,0 +1,20 @@
+name: "ANTLR"
+description:
+    "ANTLR, ANother Tool for Language Recognition, (formerly PCCTS) is a "
+    "language tool that provides a framework for constructing recognizers, "
+    "compilers, and translators from grammatical descriptions containing Java, "
+    "C#, C++, or Python actions."
+
+third_party {
+  url {
+    type: HOMEPAGE
+    value: "http://www.antlr2.org/"
+  }
+  url {
+    type: ARCHIVE
+    value: "http://www.antlr2.org/download/antlr-2.7.2.zip"
+  }
+  version: "2.7.2"
+  last_upgrade_date { year: 2018 month: 3 day: 1 }
+  license_type: PERMISSIVE
+}
