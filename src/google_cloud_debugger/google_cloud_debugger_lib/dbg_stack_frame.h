@@ -30,6 +30,7 @@
 
 namespace google_cloud_debugger {
 
+// TODO(quoct): Add error stream into the tuple.
 typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
     VariableTuple;
 
