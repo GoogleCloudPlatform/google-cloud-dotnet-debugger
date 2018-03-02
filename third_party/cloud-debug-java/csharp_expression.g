@@ -19,15 +19,17 @@
 //   third_party/antlr3/java_grammar/Java.g
 
 header "post_include_hpp" {
-  #include "common.h"
-  #include "java_expression.h"
-  #include "messages.h"
-  #include "model.h"
+  #include <iostream>
+  #include <string>
+
+  #include "../../cloud-debug-java/common.h"
+  #include "../../cloud-debug-java/java_expression.h"
+  #include "../../cloud-debug-java/messages.h"
 }
 
 options {
   language="Cpp";
-  namespace="devtools::cdbg";
+  namespace="google_cloud_debugger";
 }
 
 //
@@ -58,8 +60,8 @@ tokens {
   EXPRESSION_LIST;
 
   JNULL         = "null";
-  TRUE          = "true";
-  FALSE         = "false";
+  JTRUE          = "true";
+  JFALSE         = "false";
 
   // No explicit lexer rule exists for DOT. See NumericLiteral lexer rule for
   // details.
@@ -227,7 +229,7 @@ options {
     setASTFactory(&fact_);
   }
 
-  void reportError(const string& s) {
+  void reportError(const std::string& s) {
     errors_.push_back(s);
   }
 
@@ -237,10 +239,10 @@ options {
 
   int num_errors() { return errors_.size(); }
 
-  const std::vector<string>& errors() { return errors_; }
+  const std::vector<std::string>& errors() { return errors_; }
 
  private:
-  std::vector<string> errors_;
+  std::vector<std::string> errors_;
   antlr::ASTFactory fact_;
 }
 
@@ -402,8 +404,8 @@ literal
   | DEC_NUMERIC_LITERAL
   | CharacterLiteral
   | StringLiteral
-  | TRUE
-  | FALSE
+  | JTRUE
+  | JFALSE
   | JNULL
   ;
 
@@ -442,15 +444,15 @@ options {
     ResetErrorMessage();
 
     if (!VerifyMaxDepth(ast, kMaxTreeDepth)) {
-      LOG(WARNING) << "The parsed expression tree is too deep";
-      SetErrorMessage({ ExpressionTreeTooDeep });
+      std::cerr << "The parsed expression tree is too deep";
+      SetErrorMessage(ExpressionTreeTooDeep);
       return nullptr;
     }
 
     std::unique_ptr<JavaExpression> expression(statement(ast));
     if (expression == nullptr) {
       // Set generic error message if specific error wasn't set.
-      SetErrorMessage({ ExpressionParserError });
+      SetErrorMessage(ExpressionParserError);
     }
 
     return expression;
@@ -458,17 +460,15 @@ options {
 
   // Getter for the formatted error message. The error message will only be
   // set when "Walk" fails.
-  const FormatMessageModel& error_message() const { return error_message_; }
+  const std::string &error_message() const { return error_message_; }
 
  private:
   void ResetErrorMessage() {
-    error_message_ = FormatMessageModel();
+    error_message_.clear();
   }
 
-  void SetErrorMessage(FormatMessageModel new_error_message) {
-    if (error_message_.format.empty()) {
-      error_message_ = std::move(new_error_message);
-    }
+  void SetErrorMessage(const std::string &new_error_message) {
+    error_message_ = new_error_message;
   }
 
   void reportError(const antlr::RecognitionException& ex) {
@@ -476,7 +476,7 @@ options {
   }
 
   void reportError(const std::string& msg) {
-    LOG(ERROR) << "Internal parser error: " << msg;
+    std::cerr << "Internal parser error: " << msg;
   }
 
   // Verifies that the maximum depth of the subtree "node" does
@@ -485,8 +485,6 @@ options {
     if (max_depth == 0) {
       return false;
     }
-
-    DCHECK(node != nullptr);
 
     antlr::RefAST child_node = node->getFirstChild();
     while (child_node != nullptr) {
@@ -506,7 +504,7 @@ options {
   // "error_message_.format" indicates that the error message is not available.
   // Only first error message encountered is captured. Subsequent error 
   // messages are ignored.
-  FormatMessageModel error_message_;
+  std::string error_message_;
 }
 
 
@@ -524,8 +522,8 @@ expression returns [JavaExpression* je] {
     MethodArguments* r = nullptr;
     BinaryJavaExpression::Type binary_expression_type;
     UnaryJavaExpression::Type unary_expression_type;
-    std::list<std::vector<jchar>> string_sequence;
-    string type;
+    std::list<std::vector<char>> string_sequence;
+    std::string type;
 
     je = nullptr;
   }
@@ -566,10 +564,7 @@ expression returns [JavaExpression* je] {
     JavaIntLiteral* nl = new JavaIntLiteral;
     if (!nl->ParseString(hex_numeric_literal_node->getText(), 16)) {
       reportError("Hex integer literal could not be parsed");
-      SetErrorMessage({ 
-        BadNumericLiteral,
-        { hex_numeric_literal_node->getText() }
-      });
+      SetErrorMessage(BadNumericLiteral);
 
       delete nl;
       je = nullptr;
@@ -581,10 +576,7 @@ expression returns [JavaExpression* je] {
     JavaIntLiteral* nl = new JavaIntLiteral;
     if (!nl->ParseString(oct_numeric_literal_node->getText(), 8)) {
       reportError("Octal integer literal could not be parsed");
-      SetErrorMessage({ 
-        BadNumericLiteral,
-        { oct_numeric_literal_node->getText() }
-      });
+      SetErrorMessage(BadNumericLiteral);
 
       delete nl;
       je = nullptr;
@@ -596,10 +588,7 @@ expression returns [JavaExpression* je] {
     JavaFloatLiteral* nl = new JavaFloatLiteral;
     if (!nl->ParseString(fp_numeric_literal_node->getText())) {
       reportError("Floating point literal could not be parsed");
-      SetErrorMessage({ 
-        BadNumericLiteral,
-        { fp_numeric_literal_node->getText() }
-      });
+      SetErrorMessage(BadNumericLiteral);
 
       delete nl;
       je = nullptr;
@@ -611,10 +600,7 @@ expression returns [JavaExpression* je] {
     JavaIntLiteral* nl = new JavaIntLiteral;
     if (!nl->ParseString(dec_numeric_literal_node->getText(), 10)) {
       reportError("Decimal integer literal could not be parsed");
-      SetErrorMessage({ 
-        BadNumericLiteral,
-        { dec_numeric_literal_node->getText() }
-      });
+      SetErrorMessage(BadNumericLiteral);
 
       delete nl;
       je = nullptr;
@@ -642,11 +628,11 @@ expression returns [JavaExpression* je] {
        je = sl;
     }
   }
-  | TRUE {
-    je = new JavaBooleanLiteral(JNI_TRUE);
+  | JTRUE {
+    je = new JavaBooleanLiteral(true);
   }
-  | FALSE {
-    je = new JavaBooleanLiteral(JNI_FALSE);
+  | JFALSE {
+    je = new JavaBooleanLiteral(false);
   }
   | JNULL {
     je = new JavaNullLiteral;
@@ -777,8 +763,8 @@ arguments returns [MethodArguments* args] {
   }
   ;
 
-type_name returns [string t] {
-    string tail;
+type_name returns [std::string t] {
+    std::string tail;
   }
   : #(TYPE_NAME n1:Identifier tail=type_name) {
     t = n1->getText();
