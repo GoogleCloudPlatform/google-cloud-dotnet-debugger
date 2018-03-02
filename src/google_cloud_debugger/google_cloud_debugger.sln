@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27004.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_lib", "google_cloud_debugger_lib\google_cloud_debugger_lib.vcxproj", "{AC725B22-C773-45A3-9DDD-ACB5146BC8B1}"
 EndProject
@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "google_cloud_debugger_test"
 	ProjectSection(ProjectDependencies) = postProject
 		{AC725B22-C773-45A3-9DDD-ACB5146BC8B1} = {AC725B22-C773-45A3-9DDD-ACB5146BC8B1}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "antlr", "..\..\third_party\antlr\lib\cpp\antlr.vcxproj", "{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +57,16 @@ Global
 		{3009483D-6930-4D0D-8066-4A9CC7510AE6}.Release|x64.Build.0 = Release|x64
 		{3009483D-6930-4D0D-8066-4A9CC7510AE6}.Release|x86.ActiveCfg = Release|Win32
 		{3009483D-6930-4D0D-8066-4A9CC7510AE6}.Release|x86.Build.0 = Release|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Debug|x64.ActiveCfg = Debug|x64
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Debug|x64.Build.0 = Debug|x64
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Debug|x86.ActiveCfg = Debug|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Debug|x86.Build.0 = Debug|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Release|Any CPU.ActiveCfg = Release|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Release|x64.ActiveCfg = Release|x64
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Release|x64.Build.0 = Release|x64
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Release|x86.ActiveCfg = Release|Win32
+		{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
