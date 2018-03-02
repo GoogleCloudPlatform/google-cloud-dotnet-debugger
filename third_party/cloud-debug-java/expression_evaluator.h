@@ -18,11 +18,8 @@
 #define EXPRESSION_EVALUATOR_H_
 
 #include <memory>
-#include <string>
 
-#include "cor.h"
-#include "common.h"
-#include "type_signature.h"
+#include "common_headers.h"
 
 namespace google_cloud_debugger {
 

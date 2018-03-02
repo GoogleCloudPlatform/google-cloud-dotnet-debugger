@@ -17,7 +17,6 @@
 #ifndef UNARY_EXPRESSION_EVALUATOR_H_
 #define UNARY_EXPRESSION_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 #include "csharp_expression.h"
 

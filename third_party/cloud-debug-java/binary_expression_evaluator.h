@@ -17,7 +17,6 @@
 #ifndef BINARY_EXPRESSION_EVALUATOR_H_
 #define BINARY_EXPRESSION_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 #include "csharp_expression.h"
 
@@ -95,7 +94,7 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
   // the second argument must be int. "Bitmask" is applied to the
   // second argument as per specifications:
   // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#shift-operators
-  template <typename T, uint16 Bitmask>
+  template <typename T, uint16_t Bitmask>
   HRESULT ShiftComputer(
       std::shared_ptr<DbgObject> arg1,
       std::shared_ptr<DbgObject> arg2,

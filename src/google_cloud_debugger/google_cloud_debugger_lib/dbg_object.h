@@ -28,7 +28,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class VariableWrapper;
-class TypeSignature;
+struct TypeSignature;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)

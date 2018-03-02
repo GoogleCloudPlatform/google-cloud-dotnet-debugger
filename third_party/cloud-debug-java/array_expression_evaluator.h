@@ -17,7 +17,6 @@
 #ifndef ARRAY_EXPRESSION_EVALUATOR_H_
 #define ARRAY_EXPRESSION_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 
 namespace google_cloud_debugger {
