@@ -12,6 +12,8 @@
 #include <antlr/config.hpp>
 #include <antlr/DynamicCast.hpp>
 
+using std::string;
+
 #ifdef ANTLR_CXX_SUPPORTS_NAMESPACE
 namespace antlr {
 #endif

@@ -11,8 +11,9 @@
 #include <antlr/config.hpp>
 
 #include <stdio.h>
-#include <strings.h>
+#include <string>
 #include <map>
+#include <functional>
 
 #ifdef HAS_NOT_CCTYPE_H
 #include <ctype.h>
@@ -537,7 +538,7 @@ inline bool CharScannerLiteralsLess::operator() (const ANTLR_USE_NAMESPACE(std)s
 	else
 	{
 #ifdef NO_STRCASECMP
-		return (stricmp(x.c_str(),y.c_str())<0);
+		return (_stricmp(x.c_str(),y.c_str())<0);
 #else
 		return (strcasecmp(x.c_str(),y.c_str())<0);
 #endif
