@@ -20,7 +20,6 @@
 #include "error_messages.h"
 #include "dbg_object.h"
 #include "constants.h"
-#include "type_signature.h"
 
 namespace google_cloud_debugger {
 

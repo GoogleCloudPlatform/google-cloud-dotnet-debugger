@@ -22,6 +22,11 @@
 #include <stdint.h>
 #include <memory>
 
+#include "ccomptr.h"
+#include "cor.h"
+#include "cordebug.h"
+#include "type_signature.h"
+
 #define DISALLOW_COPY_AND_ASSIGN(TypeName)  \
     TypeName(const TypeName&) = delete;  \
     void operator=(const TypeName&) = delete

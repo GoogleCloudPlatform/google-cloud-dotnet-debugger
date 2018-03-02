@@ -17,7 +17,7 @@
 #include "type_cast_operator_evaluator.h"
 
 #include "class_names.h"
-#include "common.h"
+#include "common_headers.h"
 #include "compiler_helpers.h"
 #include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"

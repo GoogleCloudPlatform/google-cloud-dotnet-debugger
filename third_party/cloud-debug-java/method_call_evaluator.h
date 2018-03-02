@@ -19,9 +19,6 @@
 
 #include <vector>
 
-#include "ccomptr.h"
-#include "common.h"
-#include "cordebug.h"
 #include "expression_evaluator.h"
 #include "method_info.h"
 

@@ -22,7 +22,6 @@
 #include "constants.h"
 #include "i_eval_coordinator.h"
 #include "i_cor_debug_helper.h"
-#include "type_signature.h"
 #include "compiler_helpers.h"
 
 using google::cloud::diagnostics::debug::Variable;

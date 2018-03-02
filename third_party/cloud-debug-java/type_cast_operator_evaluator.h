@@ -17,9 +17,9 @@
 #ifndef TYPE_CAST_OPERATOR_EVALUATOR_H_
 #define TYPE_CAST_OPERATOR_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 #include "csharp_expression.h"
+#include "dbg_primitive.h"
 
 namespace google_cloud_debugger {
 

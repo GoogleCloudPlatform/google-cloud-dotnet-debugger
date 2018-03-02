@@ -13,7 +13,7 @@
   #include <iostream>
   #include <string>
 
-  #include "../../cloud-debug-java/common.h"
+  #include "../../cloud-debug-java/common_headers.h"
   #include "../../cloud-debug-java/csharp_expression.h"
   #include "../../cloud-debug-java/messages.h"
 
