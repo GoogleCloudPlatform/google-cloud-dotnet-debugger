@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-// ANTLR2 grammar for Java Cloud Debugger expression compiler.
+// ANTLR2 grammar for CSharp Cloud Debugger expression compiler.
 // This grammar was inspired by this ANTLR3 grammar:
 //   third_party/antlr3/java_grammar/Java.g
 
@@ -36,7 +36,7 @@ options {
 // LEXER
 //
 
-class JavaExpressionLexer extends Lexer;
+class CSharpExpressionLexer extends Lexer;
 
 options {
   k = 3;  // Set lookahead.
@@ -150,7 +150,7 @@ protected ZeroToThree
 
 
 // Only ASCII characters are supported right now.
-// TODO(vlif): add support for Unicode characters in Java identifiers.
+// TODO(vlif): add support for Unicode characters in CSharp identifiers.
 Identifier
   : ( 'a'..'z' | 'A'..'Z' | '$' | '_' )
     ( 'a'..'z' | 'A'..'Z' | '0'..'9' | '$' | '_' )*
@@ -212,12 +212,12 @@ LINE_COMMENT
 // PARSER
 //
 
-class JavaExpressionParser extends Parser;
+class CSharpExpressionParser extends Parser;
 
 options {
   k = 2;  // Set lookahead.
   buildAST = true;
-  importVocab = JavaExpressionLexer;
+  importVocab = CSharpExpressionLexer;
 }
 
 {
@@ -424,10 +424,10 @@ classOrInterfaceType
 // TREE WALKING (COMPILATION)
 //
 
-class JavaExpressionCompiler extends TreeParser;
+class CSharpExpressionCompiler extends TreeParser;
 
 options {
-  importVocab = JavaExpressionLexer;
+  importVocab = CSharpExpressionLexer;
 }
 
 {
@@ -440,7 +440,7 @@ options {
   void Init() {
   }
 
-  std::unique_ptr<JavaExpression> Walk(antlr::RefAST ast) {
+  std::unique_ptr<CSharpExpression> Walk(antlr::RefAST ast) {
     ResetErrorMessage();
 
     if (!VerifyMaxDepth(ast, kMaxTreeDepth)) {
@@ -449,7 +449,7 @@ options {
       return nullptr;
     }
 
-    std::unique_ptr<JavaExpression> expression(statement(ast));
+    std::unique_ptr<CSharpExpression> expression(statement(ast));
     if (expression == nullptr) {
       // Set generic error message if specific error wasn't set.
       SetErrorMessage(ExpressionParserError);
@@ -508,20 +508,20 @@ options {
 }
 
 
-statement returns [JavaExpression* root] {
+statement returns [CSharpExpression* root] {
     root = nullptr;
   }
   : #(STATEMENT root=expression)
   ;
 
-expression returns [JavaExpression* je] {
-    JavaExpression* a = nullptr;
-    JavaExpression* b = nullptr;
-    JavaExpression* c = nullptr;
-    JavaExpressionSelector* s = nullptr;
+expression returns [CSharpExpression* je] {
+    CSharpExpression* a = nullptr;
+    CSharpExpression* b = nullptr;
+    CSharpExpression* c = nullptr;
+    CSharpExpressionSelector* s = nullptr;
     MethodArguments* r = nullptr;
-    BinaryJavaExpression::Type binary_expression_type;
-    UnaryJavaExpression::Type unary_expression_type;
+    BinaryCSharpExpression::Type binary_expression_type;
+    UnaryCSharpExpression::Type unary_expression_type;
     std::list<std::vector<char>> string_sequence;
     std::string type;
 
@@ -535,7 +535,7 @@ expression returns [JavaExpression* je] {
       delete c;
       je = nullptr;
     } else {
-      je = new ConditionalJavaExpression(a, b, c);
+      je = new ConditionalCSharpExpression(a, b, c);
     }
   }
   | #(PARENTHESES_EXPRESSION je=expression)
@@ -546,7 +546,7 @@ expression returns [JavaExpression* je] {
       delete b;
       je = nullptr;
     } else {
-      je = new BinaryJavaExpression(binary_expression_type, a, b);
+      je = new BinaryCSharpExpression(binary_expression_type, a, b);
     }
   }
   | #(UNARY_EXPRESSION unary_expression_type=unary_expression_token a=expression) {
@@ -554,14 +554,14 @@ expression returns [JavaExpression* je] {
       reportError("NULL argument in unary expression");
       je = nullptr;
     } else {
-      je = new UnaryJavaExpression(unary_expression_type, a);
+      je = new UnaryCSharpExpression(unary_expression_type, a);
     }
   }
   | identifier_node:Identifier {
-    je = new JavaIdentifier(identifier_node->getText());
+    je = new CSharpIdentifier(identifier_node->getText());
   }
   | hex_numeric_literal_node:HEX_NUMERIC_LITERAL {
-    JavaIntLiteral* nl = new JavaIntLiteral;
+    CSharpIntLiteral* nl = new CSharpIntLiteral;
     if (!nl->ParseString(hex_numeric_literal_node->getText(), 16)) {
       reportError("Hex integer literal could not be parsed");
       SetErrorMessage(BadNumericLiteral);
@@ -573,7 +573,7 @@ expression returns [JavaExpression* je] {
     }
   }
   | oct_numeric_literal_node:OCT_NUMERIC_LITERAL {
-    JavaIntLiteral* nl = new JavaIntLiteral;
+    CSharpIntLiteral* nl = new CSharpIntLiteral;
     if (!nl->ParseString(oct_numeric_literal_node->getText(), 8)) {
       reportError("Octal integer literal could not be parsed");
       SetErrorMessage(BadNumericLiteral);
@@ -585,7 +585,7 @@ expression returns [JavaExpression* je] {
     }
   }
   | fp_numeric_literal_node:FP_NUMERIC_LITERAL {
-    JavaFloatLiteral* nl = new JavaFloatLiteral;
+    CSharpFloatLiteral* nl = new CSharpFloatLiteral;
     if (!nl->ParseString(fp_numeric_literal_node->getText())) {
       reportError("Floating point literal could not be parsed");
       SetErrorMessage(BadNumericLiteral);
@@ -597,7 +597,7 @@ expression returns [JavaExpression* je] {
     }
   }
   | dec_numeric_literal_node:DEC_NUMERIC_LITERAL {
-    JavaIntLiteral* nl = new JavaIntLiteral;
+    CSharpIntLiteral* nl = new CSharpIntLiteral;
     if (!nl->ParseString(dec_numeric_literal_node->getText(), 10)) {
       reportError("Decimal integer literal could not be parsed");
       SetErrorMessage(BadNumericLiteral);
@@ -609,7 +609,7 @@ expression returns [JavaExpression* je] {
     }
   }
   | character_literal_node:CharacterLiteral {
-    JavaCharLiteral* cl = new JavaCharLiteral;
+    CSharpCharLiteral* cl = new CSharpCharLiteral;
     if (!cl->ParseString(character_literal_node->getText())) {
       reportError("Invalid character");
       delete cl;
@@ -619,7 +619,7 @@ expression returns [JavaExpression* je] {
     }
   }
   | string_literal_node:StringLiteral {
-    JavaStringLiteral* sl = new JavaStringLiteral;
+    CSharpStringLiteral* sl = new CSharpStringLiteral;
     if (!sl->ParseString(string_literal_node->getText())) {
       reportError("Invalid string");
       delete sl;
@@ -629,13 +629,13 @@ expression returns [JavaExpression* je] {
     }
   }
   | JTRUE {
-    je = new JavaBooleanLiteral(true);
+    je = new CSharpBooleanLiteral(true);
   }
   | JFALSE {
-    je = new JavaBooleanLiteral(false);
+    je = new CSharpBooleanLiteral(false);
   }
   | JNULL {
-    je = new JavaNullLiteral;
+    je = new CSharpNullLiteral;
   }
   | #(PRIMARY_SELECTOR a=expression s=selector) {
     if ((a == nullptr) || (s == nullptr)) {
@@ -653,7 +653,7 @@ expression returns [JavaExpression* je] {
       reportError("NULL source in type cast expression");
       je = nullptr;
     } else {
-      je = new TypeCastJavaExpression(type, a);
+      je = new TypeCastCSharpExpression(type, a);
     }
   }
   | #(METHOD_CALL method_node:Identifier r=arguments) {
@@ -666,42 +666,42 @@ expression returns [JavaExpression* je] {
   }
   ;
 
-binary_expression_token returns [BinaryJavaExpression::Type type] {
-    type = static_cast<BinaryJavaExpression::Type>(-1);
+binary_expression_token returns [BinaryCSharpExpression::Type type] {
+    type = static_cast<BinaryCSharpExpression::Type>(-1);
   }
-  : ADD { type = BinaryJavaExpression::Type::add; }
-  | SUB { type = BinaryJavaExpression::Type::sub; }
-  | MUL { type = BinaryJavaExpression::Type::mul; }
-  | DIV { type = BinaryJavaExpression::Type::div; }
-  | MOD { type = BinaryJavaExpression::Type::mod; }
-  | AND { type = BinaryJavaExpression::Type::conditional_and; }
-  | OR { type = BinaryJavaExpression::Type::conditional_or; }
-  | EQUAL { type = BinaryJavaExpression::Type::eq; }
-  | NOTEQUAL { type = BinaryJavaExpression::Type::ne; }
-  | CMP_LE { type = BinaryJavaExpression::Type::le; }
-  | CMP_GE { type = BinaryJavaExpression::Type::ge; }
-  | CMP_LT { type = BinaryJavaExpression::Type::lt; }
-  | CMP_GT { type = BinaryJavaExpression::Type::gt; }
-  | BITAND { type = BinaryJavaExpression::Type::bitwise_and; }
-  | BITOR { type = BinaryJavaExpression::Type::bitwise_or; }
-  | CARET { type = BinaryJavaExpression::Type::bitwise_xor; }
-  | SHIFT_LEFT { type = BinaryJavaExpression::Type::shl; }
-  | SHIFT_RIGHT_S { type = BinaryJavaExpression::Type::shr_s; }
-  | SHIFT_RIGHT_U { type = BinaryJavaExpression::Type::shr_u; }
+  : ADD { type = BinaryCSharpExpression::Type::add; }
+  | SUB { type = BinaryCSharpExpression::Type::sub; }
+  | MUL { type = BinaryCSharpExpression::Type::mul; }
+  | DIV { type = BinaryCSharpExpression::Type::div; }
+  | MOD { type = BinaryCSharpExpression::Type::mod; }
+  | AND { type = BinaryCSharpExpression::Type::conditional_and; }
+  | OR { type = BinaryCSharpExpression::Type::conditional_or; }
+  | EQUAL { type = BinaryCSharpExpression::Type::eq; }
+  | NOTEQUAL { type = BinaryCSharpExpression::Type::ne; }
+  | CMP_LE { type = BinaryCSharpExpression::Type::le; }
+  | CMP_GE { type = BinaryCSharpExpression::Type::ge; }
+  | CMP_LT { type = BinaryCSharpExpression::Type::lt; }
+  | CMP_GT { type = BinaryCSharpExpression::Type::gt; }
+  | BITAND { type = BinaryCSharpExpression::Type::bitwise_and; }
+  | BITOR { type = BinaryCSharpExpression::Type::bitwise_or; }
+  | CARET { type = BinaryCSharpExpression::Type::bitwise_xor; }
+  | SHIFT_LEFT { type = BinaryCSharpExpression::Type::shl; }
+  | SHIFT_RIGHT_S { type = BinaryCSharpExpression::Type::shr_s; }
+  | SHIFT_RIGHT_U { type = BinaryCSharpExpression::Type::shr_u; }
   ;
 
-unary_expression_token returns [UnaryJavaExpression::Type type] {
-    type = static_cast<UnaryJavaExpression::Type>(-1);
+unary_expression_token returns [UnaryCSharpExpression::Type type] {
+    type = static_cast<UnaryCSharpExpression::Type>(-1);
   }
-  : ADD { type = UnaryJavaExpression::Type::plus; }
-  | SUB { type = UnaryJavaExpression::Type::minus; }
-  | TILDE { type = UnaryJavaExpression::Type::bitwise_complement; }
-  | BANG { type = UnaryJavaExpression::Type::logical_complement; }
+  : ADD { type = UnaryCSharpExpression::Type::plus; }
+  | SUB { type = UnaryCSharpExpression::Type::minus; }
+  | TILDE { type = UnaryCSharpExpression::Type::bitwise_complement; }
+  | BANG { type = UnaryCSharpExpression::Type::logical_complement; }
   ;
 
-selector returns [JavaExpressionSelector* js] {
-    JavaExpression* a = nullptr;
-    JavaExpressionSelector* ds = nullptr;
+selector returns [CSharpExpressionSelector* js] {
+    CSharpExpression* a = nullptr;
+    CSharpExpressionSelector* ds = nullptr;
 
     js = nullptr;
   }
@@ -718,18 +718,18 @@ selector returns [JavaExpressionSelector* js] {
       reportError("Failed to parse index expression");
       js = nullptr;
     } else {
-      js = new JavaExpressionIndexSelector(a);
+      js = new CSharpExpressionIndexSelector(a);
     }
   }
   ;
 
-dotSelector returns [JavaExpressionSelector* js] {
+dotSelector returns [CSharpExpressionSelector* js] {
     MethodArguments* r = nullptr;
 
     js = nullptr;
   }
   : identifier_node:Identifier {
-    js = new JavaExpressionMemberSelector(identifier_node->getText());
+    js = new CSharpExpressionMemberSelector(identifier_node->getText());
   }
   | #(METHOD_CALL method_node:Identifier r=arguments) {
     if (r == nullptr) {
@@ -744,7 +744,7 @@ dotSelector returns [JavaExpressionSelector* js] {
 
 arguments returns [MethodArguments* args] {
     MethodArguments* tail = nullptr;
-    JavaExpression* arg = nullptr;
+    CSharpExpression* arg = nullptr;
 
     args = nullptr;
   }

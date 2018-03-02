@@ -125,7 +125,7 @@ class DbgPrimitive : public DbgObject {
       return E_INVALIDARG;
     }
 
-    HRESULT hr = debug_eval->CreateValue(element_type_, nullptr,
+    HRESULT hr = debug_eval->CreateValue(cor_element_type_, nullptr,
         debug_value);
     if (FAILED(hr)) {
       return hr;
