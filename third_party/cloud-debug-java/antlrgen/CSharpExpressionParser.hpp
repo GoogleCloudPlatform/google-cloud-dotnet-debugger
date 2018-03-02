@@ -1,11 +1,11 @@
-#ifndef INC_JavaExpressionParser_hpp_
-#define INC_JavaExpressionParser_hpp_
+#ifndef INC_CSharpExpressionParser_hpp_
+#define INC_CSharpExpressionParser_hpp_
 
 #include "third_party/antlr/lib/cpp/antlr/config.hpp"
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionParser.hpp"$ */
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionParser.hpp"$ */
 #include "third_party/antlr/lib/cpp/antlr/TokenStream.hpp"
 #include "third_party/antlr/lib/cpp/antlr/TokenBuffer.hpp"
-#include "JavaExpressionParserTokenTypes.hpp"
+#include "CSharpExpressionParserTokenTypes.hpp"
 #include "third_party/antlr/lib/cpp/antlr/LLkParser.hpp"
 
 #line 21 "csharp_expression.g"
@@ -17,9 +17,9 @@
   #include "../../cloud-debug-java/csharp_expression.h"
   #include "../../cloud-debug-java/messages.h"
 
-#line 21 "JavaExpressionParser.hpp"
+#line 21 "CSharpExpressionParser.hpp"
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
-class JavaExpressionParser : public ANTLR_USE_NAMESPACE(antlr)LLkParser, public JavaExpressionParserTokenTypes
+class CSharpExpressionParser : public ANTLR_USE_NAMESPACE(antlr)LLkParser, public CSharpExpressionParserTokenTypes
 {
 #line 223 "csharp_expression.g"
 
@@ -46,30 +46,30 @@ class JavaExpressionParser : public ANTLR_USE_NAMESPACE(antlr)LLkParser, public 
  private:
   std::vector<std::string> errors_;
   antlr::ASTFactory fact_;
-#line 26 "JavaExpressionParser.hpp"
+#line 26 "CSharpExpressionParser.hpp"
 public:
 	void initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory );
 protected:
-	JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf, int k);
+	CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf, int k);
 public:
-	JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf);
+	CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenBuffer& tokenBuf);
 protected:
-	JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer, int k);
+	CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer, int k);
 public:
-	JavaExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer);
-	JavaExpressionParser(const ANTLR_USE_NAMESPACE(antlr)ParserSharedInputState& state);
+	CSharpExpressionParser(ANTLR_USE_NAMESPACE(antlr)TokenStream& lexer);
+	CSharpExpressionParser(const ANTLR_USE_NAMESPACE(antlr)ParserSharedInputState& state);
 	int getNumTokens() const
 	{
-		return JavaExpressionParser::NUM_TOKENS;
+		return CSharpExpressionParser::NUM_TOKENS;
 	}
 	const char* getTokenName( int type ) const
 	{
 		if( type > getNumTokens() ) return 0;
-		return JavaExpressionParser::tokenNames[type];
+		return CSharpExpressionParser::tokenNames[type];
 	}
 	const char* const* getTokenNames() const
 	{
-		return JavaExpressionParser::tokenNames;
+		return CSharpExpressionParser::tokenNames;
 	}
 	//DBG genRuleHeader(statement)
 	public: void statement();
@@ -164,4 +164,4 @@ private:
 };
 
 ANTLR_END_NAMESPACE
-#endif /*INC_JavaExpressionParser_hpp_*/
+#endif /*INC_CSharpExpressionParser_hpp_*/
