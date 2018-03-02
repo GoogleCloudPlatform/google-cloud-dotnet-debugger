@@ -17,7 +17,6 @@
 #ifndef DEVTOOLS_CDBG_DEBUGLETS_CSharp_CONDITIONAL_OPERATOR_EVALUATOR_H_
 #define DEVTOOLS_CDBG_DEBUGLETS_CSharp_CONDITIONAL_OPERATOR_EVALUATOR_H_
 
-#include "common.h"
 #include "expression_evaluator.h"
 
 namespace google_cloud_debugger {

@@ -16,6 +16,7 @@
 
 
 #include "type_signature.h"
+#include "class_names.h"
 
 namespace google_cloud_debugger {
 

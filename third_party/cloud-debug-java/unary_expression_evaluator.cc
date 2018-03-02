@@ -67,7 +67,7 @@ HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
 
   // For - operator, we also promote uint to long.
   if (!is_plus && cor_type == CorElementType::ELEMENT_TYPE_U4) {
-    cor_type == CorElementType::ELEMENT_TYPE_I8;
+    cor_type = CorElementType::ELEMENT_TYPE_I8;
   }
 
   result_type_ = {cor_type};

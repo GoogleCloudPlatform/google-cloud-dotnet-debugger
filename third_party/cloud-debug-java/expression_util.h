@@ -19,7 +19,7 @@
 
 #include <memory>
 #include <string>
-#include "common.h"
+#include "common_headers.h"
 
 namespace google_cloud_debugger {
 
