@@ -23,7 +23,7 @@ header "post_include_hpp" {
   #include <string>
 
   #include "../../cloud-debug-java/common.h"
-  #include "../../cloud-debug-java/java_expression.h"
+  #include "../../cloud-debug-java/csharp_expression.h"
   #include "../../cloud-debug-java/messages.h"
 }
 
