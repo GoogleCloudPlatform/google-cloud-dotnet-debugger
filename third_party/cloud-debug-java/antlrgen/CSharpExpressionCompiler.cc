@@ -1,5 +1,5 @@
-/* $ANTLR 2.7.2: "csharp_expression.g" -> "JavaExpressionCompiler.cc"$ */
-#include "JavaExpressionCompiler.hpp"
+/* $ANTLR 2.7.2: "csharp_expression.g" -> "CSharpExpressionCompiler.cc"$ */
+#include "CSharpExpressionCompiler.hpp"
 #include "third_party/antlr/lib/cpp/antlr/Token.hpp"
 #include "third_party/antlr/lib/cpp/antlr/AST.hpp"
 #include "third_party/antlr/lib/cpp/antlr/NoViableAltException.hpp"
@@ -8,22 +8,22 @@
 #include "third_party/antlr/lib/cpp/antlr/BitSet.hpp"
 ANTLR_BEGIN_NAMESPACE(google_cloud_debugger)
 #line 1 "csharp_expression.g"
-#line 12 "JavaExpressionCompiler.cc"
-JavaExpressionCompiler::JavaExpressionCompiler()
+#line 12 "CSharpExpressionCompiler.cc"
+CSharpExpressionCompiler::CSharpExpressionCompiler()
 	: ANTLR_USE_NAMESPACE(antlr)TreeParser() {
 }
 
 //DBG genRule(statement)
-JavaExpression*  JavaExpressionCompiler::statement(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+CSharpExpression*  CSharpExpressionCompiler::statement(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 511 "csharp_expression.g"
-	JavaExpression* root;
-#line 21 "JavaExpressionCompiler.cc"
+	CSharpExpression* root;
+#line 21 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST statement_AST_in = _t;
 #line 511 "csharp_expression.g"
 	
 	root = nullptr;
 	
-#line 27 "JavaExpressionCompiler.cc"
+#line 27 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -66,10 +66,10 @@ JavaExpression*  JavaExpressionCompiler::statement(ANTLR_USE_NAMESPACE(antlr)Ref
 }
 
 //DBG genRule(expression)
-JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+CSharpExpression*  CSharpExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 517 "csharp_expression.g"
-	JavaExpression* je;
-#line 73 "JavaExpressionCompiler.cc"
+	CSharpExpression* je;
+#line 73 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST expression_AST_in = _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST identifier_node = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST hex_numeric_literal_node = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -81,19 +81,19 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 	ANTLR_USE_NAMESPACE(antlr)RefAST method_node = ANTLR_USE_NAMESPACE(antlr)nullAST;
 #line 517 "csharp_expression.g"
 	
-	JavaExpression* a = nullptr;
-	JavaExpression* b = nullptr;
-	JavaExpression* c = nullptr;
-	JavaExpressionSelector* s = nullptr;
+	CSharpExpression* a = nullptr;
+	CSharpExpression* b = nullptr;
+	CSharpExpression* c = nullptr;
+	CSharpExpressionSelector* s = nullptr;
 	MethodArguments* r = nullptr;
-	BinaryJavaExpression::Type binary_expression_type;
-	UnaryJavaExpression::Type unary_expression_type;
+	BinaryCSharpExpression::Type binary_expression_type;
+	UnaryCSharpExpression::Type unary_expression_type;
 	std::list<std::vector<char>> string_sequence;
 	std::string type;
 	
 	je = nullptr;
 	
-#line 97 "JavaExpressionCompiler.cc"
+#line 97 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -141,10 +141,10 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			delete c;
 			je = nullptr;
 			} else {
-			je = new ConditionalJavaExpression(a, b, c);
+			je = new ConditionalCSharpExpression(a, b, c);
 			}
 			
-#line 148 "JavaExpressionCompiler.cc"
+#line 148 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -194,10 +194,10 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			delete b;
 			je = nullptr;
 			} else {
-			je = new BinaryJavaExpression(binary_expression_type, a, b);
+			je = new BinaryCSharpExpression(binary_expression_type, a, b);
 			}
 			
-#line 201 "JavaExpressionCompiler.cc"
+#line 201 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -225,10 +225,10 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			reportError("NULL argument in unary expression");
 			je = nullptr;
 			} else {
-			je = new UnaryJavaExpression(unary_expression_type, a);
+			je = new UnaryCSharpExpression(unary_expression_type, a);
 			}
 			
-#line 232 "JavaExpressionCompiler.cc"
+#line 232 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -242,9 +242,9 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 560 "csharp_expression.g"
 			
-			je = new JavaIdentifier(identifier_node->getText());
+			je = new CSharpIdentifier(identifier_node->getText());
 			
-#line 248 "JavaExpressionCompiler.cc"
+#line 248 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -258,7 +258,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 563 "csharp_expression.g"
 			
-			JavaIntLiteral* nl = new JavaIntLiteral;
+			CSharpIntLiteral* nl = new CSharpIntLiteral;
 			if (!nl->ParseString(hex_numeric_literal_node->getText(), 16)) {
 			reportError("Hex integer literal could not be parsed");
 			SetErrorMessage(BadNumericLiteral);
@@ -269,7 +269,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = nl;
 			}
 			
-#line 273 "JavaExpressionCompiler.cc"
+#line 273 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -283,7 +283,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 575 "csharp_expression.g"
 			
-			JavaIntLiteral* nl = new JavaIntLiteral;
+			CSharpIntLiteral* nl = new CSharpIntLiteral;
 			if (!nl->ParseString(oct_numeric_literal_node->getText(), 8)) {
 			reportError("Octal integer literal could not be parsed");
 			SetErrorMessage(BadNumericLiteral);
@@ -294,7 +294,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = nl;
 			}
 			
-#line 298 "JavaExpressionCompiler.cc"
+#line 298 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -308,7 +308,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 587 "csharp_expression.g"
 			
-			JavaFloatLiteral* nl = new JavaFloatLiteral;
+			CSharpFloatLiteral* nl = new CSharpFloatLiteral;
 			if (!nl->ParseString(fp_numeric_literal_node->getText())) {
 			reportError("Floating point literal could not be parsed");
 			SetErrorMessage(BadNumericLiteral);
@@ -319,7 +319,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = nl;
 			}
 			
-#line 323 "JavaExpressionCompiler.cc"
+#line 323 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -333,7 +333,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 599 "csharp_expression.g"
 			
-			JavaIntLiteral* nl = new JavaIntLiteral;
+			CSharpIntLiteral* nl = new CSharpIntLiteral;
 			if (!nl->ParseString(dec_numeric_literal_node->getText(), 10)) {
 			reportError("Decimal integer literal could not be parsed");
 			SetErrorMessage(BadNumericLiteral);
@@ -344,7 +344,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = nl;
 			}
 			
-#line 348 "JavaExpressionCompiler.cc"
+#line 348 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -358,7 +358,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 611 "csharp_expression.g"
 			
-			JavaCharLiteral* cl = new JavaCharLiteral;
+			CSharpCharLiteral* cl = new CSharpCharLiteral;
 			if (!cl->ParseString(character_literal_node->getText())) {
 			reportError("Invalid character");
 			delete cl;
@@ -367,7 +367,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = cl;
 			}
 			
-#line 371 "JavaExpressionCompiler.cc"
+#line 371 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -381,7 +381,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 621 "csharp_expression.g"
 			
-			JavaStringLiteral* sl = new JavaStringLiteral;
+			CSharpStringLiteral* sl = new CSharpStringLiteral;
 			if (!sl->ParseString(string_literal_node->getText())) {
 			reportError("Invalid string");
 			delete sl;
@@ -390,7 +390,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = sl;
 			}
 			
-#line 394 "JavaExpressionCompiler.cc"
+#line 394 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -404,9 +404,9 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 631 "csharp_expression.g"
 			
-			je = new JavaBooleanLiteral(true);
+			je = new CSharpBooleanLiteral(true);
 			
-#line 410 "JavaExpressionCompiler.cc"
+#line 410 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -420,9 +420,9 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 634 "csharp_expression.g"
 			
-			je = new JavaBooleanLiteral(false);
+			je = new CSharpBooleanLiteral(false);
 			
-#line 426 "JavaExpressionCompiler.cc"
+#line 426 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -436,9 +436,9 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			//DBG genAction(ActionElement action
 #line 637 "csharp_expression.g"
 			
-			je = new JavaNullLiteral;
+			je = new CSharpNullLiteral;
 			
-#line 442 "JavaExpressionCompiler.cc"
+#line 442 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -472,7 +472,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = s;
 			}
 			
-#line 476 "JavaExpressionCompiler.cc"
+#line 476 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -500,10 +500,10 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			reportError("NULL source in type cast expression");
 			je = nullptr;
 			} else {
-			je = new TypeCastJavaExpression(type, a);
+			je = new TypeCastCSharpExpression(type, a);
 			}
 			
-#line 507 "JavaExpressionCompiler.cc"
+#line 507 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -535,7 +535,7 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 			je = new MethodCallExpression(method_node->getText(), r);
 			}
 			
-#line 539 "JavaExpressionCompiler.cc"
+#line 539 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -568,16 +568,16 @@ JavaExpression*  JavaExpressionCompiler::expression(ANTLR_USE_NAMESPACE(antlr)Re
 }
 
 //DBG genRule(binary_expression_token)
-BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+BinaryCSharpExpression::Type  CSharpExpressionCompiler::binary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 669 "csharp_expression.g"
-	BinaryJavaExpression::Type type;
-#line 575 "JavaExpressionCompiler.cc"
+	BinaryCSharpExpression::Type type;
+#line 575 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST binary_expression_token_AST_in = _t;
 #line 669 "csharp_expression.g"
 	
-	type = static_cast<BinaryJavaExpression::Type>(-1);
+	type = static_cast<BinaryCSharpExpression::Type>(-1);
 	
-#line 581 "JavaExpressionCompiler.cc"
+#line 581 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -598,8 +598,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 672 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::add;
-#line 603 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::add;
+#line 603 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -612,8 +612,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 673 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::sub;
-#line 617 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::sub;
+#line 617 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -626,8 +626,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 674 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::mul;
-#line 631 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::mul;
+#line 631 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -640,8 +640,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 675 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::div;
-#line 645 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::div;
+#line 645 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -654,8 +654,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 676 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::mod;
-#line 659 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::mod;
+#line 659 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -668,8 +668,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 677 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::conditional_and;
-#line 673 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::conditional_and;
+#line 673 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -682,8 +682,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 678 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::conditional_or;
-#line 687 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::conditional_or;
+#line 687 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -696,8 +696,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 679 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::eq;
-#line 701 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::eq;
+#line 701 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -710,8 +710,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 680 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::ne;
-#line 715 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::ne;
+#line 715 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -724,8 +724,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 681 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::le;
-#line 729 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::le;
+#line 729 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -738,8 +738,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 682 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::ge;
-#line 743 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::ge;
+#line 743 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -752,8 +752,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 683 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::lt;
-#line 757 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::lt;
+#line 757 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -766,8 +766,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 684 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::gt;
-#line 771 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::gt;
+#line 771 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -780,8 +780,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 685 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::bitwise_and;
-#line 785 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::bitwise_and;
+#line 785 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -794,8 +794,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 686 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::bitwise_or;
-#line 799 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::bitwise_or;
+#line 799 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -808,8 +808,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 687 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::bitwise_xor;
-#line 813 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::bitwise_xor;
+#line 813 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -822,8 +822,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 688 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::shl;
-#line 827 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::shl;
+#line 827 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -836,8 +836,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 689 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::shr_s;
-#line 841 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::shr_s;
+#line 841 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -850,8 +850,8 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 690 "csharp_expression.g"
-			type = BinaryJavaExpression::Type::shr_u;
-#line 855 "JavaExpressionCompiler.cc"
+			type = BinaryCSharpExpression::Type::shr_u;
+#line 855 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -884,16 +884,16 @@ BinaryJavaExpression::Type  JavaExpressionCompiler::binary_expression_token(ANTL
 }
 
 //DBG genRule(unary_expression_token)
-UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+UnaryCSharpExpression::Type  CSharpExpressionCompiler::unary_expression_token(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 693 "csharp_expression.g"
-	UnaryJavaExpression::Type type;
-#line 891 "JavaExpressionCompiler.cc"
+	UnaryCSharpExpression::Type type;
+#line 891 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST unary_expression_token_AST_in = _t;
 #line 693 "csharp_expression.g"
 	
-	type = static_cast<UnaryJavaExpression::Type>(-1);
+	type = static_cast<UnaryCSharpExpression::Type>(-1);
 	
-#line 897 "JavaExpressionCompiler.cc"
+#line 897 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -914,8 +914,8 @@ UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 696 "csharp_expression.g"
-			type = UnaryJavaExpression::Type::plus;
-#line 919 "JavaExpressionCompiler.cc"
+			type = UnaryCSharpExpression::Type::plus;
+#line 919 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -928,8 +928,8 @@ UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 697 "csharp_expression.g"
-			type = UnaryJavaExpression::Type::minus;
-#line 933 "JavaExpressionCompiler.cc"
+			type = UnaryCSharpExpression::Type::minus;
+#line 933 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -942,8 +942,8 @@ UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 698 "csharp_expression.g"
-			type = UnaryJavaExpression::Type::bitwise_complement;
-#line 947 "JavaExpressionCompiler.cc"
+			type = UnaryCSharpExpression::Type::bitwise_complement;
+#line 947 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -956,8 +956,8 @@ UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_
 			_t = _t->getNextSibling();
 			//DBG genAction(ActionElement action
 #line 699 "csharp_expression.g"
-			type = UnaryJavaExpression::Type::logical_complement;
-#line 961 "JavaExpressionCompiler.cc"
+			type = UnaryCSharpExpression::Type::logical_complement;
+#line 961 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -990,19 +990,19 @@ UnaryJavaExpression::Type  JavaExpressionCompiler::unary_expression_token(ANTLR_
 }
 
 //DBG genRule(selector)
-JavaExpressionSelector*  JavaExpressionCompiler::selector(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+CSharpExpressionSelector*  CSharpExpressionCompiler::selector(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 702 "csharp_expression.g"
-	JavaExpressionSelector* js;
-#line 997 "JavaExpressionCompiler.cc"
+	CSharpExpressionSelector* js;
+#line 997 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST selector_AST_in = _t;
 #line 702 "csharp_expression.g"
 	
-	JavaExpression* a = nullptr;
-	JavaExpressionSelector* ds = nullptr;
+	CSharpExpression* a = nullptr;
+	CSharpExpressionSelector* ds = nullptr;
 	
 	js = nullptr;
 	
-#line 1006 "JavaExpressionCompiler.cc"
+#line 1006 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -1037,7 +1037,7 @@ JavaExpressionSelector*  JavaExpressionCompiler::selector(ANTLR_USE_NAMESPACE(an
 			js = ds;
 			}
 			
-#line 1041 "JavaExpressionCompiler.cc"
+#line 1041 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -1066,10 +1066,10 @@ JavaExpressionSelector*  JavaExpressionCompiler::selector(ANTLR_USE_NAMESPACE(an
 			reportError("Failed to parse index expression");
 			js = nullptr;
 			} else {
-			js = new JavaExpressionIndexSelector(a);
+			js = new CSharpExpressionIndexSelector(a);
 			}
 			
-#line 1073 "JavaExpressionCompiler.cc"
+#line 1073 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -1102,17 +1102,17 @@ JavaExpressionSelector*  JavaExpressionCompiler::selector(ANTLR_USE_NAMESPACE(an
 }
 
 //DBG genRule(type_name)
-std::string  JavaExpressionCompiler::type_name(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+std::string  CSharpExpressionCompiler::type_name(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 766 "csharp_expression.g"
 	std::string t;
-#line 1109 "JavaExpressionCompiler.cc"
+#line 1109 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST type_name_AST_in = _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST n1 = ANTLR_USE_NAMESPACE(antlr)nullAST;
 #line 766 "csharp_expression.g"
 	
 	std::string tail;
 	
-#line 1116 "JavaExpressionCompiler.cc"
+#line 1116 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -1151,7 +1151,7 @@ std::string  JavaExpressionCompiler::type_name(ANTLR_USE_NAMESPACE(antlr)RefAST 
 			t += tail;
 			}
 			
-#line 1155 "JavaExpressionCompiler.cc"
+#line 1155 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -1177,7 +1177,7 @@ std::string  JavaExpressionCompiler::type_name(ANTLR_USE_NAMESPACE(antlr)RefAST 
 			//DBG genAction(ActionElement action
 #line 776 "csharp_expression.g"
 			
-#line 1181 "JavaExpressionCompiler.cc"
+#line 1181 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -1210,19 +1210,19 @@ std::string  JavaExpressionCompiler::type_name(ANTLR_USE_NAMESPACE(antlr)RefAST 
 }
 
 //DBG genRule(arguments)
-MethodArguments*  JavaExpressionCompiler::arguments(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+MethodArguments*  CSharpExpressionCompiler::arguments(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 745 "csharp_expression.g"
 	MethodArguments* args;
-#line 1217 "JavaExpressionCompiler.cc"
+#line 1217 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST arguments_AST_in = _t;
 #line 745 "csharp_expression.g"
 	
 	MethodArguments* tail = nullptr;
-	JavaExpression* arg = nullptr;
+	CSharpExpression* arg = nullptr;
 	
 	args = nullptr;
 	
-#line 1226 "JavaExpressionCompiler.cc"
+#line 1226 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -1263,7 +1263,7 @@ MethodArguments*  JavaExpressionCompiler::arguments(ANTLR_USE_NAMESPACE(antlr)Re
 			args = new MethodArguments(arg, tail);
 			}
 			
-#line 1267 "JavaExpressionCompiler.cc"
+#line 1267 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -1274,7 +1274,7 @@ MethodArguments*  JavaExpressionCompiler::arguments(ANTLR_USE_NAMESPACE(antlr)Re
 			
 			args = new MethodArguments();
 			
-#line 1278 "JavaExpressionCompiler.cc"
+#line 1278 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -1307,10 +1307,10 @@ MethodArguments*  JavaExpressionCompiler::arguments(ANTLR_USE_NAMESPACE(antlr)Re
 }
 
 //DBG genRule(dotSelector)
-JavaExpressionSelector*  JavaExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
+CSharpExpressionSelector*  CSharpExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE(antlr)RefAST _t) {
 #line 726 "csharp_expression.g"
-	JavaExpressionSelector* js;
-#line 1314 "JavaExpressionCompiler.cc"
+	CSharpExpressionSelector* js;
+#line 1314 "CSharpExpressionCompiler.cc"
 	ANTLR_USE_NAMESPACE(antlr)RefAST dotSelector_AST_in = _t;
 	ANTLR_USE_NAMESPACE(antlr)RefAST identifier_node = ANTLR_USE_NAMESPACE(antlr)nullAST;
 	ANTLR_USE_NAMESPACE(antlr)RefAST method_node = ANTLR_USE_NAMESPACE(antlr)nullAST;
@@ -1320,7 +1320,7 @@ JavaExpressionSelector*  JavaExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE
 	
 	js = nullptr;
 	
-#line 1324 "JavaExpressionCompiler.cc"
+#line 1324 "CSharpExpressionCompiler.cc"
 	
 	#ifdef ANTLR_EXCEPTIONS
 	try {      // for error handling
@@ -1342,9 +1342,9 @@ JavaExpressionSelector*  JavaExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE
 			//DBG genAction(ActionElement action
 #line 731 "csharp_expression.g"
 			
-			js = new JavaExpressionMemberSelector(identifier_node->getText());
+			js = new CSharpExpressionMemberSelector(identifier_node->getText());
 			
-#line 1348 "JavaExpressionCompiler.cc"
+#line 1348 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		//DBG genCases(BitSet)
@@ -1376,7 +1376,7 @@ JavaExpressionSelector*  JavaExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE
 			js = new MethodCallExpression(method_node->getText(), r);
 			}
 			
-#line 1380 "JavaExpressionCompiler.cc"
+#line 1380 "CSharpExpressionCompiler.cc"
 			break;
 		}
 		default:
@@ -1408,10 +1408,10 @@ JavaExpressionSelector*  JavaExpressionCompiler::dotSelector(ANTLR_USE_NAMESPACE
 	return js;
 }
 
-void JavaExpressionCompiler::initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory )
+void CSharpExpressionCompiler::initializeASTFactory( ANTLR_USE_NAMESPACE(antlr)ASTFactory& factory )
 {
 }
-const char* JavaExpressionCompiler::tokenNames[] = {
+const char* CSharpExpressionCompiler::tokenNames[] = {
 	"<0>",
 	"EOF",
 	"<2>",
