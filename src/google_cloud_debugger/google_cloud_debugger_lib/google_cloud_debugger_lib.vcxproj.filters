@@ -127,13 +127,13 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\csharp_expression.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.cc">
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompiler.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.cc">
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexer.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.cc">
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParser.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -309,22 +309,22 @@
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\csharp_expression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompiler.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompilerTokenTypes.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompilerTokenTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexerTokenTypes.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexerTokenTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParserTokenTypes.hpp">
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParserTokenTypes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
