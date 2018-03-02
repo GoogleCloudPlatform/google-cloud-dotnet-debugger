@@ -177,12 +177,12 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.hpp" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompilerTokenTypes.hpp" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.hpp" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexerTokenTypes.hpp" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.hpp" />
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParserTokenTypes.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompiler.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompilerTokenTypes.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexer.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexerTokenTypes.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParser.hpp" />
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParserTokenTypes.hpp" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\array_expression_evaluator.h" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\binary_expression_evaluator.h" />
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\common.h" />
@@ -242,9 +242,9 @@
     <ClInclude Include="variable_wrapper.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionCompiler.cc" />
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionLexer.cc" />
-    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\JavaExpressionParser.cc" />
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionCompiler.cc" />
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionLexer.cc" />
+    <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParser.cc" />
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\array_expression_evaluator.cc" />
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\binary_expression_evaluator.cc" />
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\conditional_operator_evaluator.cc" />
