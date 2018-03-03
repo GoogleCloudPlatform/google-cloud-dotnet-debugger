@@ -19,7 +19,6 @@
 
 #include <vector>
 
-#include "common.h"
 #include "expression_evaluator.h"
 
 namespace google_cloud_debugger {

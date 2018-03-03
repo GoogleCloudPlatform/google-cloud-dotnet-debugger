@@ -267,9 +267,6 @@
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\binary_expression_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\third_party\cloud-debug-java\common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\conditional_operator_evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -325,6 +322,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParserTokenTypes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\common_headers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\cloud-debug-java\messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

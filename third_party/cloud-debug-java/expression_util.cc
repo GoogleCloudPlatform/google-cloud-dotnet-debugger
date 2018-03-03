@@ -17,9 +17,9 @@
 #include "expression_util.h"
 
 #include <sstream>
-#include "CSharpExpressionCompiler.hpp"
-#include "CSharpExpressionLexer.hpp"
-#include "CSharpExpressionParser.hpp"
+#include "antlrgen/CSharpExpressionCompiler.hpp"
+#include "antlrgen/CSharpExpressionLexer.hpp"
+#include "antlrgen/CSharpExpressionParser.hpp"
 #include "csharp_expression.h"
 #include "dbg_stack_frame.h"
 #include "expression_evaluator.h"

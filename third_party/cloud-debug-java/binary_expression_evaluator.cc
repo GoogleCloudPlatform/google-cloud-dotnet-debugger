@@ -25,12 +25,34 @@
 
 namespace google_cloud_debugger {
 
-// Computes x % y. Handles floating point case too.
-template<typename T> inline T ComputeModule(T x, T y) {
-  if (std::is_floating_point<T>::value) {
-    return std::fmod(x, y);
-  }
+// Implementation of C# modulo (%) operator for int data type.
+static int32_t ComputeModulo(int32_t x, int32_t y) {
   return x % y;
+}
+
+// Implementation of C# modulo (%) operator for unsigned int data type.
+static uint32_t ComputeModulo(uint32_t x, uint32_t y) {
+  return x % y;
+}
+
+// Implementation of C# modulo (%) operator for long data type.
+static int64_t ComputeModulo(int64_t x, int64_t y) {
+  return x % y;
+}
+
+// Implementation of C# modulo (%) operator for unsigned long data type.
+static uint64_t ComputeModulo(uint64_t x, uint64_t y) {
+  return x % y;
+}
+
+// Implementation of C# modulo (%) operator for float data type.
+static float_t ComputeModulo(float_t x, float_t y) {
+  return std::fmod(x, y);
+}
+
+// Implementation of C# modulo (%) operator for double data type.
+static double_t ComputeModulo(double_t x, double_t y) {
+  return std::fmod(x, y);
 }
 
 // Checks that the divisor will not trigger "division by zero" signal.
@@ -42,6 +64,28 @@ template<typename T> inline bool IsDivisionByZero(T divisor) {
 }
 
 // Detects edge case in integer division that causes SIGFPE signal.
+// This only happens if value2 is -1 and value1 is either min int (for int32_t)
+// or min long (for int64_t).
+template<typename T> inline bool IsDivisionOverflow(T value1, T value2) {
+  if (std::is_floating_point<T>::value) {
+    return false;
+  }
+
+  if (std::is_unsigned<T>::value) {
+    return false;
+  }
+
+  if (value2 != -1) {
+    return false;
+  }
+
+  if (std::is_same<T, int64_t>::value) {
+    return value1 == LONG_MIN;
+  }
+
+  return value1 == INT_MIN;
+}
+
 static bool IsDivisionOverflow(int32_t value1, int32_t value2) {
   return (value1 == INT_MIN) &&
          (value2 == -1);
@@ -418,7 +462,7 @@ HRESULT BinaryExpressionEvaluator::ArithmeticComputer(
   }
 
   T value2;
-  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+  hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
       arg2.get(), &value2);
   if (FAILED(hr)) {
     return hr;
@@ -454,7 +498,7 @@ HRESULT BinaryExpressionEvaluator::ArithmeticComputer(
         *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(value1 / value2));
         return S_OK;
       } else {
-        *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(ComputeModule(value1, value2)));
+        *result = std::shared_ptr<DbgObject>(new DbgPrimitive<T>(ComputeModulo(value1, value2)));
         return S_OK;
       }
 
@@ -475,7 +519,7 @@ HRESULT BinaryExpressionEvaluator::BitwiseComputer(
   }
 
   T value2;
-  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+  hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
       arg2.get(), &value2);
   if (FAILED(hr)) {
     return hr;
@@ -502,20 +546,20 @@ HRESULT BinaryExpressionEvaluator::BitwiseComputer(
   }
 }
 
-template <typename T, uint16 Bitmask>
+template <typename T, uint16_t Bitmask>
 HRESULT BinaryExpressionEvaluator::ShiftComputer(
     std::shared_ptr<DbgObject> arg1, std::shared_ptr<DbgObject> arg2,
     std::shared_ptr<DbgObject> *result) const {
   T value1;
   HRESULT hr =
-      NumericCompilerHelper::ExtractPrimitiveValue<T>(arg_object.get(), &value);
+      NumericCompilerHelper::ExtractPrimitiveValue<T>(arg1.get(), &value1);
   if (FAILED(hr)) {
     return hr;
   }
 
   int32_t value2 = 0;
-  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<int32_t>(
-      arg_object.get(), &value);
+  hr = NumericCompilerHelper::ExtractPrimitiveValue<int32_t>(
+      arg2.get(), &value2);
   if (FAILED(hr)) {
     return hr;
   }
@@ -665,35 +709,46 @@ HRESULT BinaryExpressionEvaluator::NumericalComparisonComputer(
   }
 
   T value2;
-  HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
+  hr = NumericCompilerHelper::ExtractPrimitiveValue<T>(
       arg2.get(), &value2);
   if (FAILED(hr)) {
     return hr;
   }
 
   switch (type_) {
-    case BinaryCSharpExpression::Type::eq:
-      return JVariant::Boolean(value1 == value2);
+    case BinaryCSharpExpression::Type::eq: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 == value2));
+      return S_OK;
+    }
 
     case BinaryCSharpExpression::Type::ne:
-    case BinaryCSharpExpression::Type::bitwise_xor:
-      return JVariant::Boolean(value1 != value2);
+    case BinaryCSharpExpression::Type::bitwise_xor: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 != value2));
+      return S_OK;
+    }
 
-    case BinaryCSharpExpression::Type::le:
-      return JVariant::Boolean(value1 <= value2);
+    case BinaryCSharpExpression::Type::le: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 <= value2));
+      return S_OK;
+    }
 
-    case BinaryCSharpExpression::Type::ge:
-      return JVariant::Boolean(value1 >= value2);
+    case BinaryCSharpExpression::Type::ge: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 >= value2));
+      return S_OK;
+    }
 
-    case BinaryCSharpExpression::Type::lt:
-      return JVariant::Boolean(value1 < value2);
+    case BinaryCSharpExpression::Type::lt: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 < value2));
+      return S_OK;
+    }
 
-    case BinaryCSharpExpression::Type::gt:
-      return JVariant::Boolean(value1 > value2);
+    case BinaryCSharpExpression::Type::gt: {
+      *result = std::shared_ptr<DbgObject>(new DbgPrimitive<bool>(value1 > value2));
+      return S_OK;
+    }
 
     default:
-      DCHECK(false);  // Any other operations are not supported for booleans.
-      return INTERNAL_ERROR_MESSAGE;
+      return E_NOTIMPL;
   }
 }
 

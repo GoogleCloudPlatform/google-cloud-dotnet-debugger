@@ -16,7 +16,6 @@
 
 #include "array_expression_evaluator.h"
 
-#include "type_util.h"
 #include "error_messages.h"
 #include "compiler_helpers.h"
 #include "dbg_array.h"

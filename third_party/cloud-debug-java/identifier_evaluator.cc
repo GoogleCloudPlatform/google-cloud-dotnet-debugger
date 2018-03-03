@@ -79,6 +79,7 @@ HRESULT IdentifierEvaluator::Evaluate(
   }
 
   // TODO(quoct): Evaluates the property.
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger

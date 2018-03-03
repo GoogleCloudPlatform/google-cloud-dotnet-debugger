@@ -285,7 +285,6 @@ HRESULT ExtractStringFromICorDebugStringValue(
   }
 
   HRESULT hr;
-  std::vector<WCHAR> string_value;
   ULONG32 str_len;
   ULONG32 str_returned_len;
 
