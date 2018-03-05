@@ -17,10 +17,14 @@
 #include <algorithm>
 #include <cctype>
 
+#include "dbg_stack_frame.h"
 #include "document_index.h"
+#include "expression_util.h"
+#include "expression_evaluator.h"
 #include "i_eval_coordinator.h"
 #include "i_stack_frame_collection.h"
 #include "i_portable_pdb_file.h"
+#include "compiler_helpers.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
@@ -36,11 +40,11 @@ using std::unique_ptr;
 namespace google_cloud_debugger {
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
-  Initialize(other.file_name_, other.id_, other.line_, other.column_);
+  Initialize(other.file_name_, other.id_, other.line_, other.column_, other.condition_);
 }
 
 void DbgBreakpoint::Initialize(const string &file_name, const string &id,
-                               uint32_t line, uint32_t column) {
+                               uint32_t line, uint32_t column, const std::string &condition) {
   file_name_ = file_name;
   id_ = id;
   std::transform(
@@ -48,6 +52,7 @@ void DbgBreakpoint::Initialize(const string &file_name, const string &id,
       [](unsigned char c) -> unsigned char { return std::tolower(c); });
   line_ = line;
   column_ = column;
+  condition_ = condition;
 }
 
 HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
@@ -134,6 +139,41 @@ bool DbgBreakpoint::TrySetBreakpoint(
 
   set_ = best_match_index != -1;
   return set_;
+}
+
+HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
+    IEvalCoordinator *eval_coordinator, bool *result) {
+  if (condition_.empty()) {
+    *result = true;
+    return S_OK;
+  }
+
+  CompiledExpression compiled_expression = CompileExpression(condition_);
+  if (compiled_expression.evaluator == nullptr) {
+    // Errors are already printed out by CompileExpression.
+    return E_FAIL;
+  }
+
+  HRESULT hr = compiled_expression.evaluator->Compile(stack_frame, &std::cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  const TypeSignature &type_sig = compiled_expression.evaluator->GetStaticType();
+  if (type_sig.cor_type != CorElementType::ELEMENT_TYPE_BOOLEAN) {
+    std::cerr << "Condition of the breakpoint must be of type boolean.";
+    return E_FAIL;
+  }
+
+  std::shared_ptr<DbgObject> condition_result;
+  hr = compiled_expression.evaluator->Evaluate(&condition_result,
+      eval_coordinator, &std::cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return NumericCompilerHelper::ExtractPrimitiveValue<bool>(
+      condition_result.get(), result);
 }
 
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
