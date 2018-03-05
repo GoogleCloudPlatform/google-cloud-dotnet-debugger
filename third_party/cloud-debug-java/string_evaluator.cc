@@ -15,6 +15,7 @@
  */
 
 #include "string_evaluator.h"
+#include "class_names.h"
 #include "ccomptr.h"
 #include "i_eval_coordinator.h"
 #include "error_messages.h"
@@ -29,7 +30,8 @@ StringEvaluator::StringEvaluator(std::string string_content)
 
 const TypeSignature& StringEvaluator::GetStaticType() const {
   static const TypeSignature string_signature = {
-    CorElementType::ELEMENT_TYPE_STRING
+    CorElementType::ELEMENT_TYPE_STRING,
+    kStringClassName
   };
 
   return string_signature;

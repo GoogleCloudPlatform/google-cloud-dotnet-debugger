@@ -149,7 +149,7 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
 
   // For now, we don't have a use for column so we just assign it to 0.
   breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
-                         0);
+                         0, breakpoint_read.condition());
   breakpoint->SetActivated(breakpoint_read.activated());
   breakpoint->SetKillServer(breakpoint_read.kill_server());
 
