@@ -84,6 +84,17 @@ class DbgPrimitive : public DbgObject {
     return generic_value->GetValue(&value_);
   }
 
+  // Cast DbgObject to a DbgPrimitive and retrieves the value.
+  static HRESULT GetValue(DbgObject *dbg_object, T *value) {
+    DbgPrimitive<T> *dbg_primitive = dynamic_cast<DbgPrimitive<T> *>(dbg_object);
+    if (!dbg_primitive) {
+      return E_INVALIDARG;
+    }
+
+    *value = dbg_primitive->GetValue();
+    return S_OK;
+  }
+
   // Returns the primitive value stored.
   T GetValue() { return value_; }
 
