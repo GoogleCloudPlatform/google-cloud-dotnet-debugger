@@ -42,13 +42,12 @@ struct CompiledExpression {
   std::string expression;
 };
 
-// Shortcut method to tokenize, parse, tree-walk and compile the specified
+// Shortcut method to tokenize, parse, and tree-walk the specified
 // expression. Returns nullptr if any error occures (syntactically or
 // semantically incorrect expression). In such cases, "error_message" is
 // populated with a human readable parameterized description of why the
 // expression could not be compiled.
-CompiledExpression CompileExpression(const std::string& string_expression,
-                                     DbgStackFrame* stack_frame);
+CompiledExpression CompileExpression(const std::string& string_expression);
 
 }  // namespace google_cloud_debugger
 

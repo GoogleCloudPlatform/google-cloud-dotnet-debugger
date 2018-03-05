@@ -28,8 +28,7 @@ using std::cerr;
 
 namespace google_cloud_debugger {
 
-CompiledExpression CompileExpression(const std::string& string_expression,
-                                     DbgStackFrame* stack_frame) {
+CompiledExpression CompileExpression(const std::string& string_expression) {
   if (string_expression.size() > kMaxExpressionLength) {
     std::cerr << "Expression can't be compiled because it is too long: "
               << string_expression.size();
@@ -74,23 +73,7 @@ CompiledExpression CompileExpression(const std::string& string_expression,
     cerr << "Expression not supported by the evaluator" << std::endl
          << "Input: " << string_expression << std::endl
          << "AST: " << parser.getAST()->toStringTree();
-
-    return compiled_expression;
   }
-
-  HRESULT hr = compiled_expression.evaluator->Compile(stack_frame, &cerr);
-  if (FAILED(hr)) {
-    cerr << "Expression could not be compiled" << std::endl
-         << "Input: " << string_expression << std::endl
-         << "AST: " << parser.getAST()->toStringTree();
-    compiled_expression.evaluator = nullptr;
-
-    return compiled_expression;
-  }
-
-  std::cout << "Expression compiled successfully" << std::endl
-            << "Input: " << string_expression << std::endl
-            << "AST: " << parser.getAST()->toStringTree();
 
   return compiled_expression;
 }

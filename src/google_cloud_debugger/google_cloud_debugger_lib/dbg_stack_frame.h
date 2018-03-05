@@ -286,14 +286,14 @@ class DbgStackFrame {
   // MetaData token of the class the frame is in.
   mdTypeDef class_token_;
 
-  // The frame this stack frame is in.
-  CComPtr<ICorDebugILFrame> debug_frame_;
-
   // The metadata import of this stack frame.
   CComPtr<IMetaDataImport> metadata_import_;
 
   // The app domain this frame is in.
   CComPtr<ICorDebugAppDomain> app_domain_;
+
+  // The frame this stack frame is in.
+  CComPtr<ICorDebugILFrame> debug_frame_;
 
   // Dictionary whose key is class name and whose value
   // is the metadata token mdTypeDef of that class.
