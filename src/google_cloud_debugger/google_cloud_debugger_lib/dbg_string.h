@@ -51,7 +51,7 @@ class DbgString : public DbgReferenceObject {
   std::string string_obj_;
 
   // True if string_obj_ is set.
-  bool string_obj_set_;
+  bool string_obj_set_ = false;
 };
 
 }  //  namespace google_cloud_debugger
