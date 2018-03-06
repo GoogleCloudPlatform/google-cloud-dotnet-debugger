@@ -36,8 +36,7 @@ namespace Google.Cloud.Diagnostics.Debug
             _server = new NamedPipeServerStream(
                pipeName: GaxPreconditions.CheckNotNullOrEmpty(pipeName, nameof(pipeName)),
                direction: PipeDirection.InOut,
-               // TODO(talarico): This should be NamedPipeServerStream.MaxAllowedServerInstance but it's not public.
-               maxNumberOfServerInstances: -1,
+               maxNumberOfServerInstances: NamedPipeServerStream.MaxAllowedServerInstances,
                transmissionMode: PipeTransmissionMode.Byte,
                options: PipeOptions.Asynchronous);
             _pipe = new NamedPipe(_server);
