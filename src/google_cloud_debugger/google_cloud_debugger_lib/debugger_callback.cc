@@ -129,16 +129,6 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   // We will get the IL frame to enumerate and print out all local variables.
   HRESULT hr;
   CComPtr<IMetaDataImport> metadata_import;
-  CComPtr<ICorDebugThread3> debug_thread3;
-  CComPtr<ICorDebugStackWalk> debug_stack_walk;
-
-  hr = debug_thread->QueryInterface(__uuidof(ICorDebugThread3),
-                                    reinterpret_cast<void **>(&debug_thread3));
-  if (FAILED(hr)) {
-    cerr << "Failed to cast ICorDebugThread to ICorDebugThread3.";
-    appdomain->Continue(FALSE);
-    return hr;
-  }
 
   mdMethodDef function_token;
   ULONG32 il_offset = 0;
@@ -150,16 +140,9 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
     return hr;
   }
 
-  hr = debug_thread3->CreateStackWalk(&debug_stack_walk);
-  if (FAILED(hr)) {
-    cerr << "Failed to create stack walk.";
-    appdomain->Continue(FALSE);
-    return hr;
-  }
-
   hr = breakpoint_collection_->EvaluateAndPrintBreakpoint(
-      function_token, il_offset, eval_coordinator_.get(), debug_thread,
-      debug_stack_walk, portable_pdbs_);
+      function_token, il_offset, eval_coordinator_.get(),
+      debug_thread, portable_pdbs_);
   if (FAILED(hr)) {
     cerr << "Failed to get stack frame's information.";
     appdomain->Continue(FALSE);

@@ -117,11 +117,14 @@ class DbgBreakpoint {
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }
 
+  // Gets the result of the evaluated condition.
+  // This should only be called after EvaluateCondition is called.
+  bool GetEvaluatedCondition() { return evaluated_condition_; }
+
   // Evaluates condition condition_ using the provided stack frame
-  // and eval coordinator. If condition_ is empty, sets result to true.
+  // and eval coordinator. Sets the result to evaluated_condition_.
   HRESULT EvaluateCondition(DbgStackFrame *stack_frame,
-                            IEvalCoordinator *eval_coordinator,
-                            bool *result);
+                            IEvalCoordinator *eval_coordinator);
 
   // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
@@ -167,6 +170,9 @@ class DbgBreakpoint {
 
   // Condition of a breakpoint. If false, don't report information back.
   std::string condition_;
+
+  // True if the condition_ of the breakpoint is empty or evaluated to true.
+  bool evaluated_condition_;
 
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
