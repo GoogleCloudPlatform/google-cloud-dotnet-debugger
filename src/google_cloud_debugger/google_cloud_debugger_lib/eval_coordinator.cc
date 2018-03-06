@@ -170,17 +170,20 @@ HRESULT EvalCoordinator::PrintBreakpoint(
                                               eval_coordinator);
         if (FAILED(hr)) {
           cerr << "Failed to initialize stack frames: " << std::hex << hr;
+          eval_coordinator->SignalFinishedPrintingVariable();
           return;
         }
 
         if (!breakpoint->GetEvaluatedCondition()) {
           std::cout << "Breakpoint condition is not met.";
+          eval_coordinator->SignalFinishedPrintingVariable();
           return;
         }
 
         Breakpoint proto_breakpoint;
         hr = breakpoint->PopulateBreakpoint(
             &proto_breakpoint, stack_frames.get(), eval_coordinator);
+        eval_coordinator->SignalFinishedPrintingVariable();
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << std::hex << hr;
           return;
@@ -189,7 +192,6 @@ HRESULT EvalCoordinator::PrintBreakpoint(
         hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
         if (FAILED(hr)) {
           cerr << "Failed to write breakpoint: " << std::hex << hr;
-          return;
         }
       },
       std::move(stack_frames), this, breakpoint_collection, breakpoint);
