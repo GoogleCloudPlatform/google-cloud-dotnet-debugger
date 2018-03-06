@@ -117,8 +117,8 @@ class DbgBreakpoint {
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }
 
-  // Evalutes condition condition_ using the provided stack frame
-  // and eval coordinator. If condition_ is null, set result to true.
+  // Evaluates condition condition_ using the provided stack frame
+  // and eval coordinator. If condition_ is empty, sets result to true.
   HRESULT EvaluateCondition(DbgStackFrame *stack_frame,
                             IEvalCoordinator *eval_coordinator,
                             bool *result);
