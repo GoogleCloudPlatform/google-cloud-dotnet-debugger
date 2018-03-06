@@ -85,6 +85,21 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void MainAction_LogPoint()
+        {
+            var breakpoints = CreateBreakpoints(1);
+            breakpoints.Single().Action = StackdriverBreakpoint.Types.Action.Log;
+            _mockDebuggerClient.Setup(c => c.ListBreakpoints()).Returns(breakpoints);
+            _server.MainAction();
+
+            _mockDebuggerClient.Verify(c => c.ListBreakpoints(), Times.Once);
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(
+                Match.Create(GetErrorMatcher("0", Messages.LogPointNotSupported))), Times.Once);
+            _mockBreakpointServer.Verify(s => s.WriteBreakpointAsync(
+                It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public void MainAction_RemoveBreakpoint()
         {
             var breakpoints = CreateBreakpoints(1);
@@ -127,11 +142,19 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         /// Creates a matcher that will match a <see cref="StackdriverBreakpoint"/>
         /// that has a status set that conditions and expressions are not supported.
         /// </summary>
-        private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id)
+        private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id) => 
+            GetErrorMatcher(id, Messages.CondExpNotSupported);
+
+
+        /// <summary>
+        /// Creates a matcher that will match a <see cref="StackdriverBreakpoint"/>
+        /// that has an error status.
+        /// </summary>
+        private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id, string errorMessage)
         {
             return (b) =>
                 b.IsFinalState && b.Id == id && b.Status.IsError &&
-                b.Status.Description.Format == Messages.CondExpNotSupported;
+                b.Status.Description.Format == errorMessage;
         }
 
         /// <summary>
