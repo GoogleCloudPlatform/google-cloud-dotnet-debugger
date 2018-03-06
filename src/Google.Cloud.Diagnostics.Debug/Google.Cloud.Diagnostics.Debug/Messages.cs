@@ -23,6 +23,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// A message stating that log points are not supported.
         /// </summary>
-        public const string LogPointNotSupported = "Log points are not currently supported.";
+        public const string LogPointNotSupported = "Log points are currently not supported.";
     }
 }
