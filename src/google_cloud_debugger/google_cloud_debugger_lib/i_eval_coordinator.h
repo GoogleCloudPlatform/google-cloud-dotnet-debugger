@@ -61,6 +61,9 @@ class IEvalCoordinator {
   // from the active thread.
   virtual HRESULT CreateEval(ICorDebugEval **eval) = 0;
 
+  // Creates an ICorDebugStackWalk object from the active thread.
+  virtual HRESULT CreateStackWalk(ICorDebugStackWalk **debug_stack_walk) = 0;
+
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   virtual HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
@@ -77,10 +80,10 @@ class IEvalCoordinator {
   // Prints out the stack frames at DbgBreakpoint breakpoint based on
   // debug_stack_walk.
   virtual HRESULT PrintBreakpoint(
-      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+      ICorDebugThread *debug_thread,
       IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;
 
   // StackFrame calls this to signal that it already processed all the
