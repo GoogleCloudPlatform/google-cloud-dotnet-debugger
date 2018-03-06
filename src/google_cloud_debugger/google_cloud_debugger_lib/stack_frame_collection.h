@@ -26,11 +26,13 @@ class StackFrameCollection : public IStackFrameCollection {
  public:
   // Using vector of PDB files, we walk through the stack debug_stack_walk at
   // breakpoint breakpoint and try to populate the stack frames vector.
+  // DbgBreakpoint breakpoint is used to provide potential condition or
+  // expressions that needs to be evaluated at the first frame.
   HRESULT Initialize(
-      ICorDebugStackWalk *debug_stack_walk,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files);
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files,
+      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator);
 
   // Populates the stack frames of a breakpoint using stack_frames.
   // eval_coordinator will be used to perform eval coordination during function
@@ -55,6 +57,38 @@ class StackFrameCollection : public IStackFrameCollection {
   HRESULT PopulateModuleClassAndFunctionName(DbgStackFrame *dbg_stack_frame,
                                              mdMethodDef function_token,
                                              IMetaDataImport *metadata_import);
+
+  // Helper function to walk the stack, process each frame and store them
+  // into stack_frames_.
+  // IEvalCoordinator eval_coordinator is used to create the stack walk.
+  // Parsed_pdb_files vector is needed for mapping each stack frame to a file
+  // location.
+  HRESULT WalkStackAndProcessStackFrame(
+      IEvalCoordinator *eval_coordinator,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files);
+
+  // Helper function to evaluate the condition stored in DbgBreakpoint breakpoint.
+  // IEvalCoordinator is needed to get the active debug thread and frame.
+  // Parsed_pdb_files vector is needed to retrieve local variables names.
+  HRESULT EvaluateBreakpointCondition(
+      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files);
+
+  // Helper function to process information in ICorDebugFrame debug_frame
+  // and initialize DbgStackFrame stack_frame with that information.
+  // If process_il_frame is set to true, this function will try to convert
+  // debug_frame to an ICorDebugILFrame and retrieve local variables and
+  // method arguments from the frame.
+  HRESULT PopulateDbgStackFrameHelper(
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files,
+      ICorDebugFrame *debug_frame, DbgStackFrame *stack_frame,
+      bool process_il_frame);
 
   // Vectors of stack frames that this collection owns.
   std::vector<DbgStackFrame> stack_frames_;
