@@ -113,16 +113,15 @@ HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
 HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
     mdMethodDef function_token, ULONG32 il_offset,
     IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
-    ICorDebugStackWalk *debug_stack_walk,
     const std::vector<
-        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   HRESULT hr = S_FALSE;
   for (auto &&breakpoint : breakpoints_) {
     if (breakpoint->GetMethodToken() == function_token &&
         il_offset == breakpoint->GetILOffset()) {
-      hr = eval_coordinator->PrintBreakpoint(debug_stack_walk, debug_thread,
-                                             this, breakpoint.get(), pdb_files);
+      hr = eval_coordinator->PrintBreakpoint(debug_thread, this,
+                                             breakpoint.get(), pdb_files);
       if (FAILED(hr)) {
         cerr << "Failed to get stack frame's information.";
       }

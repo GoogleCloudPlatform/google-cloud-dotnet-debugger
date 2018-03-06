@@ -142,9 +142,9 @@ bool DbgBreakpoint::TrySetBreakpoint(
 }
 
 HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
-    IEvalCoordinator *eval_coordinator, bool *result) {
+    IEvalCoordinator *eval_coordinator) {
   if (condition_.empty()) {
-    *result = true;
+    evaluated_condition_ = true;
     return S_OK;
   }
 
@@ -173,7 +173,7 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
   }
 
   return NumericCompilerHelper::ExtractPrimitiveValue<bool>(
-      condition_result.get(), result);
+      condition_result.get(), &evaluated_condition_);
 }
 
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,

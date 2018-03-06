@@ -25,6 +25,7 @@
 namespace google_cloud_debugger {
 
 class IEvalCoordinator;
+class DbgBreakpoint;
 
 class IStackFrameCollection {
  public:
@@ -33,10 +34,10 @@ class IStackFrameCollection {
   // Using vector of PDB files, we walk through the stack debug_stack_walk at
   // breakpoint breakpoint and try to populate the stack frames vector.
   virtual HRESULT Initialize(
-      ICorDebugStackWalk *debug_stack_walk,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files) = 0;
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files,
+      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator) = 0;
 
   // Populates the stack frames of a breakpoint using stack_frames.
   // eval_coordinator will be used to perform eval coordination during function
