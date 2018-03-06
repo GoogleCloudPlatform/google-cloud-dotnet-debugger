@@ -278,8 +278,8 @@ HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
   }
 
   // Conditional operations applied to objects.
-  if (signature1.type_name.compare(kStringClassName) == 0 &&
-      signature2.type_name.compare(kStringClassName) == 0) {
+  if (signature1.cor_type == CorElementType::ELEMENT_TYPE_STRING &&
+      signature2.cor_type == CorElementType::ELEMENT_TYPE_STRING) {
     computer_ = &BinaryExpressionEvaluator::ConditionalStringComputer;
     return S_OK;
   } else if (!TypeCompilerHelper::IsNumericalType(signature1.cor_type) &&

@@ -33,6 +33,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class IStackFrameCollection;
+class DbgStackFrame;
 
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
@@ -46,7 +47,7 @@ class DbgBreakpoint {
 
   // Populate this breakpoint's file name, id, line and column.
   void Initialize(const std::string &file_name, const std::string &id,
-                  uint32_t line, uint32_t column);
+                  uint32_t line, uint32_t column, const std::string &condition);
 
   // Given a PortablePdbFile, try to see whether we can set this breakpoint.
   // We do this by searching the PortablePdbFile for the file name and
@@ -113,6 +114,15 @@ class DbgBreakpoint {
   // Sets whether this breakpoint should kill the server.
   void SetKillServer(bool kill_server) { kill_server_ = kill_server; }
 
+  // Returns the condition of the breakpoint.
+  const std::string &GetCondition() const { return condition_; }
+
+  // Evaluates condition condition_ using the provided stack frame
+  // and eval coordinator. If condition_ is empty, sets result to true.
+  HRESULT EvaluateCondition(DbgStackFrame *stack_frame,
+                            IEvalCoordinator *eval_coordinator,
+                            bool *result);
+
   // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
   // are used to evaluate and fill up the stack frames of the breakpoint.
@@ -154,6 +164,9 @@ class DbgBreakpoint {
 
   // The method token of the method this breakpoint is in.
   mdMethodDef method_token_;
+
+  // Condition of a breakpoint. If false, don't report information back.
+  std::string condition_;
 
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
