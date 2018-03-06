@@ -79,7 +79,6 @@ HRESULT StackFrameCollection::Initialize(
     }
 
     if (!breakpoint->GetEvaluatedCondition()) {
-      cout << "Breakpoint condition is not met.";
       return S_FALSE;
     }
   }
@@ -130,7 +129,6 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     hr = dbg_stack_frame.PopulateStackFrame(frame, frame_max_size,
                                             eval_coordinator);
     if (FAILED(hr)) {
-      eval_coordinator->SignalFinishedPrintingVariable();
       return hr;
     }
 
@@ -146,7 +144,6 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 
-  eval_coordinator->SignalFinishedPrintingVariable();
   return S_OK;
 }
 
@@ -330,7 +327,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
   CComPtr<ICorDebugFrame> frame;
   int il_frame_parsed_so_far = 0;
   int frame_parsed_so_far = 0;
-  hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
+  HRESULT hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
   if (FAILED(hr)) {
     cerr << "Failed to create stack walk.";
     return hr;
