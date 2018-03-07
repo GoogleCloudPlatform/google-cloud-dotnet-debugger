@@ -43,9 +43,30 @@ HRESULT EvalCoordinator::CreateEval(ICorDebugEval **eval) {
   lock_guard<mutex> lk(mutex_);
 
   if (active_debug_thread_ == nullptr) {
+    std::cerr << "Active debug thread is missing";
     return E_FAIL;
   }
   return active_debug_thread_->CreateEval(eval);
+}
+
+HRESULT EvalCoordinator::CreateStackWalk(
+    ICorDebugStackWalk **debug_stack_walk) {
+  if (!active_debug_thread_) {
+    cerr << "Active debug thread is missing";
+    return E_FAIL;
+  }
+
+  HRESULT hr;
+  CComPtr<ICorDebugThread3> debug_thread3;
+
+  hr = active_debug_thread_->QueryInterface(
+      __uuidof(ICorDebugThread3), reinterpret_cast<void **>(&debug_thread3));
+  if (FAILED(hr)) {
+    cerr << "Failed to cast ICorDebugThread to ICorDebugThread3.";
+    return hr;
+  }
+
+  return debug_thread3->CreateStackWalk(debug_stack_walk);
 }
 
 HRESULT EvalCoordinator::WaitForEval(BOOL *exception_thrown,
@@ -111,20 +132,22 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
 }
 
 HRESULT EvalCoordinator::PrintBreakpoint(
-    ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-    IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+    ICorDebugThread *debug_thread, IBreakpointCollection *breakpoint_collection,
+    DbgBreakpoint *breakpoint,
     const std::vector<
-        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   if (!breakpoint) {
     cerr << "Breakpoint is null.";
     return E_INVALIDARG;
   }
 
-  if (!debug_stack_walk) {
+  if (!debug_thread) {
     cerr << "Debug stack walk is null.";
     return E_INVALIDARG;
   }
+
+  active_debug_thread_ = debug_thread;
 
   // Creates and initializes stack frame collection based on the
   // ICorDebugStackWalk object.
@@ -135,37 +158,49 @@ HRESULT EvalCoordinator::PrintBreakpoint(
     return E_FAIL;
   }
 
-  HRESULT hr = stack_frames->Initialize(debug_stack_walk, pdb_files);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
   unique_lock<mutex> lk(mutex_);
 
-  std::future<void> print_breakpoint_task = std::async(
+  std::future<HRESULT> print_breakpoint_task = std::async(
       std::launch::async,
-      [](unique_ptr<IStackFrameCollection> stack_frames,
-         EvalCoordinator *eval_coordinator,
-         IBreakpointCollection *breakpoint_collection,
-         DbgBreakpoint *breakpoint) {
+      [&](unique_ptr<IStackFrameCollection> stack_frames,
+          EvalCoordinator *eval_coordinator,
+          IBreakpointCollection *breakpoint_collection,
+          DbgBreakpoint *breakpoint) {
+        HRESULT hr = stack_frames->Initialize(pdb_files, breakpoint,
+                                              eval_coordinator);
+        if (FAILED(hr)) {
+          cerr << "Failed to initialize stack frames: " << std::hex << hr;
+          eval_coordinator->SignalFinishedPrintingVariable();
+          return hr;
+        }
+
+        if (!breakpoint->GetEvaluatedCondition()) {
+          std::cout << "Breakpoint condition is not met.";
+          eval_coordinator->SignalFinishedPrintingVariable();
+          return hr;
+        }
+
         Breakpoint proto_breakpoint;
-        HRESULT hr = breakpoint->PopulateBreakpoint(
+        hr = breakpoint->PopulateBreakpoint(
             &proto_breakpoint, stack_frames.get(), eval_coordinator);
+        eval_coordinator->SignalFinishedPrintingVariable();
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << std::hex << hr;
+          return hr;
         }
 
         hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
         if (FAILED(hr)) {
           cerr << "Failed to write breakpoint: " << std::hex << hr;
         }
+
+        return hr;
       },
       std::move(stack_frames), this, breakpoint_collection, breakpoint);
   print_breakpoint_tasks_.push_back(std::move(print_breakpoint_task));
 
   ready_to_print_variables_ = TRUE;
   debuggercallback_can_continue_ = FALSE;
-  active_debug_thread_ = debug_thread;
 
   // Notify the StackFrame threads we are ready.
   variable_threads_cv_.notify_all();

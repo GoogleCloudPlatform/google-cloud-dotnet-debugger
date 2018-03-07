@@ -48,57 +48,62 @@ class EvalCoordinator : public IEvalCoordinator {
  public:
   // This method is used to create an ICorDebugEval object
   // from the active thread.
-  HRESULT CreateEval(ICorDebugEval **eval);
+  HRESULT CreateEval(ICorDebugEval **eval) override;
+
+  // Creates an ICorDebugStackWalk object from the active thread.
+  HRESULT CreateStackWalk(ICorDebugStackWalk **debug_stack_walk) override;
 
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
-                      ICorDebugValue **eval_result);
+                      ICorDebugValue **eval_result) override;
 
   // DebuggerCallback calls this function to signal that an evaluation is
   // finished.
-  void SignalFinishedEval(ICorDebugThread *debug_thread);
+  void SignalFinishedEval(ICorDebugThread *debug_thread) override;
 
   // DebuggerCallback calls this function to signal that an exception has
   // occurred.
-  void HandleException();
+  void HandleException() override;
 
   // Prints out the stack frames at DbgBreakpoint breakpoint based on
   // debug_stack_walk.
   HRESULT PrintBreakpoint(
-      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+      ICorDebugThread *debug_thread,
       IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files);
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files) override;
 
   // StackFrame calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
   // print them out.
-  void WaitForReadySignal();
+  void WaitForReadySignal() override;
 
   // StackFrame calls this to signal to the DebuggerCallback that it
   // finished all the evaluation.
-  void SignalFinishedPrintingVariable();
+  void SignalFinishedPrintingVariable() override;
 
   // Returns the active debug thread.
-  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread);
+  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) override;
 
   // Returns true if we are waiting for an evaluation result.
-  BOOL WaitingForEval();
+  BOOL WaitingForEval() override;
 
   // Sets this to stop property evaluation.
-  void SetPropertyEvaluation(BOOL eval) { property_evaluation_ = eval; }
+  void SetPropertyEvaluation(BOOL eval) override {
+    property_evaluation_ = eval;
+  }
 
   // Returns whether property evaluation should be performed.
-  BOOL PropertyEvaluation() { return property_evaluation_; }
+  BOOL PropertyEvaluation() override { return property_evaluation_; }
 
  private:
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
 
   // The tasks that help us enumerate and print out variables.
-  std::vector<std::future<void>> print_breakpoint_tasks_;
+  std::vector<std::future<HRESULT>> print_breakpoint_tasks_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
