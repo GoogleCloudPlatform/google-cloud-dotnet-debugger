@@ -160,7 +160,7 @@ HRESULT EvalCoordinator::PrintBreakpoint(
 
   unique_lock<mutex> lk(mutex_);
 
-  std::future<void> print_breakpoint_task = std::async(
+  std::future<HRESULT> print_breakpoint_task = std::async(
       std::launch::async,
       [&](unique_ptr<IStackFrameCollection> stack_frames,
           EvalCoordinator *eval_coordinator,
@@ -171,13 +171,13 @@ HRESULT EvalCoordinator::PrintBreakpoint(
         if (FAILED(hr)) {
           cerr << "Failed to initialize stack frames: " << std::hex << hr;
           eval_coordinator->SignalFinishedPrintingVariable();
-          return;
+          return hr;
         }
 
         if (!breakpoint->GetEvaluatedCondition()) {
           std::cout << "Breakpoint condition is not met.";
           eval_coordinator->SignalFinishedPrintingVariable();
-          return;
+          return hr;
         }
 
         Breakpoint proto_breakpoint;
@@ -186,13 +186,15 @@ HRESULT EvalCoordinator::PrintBreakpoint(
         eval_coordinator->SignalFinishedPrintingVariable();
         if (FAILED(hr)) {
           cerr << "Failed to print out variables: " << std::hex << hr;
-          return;
+          return hr;
         }
 
         hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
         if (FAILED(hr)) {
           cerr << "Failed to write breakpoint: " << std::hex << hr;
         }
+
+        return hr;
       },
       std::move(stack_frames), this, breakpoint_collection, breakpoint);
   print_breakpoint_tasks_.push_back(std::move(print_breakpoint_task));
