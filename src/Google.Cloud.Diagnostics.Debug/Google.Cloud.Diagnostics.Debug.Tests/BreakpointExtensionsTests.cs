@@ -127,33 +127,5 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Single(
                 sdBreakpoint.EvaluatedExpressions.Where(ee => ee.Name.Equals("second-expression")));
         }
-
-        [Fact]
-        public void GetLocationIdentifier_Breakpoint()
-        {
-            var breakpoint = new Breakpoint
-            {
-                Location = new SourceLocation
-                {
-                    Path = _path,
-                    Line = _line
-                }
-            };
-            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
-        }
-
-        [Fact]
-        public void GetLocationIdentifier_StackdriverBreakpoint()
-        {
-            var breakpoint = new StackdriverBreakpoint
-            {
-                Location = new StackdriverSourceLocation
-                {
-                    Path = _path,
-                    Line = _line
-                }
-            };
-            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
-        }
     }
 }
