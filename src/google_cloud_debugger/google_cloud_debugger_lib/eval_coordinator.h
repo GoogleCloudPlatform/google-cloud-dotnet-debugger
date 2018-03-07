@@ -103,7 +103,7 @@ class EvalCoordinator : public IEvalCoordinator {
   BOOL property_evaluation_ = FALSE;
 
   // The tasks that help us enumerate and print out variables.
-  std::vector<std::future<void>> print_breakpoint_tasks_;
+  std::vector<std::future<HRESULT>> print_breakpoint_tasks_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;
