@@ -51,7 +51,7 @@ class IBreakpointCollection {
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
   // This means duplicate breakpoints will be silently rejected.
-  virtual HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) = 0;
+  virtual HRESULT UpdateBreakpoint(const DbgBreakpoint &breakpoint) = 0;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.

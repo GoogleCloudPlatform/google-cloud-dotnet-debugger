@@ -37,7 +37,7 @@ class IBreakpointCollectionMock
   MOCK_METHOD1(
       SetDebuggerCallback,
       HRESULT(google_cloud_debugger::DebuggerCallback *debugger_callback));
-  MOCK_METHOD1(ActivateOrDeactivate,
+  MOCK_METHOD1(UpdateBreakpoint,
                HRESULT(const google_cloud_debugger::DbgBreakpoint &breakpoint));
   MOCK_METHOD0(SyncBreakpoints, HRESULT());
   MOCK_METHOD0(CancelSyncBreakpoints, HRESULT());

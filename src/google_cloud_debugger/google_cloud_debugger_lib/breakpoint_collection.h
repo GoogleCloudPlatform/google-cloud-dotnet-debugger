@@ -52,7 +52,7 @@ class BreakpointCollection : public IBreakpointCollection {
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
   // This means duplicate breakpoints will be silently rejected.
-  HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) override;
+  HRESULT UpdateBreakpoint(const DbgBreakpoint &breakpoint) override;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.
@@ -89,7 +89,7 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT ReadAndParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
-  std::vector<std::unique_ptr<DbgBreakpoint>> breakpoints_;
+  std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
 
   // Activate a breakpoint in a portable pdb file.
   // This function should only be used if breakpoint is already set, i.e.
@@ -98,9 +98,15 @@ class BreakpointCollection : public IBreakpointCollection {
       DbgBreakpoint *breakpoint,
       google_cloud_debugger_portable_pdb::IPortablePdbFile *portable_pdb);
 
-  // Helper function to activate or deactivate an existing breakpoint.
-  HRESULT ActivateOrDeactivateExistingBreakpoint(
-      const DbgBreakpoint &breakpoint, BOOL activate);
+  // Helper function to updates an existing breakpoint that
+  // has the same ID as breakpoint.
+  HRESULT UpdateBpUsingExistingBpSameId(const DbgBreakpoint &breakpoint,
+                                        BOOL activate);
+
+  // This function searches for a breakpoint in breakpoints_ with the same
+  // location (file name and line number as breakpoint). If found, it will
+  // use some existing information in that breakpoint to activate breakpoint.
+  HRESULT ActivateBpUsingExistingBpWithSameLocation(DbgBreakpoint *breakpoint);
 
   // Helper function to get type definition token, signature, virtual address
   // and name of a method (identified using method_def).
