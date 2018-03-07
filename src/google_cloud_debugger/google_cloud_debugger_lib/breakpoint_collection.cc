@@ -54,7 +54,8 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
     return E_INVALIDARG;
   }
 
-  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient(pipe_name));
+  unique_ptr<NamedPipeClient> pipe(new (std::nothrow)
+                                       NamedPipeClient(pipe_name));
   if (!pipe) {
     cerr << "Cannot create named pipe client.";
     return E_OUTOFMEMORY;
@@ -87,7 +88,7 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
 HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
   if (!breakpoint_client_write_) {
     HRESULT hr = CreateAndInitializeBreakpointClient(
-      &breakpoint_client_write_, debugger_callback_->GetPipeName());
+        &breakpoint_client_write_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for writing breakpoints.";
       return hr;
@@ -100,7 +101,7 @@ HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
 HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   if (!breakpoint_client_read_) {
     HRESULT hr = CreateAndInitializeBreakpointClient(
-		&breakpoint_client_read_, debugger_callback_->GetPipeName());
+        &breakpoint_client_read_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for reading breakpoints.";
       return hr;
@@ -117,17 +118,27 @@ HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   HRESULT hr = S_FALSE;
-  for (auto &&breakpoint : breakpoints_) {
-    if (breakpoint->GetMethodToken() == function_token &&
-        il_offset == breakpoint->GetILOffset()) {
-      hr = eval_coordinator->PrintBreakpoint(debug_thread, this,
-                                             breakpoint.get(), pdb_files);
-      if (FAILED(hr)) {
-        cerr << "Failed to get stack frame's information.";
-      }
+  std::vector<std::shared_ptr<DbgBreakpoint>> matched_breakpoints;
 
-      return hr;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &&breakpoint : breakpoints_) {
+      if (breakpoint->GetMethodToken() == function_token &&
+          il_offset == breakpoint->GetILOffset()) {
+        matched_breakpoints.push_back(breakpoint);
+      }
     }
+  }
+
+  if (matched_breakpoints.empty()) {
+    std::cout << "No matching breakpoints found.";
+    return S_FALSE;
+  }
+
+  hr = eval_coordinator->ProcessBreakpoints(
+      debug_thread, this, std::move(matched_breakpoints), pdb_files);
+  if (FAILED(hr)) {
+    cerr << "Failed to get stack frame's information.";
   }
 
   return hr;
@@ -147,18 +158,21 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   SourceLocation location = breakpoint_read.location();
 
   // For now, we don't have a use for column so we just assign it to 0.
-  breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
-                         0, breakpoint_read.condition());
+  breakpoint->Initialize(
+      location.path(), breakpoint_read.id(), location.line(), 0,
+      breakpoint_read.condition(),
+      std::vector<std::string>(breakpoint_read.expressions().begin(),
+                               breakpoint_read.expressions().end()));
   breakpoint->SetActivated(breakpoint_read.activated());
   breakpoint->SetKillServer(breakpoint_read.kill_server());
 
   return S_OK;
 }
 
-HRESULT BreakpointCollection::ActivateOrDeactivate(
+HRESULT BreakpointCollection::UpdateBreakpoint(
     const DbgBreakpoint &breakpoint) {
-  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint,
-                                                      breakpoint.Activated());
+  HRESULT hr =
+      UpdateBpUsingExistingBpSameId(breakpoint, breakpoint.Activated());
   if (FAILED(hr)) {
     cerr << "Failed to activate breakpoint.";
     return hr;
@@ -168,19 +182,37 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
     return hr;
   }
 
-  // This means the breakpoint is not in the existing breakpoint list.
+  // S_FALSE is return when breakpoint is not in existing breakpoint list.
+  if (hr != S_FALSE) {
+    return E_FAIL;
+  }
+
+  // Nothing to do if the breakpoint is deactivated.
+  if (!breakpoint.Activated()) {
+    return S_OK;
+  }
+
+  // Craetes a new breakpoint.
+  std::shared_ptr<DbgBreakpoint> new_breakpoint(new (std::nothrow)
+                                                    DbgBreakpoint);
+  if (!new_breakpoint) {
+    return E_OUTOFMEMORY;
+  }
+  new_breakpoint->Initialize(breakpoint);
+
+  // Try to update the breakpoint using a breakpoint with the same location.
+  // This will be more efficient than setting the breakpoint from scratch.
+  hr = ActivateBpUsingExistingBpWithSameLocation(new_breakpoint.get());
+  if (FAILED(hr)) {
+    cerr << "Failed to activate breakpoint using existing breakpoints.";
+    return hr;
+  }
+
   if (hr == S_FALSE) {
-    // Nothing to do if the breakpoint is deactivated.
-    if (!breakpoint.Activated()) {
-      return S_OK;
-    }
-
-    unique_ptr<DbgBreakpoint> new_breakpoint(new (std::nothrow) DbgBreakpoint);
-    if (!new_breakpoint) {
-      return E_OUTOFMEMORY;
-    }
-    new_breakpoint->Initialize(breakpoint);
-
+    // No existing breakpoint with the same location so we have to
+    // try to set and activate the breakpoint by searching through PDB files
+    // for a matching location.
+    bool found_bp = false;
     for (auto &pdb_file : debugger_callback_->GetPdbFiles()) {
       if (!pdb_file) {
         continue;
@@ -194,20 +226,26 @@ HRESULT BreakpointCollection::ActivateOrDeactivate(
         continue;
       }
 
-      std::lock_guard<std::mutex> lock(mutex_);
       hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file.get());
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
       }
+      found_bp = true;
+      break;
+    }
 
-      breakpoints_.push_back(std::move(new_breakpoint));
-
-      return hr;
+    if (!found_bp) {
+      return S_FALSE;
     }
   }
 
-  return E_FAIL;
+  // Add the breakpoint to the collection.
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    breakpoints_.push_back(std::move(new_breakpoint));
+  }
+  return S_OK;
 }
 
 HRESULT BreakpointCollection::SyncBreakpoints() {
@@ -220,11 +258,11 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
       return hr;
     }
 
-	if (breakpoint.GetKillServer()) {
-	  return S_OK;
-	}
+    if (breakpoint.GetKillServer()) {
+      return S_OK;
+    }
 
-    hr = ActivateOrDeactivate(breakpoint);
+    hr = UpdateBreakpoint(breakpoint);
     if (FAILED(hr)) {
       cerr << "Failed to activate breakpoint.";
     }
@@ -397,50 +435,102 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
   return S_OK;
 }
 
-HRESULT BreakpointCollection::ActivateOrDeactivateExistingBreakpoint(
+HRESULT BreakpointCollection::UpdateBpUsingExistingBpSameId(
     const DbgBreakpoint &breakpoint, BOOL activate) {
   HRESULT hr;
-  bool found_breakpoint = false;
-
   std::lock_guard<std::mutex> lock(mutex_);
 
-  // Try to find if the breakpoint is available.
-  for (auto &&existing_breakpoint : breakpoints_) {
-    // We use file name and line instead of id in case user reactivates a
-    // breakpoint, then we just need to reactivate it.
-    if (EqualsIgnoreCase(existing_breakpoint->GetFileName(),
-                         breakpoint.GetFileName()) &&
-        existing_breakpoint->GetLine() == breakpoint.GetLine()) {
-      CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
-      hr = existing_breakpoint->GetCorDebugBreakpoint(&cor_debug_breakpoint);
-      if (FAILED(hr)) {
-        cerr << "Failed to get ICorDebugBreakpoint from existing breakpoint.";
-        return hr;
-      }
+  const auto &existing_breakpoint = std::find_if(
+      breakpoints_.begin(), breakpoints_.end(),
+      [&](std::shared_ptr<DbgBreakpoint> &existing_bp) {
+        return existing_bp->GetId().compare(breakpoint.GetId()) == 0;
+      });
 
-      BOOL active;
-      hr = cor_debug_breakpoint->IsActive(&active);
-      if (FAILED(hr)) {
-        cerr << "Failed to check whether breakpoint " << breakpoint.GetId()
-             << " is active or not.";
-        return hr;
-      }
+  if (existing_breakpoint == breakpoints_.end()) {
+    return S_FALSE;
+  }
 
-      if (active == activate) {
-        return S_OK;
-      }
+  // Updates condition and expressions.
+  (*existing_breakpoint)->SetCondition(breakpoint.GetCondition());
+  (*existing_breakpoint)->SetExpressions(breakpoint.GetExpressions());
 
-      hr = cor_debug_breakpoint->Activate(activate);
-      if (FAILED(hr)) {
-        cerr << "Failed to activate breakpoint " << breakpoint.GetId();
-        return hr;
-      }
+  // Activates or deactivates the breakpoint.
+  CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
+  hr = (*existing_breakpoint)->GetCorDebugBreakpoint(&cor_debug_breakpoint);
+  if (FAILED(hr)) {
+    cerr << "Failed to get ICorDebugBreakpoint from existing breakpoint.";
+    return hr;
+  }
 
-      return S_OK;
+  BOOL active;
+  hr = cor_debug_breakpoint->IsActive(&active);
+  if (FAILED(hr)) {
+    cerr << "Failed to check whether breakpoint " << breakpoint.GetId()
+         << " is active or not.";
+    return hr;
+  }
+
+  if (active == activate) {
+    return S_OK;
+  }
+
+  hr = cor_debug_breakpoint->Activate(activate);
+  if (FAILED(hr)) {
+    cerr << "Failed to activate breakpoint " << breakpoint.GetId();
+    return hr;
+  }
+
+  return S_OK;
+}
+
+HRESULT BreakpointCollection::ActivateBpUsingExistingBpWithSameLocation(
+    DbgBreakpoint *breakpoint) {
+  if (!breakpoint) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr;
+  std::lock_guard<std::mutex> lock(mutex_);
+
+  const auto &same_location =
+      std::find_if(breakpoints_.begin(), breakpoints_.end(),
+                   [&](std::shared_ptr<DbgBreakpoint> &existing_bp) {
+                     return EqualsIgnoreCase(breakpoint->GetFileName(),
+                                             existing_bp->GetFileName()) &&
+                            breakpoint->GetLine() == existing_bp->GetLine();
+                   });
+
+  if (same_location == breakpoints_.end()) {
+    return S_FALSE;
+  }
+
+  // Gets ICorDebugBreakpoint from existing breakpoint and stores it.
+  CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
+  hr = (*same_location)->GetCorDebugBreakpoint(&cor_debug_breakpoint);
+  if (FAILED(hr)) {
+    cerr << "Failed to get ICorDebugBreakpoint from existing breakpoint.";
+    return hr;
+  }
+
+  BOOL active;
+  hr = cor_debug_breakpoint->IsActive(&active);
+  if (FAILED(hr)) {
+    cerr << "Failed to check whether breakpoint " << breakpoint->GetId()
+         << " is active or not.";
+    return hr;
+  }
+
+  if (!active) {
+    hr = cor_debug_breakpoint->Activate(TRUE);
+    if (FAILED(hr)) {
+      cerr << "Failed to activate breakpoint " << breakpoint->GetId();
+      return hr;
     }
   }
 
-  return S_FALSE;
+  // Sets the ICorDebugBreakpoint.
+  breakpoint->SetCorDebugBreakpoint(cor_debug_breakpoint);
+  return S_OK;
 }
 
 HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,
