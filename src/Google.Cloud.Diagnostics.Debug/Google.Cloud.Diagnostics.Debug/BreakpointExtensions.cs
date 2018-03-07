@@ -72,33 +72,5 @@ namespace Google.Cloud.Diagnostics.Debug
                 }
             };
         }
-
-        /// <summary>
-        /// Creates a location identifier based on the file name and the line number of the breakpoint.
-        /// </summary>
-        public static string GetLocationIdentifier(this StackdriverBreakpoint breakpoint)
-        {
-            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
-            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
-            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            // Normalize the path in the key to account for Linux vs Windows difference.
-            string path = breakpoint.Location?.Path?.Replace('\\', '/');
-            int? line = breakpoint.Location?.Line;
-            return $"{path}:{line}".ToLower();
-        }
-
-        /// <summary>
-        /// Creates a location identifier based on the file name and the line number of the breakpoint.
-        /// </summary>
-        public static string GetLocationIdentifier(this Breakpoint breakpoint)
-        {
-            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
-            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
-            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            // Normalize the path in the key to account for Linux vs Windows difference.
-            string path = breakpoint.Location?.Path?.Replace('\\', '/');
-            int? line = breakpoint.Location?.Line;
-            return $"{path}:{line}".ToLower();
-        }
     }
 }
