@@ -147,23 +147,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(breakpoints[0], response.Removed.Single());
         }
 
-        [Fact]
-        public void GetBreakpointId()
-        {
-            var breakpoints = CreateBreakpoints(1);
-            _manager.UpdateBreakpoints(breakpoints);
-            var breakpoint = CreateBreakpoints(1).Single();
-            breakpoint.Id = "not-the-same-id";
-
-            Assert.Equal(breakpoints.Single().Id, _manager.GetBreakpointId(breakpoint));
-        }
-
-        [Fact]
-        public void GetBreakpointId_Null()
-        {
-            Assert.Null(_manager.GetBreakpointId(CreateBreakpoints(1).Single()));
-        }
-
         /// <summary>
         /// Create a list of <see cref="StackdriverBreakpoint"/>s.
         /// </summary>
