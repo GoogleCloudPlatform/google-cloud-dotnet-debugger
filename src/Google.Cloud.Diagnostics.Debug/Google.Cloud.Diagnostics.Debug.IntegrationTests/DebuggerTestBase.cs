@@ -42,6 +42,16 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         public Debugger.V2.Breakpoint SetBreakpointAndSleep(string debuggeeId, string path, int line)
         {
+            var breakpoint = SetBreakpoint(debuggeeId, path, line);
+            Thread.Sleep(TimeSpan.FromSeconds(1));
+            return breakpoint;
+        }
+
+        /// <summary>
+        /// Set a breakpoint at a file and line for a given debuggee.
+        /// </summary>
+        public Debugger.V2.Breakpoint SetBreakpoint(string debuggeeId, string path, int line)
+        {
             SetBreakpointRequest request = new SetBreakpointRequest
             {
                 DebuggeeId = debuggeeId,
@@ -54,9 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     }
                 }
             };
-            var breakpoint = Polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
-            Thread.Sleep(TimeSpan.FromSeconds(1));
-            return breakpoint;
+            return Polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
         }
 
         /// <summary>
