@@ -23,6 +23,12 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
 {
     public class DebuggerTests : DebuggerTestBase
     {
+        /// <summary>
+        /// The amount of time for a hanging get to the debugger API to timeout
+        /// which will trigger another reload of active breakpoints.
+        /// </summary>
+        private static readonly TimeSpan _hangingGetTimeout = TimeSpan.FromMinutes(1);
+
         [Fact]
         public async Task BreakpointHit_Wait()
         {
@@ -32,7 +38,7 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
                 var breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", 26);
 
                 // Sleep for long period to ensure multiple get calls to the Debugger API. 
-                Thread.Sleep(TimeSpan.FromMinutes(1));
+                Thread.Sleep(_hangingGetTimeout);
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -61,7 +67,7 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
                 var breakpoint3 = SetBreakpoint(debuggee.Id, "MainController.cs", 53);
 
                 // Sleep for long period to ensure multiple get calls to the Debugger API. 
-                Thread.Sleep(TimeSpan.FromMinutes(1));
+                Thread.Sleep(_hangingGetTimeout);
 
                 using (HttpClient client = new HttpClient())
                 {
@@ -78,7 +84,7 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
                 Assert.False(newBp3.IsFinalState);
 
                 // Sleep for long period to ensure multiple get calls to the Debugger API. 
-                Thread.Sleep(TimeSpan.FromMinutes(1));
+                Thread.Sleep(_hangingGetTimeout);
 
                 using (HttpClient client = new HttpClient())
                 {
