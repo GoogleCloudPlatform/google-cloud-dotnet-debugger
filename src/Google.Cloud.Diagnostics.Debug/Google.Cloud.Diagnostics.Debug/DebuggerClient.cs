@@ -81,7 +81,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     return _controlClient.ListActiveBreakpoints(request);
                 });
                 _waitToken = response.NextWaitToken ?? InitialWaitToken;
-                return response.Breakpoints;
+                return response.WaitExpired ? null : response.Breakpoints;
             }
         }
 

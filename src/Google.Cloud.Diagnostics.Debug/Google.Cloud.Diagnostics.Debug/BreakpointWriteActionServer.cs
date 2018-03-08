@@ -48,6 +48,10 @@ namespace Google.Cloud.Diagnostics.Debug
         internal override void MainAction()
         {
             var serverBreakpoints = _client.ListBreakpoints();
+            if (serverBreakpoints == null)
+            {
+                return;
+            }
             var bpmResponse = _breakpointManager.UpdateBreakpoints(serverBreakpoints);
 
             foreach (var breakpointToBeRemoved in bpmResponse.Removed)

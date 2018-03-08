@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.De
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Google.Cloud.Diagnostics.Debug.Tests", "Google.Cloud.Diagnostics.Debug.Tests\Google.Cloud.Diagnostics.Debug.Tests.csproj", "{7FC6A4C6-A44B-4E0C-9ECB-74B4ADEB25B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Cloud.Diagnostics.Debug.LongRunningTests", "Google.Cloud.Diagnostics.Debug.LongRunningTests\Google.Cloud.Diagnostics.Debug.LongRunningTests.csproj", "{2ED3ED0F-6244-4C75-AE61-01DF87812548}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{7FC6A4C6-A44B-4E0C-9ECB-74B4ADEB25B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FC6A4C6-A44B-4E0C-9ECB-74B4ADEB25B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FC6A4C6-A44B-4E0C-9ECB-74B4ADEB25B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ED3ED0F-6244-4C75-AE61-01DF87812548}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ED3ED0F-6244-4C75-AE61-01DF87812548}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ED3ED0F-6244-4C75-AE61-01DF87812548}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ED3ED0F-6244-4C75-AE61-01DF87812548}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
