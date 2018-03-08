@@ -18,14 +18,14 @@ using std::cerr;
 
 namespace google_cloud_debugger {
 
-  std::vector<std::shared_ptr<DbgBreakpoint>> BreakpointLocationCollection::GetBreakpoints()
-  {
-    std::shared_ptr<DbgBreakpoint> new_breakpoint;
-    std::vector<std::shared_ptr<DbgBreakpoint>> return_val = breakpoints_;
-    return return_val;
-  }
+std::vector<std::shared_ptr<DbgBreakpoint>>
+BreakpointLocationCollection::GetBreakpoints() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<std::shared_ptr<DbgBreakpoint>> return_val = breakpoints_;
+  return return_val;
+}
 
-  HRESULT BreakpointLocationCollection::AddFirstBreakpoint(
+HRESULT BreakpointLocationCollection::AddFirstBreakpoint(
     std::shared_ptr<DbgBreakpoint> breakpoint) {
   // Initializes the cache.
   il_offset_ = breakpoint->GetILOffset();
@@ -41,7 +41,8 @@ namespace google_cloud_debugger {
   breakpoints_.push_back(std::move(breakpoint));
 }
 
-HRESULT BreakpointLocationCollection::UpdateBreakpoints(const DbgBreakpoint &breakpoint) {
+HRESULT BreakpointLocationCollection::UpdateBreakpoints(
+    const DbgBreakpoint &breakpoint) {
   HRESULT hr = UpdateExistingBreakpoint(breakpoint);
   if (FAILED(hr)) {
     cerr << "Failed to activate breakpoint.";
@@ -61,8 +62,8 @@ HRESULT BreakpointLocationCollection::UpdateBreakpoints(const DbgBreakpoint &bre
   std::shared_ptr<DbgBreakpoint> new_breakpoint;
 
   // Creates a new breakpoint from cached information.
-  new_breakpoint = std::shared_ptr<DbgBreakpoint>(new (std::nothrow)
-                                                  DbgBreakpoint);
+  new_breakpoint =
+      std::shared_ptr<DbgBreakpoint>(new (std::nothrow) DbgBreakpoint);
   if (!new_breakpoint) {
     return E_OUTOFMEMORY;
   }
@@ -71,7 +72,7 @@ HRESULT BreakpointLocationCollection::UpdateBreakpoints(const DbgBreakpoint &bre
   new_breakpoint->SetActivated(breakpoint.Activated());
   new_breakpoint->SetKillServer(breakpoint.GetKillServer());
 
-  // Now sets breakpoint information from the cached.
+  // Now sets breakpoint information from the cache.
   new_breakpoint->SetILOffset(il_offset_);
   new_breakpoint->SetMethodDef(method_def_);
   new_breakpoint->SetMethodToken(method_token_);
@@ -90,9 +91,9 @@ HRESULT BreakpointLocationCollection::UpdateBreakpoints(const DbgBreakpoint &bre
   return hr;
 }
 
-HRESULT BreakpointLocationCollection::UpdateExistingBreakpoint(const DbgBreakpoint &breakpoint) {
+HRESULT BreakpointLocationCollection::UpdateExistingBreakpoint(
+    const DbgBreakpoint &breakpoint) {
   std::lock_guard<std::mutex> lock(mutex_);
-  HRESULT hr;
   const auto &existing_breakpoint = std::find_if(
       breakpoints_.begin(), breakpoints_.end(),
       [&](std::shared_ptr<DbgBreakpoint> &existing_bp) {
@@ -103,7 +104,7 @@ HRESULT BreakpointLocationCollection::UpdateExistingBreakpoint(const DbgBreakpoi
     return S_FALSE;
   }
 
-  hr = ActivateCorDebugBreakpointHelper(breakpoint.Activated());
+  HRESULT hr = ActivateCorDebugBreakpointHelper(breakpoint.Activated());
   if (FAILED(hr)) {
     return hr;
   }
@@ -116,7 +117,8 @@ HRESULT BreakpointLocationCollection::UpdateExistingBreakpoint(const DbgBreakpoi
   return hr;
 }
 
-HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(BOOL activation_state) {
+HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(
+    BOOL activation_state) {
   if (!cor_debug_breakpoint_) {
     std::cerr << "Cannot activate breakpoints without ICorDebugBreakpoint.";
     return E_INVALIDARG;
@@ -126,17 +128,20 @@ HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(BOOL acti
   HRESULT hr = cor_debug_breakpoint_->IsActive(&current_activation_state);
   if (FAILED(hr)) {
     std::cerr << "Failed to check whether breakpoint at " << location_string_
-      << " is active or not.";
+              << " is active or not.";
     return hr;
   }
 
   if (current_activation_state != activation_state) {
     // Clean up case for breakpoint deactivation:
-    // If none of the breakpoints at this location is active, deactivate the ICorDebugBreakpoint.
+    // If none of the breakpoints at this location are active, deactivate the
+    // ICorDebugBreakpoint.
     if (!activation_state) {
-      const auto &existing_active_breakpoint = std::find_if(breakpoints_.begin(), breakpoints_.end(),
-        [&](std::shared_ptr<DbgBreakpoint> &existing_bp) {
-          return existing_bp->Activated(); });
+      const auto &existing_active_breakpoint =
+          std::find_if(breakpoints_.begin(), breakpoints_.end(),
+                       [&](std::shared_ptr<DbgBreakpoint> &existing_bp) {
+                         return existing_bp->Activated();
+                       });
       if (existing_active_breakpoint != breakpoints_.end()) {
         return S_OK;
       }
@@ -155,4 +160,3 @@ HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(BOOL acti
 }
 
 }  // namespace google_cloud_debugger
-
