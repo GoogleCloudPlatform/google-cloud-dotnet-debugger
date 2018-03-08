@@ -136,6 +136,9 @@
     <ClCompile Include="..\..\..\third_party\cloud-debug-java\antlrgen\CSharpExpressionParser.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="breakpoint_location_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ccomptr.h">
@@ -328,6 +331,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\third_party\cloud-debug-java\messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="breakpoint_location_collection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

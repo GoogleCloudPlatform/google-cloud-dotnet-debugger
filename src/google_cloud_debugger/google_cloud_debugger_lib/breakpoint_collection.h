@@ -15,6 +15,7 @@
 #ifndef BREAKPOINT_COLLECTION_H_
 #define BREAKPOINT_COLLECTION_H_
 
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -23,6 +24,7 @@
 #include "ccomptr.h"
 #include "dbg_breakpoint.h"
 #include "i_breakpoint_collection.h"
+#include "breakpoint_location_collection.h"
 
 namespace google_cloud_debugger {
 
@@ -89,7 +91,11 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT ReadAndParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
-  std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
+  // std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
+
+  // A map of location to a collection of breakpoint at that location.
+  std::map<std::string, std::unique_ptr<BreakpointLocationCollection>>
+    location_to_breakpoints_;
 
   // Activate a breakpoint in a portable pdb file.
   // This function should only be used if breakpoint is already set, i.e.
@@ -97,16 +103,6 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT ActivateBreakpointHelper(
       DbgBreakpoint *breakpoint,
       google_cloud_debugger_portable_pdb::IPortablePdbFile *portable_pdb);
-
-  // Helper function to updates an existing breakpoint that
-  // has the same ID as breakpoint.
-  HRESULT UpdateBpUsingExistingBpSameId(const DbgBreakpoint &breakpoint,
-                                        BOOL activate);
-
-  // This function searches for a breakpoint in breakpoints_ with the same
-  // location (file name and line number as breakpoint). If found, it will
-  // use some existing information in that breakpoint to activate breakpoint.
-  HRESULT ActivateBpUsingExistingBpWithSameLocation(DbgBreakpoint *breakpoint);
 
   // Helper function to get type definition token, signature, virtual address
   // and name of a method (identified using method_def).
