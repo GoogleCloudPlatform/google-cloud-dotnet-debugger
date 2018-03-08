@@ -201,6 +201,7 @@
     <ClInclude Include="breakpoint.pb.h" />
     <ClInclude Include="breakpoint_client.h" />
     <ClInclude Include="breakpoint_collection.h" />
+    <ClInclude Include="breakpoint_location_collection.h" />
     <ClInclude Include="ccomptr.h" />
     <ClInclude Include="class_names.h" />
     <ClInclude Include="compiler_helpers.h" />
@@ -260,6 +261,7 @@
     <ClCompile Include="breakpoint.pb.cc" />
     <ClCompile Include="breakpoint_client.cc" />
     <ClCompile Include="breakpoint_collection.cc" />
+    <ClCompile Include="breakpoint_location_collection.cc" />
     <ClCompile Include="compiler_helpers.cc" />
     <ClCompile Include="custom_binary_reader.cc" />
     <ClCompile Include="dbg_array.cc" />
