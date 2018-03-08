@@ -105,6 +105,24 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void ListBreakpoints_WaitTimeout()
+        {
+            var bpReq = CreateBreakpointRequest();
+            var bpResp = new ListActiveBreakpointsResponse
+            {
+                NextWaitToken = _waitToken,
+                WaitExpired = true,
+            };
+
+            _mockControllerClient.Setup(c => c.RegisterDebuggee(It.IsAny<Debuggee>(), null)).Returns(_response);
+            _mockControllerClient.Setup(c => c.ListActiveBreakpoints(bpReq, null)).Returns(bpResp);
+
+            _client.Register();
+            Assert.Null(_client.ListBreakpoints());
+            _mockControllerClient.VerifyAll();
+        }
+
+        [Fact]
         public void ListBreakpoints_NotRegistered() =>
             Assert.Throws<InvalidOperationException>(() => _client.ListBreakpoints());
 

@@ -58,6 +58,19 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void MainAction_WaitExpired()
+        {
+            var breakpoints = CreateBreakpoints(0);
+            _mockDebuggerClient.Setup(c => c.ListBreakpoints()).Returns((IEnumerable<Debugger.V2.Breakpoint>) null);
+            _server.MainAction();
+
+            _mockDebuggerClient.Verify(c => c.ListBreakpoints(), Times.Once);
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(It.IsAny<StackdriverBreakpoint>()), Times.Never);
+            _mockBreakpointServer.Verify(s => s.WriteBreakpointAsync(
+                It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
         public void MainAction_NewBreakpoint()
         {
             var breakpoints = CreateBreakpoints(1);
