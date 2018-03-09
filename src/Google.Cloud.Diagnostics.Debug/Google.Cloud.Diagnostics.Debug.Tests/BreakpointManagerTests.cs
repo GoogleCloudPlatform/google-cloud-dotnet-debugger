@@ -124,30 +124,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void RemoveBreakpoint()
-        {
-            var breakpoints = CreateBreakpoints(1);
-            _manager.UpdateBreakpoints(breakpoints);
-            _manager.RemoveBreakpoint(breakpoints.Single());
-
-            var response = _manager.UpdateBreakpoints(_emptyList);
-            Assert.Empty(response.New);
-            Assert.Empty(response.Removed);
-        }
-
-        [Fact]
-        public void RemoveBreakpoint_NoEffect()
-        {
-            var breakpoints = CreateBreakpoints(2);
-            _manager.UpdateBreakpoints(breakpoints.GetRange(0, 1));
-            _manager.RemoveBreakpoint(breakpoints[1]);
-
-            var response = _manager.UpdateBreakpoints(_emptyList);
-            Assert.Empty(response.New);
-            Assert.Equal(breakpoints[0], response.Removed.Single());
-        }
-
-        [Fact]
         public void GetBreakpointId()
         {
             var breakpoints = CreateBreakpoints(1);

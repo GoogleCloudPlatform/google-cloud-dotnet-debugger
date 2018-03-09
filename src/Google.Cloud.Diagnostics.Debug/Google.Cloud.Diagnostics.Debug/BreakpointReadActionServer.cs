@@ -49,7 +49,6 @@ namespace Google.Cloud.Diagnostics.Debug
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
             breakpoint.IsFinalState = true;
             breakpoint.Id = _breakpointManager.GetBreakpointId(breakpoint) ?? breakpoint.Id;
-            _breakpointManager.RemoveBreakpoint(breakpoint);
             _client.UpdateBreakpoint(breakpoint);
         }
     }

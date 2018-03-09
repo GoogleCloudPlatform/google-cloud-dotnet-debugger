@@ -94,18 +94,6 @@ namespace Google.Cloud.Diagnostics.Debug
         }
 
         /// <summary>
-        /// Remove a breakpoint from the manager.
-        /// </summary>
-        /// <param name="breakpoint">The breakpoint to remove.</param>
-        public void RemoveBreakpoint(StackdriverBreakpoint breakpoint)
-        {
-            lock (_mutex)
-            {
-                _breakpointDictionary.Remove(breakpoint.GetLocationIdentifier());
-            }
-        }
-
-        /// <summary>
         /// Gets the breakpoint id from the manager based on the breakpoint location.
         /// If the list does not contain
         /// Note: This is needed as the debugger does not pay attention to breakpoint ids
