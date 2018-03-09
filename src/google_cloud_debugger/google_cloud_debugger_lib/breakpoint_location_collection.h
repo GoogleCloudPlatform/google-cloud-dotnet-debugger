@@ -77,10 +77,6 @@ class BreakpointLocationCollection {
   // Collection of breakpoints at this location.
   std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
 
-  // ICorDebugBreakpoint that represents the breakpoints at this location.
-  // We only need 1.
-  CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint_;
-
   // The IL Offset of breakpoints at this location.
   uint32_t il_offset_;
 
