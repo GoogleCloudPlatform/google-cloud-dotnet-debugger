@@ -233,15 +233,14 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
                                                      StackFrameCollection);
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
-    return E_FAIL;
+    return E_OUTOFMEMORY;
   }
 
   HRESULT hr;
   for (auto &&breakpoint : breakpoints) {
     hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(), this);
     if (FAILED(hr)) {
-      std::cerr << "BFailed to process breakpoint " << breakpoint->GetId()
-                << " is not met.";
+      std::cerr << "Failed to process breakpoint " << breakpoint->GetId();
       break;
     }
 

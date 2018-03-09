@@ -107,7 +107,7 @@ class EvalCoordinator : public IEvalCoordinator {
   // Helper function to process a vector of multiple breakpoints at the same location
   // using the stack frame collection. The stack frame collection
   // will first be used to evaluate the breakpoint condition. If this succeeds,
-  // the function will proceed to stack frame information at the breakpoint.
+  // the function will proceed to get stack frame information at the breakpoint.
   HRESULT ProcessBreakpointsTask(
       IBreakpointCollection *breakpoint_collection,
       std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
