@@ -131,17 +131,12 @@ void EvalCoordinator::SignalFinishedEval(ICorDebugThread *debug_thread) {
                              [&] { return debuggercallback_can_continue_; });
 }
 
-HRESULT EvalCoordinator::PrintBreakpoint(
+HRESULT EvalCoordinator::ProcessBreakpoints(
     ICorDebugThread *debug_thread, IBreakpointCollection *breakpoint_collection,
-    DbgBreakpoint *breakpoint,
+    std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
     const std::vector<
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
-  if (!breakpoint) {
-    cerr << "Breakpoint is null.";
-    return E_INVALIDARG;
-  }
-
   if (!debug_thread) {
     cerr << "Debug stack walk is null.";
     return E_INVALIDARG;
@@ -149,54 +144,11 @@ HRESULT EvalCoordinator::PrintBreakpoint(
 
   active_debug_thread_ = debug_thread;
 
-  // Creates and initializes stack frame collection based on the
-  // ICorDebugStackWalk object.
-  unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
-                                                     StackFrameCollection);
-  if (!stack_frames) {
-    cerr << "Failed to create DbgStack.";
-    return E_FAIL;
-  }
-
   unique_lock<mutex> lk(mutex_);
 
   std::future<HRESULT> print_breakpoint_task = std::async(
-      std::launch::async,
-      [&](unique_ptr<IStackFrameCollection> stack_frames,
-          EvalCoordinator *eval_coordinator,
-          IBreakpointCollection *breakpoint_collection,
-          DbgBreakpoint *breakpoint) {
-        HRESULT hr = stack_frames->Initialize(pdb_files, breakpoint,
-                                              eval_coordinator);
-        if (FAILED(hr)) {
-          cerr << "Failed to initialize stack frames: " << std::hex << hr;
-          eval_coordinator->SignalFinishedPrintingVariable();
-          return hr;
-        }
-
-        if (!breakpoint->GetEvaluatedCondition()) {
-          std::cout << "Breakpoint condition is not met.";
-          eval_coordinator->SignalFinishedPrintingVariable();
-          return hr;
-        }
-
-        Breakpoint proto_breakpoint;
-        hr = breakpoint->PopulateBreakpoint(
-            &proto_breakpoint, stack_frames.get(), eval_coordinator);
-        eval_coordinator->SignalFinishedPrintingVariable();
-        if (FAILED(hr)) {
-          cerr << "Failed to print out variables: " << std::hex << hr;
-          return hr;
-        }
-
-        hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
-        if (FAILED(hr)) {
-          cerr << "Failed to write breakpoint: " << std::hex << hr;
-        }
-
-        return hr;
-      },
-      std::move(stack_frames), this, breakpoint_collection, breakpoint);
+      std::launch::async, &EvalCoordinator::ProcessBreakpointsTask, this,
+      breakpoint_collection, std::move(breakpoints), pdb_files);
   print_breakpoint_tasks_.push_back(std::move(print_breakpoint_task));
 
   ready_to_print_variables_ = TRUE;
@@ -254,6 +206,68 @@ HRESULT EvalCoordinator::GetActiveDebugThread(ICorDebugThread **debug_thread) {
 BOOL EvalCoordinator::WaitingForEval() {
   lock_guard<mutex> lk(mutex_);
   return waiting_for_eval_;
+}
+
+HRESULT EvalCoordinator::ProcessBreakpointsTask(
+    IBreakpointCollection *breakpoint_collection,
+    std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &pdb_files) {
+  // Vector of PDB files that are parsed successfully.
+  std::vector<std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+      parsed_pdb_files;
+  for (auto &&pdb_file : pdb_files) {
+    if (!pdb_file) {
+      continue;
+    }
+
+    if (pdb_file->ParsePdbFile()) {
+      parsed_pdb_files.push_back(pdb_file);
+    }
+  }
+
+  // Creates and initializes stack frame collection based on the
+  // ICorDebugStackWalk object.
+  unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
+                                                     StackFrameCollection);
+  if (!stack_frames) {
+    cerr << "Failed to create DbgStack.";
+    return E_FAIL;
+  }
+
+  HRESULT hr;
+  for (auto &&breakpoint : breakpoints) {
+    hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(), this);
+    if (FAILED(hr)) {
+      std::cerr << "BFailed to process breakpoint " << breakpoint->GetId()
+                << " is not met.";
+      break;
+    }
+
+    if (!breakpoint->GetEvaluatedCondition()) {
+      std::cout << "Breakpoint condition for breakpoint " << breakpoint->GetId()
+                << " is not met.";
+      continue;
+    }
+
+    Breakpoint proto_breakpoint;
+    hr = breakpoint->PopulateBreakpoint(&proto_breakpoint, stack_frames.get(),
+                                        this);
+    if (FAILED(hr)) {
+      cerr << "Failed to print out variables: " << std::hex << hr;
+      break;
+    }
+
+    hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
+    if (FAILED(hr)) {
+      cerr << "Failed to write breakpoint: " << std::hex << hr;
+      break;
+    }
+  }
+
+  SignalFinishedPrintingVariable();
+  return hr;
 }
 
 }  //  namespace google_cloud_debugger

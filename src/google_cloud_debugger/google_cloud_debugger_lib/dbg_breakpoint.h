@@ -45,9 +45,11 @@ class DbgBreakpoint {
   // id, line and column.
   void Initialize(const DbgBreakpoint &other);
 
-  // Populate this breakpoint's file name, id, line and column.
+  // Populate this breakpoint's file name, id, line, column, condition
+  // and expressions.
   void Initialize(const std::string &file_name, const std::string &id,
-                  uint32_t line, uint32_t column, const std::string &condition);
+                  uint32_t line, uint32_t column, const std::string &condition,
+                  const std::vector<std::string> &expressions);
 
   // Given a PortablePdbFile, try to see whether we can set this breakpoint.
   // We do this by searching the PortablePdbFile for the file name and
@@ -59,9 +61,14 @@ class DbgBreakpoint {
   // Returns the IL Offset that corresponds to this breakpoint location.
   uint32_t GetILOffset() { return il_offset_; }
 
+  // Sets the IL Offset that corresponds to this breakpoint location.
+  void SetILOffset(uint32_t offset) { il_offset_ = offset; }
+
   // Returns the method definition of the method this breakpoint is in.
-  // This must be set through TrySetBreakpoint.
   uint32_t GetMethodDef() { return method_def_; }
+
+  // Sets the method definition of the method this breakpoint is in.
+  void SetMethodDef(uint32_t method_def) { method_def_ = method_def; }
 
   // Returns the method token of the method this breakpoint is in.
   mdMethodDef GetMethodToken() { return method_token_; }
@@ -88,10 +95,6 @@ class DbgBreakpoint {
   // Gets the column number of this breakpoint.
   uint32_t GetColumn() const { return column_; }
 
-  // Returns true if this breakpoint is set.
-  // When a breakpoint is set, its il_off_set is set.
-  bool IsSet() const { return set_; }
-
   // Returns the unique ID of this breakpoint.
   const std::string &GetId() const { return id_; }
 
@@ -99,6 +102,7 @@ class DbgBreakpoint {
   void SetCorDebugBreakpoint(ICorDebugBreakpoint *debug_breakpoint) {
     debug_breakpoint_ = debug_breakpoint;
   }
+
   // Gets the ICorDebugBreakpoint that corresponds with this breakpoint.
   HRESULT GetCorDebugBreakpoint(ICorDebugBreakpoint **debug_breakpoint) const;
 
@@ -117,9 +121,28 @@ class DbgBreakpoint {
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }
 
+  // Sets the condition of the breakpoint.
+  void SetCondition(const std::string &condition) {
+    condition_ = condition;
+  }
+
   // Gets the result of the evaluated condition.
   // This should only be called after EvaluateCondition is called.
   bool GetEvaluatedCondition() { return evaluated_condition_; }
+
+  // Gets the expressions of the breakpoint.
+  const std::vector<std::string> &GetExpressions() const { return expressions_; }
+
+  // Sets the expression of the breakpoint.
+  void SetExpressions(const std::vector<std::string> &expressions) {
+    expressions_ = expressions;
+  }
+
+  // Returns a string representation of the breakpoint location
+  // by concatenating file name and line number.
+  std::string GetBreakpointLocation() const {
+    return file_name_ + "##" + std::to_string(line_);
+  }
 
   // Evaluates condition condition_ using the provided stack frame
   // and eval coordinator. Sets the result to evaluated_condition_.
@@ -144,9 +167,6 @@ class DbgBreakpoint {
   bool TrySetBreakpointInMethod(
       const google_cloud_debugger_portable_pdb::MethodInfo &method);
 
-  // True if this breakpoint is set (through TryGetBreakpoint).
-  bool set_;
-
   // The line number of the breakpoint.
   uint32_t line_;
 
@@ -170,6 +190,9 @@ class DbgBreakpoint {
 
   // Condition of a breakpoint. If false, don't report information back.
   std::string condition_;
+
+  // Expressions of a breakpoint.
+  std::vector<std::string> expressions_;
 
   // True if the condition_ of the breakpoint is empty or evaluated to true.
   bool evaluated_condition_;

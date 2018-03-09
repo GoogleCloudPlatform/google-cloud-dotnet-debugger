@@ -40,11 +40,13 @@ using std::unique_ptr;
 namespace google_cloud_debugger {
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
-  Initialize(other.file_name_, other.id_, other.line_, other.column_, other.condition_);
+  Initialize(other.file_name_, other.id_, other.line_, other.column_,
+             other.condition_, other.expressions_);
 }
 
 void DbgBreakpoint::Initialize(const string &file_name, const string &id,
-                               uint32_t line, uint32_t column, const std::string &condition) {
+                               uint32_t line, uint32_t column, const std::string &condition,
+                               const std::vector<std::string> &expressions) {
   file_name_ = file_name;
   id_ = id;
   std::transform(
@@ -53,6 +55,7 @@ void DbgBreakpoint::Initialize(const string &file_name, const string &id,
   line_ = line;
   column_ = column;
   condition_ = condition;
+  expressions_ = expressions;
 }
 
 HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
@@ -137,8 +140,7 @@ bool DbgBreakpoint::TrySetBreakpoint(
     }
   }
 
-  set_ = best_match_index != -1;
-  return set_;
+  return best_match_index != -1;
 }
 
 HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,

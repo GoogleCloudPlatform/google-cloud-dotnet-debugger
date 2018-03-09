@@ -37,7 +37,7 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-HRESULT StackFrameCollection::Initialize(
+HRESULT StackFrameCollection::ProcessBreakpoint(
     const vector<
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files,
@@ -52,19 +52,6 @@ HRESULT StackFrameCollection::Initialize(
     return E_INVALIDARG;
   }
 
-  // Vector of PDB files that are parsed successfully.
-  vector<std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-      parsed_pdb_files;
-  for (auto &&pdb_file : pdb_files) {
-    if (!pdb_file) {
-      continue;
-    }
-
-    if (pdb_file->ParsePdbFile()) {
-      parsed_pdb_files.push_back(pdb_file);
-    }
-  }
-
   HRESULT hr;
 
   // If there are conditions or expressions, handle them first.
@@ -72,7 +59,7 @@ HRESULT StackFrameCollection::Initialize(
   const std::string &breakpoint_condition = breakpoint->GetCondition();
   if (!breakpoint_condition.empty()) {
     hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator,
-                                     parsed_pdb_files);
+                                     pdb_files);
     if (FAILED(hr)) {
       cerr << "Failed to evaluate breakpoint condition";
       return hr;
@@ -83,7 +70,7 @@ HRESULT StackFrameCollection::Initialize(
     }
   }
 
-  return WalkStackAndProcessStackFrame(eval_coordinator, parsed_pdb_files);
+  return WalkStackAndProcessStackFrame(eval_coordinator, pdb_files);
 }
 
 HRESULT StackFrameCollection::PopulateStackFrames(
@@ -323,6 +310,10 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     const std::vector<
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &parsed_pdb_files) {
+  if (stack_walked) {
+    return S_OK;
+  }
+
   CComPtr<ICorDebugStackWalk> debug_stack_walk;
   CComPtr<ICorDebugFrame> frame;
   int il_frame_parsed_so_far = 0;
@@ -337,12 +328,14 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
   while (SUCCEEDED(hr)) {
     // Don't parse too many stack frames.
     if (frame_parsed_so_far >= kMaximumStackFrames) {
+      stack_walked = true;
       return S_OK;
     }
 
     hr = debug_stack_walk->GetFrame(&frame);
     // No more stacks.
     if (hr == S_FALSE) {
+      stack_walked = true;
       return S_OK;
     }
 
@@ -376,6 +369,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     cerr << "Failed to get stack frame's information.";
   }
 
+  stack_walked = true;
   return hr;
 }
 
