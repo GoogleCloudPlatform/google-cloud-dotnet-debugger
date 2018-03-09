@@ -35,7 +35,7 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
             using (var app = StartTestApp(debugEnabled: true))
             {
                 var debuggee = Polling.GetDebuggee(app.Module, app.Version);
-                var breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", 26);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
 
                 // Sleep for long period to ensure multiple get calls to the Debugger API. 
                 Thread.Sleep(_hangingGetTimeout);
@@ -58,13 +58,13 @@ namespace Google.Cloud.Diagnostics.Debug.LongRunningTests
             using (var app = StartTestApp(debugEnabled: true))
             {
                 var debuggee = Polling.GetDebuggee(app.Module, app.Version);
-                var breakpoint1 = SetBreakpoint(debuggee.Id, "MainController.cs", 26);
-                var breakpoint2 = SetBreakpoint(debuggee.Id, "MainController.cs", 33);
+                var breakpoint1 = SetBreakpoint(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
+                var breakpoint2 = SetBreakpoint(debuggee.Id, TestApplication.MainClass, TestApplication.EchoTopLine);
 
                 // Let the first two breakpoints get picked up by the server before
                 // setting the last one.
                 Thread.Sleep(TimeSpan.FromSeconds(5));
-                var breakpoint3 = SetBreakpoint(debuggee.Id, "MainController.cs", 53);
+                var breakpoint3 = SetBreakpoint(debuggee.Id, TestApplication.MainClass, TestApplication.PidLine);
 
                 // Sleep for long period to ensure multiple get calls to the Debugger API. 
                 Thread.Sleep(_hangingGetTimeout);

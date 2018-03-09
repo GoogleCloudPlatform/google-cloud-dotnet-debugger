@@ -25,6 +25,12 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
     /// </summary>
     public class TestApplication : IDisposable
     {
+        public static readonly string MainClass = "MainController.cs";
+        public static readonly int HelloLine = 33;
+        public static readonly int EchoTopLine = 38;
+        public static readonly int EchoBottomLine = 49;
+        public static readonly int PidLine = 59;
+
         /// <summary>The base url for the test application.</summary>
         public string AppUrlBase => $"http://localhost:{_port}";
 

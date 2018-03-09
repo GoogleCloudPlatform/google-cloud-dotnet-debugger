@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Google.Cloud.Diagnostics.Debug.TestApp\Google.Cloud.Diagnostics.Debug.TestApp.csproj" />
     <ProjectReference Include="..\Google.Cloud.Diagnostics.Debug\Google.Cloud.Diagnostics.Debug.csproj" />
   </ItemGroup>
 
