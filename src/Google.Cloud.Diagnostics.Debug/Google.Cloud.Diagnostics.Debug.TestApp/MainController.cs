@@ -26,7 +26,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         private static readonly String _privateReadOnlyString = "can you read me? not yet!";
 
         // Class variable for testing.
-        public String publicString = "you can read me!";
+        public String PublicString = "you can read me!";
 
         public string Hello()
         {

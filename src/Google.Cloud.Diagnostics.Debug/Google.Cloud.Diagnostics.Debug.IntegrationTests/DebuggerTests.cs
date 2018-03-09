@@ -94,9 +94,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
                 Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);
 
-                var publicString = thisArg.Members.Where(m => m.Name == "publicString").Single();
+                var publicString = thisArg.Members.Where(m => m.Name == "PublicString").Single();
                 Assert.Equal(typeof(System.String).ToString(), publicString.Type);
-                Assert.Equal(new TestApp.MainController().publicString, publicString.Value);
+                Assert.Equal(new TestApp.MainController().PublicString, publicString.Value);
 
                 // Check 'message' arg.
                 var messageArg = arguments.Where(l => l.Name == "message").Single();
