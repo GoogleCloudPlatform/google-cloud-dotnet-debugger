@@ -22,6 +22,8 @@
 
 namespace google_cloud_debugger {
 
+class IStackFrameCollection;
+
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
 // and print out variables. It does so by creating a StackFrame on a new
 // thread and coordinates between the StackFrame and DebuggerCallback.
@@ -66,11 +68,14 @@ class EvalCoordinator : public IEvalCoordinator {
   // occurred.
   void HandleException() override;
 
-  // Prints out the stack frames at DbgBreakpoint breakpoint based on
-  // debug_stack_walk.
-  HRESULT PrintBreakpoint(
+  // Processes a vector of breakpoints set at the SAME location (they
+  // can have different conditions and expressions).
+  // Each breakpoint's condition will first be tested. If this is true,
+  // stack frame information and expressions will be evaluated and reported.
+  HRESULT ProcessBreakpoints(
       ICorDebugThread *debug_thread,
-      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+      IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) override;
@@ -99,6 +104,17 @@ class EvalCoordinator : public IEvalCoordinator {
   BOOL PropertyEvaluation() override { return property_evaluation_; }
 
  private:
+  // Helper function to process a vector of multiple breakpoints at the same location
+  // using the stack frame collection. The stack frame collection
+  // will first be used to evaluate the breakpoint condition. If this succeeds,
+  // the function will proceed to stack frame information at the breakpoint.
+  HRESULT ProcessBreakpointsTask(
+      IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files);
+
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
 

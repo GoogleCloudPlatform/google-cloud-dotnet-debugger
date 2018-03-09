@@ -31,9 +31,13 @@ class IStackFrameCollection {
  public:
   virtual ~IStackFrameCollection() = default;
 
-  // Using vector of PDB files, we walk through the stack debug_stack_walk at
-  // breakpoint breakpoint and try to populate the stack frames vector.
-  virtual HRESULT Initialize(
+  // This function first checks whether breakpoint has a condition.
+  // If the condition evaluated to false, do nothing.
+  // If there is no condition or the condition evaluated to true,
+  // any expressions in the breakpoint will be evaluated.
+  // Afterwards, stack information will be collected at the
+  // breakpoint's location.
+  virtual HRESULT ProcessBreakpoint(
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files,

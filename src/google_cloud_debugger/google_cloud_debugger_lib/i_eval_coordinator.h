@@ -77,11 +77,13 @@ class IEvalCoordinator {
   // occurred.
   virtual void HandleException() = 0;
 
-  // Prints out the stack frames at DbgBreakpoint breakpoint based on
-  // debug_stack_walk.
-  virtual HRESULT PrintBreakpoint(
-      ICorDebugThread *debug_thread,
-      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+  // Processes a vector of breakpoints set at the SAME location (they
+  // can have different conditions and expressions).
+  // Each breakpoint's condition will first be tested. If this is true,
+  // stack frame information and expressions will be evaluated and reported.
+  virtual HRESULT ProcessBreakpoints(
+      ICorDebugThread *debug_thread, IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;

@@ -61,7 +61,7 @@ class BreakpointLocationCollection {
   mdMethodDef GetMethodToken() { return method_token_; }
 
  private:
-  // Mutex to protect breakpoints_ vector from mulutiple access.
+  // Mutex to protect breakpoints_ vector from multiple access.
   std::mutex mutex_;
 
   // Helper function to update an existing breakpoint in breakpoints_ that
