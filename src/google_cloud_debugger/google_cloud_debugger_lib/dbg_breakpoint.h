@@ -133,7 +133,7 @@ class DbgBreakpoint {
   // Gets the expressions of the breakpoint.
   const std::vector<std::string> &GetExpressions() const { return expressions_; }
 
-  // Sets the expression of the breakpoint.
+  // Sets the expressions of the breakpoint.
   void SetExpressions(const std::vector<std::string> &expressions) {
     expressions_ = expressions;
   }
