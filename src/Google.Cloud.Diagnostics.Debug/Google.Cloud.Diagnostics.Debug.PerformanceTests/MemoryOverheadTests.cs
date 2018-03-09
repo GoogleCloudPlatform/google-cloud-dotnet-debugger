@@ -113,9 +113,9 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                         Debugger.V2.Breakpoint breakpoint = null;
                         if (setBreakpoint)
                         {
-                            var line = hitBreakpoint ? 32 : 26;
+                            var line = hitBreakpoint ? TestApplication.EchoTopLine : TestApplication.HelloLine;
                             // Set a breakpoint and wait to ensure the debuggee picks it up.
-                            breakpoint = SetBreakpointAndSleep(debuggee.Id, "MainController.cs", line);
+                            breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, line);
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
