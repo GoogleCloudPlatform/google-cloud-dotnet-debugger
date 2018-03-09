@@ -208,6 +208,11 @@ class DbgStackFrame {
       std::vector<CComPtr<ICorDebugType>> *debug_types);
 
  private:
+  // Gets the metadata import of the module this frame is in.
+  // We cannot store the IMetaDataImport directly because
+  // they may be invalidated.
+  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import);
+
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
   HRESULT ProcessLocalVariables(
@@ -292,8 +297,8 @@ class DbgStackFrame {
   // The frame this stack frame is in.
   CComPtr<ICorDebugILFrame> debug_frame_;
 
-  // The metadata import of this stack frame.
-  CComPtr<IMetaDataImport> metadata_import_;
+  // The module this stack frame is in.
+  CComPtr<ICorDebugModule> debug_module_;
 
   // Dictionary whose key is class name and whose value
   // is the metadata token mdTypeDef of that class.
