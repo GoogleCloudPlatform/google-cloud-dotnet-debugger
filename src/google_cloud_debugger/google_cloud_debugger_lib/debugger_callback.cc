@@ -122,6 +122,7 @@ HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
   //
   // Visual Studio also seems to skip a breakpoint if it is hit during function
   // evaluation.
+
   if (eval_coordinator_->WaitingForEval()) {
     return appdomain->Continue(FALSE);
   }

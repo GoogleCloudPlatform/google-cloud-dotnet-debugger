@@ -266,6 +266,7 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     }
   }
 
+  stack_frames.reset();
   SignalFinishedPrintingVariable();
   return hr;
 }

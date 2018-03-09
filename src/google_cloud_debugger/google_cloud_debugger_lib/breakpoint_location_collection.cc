@@ -39,6 +39,7 @@ HRESULT BreakpointLocationCollection::AddFirstBreakpoint(
   }
 
   breakpoints_.push_back(std::move(breakpoint));
+  return S_OK;
 }
 
 HRESULT BreakpointLocationCollection::UpdateBreakpoints(
@@ -119,13 +120,13 @@ HRESULT BreakpointLocationCollection::UpdateExistingBreakpoint(
 
 HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(
     BOOL activation_state) {
-  if (!cor_debug_breakpoint_) {
+  if (!debug_breakpoint_) {
     std::cerr << "Cannot activate breakpoints without ICorDebugBreakpoint.";
     return E_INVALIDARG;
   }
 
   BOOL current_activation_state;
-  HRESULT hr = cor_debug_breakpoint_->IsActive(&current_activation_state);
+  HRESULT hr = debug_breakpoint_->IsActive(&current_activation_state);
   if (FAILED(hr)) {
     std::cerr << "Failed to check whether breakpoint at " << location_string_
               << " is active or not.";
@@ -149,7 +150,7 @@ HRESULT BreakpointLocationCollection::ActivateCorDebugBreakpointHelper(
       // Otherwise, deactivate the breakpoints.
     }
 
-    hr = cor_debug_breakpoint_->Activate(activation_state);
+    hr = debug_breakpoint_->Activate(activation_state);
     if (FAILED(hr)) {
       std::cerr << "Failed to activate breakpoint at " << location_string_;
       return hr;
