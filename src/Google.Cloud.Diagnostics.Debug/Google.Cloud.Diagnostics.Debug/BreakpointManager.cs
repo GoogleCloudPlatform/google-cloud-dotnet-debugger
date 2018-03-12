@@ -88,20 +88,5 @@ namespace Google.Cloud.Diagnostics.Debug
                 };
             }
         }
-
-        /// <summary>
-        /// Gets the breakpoint id from the manager based on the breakpoint location.
-        /// If the list does not contain
-        /// Note: This is needed as the debugger does not pay attention to breakpoint ids
-        /// and must be managed here.
-        /// </summary>
-        /// <param name="breakpoint">The breakpoint to get the id of.</param>
-        /// <returns>The breakpoint id or null if none can be found.</returns>
-        public string GetBreakpointId(StackdriverBreakpoint breakpoint)
-        {
-            StackdriverBreakpoint bp;
-            return _breakpointDictionary.TryGetValue(
-                breakpoint.Id, out bp) ? bp.Id : null;
-        }
     }
 }
