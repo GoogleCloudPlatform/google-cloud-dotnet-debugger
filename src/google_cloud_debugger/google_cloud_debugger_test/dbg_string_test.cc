@@ -19,15 +19,15 @@
 #include "common_action_mocks.h"
 #include "i_cor_debug_mocks.h"
 
+using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::DbgString;
+using std::string;
+using std::vector;
+using ::testing::_;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using ::testing::_;
-using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::DbgString;
-using google_cloud_debugger::ConvertStringToWCharPtr;
-using std::string;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -97,12 +97,13 @@ TEST(DbgStringTest, GetString) {
 
   EXPECT_CALL(string_value_mock, GetString(string_size, _, _))
       .Times(1)
-      .WillRepeatedly(DoAll(
-          SetArrayArgument<2>(wchar_string.data(), wchar_string.data() + string_size),
-          Return(S_OK)));
+      .WillRepeatedly(
+          DoAll(SetArrayArgument<2>(wchar_string.data(),
+                                    wchar_string.data() + string_size),
+                Return(S_OK)));
 
   std::string returned_string;
-  dbg_string.GetString(&string_value_mock, &returned_string);
+  DbgString::GetString(&dbg_string, &returned_string);
 
   EXPECT_EQ(returned_string, test_string_value);
 }
@@ -119,7 +120,7 @@ TEST(DbgStringTest, GetStringError) {
 
   // Test null cases.
   EXPECT_EQ(dbg_string.GetString(nullptr, nullptr), E_INVALIDARG);
-  EXPECT_EQ(dbg_string.GetString(&string_value_mock, nullptr), E_INVALIDARG);
+  EXPECT_EQ(dbg_string.GetString(&dbg_string, nullptr), E_INVALIDARG);
   EXPECT_EQ(dbg_string.GetString(nullptr, &returned_string), E_INVALIDARG);
 
   {
@@ -127,7 +128,7 @@ TEST(DbgStringTest, GetStringError) {
     EXPECT_CALL(string_value_mock, GetLength(_))
         .Times(1)
         .WillRepeatedly(Return(E_ACCESSDENIED));
-    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string),
+    EXPECT_EQ(DbgString::GetString(&dbg_string, &returned_string),
               E_ACCESSDENIED);
     EXPECT_TRUE(returned_string.empty());
   }
@@ -140,8 +141,7 @@ TEST(DbgStringTest, GetStringError) {
     EXPECT_CALL(string_value_mock, GetString(string_size + 1, _, _))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
-    EXPECT_EQ(dbg_string.GetString(&string_value_mock, &returned_string),
-              E_ABORT);
+    EXPECT_EQ(DbgString::GetString(&dbg_string, &returned_string), E_ABORT);
     EXPECT_TRUE(returned_string.empty());
   }
 }
