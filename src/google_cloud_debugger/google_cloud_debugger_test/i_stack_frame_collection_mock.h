@@ -27,12 +27,13 @@ namespace google_cloud_debugger_test {
 class IStackFrameCollectionMock
     : public google_cloud_debugger::IStackFrameCollection {
  public:
-  MOCK_METHOD2(
-      Initialize,
-      HRESULT(ICorDebugStackWalk *debug_stack_walk,
-              const std::vector<std::unique_ptr<
+  MOCK_METHOD3(
+      ProcessBreakpoint,
+      HRESULT(const std::vector<std::shared_ptr<
                   google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-                  &pdb_files));
+                  &pdb_files,
+              google_cloud_debugger::DbgBreakpoint *breakpoint,
+              google_cloud_debugger::IEvalCoordinator *eval_coordinator));
   MOCK_METHOD2(
       PopulateStackFrames,
       HRESULT(google::cloud::diagnostics::debug::Breakpoint *breakpoint,

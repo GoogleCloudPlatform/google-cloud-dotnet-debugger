@@ -35,13 +35,13 @@ class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
 
   MOCK_METHOD0(HandleException, void());
 
-  MOCK_METHOD5(
-      PrintBreakpoint,
+  MOCK_METHOD4(
+      ProcessBreakpoints,
       HRESULT(
-          ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
+          ICorDebugThread *debug_thread,
           google_cloud_debugger::IBreakpointCollection *breakpoint_collection,
-          google_cloud_debugger::DbgBreakpoint *breakpoint,
-          const std::vector<std::unique_ptr<
+          std::vector<std::shared_ptr<google_cloud_debugger::DbgBreakpoint>> breakpoint,
+          const std::vector<std::shared_ptr<
               google_cloud_debugger_portable_pdb::IPortablePdbFile>>
               &pdb_files));
 
@@ -56,6 +56,8 @@ class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
   MOCK_METHOD1(SetPropertyEvaluation, void(BOOL eval));
 
   MOCK_METHOD0(PropertyEvaluation, BOOL());
+
+  MOCK_METHOD1(CreateStackWalk, HRESULT(ICorDebugStackWalk **debug_stack_walk));
 };
 
 }  // namespace google_cloud_debugger_test

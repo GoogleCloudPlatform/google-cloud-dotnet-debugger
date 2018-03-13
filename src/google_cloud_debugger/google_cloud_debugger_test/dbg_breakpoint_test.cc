@@ -47,7 +47,8 @@ namespace google_cloud_debugger_test {
 class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    breakpoint_.Initialize(file_name_, id_, line_, column_);
+    breakpoint_.Initialize(file_name_, id_, line_, column_,
+                           condition_, expressions_);
     // Gives the PDB file the same file name as this breakpoint's file name.
     pdb_file_fixture_.first_doc_.file_name_ = file_name_;
     pdb_file_fixture_.SetUpIPortablePDBFile(&file_mock_);
@@ -64,6 +65,10 @@ class DbgBreakpointTest : public ::testing::Test {
 
   // Lower case of the file name of the breakpoint.
   string lower_case_file_name_ = "my file";
+
+  string condition_;
+
+  std::vector<string> expressions_;
 
   // Id of the breakpoint.
   string id_ = "My ID";
@@ -198,7 +203,6 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
   EXPECT_TRUE(breakpoint_.TrySetBreakpoint(&file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset);
   EXPECT_EQ(breakpoint_.GetMethodDef(), method_def);
-  EXPECT_TRUE(breakpoint_.IsSet());
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint
@@ -236,7 +240,6 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
   EXPECT_TRUE(breakpoint_.TrySetBreakpoint(&file_mock_));
   EXPECT_EQ(breakpoint_.GetILOffset(), il_offset_3);
   EXPECT_EQ(breakpoint_.GetMethodDef(), method3_def);
-  EXPECT_TRUE(breakpoint_.IsSet());
 }
 
 // Tests the case where no matching methods are found.

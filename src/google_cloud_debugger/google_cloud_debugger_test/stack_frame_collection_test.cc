@@ -19,30 +19,33 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "dbg_breakpoint.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
 #include "i_portable_pdb_mocks.h"
 #include "stack_frame_collection.h"
 
+using google::cloud::diagnostics::debug::Breakpoint;
+using google::cloud::diagnostics::debug::StackFrame;
+using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::DbgBreakpoint;
+using google_cloud_debugger::StackFrameCollection;
+using google_cloud_debugger_portable_pdb::LocalVariableInfo;
+using google_cloud_debugger_portable_pdb::MethodInfo;
+using google_cloud_debugger_portable_pdb::Scope;
+using google_cloud_debugger_portable_pdb::SequencePoint;
+using std::shared_ptr;
+using std::string;
+using std::unique_ptr;
+using std::vector;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::ReturnRef;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using google::cloud::diagnostics::debug::Breakpoint;
-using google::cloud::diagnostics::debug::StackFrame;
-using google_cloud_debugger::CComPtr;
-using google_cloud_debugger::ConvertStringToWCharPtr;
-using google_cloud_debugger::StackFrameCollection;
-using google_cloud_debugger_portable_pdb::LocalVariableInfo;
-using google_cloud_debugger_portable_pdb::MethodInfo;
-using google_cloud_debugger_portable_pdb::Scope;
-using google_cloud_debugger_portable_pdb::SequencePoint;
-using std::string;
-using std::unique_ptr;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -305,7 +308,7 @@ class StackFrameCollectionTest : public ::testing::Test {
 
   // Vector of PDB files that will be fed to the Initialize function
   // of StackFrameCollection.
-  std::vector<unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+  std::vector<shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       pdb_files_;
 
   // The PDB file fixture for the first PDB file in pdb_files_ vector.
@@ -320,8 +323,14 @@ class StackFrameCollectionTest : public ::testing::Test {
   // MetaData from the module above.
   IMetaDataImportMock metadata_import_;
 
+  // Breakpoint to check for condition.
+  DbgBreakpoint dbg_breakpoint_;
+
   // Name of the module above.
   string module_name_ = "MyModule";
+
+  // Eval coordinator used to evaluate breakpoint.
+  IEvalCoordinatorMock eval_coordinator_;
 
   // Name of the module in WCHAR.
   vector<WCHAR> wchar_module_name_;
@@ -338,8 +347,8 @@ class StackFrameCollectionTest : public ::testing::Test {
 TEST_F(StackFrameCollectionTest, TestInitializeWithoutPDBFile) {
   StackFrameCollection stack_frame_collection;
   SetUpStackWalk();
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
@@ -349,8 +358,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithPDBFile) {
   StackFrameCollection stack_frame_collection;
   SetUpStackWalk();
   SetUpPDBFile();
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
@@ -362,14 +371,19 @@ TEST_F(StackFrameCollectionTest, TestInitializeError) {
     EXPECT_CALL(debug_stack_walk_, GetFrame(_))
         .WillRepeatedly(Return(E_ACCESSDENIED));
     StackFrameCollection stack_frame_collection;
-    EXPECT_EQ(stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_),
+    EXPECT_EQ(stack_frame_collection.ProcessBreakpoint(
+                  pdb_files_, &dbg_breakpoint_, &eval_coordinator_),
               E_ACCESSDENIED);
   }
 
   // Null tests.
   {
     StackFrameCollection stack_frame_collection;
-    EXPECT_EQ(stack_frame_collection.Initialize(nullptr, pdb_files_),
+    EXPECT_EQ(stack_frame_collection.ProcessBreakpoint(pdb_files_, nullptr,
+                                                       &eval_coordinator_),
+              E_INVALIDARG);
+    EXPECT_EQ(stack_frame_collection.ProcessBreakpoint(
+                  pdb_files_, &dbg_breakpoint_, nullptr),
               E_INVALIDARG);
   }
 }
@@ -382,8 +396,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithMoreThan20Frames) {
   // This should only be called 20 times.
   EXPECT_CALL(debug_stack_walk_, GetFrame(_))
       .Times(20)
-      .WillRepeatedly(DoAll(
-          SetArgPointee<0>(&first_frame_.frame_), Return(S_OK)));
+      .WillRepeatedly(
+          DoAll(SetArgPointee<0>(&first_frame_.frame_), Return(S_OK)));
 
   // Makes GetFunction returns CORDBG_E_CODE_NOT_AVAILABLE so we will
   // get an empty frame.
@@ -391,8 +405,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithMoreThan20Frames) {
       .Times(20)
       .WillRepeatedly(Return(CORDBG_E_CODE_NOT_AVAILABLE));
 
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
@@ -414,21 +428,20 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithFourILFrames) {
   mdTypeDef class_token = 3000;
   string class_name = "MyClass";
 
-  first_frame_.SetUpFrame(&debug_module_, &metadata_import_,
-                          func_virtual_addr, func_token, func_name,
-                          class_token, class_name);
+  first_frame_.SetUpFrame(&debug_module_, &metadata_import_, func_virtual_addr,
+                          func_token, func_name, class_token, class_name);
   first_frame_.SetUpILFrame(true, 500);
-  second_frame_.SetUpFrame(
-      &debug_module_, &metadata_import_, func_virtual_addr + 1,
-      func_token + 1, func_name + "1", class_token + 1, class_name + "1");
+  second_frame_.SetUpFrame(&debug_module_, &metadata_import_,
+                           func_virtual_addr + 1, func_token + 1,
+                           func_name + "1", class_token + 1, class_name + "1");
   second_frame_.SetUpILFrame(true, 500);
   third_frame_.SetUpFrame(&debug_module_, &metadata_import_,
                           func_virtual_addr + 2, func_token + 2,
                           func_name + "2", class_token + 2, class_name + "2");
   third_frame_.SetUpILFrame(true, 500);
   fourth_frame_.SetUpFrame(&debug_module_, &metadata_import_,
-                          func_virtual_addr + 3, func_token + 3,
-                          func_name + "3", class_token + 3, class_name + "3");
+                           func_virtual_addr + 3, func_token + 3,
+                           func_name + "3", class_token + 3, class_name + "3");
   fourth_frame_.SetUpILFrame(true, 500);
   fifth_frame_.SetUpFrame(&debug_module_, &metadata_import_,
                           func_virtual_addr + 4, func_token + 4,
@@ -437,13 +450,14 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithFourILFrames) {
   // For the fifth frame, only sets up such that it gets identified as
   // an IL frame, don't set up other things as they shouldn't be called.
   ON_CALL(fifth_frame_.frame_, QueryInterface(__uuidof(ICorDebugILFrame), _))
-      .WillByDefault(DoAll(SetArgPointee<1>(&(fifth_frame_.il_frame_)), Return(S_OK)));
+      .WillByDefault(
+          DoAll(SetArgPointee<1>(&(fifth_frame_.il_frame_)), Return(S_OK)));
 
   SetUpDebugModule();
 
   StackFrameCollection stack_frame_collection;
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
@@ -452,8 +466,8 @@ TEST_F(StackFrameCollectionTest, TestPopulateStackFrames) {
   StackFrameCollection stack_frame_collection;
   SetUpStackWalk();
   SetUpPDBFile();
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   Breakpoint breakpoint;
@@ -499,8 +513,8 @@ TEST_F(StackFrameCollectionTest, TestPopulateStackFramesError) {
   StackFrameCollection stack_frame_collection;
   SetUpStackWalk();
   SetUpPDBFile();
-  HRESULT hr =
-      stack_frame_collection.Initialize(&debug_stack_walk_, pdb_files_);
+  HRESULT hr = stack_frame_collection.ProcessBreakpoint(
+      pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   Breakpoint breakpoint;
