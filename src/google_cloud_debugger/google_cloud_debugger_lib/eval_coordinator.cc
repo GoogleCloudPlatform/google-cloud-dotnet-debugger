@@ -236,7 +236,7 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     return E_OUTOFMEMORY;
   }
 
-  HRESULT hr;
+  HRESULT hr = S_OK;
   for (auto &&breakpoint : breakpoints) {
     hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(), this);
     if (FAILED(hr)) {
