@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include <string>
 
+#include "class_names.h"
 #include "common_action_mocks.h"
 #include "i_cor_debug_mocks.h"
 
@@ -31,92 +32,123 @@ using ::testing::SetArrayArgument;
 
 namespace google_cloud_debugger_test {
 
+// Test Fixture for DbgString.
+class DbgStringTest : public ::testing::Test {
+ protected:
+  virtual void SetUp() {
+  }
+
+  // Sets up various mock objects for DbgString class.
+  void SetUpString() {
+    // If queried for ICorDebugHeapValue2, returns heap_value.
+    // This happens when the Initialize function tries to create a strong
+    // handle of the string.
+    ON_CALL(string_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
+        .WillByDefault(DoAll(SetArgPointee<1>(&heap_value_), Return(S_OK)));
+
+    // Makes heap_value returns handle_value if CreateHandle is called.
+    ON_CALL(heap_value_, CreateHandle(_, _))
+        .WillByDefault(DoAll(SetArgPointee<1>(&handle_value_), Return(S_OK)));
+
+    // The handle should dereference to the string value.
+    ON_CALL(handle_value_, Dereference(_))
+        .WillByDefault(DoAll(SetArgPointee<0>(&string_value_), Return(S_OK)));
+
+    // If queried for ICorDebugStringValue, returns string_value_.
+    ON_CALL(string_value_, QueryInterface(__uuidof(ICorDebugStringValue), _))
+        .WillByDefault(DoAll(SetArgPointee<1>(&string_value_), Return(S_OK)));
+  }
+
+  // ICorDebugValue that represents the string.
+  ICorDebugStringValueMock string_value_;
+
+  // Heap and handle value created for the string.
+  ICorDebugHeapValue2Mock heap_value_;
+  ICorDebugHandleValueMock handle_value_;
+};
+
 // Tests Initialize function of DbgString.
-TEST(DbgStringTest, Initialize) {
+TEST_F(DbgStringTest, Initialize) {
   DbgString dbg_string(nullptr);
 
-  ICorDebugStringValueMock string_value_mock;
-  EXPECT_CALL(string_value_mock, QueryInterface(_, _))
-      .Times(1)
-      .WillRepeatedly(
-          DoAll(SetArgPointee<1>(&string_value_mock), Return(S_OK)));
+  SetUpString();
 
-  dbg_string.Initialize(&string_value_mock, FALSE);
+  dbg_string.Initialize(&string_value_, FALSE);
   EXPECT_FALSE(dbg_string.GetIsNull());
 
-  dbg_string.Initialize(&string_value_mock, TRUE);
+  dbg_string.Initialize(&string_value_, TRUE);
   EXPECT_TRUE(dbg_string.GetIsNull());
 }
 
 // Tests error cases for Initialize function of DbgString.
-TEST(DbgStringTest, InitializeError) {
+TEST_F(DbgStringTest, InitializeError) {
   DbgString dbg_string(nullptr);
 
   // If ICorDebugStringValue is null, E_INVALIDARG is returned.
   dbg_string.Initialize(nullptr, FALSE);
   EXPECT_EQ(dbg_string.GetInitializeHr(), E_INVALIDARG);
 
-  ICorDebugStringValueMock string_value_mock;
-  EXPECT_CALL(string_value_mock, QueryInterface(_, _))
+  EXPECT_CALL(string_value_, QueryInterface(_, _))
       .Times(1)
       .WillRepeatedly(Return(E_NOTIMPL));
 
-  dbg_string.Initialize(&string_value_mock, FALSE);
+  dbg_string.Initialize(&string_value_, FALSE);
   EXPECT_EQ(dbg_string.GetInitializeHr(), E_NOTIMPL);
 }
 
 // Tests that PopulateType function always return System.String.
-TEST(DbgStringTest, PopulateType) {
-  static string string_type = "System.String";
+TEST_F(DbgStringTest, PopulateType) {
   DbgString dbg_string(nullptr);
 
   Variable variable;
   EXPECT_EQ(dbg_string.PopulateType(&variable), S_OK);
   string string_result = variable.type();
-  EXPECT_EQ(variable.type(), string_type);
+  EXPECT_EQ(variable.type(), google_cloud_debugger::kStringClassName);
 }
 
 // Tests error cases for PopulateType.
-TEST(DbgStringTest, PopulateTypeError) {
+TEST_F(DbgStringTest, PopulateTypeError) {
   DbgString dbg_string(nullptr);
   EXPECT_EQ(dbg_string.PopulateType(nullptr), E_INVALIDARG);
 }
 
-TEST(DbgStringTest, GetString) {
-  DbgString dbg_string(nullptr);
-
+TEST_F(DbgStringTest, GetString) {
   static const string test_string_value = "This is a test string";
 
   vector<WCHAR> wchar_string = ConvertStringToWCharPtr(test_string_value);
 
   uint32_t string_size = wchar_string.size();
-  ICorDebugStringValueMock string_value_mock;
-  EXPECT_CALL(string_value_mock, GetLength(_))
+  EXPECT_CALL(string_value_, GetLength(_))
       .Times(1)
       .WillRepeatedly(DoAll(SetArgPointee<0>(string_size - 1), Return(S_OK)));
 
-  EXPECT_CALL(string_value_mock, GetString(string_size, _, _))
+  EXPECT_CALL(string_value_, GetString(string_size, _, _))
       .Times(1)
       .WillRepeatedly(
           DoAll(SetArrayArgument<2>(wchar_string.data(),
                                     wchar_string.data() + string_size),
                 Return(S_OK)));
 
+  DbgString dbg_string(nullptr);
+  SetUpString();
+  dbg_string.Initialize(&string_value_, FALSE);
+
   std::string returned_string;
-  DbgString::GetString(&dbg_string, &returned_string);
+  EXPECT_EQ(DbgString::GetString(&dbg_string, &returned_string), S_OK);
 
   EXPECT_EQ(returned_string, test_string_value);
 }
 
 // Tests error cases for GetString.
-TEST(DbgStringTest, GetStringError) {
-  DbgString dbg_string(nullptr);
-
+TEST_F(DbgStringTest, GetStringError) {
   static const string test_string_value = "This is a test string";
-
   uint32_t string_size = test_string_value.size();
-  ICorDebugStringValueMock string_value_mock;
+
   std::string returned_string;
+
+  SetUpString();
+  DbgString dbg_string(nullptr);
+  dbg_string.Initialize(&string_value_, FALSE);
 
   // Test null cases.
   EXPECT_EQ(dbg_string.GetString(nullptr, nullptr), E_INVALIDARG);
@@ -125,7 +157,7 @@ TEST(DbgStringTest, GetStringError) {
 
   {
     // Makes GetLength return an error.
-    EXPECT_CALL(string_value_mock, GetLength(_))
+    EXPECT_CALL(string_value_, GetLength(_))
         .Times(1)
         .WillRepeatedly(Return(E_ACCESSDENIED));
     EXPECT_EQ(DbgString::GetString(&dbg_string, &returned_string),
@@ -135,10 +167,10 @@ TEST(DbgStringTest, GetStringError) {
 
   {
     // Makes ICorDebugString's GetString method return an error.
-    EXPECT_CALL(string_value_mock, GetLength(_))
+    EXPECT_CALL(string_value_, GetLength(_))
         .Times(1)
         .WillRepeatedly(DoAll(SetArgPointee<0>(string_size), Return(S_OK)));
-    EXPECT_CALL(string_value_mock, GetString(string_size + 1, _, _))
+    EXPECT_CALL(string_value_, GetString(string_size + 1, _, _))
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
     EXPECT_EQ(DbgString::GetString(&dbg_string, &returned_string), E_ABORT);

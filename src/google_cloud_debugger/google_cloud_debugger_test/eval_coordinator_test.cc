@@ -115,10 +115,10 @@ TEST_F(EvalCoordinatorTest, TestWaitForEvalTimeOut) {
 // Tests that ProcessBreakpoint will return.
 TEST_F(EvalCoordinatorTest, TestProcessBreakpoint) {
   EXPECT_CALL(debug_stack_walk_, GetFrame(_)).WillRepeatedly(Return(S_FALSE));
-  // WriteBreakpoint method should get called.
+  // WriteBreakpoint method should not be called if breakpoints_ is empty called.
+  // TODO(quoct): Add a test when breakpoints_ have members.
   EXPECT_CALL(breakpoint_collection_, WriteBreakpoint(_))
-      .Times(1)
-      .WillRepeatedly(Return(S_OK));
+      .Times(0);
   HRESULT hr = eval_coordinator_.ProcessBreakpoints(
       &debug_thread_, &breakpoint_collection_, breakpoints_,
       pdb_files_);

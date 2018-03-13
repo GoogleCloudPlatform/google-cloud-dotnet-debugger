@@ -400,6 +400,22 @@ class ICorDebugFunctionBreakpointMock : public ICorDebugFunctionBreakpoint {
   MOCK_METHOD1(GetOffset, HRESULT(ULONG32 *pnOffset));
 };
 
+class ICorDebugAssemblyMock : public ICorDebugAssembly {
+ public:
+  IUNKNOWN_MOCK
+
+    MOCK_METHOD1(GetProcess,
+      HRESULT(ICorDebugProcess ** ppProcess));
+  MOCK_METHOD1(GetAppDomain,
+      HRESULT(ICorDebugAppDomain ** ppAppDomain));
+  MOCK_METHOD1(EnumerateModules,
+      HRESULT(ICorDebugModuleEnum ** ppModules));
+  MOCK_METHOD3(GetCodeBase,
+      HRESULT(ULONG32 cchName, ULONG32 * pcchName, WCHAR szName[]));
+  MOCK_METHOD3(GetName,
+      HRESULT(ULONG32 cchName, ULONG32 * pcchName, WCHAR szName[]));
+};
+
 // Mock class for ICorDebugType.
 class ICorDebugTypeMock : public ICorDebugType {
  public:

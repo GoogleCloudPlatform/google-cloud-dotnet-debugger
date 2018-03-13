@@ -131,6 +131,10 @@ class FrameFixture {
     ON_CALL(frame_, QueryInterface(__uuidof(ICorDebugILFrame), _))
         .WillByDefault(DoAll(SetArgPointee<1>(&il_frame_), Return(S_OK)));
 
+    ON_CALL(il_frame_, GetFunction(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&frame_function_), Return(S_OK)));
+
     // Sets up the instruction pointer (IP) for this IL frame.
     ON_CALL(il_frame_, GetIP(_, _))
         .WillByDefault(DoAll(SetArgPointee<0>(ip_offset_),
@@ -209,7 +213,11 @@ class FrameFixture {
 // Test Fixture for StackFrameCollection tests.
 class StackFrameCollectionTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {}
+  virtual void SetUp() {
+    // Sets up the EvalCoordinator to return stack walk.
+    ON_CALL(eval_coordinator_, CreateStackWalk(_))
+      .WillByDefault(DoAll(SetArgPointee<0>(&debug_stack_walk_), Return(S_OK)));
+  }
 
   // Sets up the StackFrameCollection to return 3 frames.
   // Also sets up the ICorDebugModule debug_module_ to be
@@ -266,6 +274,14 @@ class StackFrameCollectionTest : public ::testing::Test {
             SetArgPointee<1>(module_name_len),
             SetArg2ToWcharArray(wchar_module_name_.data(), module_name_len),
             Return(S_OK)));
+
+    ON_CALL(debug_module_, GetAssembly(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
+
+    ON_CALL(debug_assembly_, GetAppDomain(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_domain_), Return(S_OK)));
   }
 
   virtual void SetUpPDBFile() {
@@ -322,6 +338,12 @@ class StackFrameCollectionTest : public ::testing::Test {
 
   // MetaData from the module above.
   IMetaDataImportMock metadata_import_;
+
+  // ICorDebugAssembly from debug_module_.
+  ICorDebugAssemblyMock debug_assembly_;
+
+  // AppDomain from ICorDebugAssembly.
+  ICorDebugAppDomainMock debug_domain_;
 
   // Breakpoint to check for condition.
   DbgBreakpoint dbg_breakpoint_;

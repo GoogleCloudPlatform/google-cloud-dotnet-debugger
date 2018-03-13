@@ -66,7 +66,24 @@ class VariableInfo {
 // Contains various ICorDebug mock objects needed.
 class DbgStackFrameTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {}
+  virtual void SetUp() {
+    // Sets up chain from ICorDebugFrame to ICorDebugAppDomain.
+    ON_CALL(frame_mock_, GetFunction(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_function_), Return(S_OK)));
+
+    ON_CALL(debug_function_, GetModule(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
+
+    ON_CALL(debug_module_, GetAssembly(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
+
+    ON_CALL(debug_assembly_, GetAppDomain(_))
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&app_domain_), Return(S_OK)));
+  }
 
   // Sets up mock calls to process local variables.
   virtual void SetUpLocalVariables() {
@@ -217,6 +234,18 @@ class DbgStackFrameTest : public ::testing::Test {
 
   // MetaDataImport used by the test.
   IMetaDataImportMock metadata_import_;
+
+  // ICorDebugFunction returned by frame_mock_.
+  ICorDebugFunctionMock debug_function_;
+
+  // ICorDebugModule from debug_function_.
+  ICorDebugModuleMock debug_module_;
+
+  // ICorDebugAssembly from debug_module_.
+  ICorDebugAssemblyMock debug_assembly_;
+
+  // ICorDebugAppDomain from debug_assembly_.
+  ICorDebugAppDomainMock app_domain_;
 
   // Token that represents the method the frame is in.
   mdMethodDef method_token_ = 10;
