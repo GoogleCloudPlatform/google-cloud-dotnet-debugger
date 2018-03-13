@@ -53,9 +53,14 @@ class FakeDbgObjectBase : public DbgObject {
 
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) override {}
 
-  virtual HRESULT PopulateType(Variable *variable) override {
-    variable->set_type(type_);
+  virtual HRESULT GetTypeString(std::string *type_string) override {
+    *type_string = type_;
     return S_OK;
+  }
+
+  virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+      ICorDebugEval *debug_eval) override {
+    return E_NOTIMPL;
   }
 
   // Type of the object.

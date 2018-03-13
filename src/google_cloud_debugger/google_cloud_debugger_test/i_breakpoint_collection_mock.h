@@ -47,13 +47,12 @@ class IBreakpointCollectionMock
   MOCK_METHOD1(
       ReadBreakpoint,
       HRESULT(google::cloud::diagnostics::debug::Breakpoint *breakpoint));
-  MOCK_METHOD6(
+  MOCK_METHOD5(
       EvaluateAndPrintBreakpoint,
       HRESULT(mdMethodDef function_token, ULONG32 il_offset,
               google_cloud_debugger::IEvalCoordinator *eval_coordinator,
               ICorDebugThread *debug_thread,
-              ICorDebugStackWalk *debug_stack_walk,
-              const std::vector<std::unique_ptr<
+              const std::vector<std::shared_ptr<
                   google_cloud_debugger_portable_pdb::IPortablePdbFile>>
                   &pdb_files));
 };
