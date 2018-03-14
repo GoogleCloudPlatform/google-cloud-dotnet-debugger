@@ -1,7 +1,7 @@
 [submodule "coreclr"]
   path = third_party/coreclr
   url = https://github.com/dotnet/coreclr.git
-  commit = 51713ad7d142a726c54c6e7ae3996fe0ccb1e1d6
+  commit = cd8af80c29379c69997106d1d347a2b4ab02693b
   ignore = dirty
 [submodule "googletest"]
   path = third_party/googletest
