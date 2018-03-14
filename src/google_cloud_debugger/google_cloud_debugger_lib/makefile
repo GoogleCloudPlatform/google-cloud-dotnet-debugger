@@ -12,13 +12,14 @@ PAL_RT_INC = $(THIRD_PARTY_DIR)/coreclr/src/pal/inc/rt/
 PAL_INC = $(THIRD_PARTY_DIR)/coreclr/src/pal/inc/
 CORE_CLR_INC = $(THIRD_PARTY_DIR)/coreclr/src/inc/
 DBGSHIM_INC = $(THIRD_PARTY_DIR)/coreclr-subset/
+JAVA_DBG_INC = $(THIRD_PARTY_DIR)/cloud-debug-java/
 
-INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} `pkg-config --cflags protobuf`
+INCDIRS = -I${PREBUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${JAVA_DBG_INC} -I${ROOT_DIR} `pkg-config --cflags protobuf`
 
 DBG_OBJECTS = dbg_object.o dbg_string.o dbg_array.o dbg_class.o dbg_class_field.o dbg_class_property.o dbg_stack_frame.o dbg_enum.o dbg_builtin_collection.o
 PDB_PARSERS = metadata_headers.o metadata_tables.o document_index.o custom_binary_reader.o portable_pdb_file.o
-BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o variable_wrapper.o
-ALL_O_FILES = string_stream_wrapper.o stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
+BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o variable_wrapper.o breakpoint_location_collection.o
+ALL_O_FILES = string_stream_wrapper.o stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o compiler_helpers.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -Wignored-attributes -g ${COVERAGE_ARG}
 
 google_cloud_debugger_lib: ${ALL_O_FILES}
@@ -77,6 +78,12 @@ dbg_breakpoint.o: dbg_breakpoint.h dbg_breakpoint.cc
 
 breakpoint_collection.o: breakpoint_collection.h breakpoint_collection.cc
 	clang-3.9 breakpoint_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_collection.o
+
+breakpoint_location_collection.o: breakpoint_location_collection.h breakpoint_location_collection.cc
+	clang-3.9 breakpoint_collection.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_location_collection.o
+
+compiler_helpers.o: compiler_helpers.cc compiler_helpers.h
+	clang-3.9 compiler_helpers.cc ${INCDIRS} ${CC_FLAGS} -c -o compiler_helpers.o
 
 i_cor_debug_helper.o: i_cor_debug_helper.h i_cor_debug_helper.cc
 	clang-3.9 i_cor_debug_helper.cc ${INCDIRS} ${CC_FLAGS} -c -o i_cor_debug_helper.o
