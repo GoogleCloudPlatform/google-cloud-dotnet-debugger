@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <type_traits>
+#include <math.h>
 
 #include "ccomptr.h"
 #include "class_names.h"
