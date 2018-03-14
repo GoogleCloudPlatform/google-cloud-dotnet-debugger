@@ -31,6 +31,10 @@ DbgObject::DbgObject(ICorDebugType *debug_type, int depth) {
 }
 
 HRESULT DbgObject::PopulateType(Variable *variable) {
+  if (variable == nullptr) {
+    return E_INVALIDARG;
+  }
+
   std::string type_string;
   HRESULT hr = GetTypeString(&type_string);
   if (FAILED(hr)) {
