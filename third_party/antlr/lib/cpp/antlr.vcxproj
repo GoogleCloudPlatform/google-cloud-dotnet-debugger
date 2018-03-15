@@ -85,7 +85,6 @@
     <ClCompile Include="src\CommonASTWithHiddenTokens.cpp" />
     <ClCompile Include="src\CommonHiddenStreamToken.cpp" />
     <ClCompile Include="src\CommonToken.cpp" />
-    <ClCompile Include="src\dll.cpp" />
     <ClCompile Include="src\ExceptionSlot.cpp" />
     <ClCompile Include="src\InputBuffer.cpp" />
     <ClCompile Include="src\IOException.cpp" />

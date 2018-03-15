@@ -195,19 +195,19 @@ class DbgBreakpoint {
   std::vector<std::string> expressions_;
 
   // True if the condition_ of the breakpoint is empty or evaluated to true.
-  bool evaluated_condition_;
+  bool evaluated_condition_ = true;
 
   // The name of the method this breakpoint is in.
   std::vector<WCHAR> method_name_;
 
   // True if this breakpoint is activated.
-  bool activated_;
+  bool activated_ = false;
 
   // The ICorDebugBreakpoint that corresponds with this breakpoint.
   CComPtr<ICorDebugBreakpoint> debug_breakpoint_;
 
   // True if this breakpoint should kill the server it was sent to.
-  bool kill_server_;
+  bool kill_server_ = false;
 };
 
 }  // namespace google_cloud_debugger

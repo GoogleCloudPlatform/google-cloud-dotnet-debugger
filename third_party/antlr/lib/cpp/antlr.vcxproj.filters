@@ -207,9 +207,6 @@
     <ClCompile Include="src\CommonToken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dll.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ExceptionSlot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
