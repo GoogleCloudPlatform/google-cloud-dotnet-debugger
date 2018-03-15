@@ -371,7 +371,7 @@ class DbgClassTest : public ::testing::Test {
   PCCOR_SIGNATURE first_field_sig_;
 
   // Attribute of the first field.
-  ULONG first_field_attr_;
+  ULONG first_field_attr_ = 0;
 
   // Name of this class's second field.
   string class_second_field_ = "Field2";
@@ -389,7 +389,7 @@ class DbgClassTest : public ::testing::Test {
   PCCOR_SIGNATURE second_field_sig_;
 
   // Attribute of the first field.
-  ULONG second_field_attr_;
+  ULONG second_field_attr_ = 0;
 
   // Name of this class's property.
   string class_property_ = "Property";
