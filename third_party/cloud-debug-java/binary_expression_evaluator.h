@@ -17,6 +17,8 @@
 #ifndef BINARY_EXPRESSION_EVALUATOR_H_
 #define BINARY_EXPRESSION_EVALUATOR_H_
 
+#include <math.h>
+
 #include "expression_evaluator.h"
 #include "csharp_expression.h"
 

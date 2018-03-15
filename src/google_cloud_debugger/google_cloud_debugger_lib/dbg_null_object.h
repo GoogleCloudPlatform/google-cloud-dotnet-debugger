@@ -30,7 +30,7 @@ class DbgNullObject : public DbgObject {
   DbgNullObject(ICorDebugType *pType) : DbgObject(pType, 0) {}
 
   // Inherited via DbgObject.
-  virtual void Initialize(ICorDebugValue * debug_value, BOOL is_null) {}
+  virtual void Initialize(ICorDebugValue * debug_value, BOOL is_null) override {}
 
   // This should not be called because we cannot create a
   // ICorDebugValue that represents a null object.
