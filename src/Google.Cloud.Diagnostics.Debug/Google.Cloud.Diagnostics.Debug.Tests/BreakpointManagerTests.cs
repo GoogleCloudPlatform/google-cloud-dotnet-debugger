@@ -73,22 +73,25 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void UpdateBreakpoints_IgnoreDuplicateBreakpointsBySource()
+        public void UpdateBreakpoints_ShouldNotIgnoreDuplicateBreakpointsBySource()
         {
             var breakpoints = CreateBreakpoints(2);
             var response = _manager.UpdateBreakpoints(breakpoints);
 
             Assert.Equal(2, response.New.Count());
 
+            // Now create 2 breakpoints with different id but same location.
             foreach (var breakpoint in breakpoints)
             {
-                breakpoint.Id = "" + (Int32.Parse(breakpoint.Id) * 2);
+                // Have to plus 1 because if breakpoint id is 0, then
+                // we get the same breakpoint id.
+                breakpoint.Id = "" + ((Int32.Parse(breakpoint.Id) + 1)* 2);
             }
 
             response = _manager.UpdateBreakpoints(breakpoints);
 
-            Assert.Empty(response.New);
-            Assert.Empty(response.Removed);
+            Assert.Equal(2, response.New.Count());
+            Assert.Equal(2, response.Removed.Count());
         }
 
         [Fact]

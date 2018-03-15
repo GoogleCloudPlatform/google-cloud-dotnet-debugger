@@ -94,8 +94,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _mockDebuggerClient.Verify(c => c.ListBreakpoints(), Times.Once);
             _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(
                 Match.Create(GetErrorMatcher("0", Messages.LogPointNotSupported))), Times.Once);
-            _mockBreakpointServer.Verify(s => s.WriteBreakpointAsync(
-                It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -123,9 +121,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _mockDebuggerClient.Setup(c => c.ListBreakpoints()).Returns(breakpoints);
             _server.MainAction();
 
-            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(Match.Create(GetErrorMatcher("2"))), Times.Once);
             _mockBreakpointServer.Verify(s => s.WriteBreakpointAsync(
-                It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()), Times.Exactly(4));
+                It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()), Times.Exactly(5));
 
             _mockDebuggerClient.Reset();
             _mockBreakpointServer.Reset();
