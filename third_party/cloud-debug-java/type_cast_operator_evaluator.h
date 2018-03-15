@@ -20,6 +20,7 @@
 #include "expression_evaluator.h"
 #include "csharp_expression.h"
 #include "dbg_primitive.h"
+#include "compiler_helpers.h"
 
 namespace google_cloud_debugger {
 

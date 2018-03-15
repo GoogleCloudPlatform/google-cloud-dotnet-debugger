@@ -11,7 +11,7 @@
 #include <antlr/config.hpp>
 
 #include <stdio.h>
-#include <string>
+#include <string.h>
 #include <map>
 #include <functional>
 

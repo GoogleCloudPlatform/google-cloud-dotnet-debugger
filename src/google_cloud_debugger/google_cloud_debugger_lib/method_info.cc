@@ -119,8 +119,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   method_sig_len -= bytes_read;
   // If generic method, the next bytes would be the number of generic
   // parameters.
-  if (calling_convention &
-      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC != 0) {
+  if ((calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
     ULONG generic_param_count = 0;
     hr = CorSigUncompressData(method_sig, method_sig_len,
                               &generic_param_count, &bytes_read);
@@ -140,8 +140,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
 
   // This is true if there is an explicit this parameter.
   bool explicitThis =
-      calling_convention &
-      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0;
+      (calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS) != 0;
   if (explicitThis) {
     param_count -= 1;
   }
@@ -162,8 +162,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   }
 
   // If there is an explicit this, there will be a this parameter.
-  if (calling_convention &
-      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS != 0) {
+  if ((calling_convention &
+      CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS) != 0) {
     // Extracts out this "this" parameter.
     std::string this_type;
     hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
