@@ -193,7 +193,7 @@ class CSharpFloatLiteral : public CSharpExpression {
   // Indicates whether this is an float or a double.
   bool is_double_;
 
-  std::double_t d_;
+  double_t d_;
 
   DISALLOW_COPY_AND_ASSIGN(CSharpFloatLiteral);
 };

@@ -184,10 +184,10 @@ class DbgPrimitive : public DbgObject {
   const std::string GetTypeCore(std::uint64_t) {
     return kUInt64ClassName;
   }
-  const std::string GetTypeCore(std::float_t) {
+  const std::string GetTypeCore(float_t) {
     return kSingleClassName;
   }
-  const std::string GetTypeCore(std::double_t) {
+  const std::string GetTypeCore(double_t) {
     return kDoubleClassName;
   }
 
@@ -221,10 +221,10 @@ class DbgPrimitive : public DbgObject {
   void SetCorElementType(std::uint64_t value) {
     cor_element_type_ = CorElementType::ELEMENT_TYPE_U8;
   }
-  void SetCorElementType(std::float_t value) {
+  void SetCorElementType(float_t value) {
     cor_element_type_ = CorElementType::ELEMENT_TYPE_R4;
   }
-  void SetCorElementType(std::double_t value) {
+  void SetCorElementType(double_t value) {
     cor_element_type_ = CorElementType::ELEMENT_TYPE_R8;
   }
 
