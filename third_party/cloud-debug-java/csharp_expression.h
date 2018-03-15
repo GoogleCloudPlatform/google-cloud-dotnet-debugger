@@ -19,6 +19,7 @@
 
 #include <list>
 #include <memory>
+#include <math.h>
 #include "expression_util.h"
 
 using std::string;
