@@ -161,6 +161,7 @@
     <ClCompile Include="dbg_stack_frame_test.cc" />
     <ClCompile Include="debugger_callback_test.cc" />
     <ClCompile Include="eval_coordinator_test.cc" />
+    <ClCompile Include="i_cor_debug_helper_test.cc" />
     <ClCompile Include="i_cor_debug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
     <ClCompile Include="dbg_class_property_test.cc" />
