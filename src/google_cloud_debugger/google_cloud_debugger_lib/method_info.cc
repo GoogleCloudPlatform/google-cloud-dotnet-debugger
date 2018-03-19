@@ -104,36 +104,27 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     return hr;
   }
 
-  ULONG bytes_read;
   ULONG calling_convention;
-  hr = CorSigUncompressData(method_sig, method_sig_len, &calling_convention,
-                            &bytes_read);
+  hr = ParseCompressedBytes(&method_sig, &method_sig_len, &calling_convention);
   if (FAILED(hr)) {
     return hr;
   }
 
-  if (bytes_read != 1) {
-    return META_E_BAD_SIGNATURE;
-  }
-
-  method_sig_len -= bytes_read;
   // If generic method, the next bytes would be the number of generic
   // parameters.
   if ((calling_convention &
       CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
     ULONG generic_param_count = 0;
-    hr = CorSigUncompressData(method_sig, method_sig_len,
-                              &generic_param_count, &bytes_read);
+    hr = ParseCompressedBytes(&method_sig, &method_sig_len,
+                              &generic_param_count);
     if (FAILED(hr)) {
       return hr;
     }
-    method_sig_len -= bytes_read;
   }
 
   // Now we get the number of parameters in the signature.
   ULONG param_count = 0;
-  hr = CorSigUncompressData(method_sig, method_sig_len, &param_count,
-                            &bytes_read);
+  hr = ParseCompressedBytes(&method_sig, &method_sig_len, &param_count);
   if (FAILED(hr)) {
     return hr;
   }
@@ -146,7 +137,6 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     param_count -= 1;
   }
 
-  method_sig_len -= bytes_read;
   // The param count has to match. Otherwise, this is not
   // the method we are looking for.
   if (param_count != argument_types.size()) {
@@ -155,7 +145,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
 
   // Now we can extract the return type.
   std::string returned_type;
-  hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+  hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                         &returned_type);
   if (FAILED(hr)) {
     return hr;
@@ -166,7 +156,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
       CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS) != 0) {
     // Extracts out this "this" parameter.
     std::string this_type;
-    hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+    hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                           &returned_type);
     if (FAILED(hr)) {
       return hr;
@@ -179,7 +169,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   // types.
   for (size_t i = 0; i < param_count; ++i) {
     std::string parameter_type;
-    hr = ParseTypeFromSig(method_sig, &method_sig_len, metadata_import,
+    hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                           &parameter_type);
     if (FAILED(hr)) {
       return hr;

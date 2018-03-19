@@ -314,7 +314,7 @@ class DbgStackFrame {
   std::map<std::string, mdTypeRef> type_ref_dict_;
 
   // True if type_def_dict_ and type_ref_dict_ have been populated.
-  bool type_dict_populated_ = true;
+  bool type_dict_populated_ = false;
 
   // MetaData for local variables in this frame.
   std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
