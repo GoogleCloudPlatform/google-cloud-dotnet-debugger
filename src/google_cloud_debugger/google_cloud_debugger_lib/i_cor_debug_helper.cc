@@ -41,6 +41,11 @@ HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
     return E_INVALIDARG;
   }
 
+  if (!metadata_import) {
+    *err_stream << "IMetaDataImport cannot be null.";
+    return E_INVALIDARG;
+  }
+
   CComPtr<ICorDebugModule> debug_module;
   HRESULT hr = debug_class->GetModule(&debug_module);
   if (FAILED(hr)) {
@@ -57,6 +62,11 @@ HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
                                              ostream *err_stream) {
   if (!debug_module) {
     *err_stream << "ICorDebugModule cannot be null.";
+    return E_INVALIDARG;
+  }
+
+  if (!metadata_import) {
+    *err_stream << "IMetaDataImport cannot be null.";
     return E_INVALIDARG;
   }
 

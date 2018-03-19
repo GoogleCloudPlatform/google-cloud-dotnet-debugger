@@ -108,6 +108,9 @@
     <ClCompile Include="src\TokenStreamSelector.cpp" />
     <ClCompile Include="src\TreeParser.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="makefile" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{46C6B3E2-E5BA-4091-964E-D60026BFBD5F}</ProjectGuid>

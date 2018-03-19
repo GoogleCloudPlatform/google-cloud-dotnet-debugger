@@ -41,9 +41,10 @@ INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} 
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${ANTLR_LIB} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -lm -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib -lantlr_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined 
 
-TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o \
-dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o variable_wrapper_test.o \
-stack_frame_collection_test.o custom_binary_stream_test.o eval_coordinator_test.o common_action_mocks.o i_portable_pdb_mocks.o
+SRC_TEST_FILES := $(wildcard *_test.cc)
+OBJ_TEST_FILES := $(patsubst %_test.cc,%_test.o,${SRC_TEST_FILES})
+
+TESTS = unit_test_main.o ${OBJ_TEST_FILES} common_action_mocks.o i_portable_pdb_mocks.o
 
 google_cloud_debugger_test: ${TESTS}
 	clang-3.9 -o google_cloud_debugger_test ${TESTS} ${INCDIRS} ${CC_FLAGS} ${COVERAGE_ARG} ${INCLIBS} -v
@@ -54,44 +55,8 @@ common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 i_portable_pdb_mocks.o: i_portable_pdb_mocks.h i_portable_pdb_mocks.cc
 	clang-3.9 i_portable_pdb_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o i_portable_pdb_mocks.o
 
-breakpoint_client_test.o: breakpoint_client_test.cc
-	clang-3.9 breakpoint_client_test.cc ${INCDIRS} ${CC_FLAGS} -c -o breakpoint_client_test.o
-
-dbg_breakpoint_test.o: dbg_breakpoint_test.cc
-	clang-3.9 dbg_breakpoint_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_breakpoint_test.o
-
-dbg_string_test.o: dbg_string_test.cc
-	clang-3.9 dbg_string_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_string_test.o
-
-dbg_class_field_test.o: dbg_class_field_test.cc
-	clang-3.9 dbg_class_field_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_field_test.o
-
-dbg_class_property_test.o: dbg_class_property_test.cc
-	clang-3.9 dbg_class_property_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_property_test.o
-
-dbg_class_test.o: dbg_class_test.cc
-	clang-3.9 dbg_class_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_class_test.o
-
-dbg_array_test.o: dbg_array_test.cc
-	clang-3.9 dbg_array_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_array_test.o
-
-dbg_stack_frame_test.o: dbg_stack_frame_test.cc
-	clang-3.9 dbg_stack_frame_test.cc ${INCDIRS} ${CC_FLAGS} -c -o dbg_stack_frame_test.o
-
-debugger_callback_test.o: debugger_callback_test.cc
-	clang-3.9 debugger_callback_test.cc ${INCDIRS} ${CC_FLAGS} -c -o debugger_callback_test.o
-
-variable_wrapper_test.o: variable_wrapper_test.cc
-	clang-3.9 variable_wrapper_test.cc ${INCDIRS} ${CC_FLAGS} -c -o variable_wrapper_test.o
-
-stack_frame_collection_test.o: stack_frame_collection_test.cc
-	clang-3.9 stack_frame_collection_test.cc ${INCDIRS} ${CC_FLAGS} -c -o stack_frame_collection_test.o
-
-custom_binary_stream_test.o: custom_binary_stream_test.cc
-	clang-3.9 custom_binary_stream_test.cc ${INCDIRS} ${CC_FLAGS} -c -o custom_binary_stream_test.o
-
-eval_coordinator_test.o: eval_coordinator_test.cc
-	clang-3.9 eval_coordinator_test.cc ${INCDIRS} ${CC_FLAGS} -c -o eval_coordinator_test.o
+%_test.o: %_test.cc
+	clang-3.9 ${INCDIRS} ${CC_FLAGS} -c -o $@ $<
 
 unit_test_main.o: unit_test_main.cc
 	clang-3.9 unit_test_main.cc ${INCDIRS} ${CC_FLAGS} -c -o unit_test_main.o
