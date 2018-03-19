@@ -101,6 +101,7 @@ TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugModule) {
   HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
       &debug_module_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, S_OK);
+  EXPECT_EQ((IMetaDataImport *)retrieved_metadata_import, &metadata_import_);
 }
 
 // Tests error cases for GetMetadataImportFromICorDebugModule function.
@@ -131,6 +132,7 @@ TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugClass) {
   HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugClass(
       &debug_class_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, S_OK);
+  EXPECT_EQ((IMetaDataImport *)retrieved_metadata_import, &metadata_import_);
 }
 
 // Tests error cases for GetMetadataImportFromICorDebugClass function.
