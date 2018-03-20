@@ -121,14 +121,15 @@ BinaryExpressionEvaluator::BinaryExpressionEvaluator(
 }
 
 HRESULT BinaryExpressionEvaluator::Compile(DbgStackFrame *readers_factory,
+                                           ICorDebugILFrame *debug_frame,
                                            std::ostream *error_stream) {
   HRESULT hr;
-  hr = arg1_->Compile(readers_factory, error_stream);
+  hr = arg1_->Compile(readers_factory, debug_frame, error_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = arg2_->Compile(readers_factory, error_stream);
+  hr = arg2_->Compile(readers_factory, debug_frame, error_stream);
   if (FAILED(hr)) {
     return hr;
   }

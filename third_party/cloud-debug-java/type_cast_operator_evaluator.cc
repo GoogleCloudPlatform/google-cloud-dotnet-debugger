@@ -34,8 +34,9 @@ TypeCastOperatorEvaluator::TypeCastOperatorEvaluator(
 }
 
 HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
+                                           ICorDebugILFrame *debug_frame,
                                            std::ostream *err_stream) {
-  HRESULT hr = source_->Compile(stack_frame, err_stream);
+  HRESULT hr = source_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

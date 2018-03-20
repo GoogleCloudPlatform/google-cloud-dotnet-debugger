@@ -36,7 +36,7 @@ class FieldEvaluator : public ExpressionEvaluator {
                  std::string identifier_name, std::string possible_class_name,
                  std::string field_name);
 
-  HRESULT Compile(DbgStackFrame *stack_frame,
+  HRESULT Compile(DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
   const TypeSignature &GetStaticType() const override { return result_type_; }
@@ -50,6 +50,7 @@ class FieldEvaluator : public ExpressionEvaluator {
   // and then uses that to extract out information about field
   // field_name_.
   HRESULT CompileUsingInstanceSource(DbgStackFrame *stack_frame,
+                                     ICorDebugILFrame *debug_frame,
                                      std::ostream *err_stream);
 
   // Tries to use possible_class_name_ to extract out information
@@ -102,9 +103,6 @@ class FieldEvaluator : public ExpressionEvaluator {
 
   // Module that contains the class this field is in.
   CComPtr<ICorDebugModule> debug_module_;
-
-  // Gets the frame this field is in.
-  CComPtr<ICorDebugILFrame> debug_frame_;
 
   DISALLOW_COPY_AND_ASSIGN(FieldEvaluator);
 };

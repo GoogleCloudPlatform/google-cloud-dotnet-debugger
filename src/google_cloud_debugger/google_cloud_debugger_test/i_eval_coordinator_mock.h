@@ -51,6 +51,8 @@ class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
 
   MOCK_METHOD1(GetActiveDebugThread, HRESULT(ICorDebugThread **debug_thread));
 
+  MOCK_METHOD1(GetActiveDebugFrame, HRESULT(ICorDebugILFrame **debug_frame));
+
   MOCK_METHOD0(WaitingForEval, BOOL());
 
   MOCK_METHOD1(SetPropertyEvaluation, void(BOOL eval));

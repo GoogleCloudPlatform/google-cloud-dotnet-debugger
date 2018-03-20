@@ -42,6 +42,7 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
   // either of them is a base class of the other. If not, this function will
   // fail. Otherwise, sets result_type_ to target_type_ and do nothing.
   HRESULT Compile(DbgStackFrame *stack_frame,
+                  ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
   // Returns the static type of the expression.

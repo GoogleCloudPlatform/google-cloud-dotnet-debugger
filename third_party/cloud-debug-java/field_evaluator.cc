@@ -21,6 +21,7 @@
 #include "dbg_reference_object.h"
 #include "dbg_stack_frame.h"
 #include "error_messages.h"
+#include "i_eval_coordinator.h"
 
 namespace google_cloud_debugger {
 
@@ -38,13 +39,10 @@ FieldEvaluator::FieldEvaluator(
       field_name_(std::move(field_name)) {}
 
 HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
+                                ICorDebugILFrame *debug_frame,
                                 std::ostream *err_stream) {
-  HRESULT hr = stack_frame->GetFrame(&debug_frame_);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  hr = CompileUsingInstanceSource(stack_frame, err_stream);
+  HRESULT hr = CompileUsingInstanceSource(stack_frame,
+      debug_frame, err_stream);
   if (SUCCEEDED(hr)) {
     return hr;
   }
@@ -58,8 +56,9 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
 }
 
 HRESULT FieldEvaluator::CompileUsingInstanceSource(DbgStackFrame *stack_frame,
+                                                   ICorDebugILFrame *debug_frame,
                                                    std::ostream *err_stream) {
-  HRESULT hr = instance_source_->Compile(stack_frame, err_stream);
+  HRESULT hr = instance_source_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -142,7 +141,13 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
         return hr;
       }
 
-      hr = debug_class->GetStaticFieldValue(field_def_, debug_frame_, &debug_field_value);
+      CComPtr<ICorDebugILFrame> debug_frame;
+      hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      hr = debug_class->GetStaticFieldValue(field_def_, debug_frame, &debug_field_value);
       if (FAILED(hr)) {
         return hr;
       }

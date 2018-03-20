@@ -31,7 +31,8 @@ class LiteralEvaluator : public ExpressionEvaluator {
   }
 
   virtual HRESULT Compile(
-      DbgStackFrame* stack_frame, std::ostream *err_stream) override {
+      DbgStackFrame* stack_frame, ICorDebugILFrame *debug_frame,
+      std::ostream *err_stream) override {
     return S_OK;
   }
 

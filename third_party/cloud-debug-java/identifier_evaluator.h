@@ -32,6 +32,7 @@ class IdentifierEvaluator : public ExpressionEvaluator {
 
   virtual HRESULT Compile(
       DbgStackFrame *stack_frame,
+      ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 
   const TypeSignature& GetStaticType() const override { return result_type_; }

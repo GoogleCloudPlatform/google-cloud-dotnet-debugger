@@ -92,6 +92,9 @@ class EvalCoordinator : public IEvalCoordinator {
   // Returns the active debug thread.
   HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) override;
 
+  // Returns the active debug thread.
+  HRESULT GetActiveDebugFrame(ICorDebugILFrame **debug_frame) override;
+
   // Returns true if we are waiting for an evaluation result.
   BOOL WaitingForEval() override;
 

@@ -32,13 +32,15 @@ IndexerAccessExpressionEvaluator::IndexerAccessExpressionEvaluator(
 
 HRESULT IndexerAccessExpressionEvaluator::Compile(
     DbgStackFrame *stack_frame,
+    ICorDebugILFrame *debug_frame,
     std::ostream *err_stream) {
-  HRESULT hr = source_collection_->Compile(stack_frame, err_stream);
+  HRESULT hr = source_collection_->Compile(stack_frame, debug_frame,
+                                           err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = source_index_->Compile(stack_frame, err_stream);
+  hr = source_index_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

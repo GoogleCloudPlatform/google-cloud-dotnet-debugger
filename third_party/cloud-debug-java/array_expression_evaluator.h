@@ -36,6 +36,7 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
   // to do this for any expression that has get_Item() function.
   HRESULT Compile(
       DbgStackFrame *stack_frame,
+      ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 
   // Returns the static type that the expression compiles to.

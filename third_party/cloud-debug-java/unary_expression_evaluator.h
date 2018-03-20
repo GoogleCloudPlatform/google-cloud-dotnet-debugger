@@ -37,6 +37,7 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
   // evaluate the expressoin and assign that to computer_.
   HRESULT Compile(
       DbgStackFrame *stack_frame,
+      ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 
   // Returns the static type of the expression.

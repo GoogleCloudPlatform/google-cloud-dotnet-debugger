@@ -21,6 +21,7 @@
 #include "compiler_helpers.h"
 #include "constants.h"
 #include "dbg_breakpoint.h"
+#include "dbg_reference_object.h"
 #include "dbg_class_property.h"
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
@@ -57,17 +58,15 @@ HRESULT DbgStackFrame::Initialize(
     return E_INVALIDARG;
   }
 
-  debug_frame_ = il_frame;
-  local_variables_info_ = variable_infos;
   method_token_ = method_token;
 
   HRESULT hr =
-      GetAppDomainFromICorDebugFrame(debug_frame_, &app_domain_, &std::cerr);
+      GetAppDomainFromICorDebugFrame(il_frame, &app_domain_, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_, &debug_module_,
+  hr = GetICorDebugModuleFromICorDebugFrame(il_frame, &debug_module_,
                                             &cerr);
   if (FAILED(hr)) {
     return hr;
@@ -93,7 +92,6 @@ HRESULT DbgStackFrame::Initialize(
 
   is_static_method_ = IsMdStatic(method_flag);
 
-  // TODO(quoct): Moves the code below out of the Initialize function.
   CComPtr<ICorDebugValueEnum> local_enum;
   CComPtr<ICorDebugValueEnum> method_arg_enum;
 
@@ -122,16 +120,6 @@ HRESULT DbgStackFrame::Initialize(
   }
 
   is_processed_il_frame_ = true;
-  return S_OK;
-}
-
-HRESULT DbgStackFrame::GetFrame(ICorDebugILFrame **debug_frame) {
-  if (!debug_frame_) {
-    return E_FAIL;
-  }
-
-  *debug_frame = debug_frame_;
-  debug_frame_->AddRef();
   return S_OK;
 }
 
@@ -322,6 +310,7 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
 }
 
 HRESULT DbgStackFrame::GetClassGenericTypeParameters(
+    ICorDebugILFrame *debug_frame,
     std::vector<CComPtr<ICorDebugType>> *debug_types) {
   if (!debug_types) {
     return E_INVALIDARG;
@@ -341,8 +330,8 @@ HRESULT DbgStackFrame::GetClassGenericTypeParameters(
   }
 
   CComPtr<ICorDebugILFrame2> debug_frame_2;
-  hr = debug_frame_->QueryInterface(__uuidof(ICorDebugILFrame2),
-                                    reinterpret_cast<void **>(&debug_frame_2));
+  hr = debug_frame->QueryInterface(__uuidof(ICorDebugILFrame2),
+                                   reinterpret_cast<void **>(&debug_frame_2));
   if (FAILED(hr)) {
     return hr;
   }
@@ -599,7 +588,7 @@ HRESULT DbgStackFrame::PopulateStackFrame(
 }
 
 HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
-                                        std::unique_ptr<DbgObject> *dbg_object,
+                                        std::shared_ptr<DbgObject> *dbg_object,
                                         std::ostream *err_stream) {
   static const std::string this_var = "this";
   HRESULT hr;
@@ -608,117 +597,42 @@ HRESULT DbgStackFrame::GetLocalVariable(const std::string &variable_name,
   // variable_name.
   if (variable_name.compare(this_var) != 0) {
     auto local_var =
-        std::find_if(local_variables_info_.begin(), local_variables_info_.end(),
-                     [&variable_name](const LocalVariableInfo &variable_info) {
-                       return variable_name.compare(variable_info.name) == 0;
+        std::find_if(variables_.begin(), variables_.end(),
+                     [&variable_name](const VariableTuple &variable_tuple) {
+                       return variable_name.compare(std::get<0>(variable_tuple)) == 0;
                      });
 
     // If we found a match, we'll create a DbgObject and return it.
     hr = S_OK;
-    if (local_var != local_variables_info_.end()) {
-      CComPtr<ICorDebugValue> debug_value;
-      hr = debug_frame_->GetLocalVariable(local_var->slot, &debug_value);
-      if (FAILED(hr)) {
-        return hr;
-      }
-
-      return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object,
-                                        err_stream);
+    if (local_var != variables_.end()) {
+      *dbg_object = std::get<1>(*local_var);
+      return S_OK;
     }
   }
 
   // Otherwise, we check the method arguments and see which one matches
   // variable_name.
-  HCORENUM cor_enum = nullptr;
-
-  // If variable_name is "this", then gets the first argument.
-  if (variable_name.compare(this_var) == 0) {
-    // If the frame is static, we cannot get "this".
-    if (is_static_method_) {
-      return E_FAIL;
-    }
-
-    CComPtr<ICorDebugValue> debug_value;
-    hr = debug_frame_->GetArgument(0, &debug_value);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    return DbgObject::CreateDbgObject(debug_value, object_depth_, dbg_object,
-                                      err_stream);
+  auto method_arg =
+      std::find_if(method_arguments_.begin(), method_arguments_.end(),
+                    [&variable_name](const VariableTuple &variable_tuple) {
+                      return variable_name.compare(std::get<0>(variable_tuple)) == 0;
+                    });
+  
+  if (method_arg != method_arguments_.end()) {
+    *dbg_object = std::get<1>(*method_arg);
+    return S_OK;
   }
-
-  CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetaDataImport(&metadata_import);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  // Loops through the method arguments and checks to see which matches
-  // variable_name.
-  vector<mdParamDef> method_args(kDefaultVectorSize, 0);
-  // If the frame is non-static, the first argument is "this", so we will skip
-  // it.
-  DWORD argument_index = is_static_method_ ? 0 : 1;
-  while (hr == S_OK) {
-    ULONG method_args_returned = 0;
-    hr = metadata_import->EnumParams(&cor_enum, method_token_,
-                                     method_args.data(), method_args.size(),
-                                     &method_args_returned);
-    if (FAILED(hr)) {
-      metadata_import->CloseEnum(cor_enum);
-      return hr;
-    }
-
-    // No arguments to check.
-    if (method_args_returned == 0) {
-      break;
-    }
-
-    method_args.resize(method_args_returned);
-
-    for (auto const &method_arg_token : method_args) {
-      std::string param_name;
-      hr = ExtractParamName(metadata_import, method_arg_token, &param_name,
-                            &cerr);
-      if (FAILED(hr)) {
-        ++argument_index;
-        continue;
-      }
-
-      if (variable_name.compare(param_name) == 0) {
-        metadata_import->CloseEnum(cor_enum);
-        CComPtr<ICorDebugValue> debug_value;
-        hr = debug_frame_->GetArgument(argument_index, &debug_value);
-        if (FAILED(hr)) {
-          return hr;
-        }
-
-        return DbgObject::CreateDbgObject(debug_value, object_depth_,
-                                          dbg_object, err_stream);
-      }
-      ++argument_index;
-    }
-  }
-
-  metadata_import->CloseEnum(cor_enum);
+    
   return S_FALSE;
 }
 
 // TODO(quoct): This only finds members defined directly in a class or an
 // interface. Therefore, inherited fields won't be found.
 HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
-    const std::string &member_name, std::unique_ptr<DbgObject> *dbg_object,
-    std::ostream *err_stream) {
-  CComPtr<ICorDebugModule> debug_module;
-  HRESULT hr = GetICorDebugModuleFromICorDebugFrame(debug_frame_, &debug_module,
-                                                    &std::cerr);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
+    const std::string &member_name, std::shared_ptr<DbgObject> *dbg_object,
+    ICorDebugILFrame *debug_frame, std::ostream *err_stream) {
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetaDataImport(&metadata_import);
+  HRESULT hr = GetMetaDataImport(&metadata_import);
   if (FAILED(hr)) {
     return hr;
   }
@@ -740,51 +654,54 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   if (field_static) {
     // Extracts out ICorDebugClass to get the static field value.
     CComPtr<ICorDebugClass> debug_class;
-    hr = debug_module->GetClassFromToken(class_token_, &debug_class);
+    hr = debug_module_->GetClassFromToken(class_token_, &debug_class);
     if (FAILED(hr)) {
       return hr;
     }
 
     hr =
-        debug_class->GetStaticFieldValue(field_def, debug_frame_, &field_value);
-    if (FAILED(hr)) {
-      return hr;
-    }
-  } else {
-    // We cannot get a non-static field in a static frame.
-    if (is_static_method_) {
-      *err_stream << "Cannot get non-static field in static frame.";
-      return E_FAIL;
-    }
-
-    // Otherwise, we have to get "this" object.
-    CComPtr<ICorDebugValue> this_value;
-    hr = debug_frame_->GetArgument(0, &this_value);
+        debug_class->GetStaticFieldValue(field_def, debug_frame, &field_value);
     if (FAILED(hr)) {
       return hr;
     }
 
-    CComPtr<ICorDebugObjectValue> object_value;
-    hr = this_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-                                    reinterpret_cast<void **>(&object_value));
+    std::unique_ptr<DbgObject> result;
+    hr = DbgObject::CreateDbgObject(field_value, object_depth_, &result,
+                                    err_stream);
     if (FAILED(hr)) {
       return hr;
     }
 
-    CComPtr<ICorDebugClass> debug_class;
-    hr = object_value->GetClass(&debug_class);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    hr = object_value->GetFieldValue(debug_class, field_def, &field_value);
-    if (FAILED(hr)) {
-      return hr;
-    }
+    *dbg_object = std::move(result);
+    return S_OK;
   }
 
-  return DbgObject::CreateDbgObject(field_value, object_depth_, dbg_object,
-                                    err_stream);
+  // If code reaches here, we are dealing with non-static field.
+  // We cannot get a non-static field in a static frame.
+  if (is_static_method_) {
+    *err_stream << "Cannot get non-static field in static frame.";
+    return E_FAIL;
+  }
+
+  // Otherwise, we have to get "this" object.
+  auto this_obj =
+  std::find_if(method_arguments_.begin(), method_arguments_.end(),
+                [](const VariableTuple &variable_tuple) {
+                  return std::get<0>(variable_tuple).compare("this") == 0;
+                });
+  
+  if (this_obj == method_arguments_.end()) {
+    *err_stream << "Cannot get this object.";
+    return E_FAIL;
+  }
+
+  std::shared_ptr<DbgObject> this_dbg_obj = std::get<1>(*this_obj);
+  DbgReferenceObject *reference_obj = dynamic_cast<DbgReferenceObject *>(this_dbg_obj.get());
+  if (reference_obj == nullptr) {
+    *err_stream << "Cannot get non-static field from non-reference object.";
+    return E_FAIL;
+  }
+  return reference_obj->GetNonStaticField(member_name, dbg_object);
 }
 
 HRESULT DbgStackFrame::GetPropertyFromFrame(
