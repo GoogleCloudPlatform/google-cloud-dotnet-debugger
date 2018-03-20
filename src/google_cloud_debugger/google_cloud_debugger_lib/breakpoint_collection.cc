@@ -208,7 +208,7 @@ HRESULT BreakpointCollection::UpdateBreakpoint(
   // try to set and activate the breakpoint by searching through PDB files
   // for a matching location.
   bool found_bp = false;
-  for (auto &pdb_file : debugger_callback_->GetPdbFiles()) {
+  for (auto pdb_file : debugger_callback_->GetPdbFiles()) {
     if (!pdb_file) {
       continue;
     }

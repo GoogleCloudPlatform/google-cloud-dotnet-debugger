@@ -245,7 +245,8 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     }
 
     if (!breakpoint->GetEvaluatedCondition()) {
-      std::cout << "Breakpoint condition for breakpoint " << breakpoint->GetId()
+      std::cout << "Breakpoint condition " << breakpoint->GetCondition()
+                << " for breakpoint " << breakpoint->GetId()
                 << " is not met.";
       continue;
     }

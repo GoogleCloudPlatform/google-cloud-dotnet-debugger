@@ -94,7 +94,10 @@ class StackFrameCollection : public IStackFrameCollection {
       bool process_il_frame);
 
   // Vectors of stack frames that this collection owns.
-  std::vector<DbgStackFrame> stack_frames_;
+  std::vector<std::shared_ptr<DbgStackFrame>> stack_frames_;
+
+  // The very top stack frame of this collection.
+  std::shared_ptr<DbgStackFrame> first_stack_;
 
   // Number of processed IL frames in stack_frames_.
   int number_of_processed_il_frames_ = 0;
