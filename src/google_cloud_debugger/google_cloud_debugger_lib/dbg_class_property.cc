@@ -208,7 +208,7 @@ HRESULT DbgClassProperty::Evaluate(
 
 HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
   std::string type_name;
-  // Use a copy of the signature because the function ParseTypeFromSig
+  // Use a copy of the pointer to the signature because the function ParseTypeFromSig
   // will modify it.
   PCCOR_SIGNATURE signature_pointer_copy = signature_metadata_;
   ULONG signature_length_copy = sig_metadata_length_;
