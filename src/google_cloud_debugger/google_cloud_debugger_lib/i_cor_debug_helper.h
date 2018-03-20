@@ -97,32 +97,44 @@ HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
                                              ICorDebugModule **debug_module,
                                              std::ostream *err_stream);
 
+// Parses compressed bytes (1 to 4 bytes) from PCCOR_SIGNATURE signature.
+// This will also set sig_len to appropriate length.
+// The uncompressed bytes will bee stored in result.
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParseCompressedBytes(PCCOR_SIGNATURE *signature, ULONG *sig_len,
+                             ULONG *result);
+
 // Parses the metadata signature of a field and retrieves
 // the field's type.
-HRESULT ParseFieldSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                       IMetaDataImport *metadata_import,
                       std::string *field_type_name);
 
 // Parses the metadata signature of a property and retrieves
 // the property's type.
-HRESULT ParsePropertySig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                          IMetaDataImport *metadata_import,
                          std::string *property_type_name);
 
 // Given a PCCOR_SIGNATURE signature, parses the type
 // and stores the result in type_name. Also update the sig_len.
-HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                          IMetaDataImport *metadata_import,
                          std::string *type_name);
 
 // Given a PCCOR_SIGNATURE signature, parses the next byte A.
 // Then, parses and skips the next A bytes.
-HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE *signature,
                                               ULONG *sig_len);
 
 // Given a PCCOR_SIGNATURE, parses the first byte
 // and checks that with calling_convention.
-HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
+// Will modify the signature pointer PCCOR_SIGNATURE.
+HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                                CorCallingConvention calling_convention);
 
 // Extracts out the metadata for field field_name

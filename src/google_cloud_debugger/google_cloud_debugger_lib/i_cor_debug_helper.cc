@@ -378,7 +378,20 @@ HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
   return hr;
 }
 
-HRESULT ParseFieldSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+HRESULT ParseCompressedBytes(PCCOR_SIGNATURE *signature, ULONG *sig_len,
+                             ULONG *result) {
+  ULONG bytes_read;
+  HRESULT hr = CorSigUncompressData(*signature, *sig_len, result, &bytes_read);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  *sig_len -= bytes_read;
+  *signature += bytes_read;
+  return hr;
+}
+
+HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                       IMetaDataImport *metadata_import,
                       std::string *field_type_name) {
   // Field signature has the form: FIELD CustomModification* Type
@@ -395,7 +408,7 @@ HRESULT ParseFieldSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
   return ParseTypeFromSig(signature, sig_len, metadata_import, field_type_name);
 }
 
-HRESULT ParsePropertySig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                          IMetaDataImport *metadata_import,
                          std::string *property_type_name) {
   // Field signature has the form:
@@ -410,24 +423,22 @@ HRESULT ParsePropertySig(PCCOR_SIGNATURE signature, ULONG *sig_len,
   }
 
   // Parses the number of parameters for the property.
-  ULONG bytes_read;
   ULONG no_of_params;
-  hr = CorSigUncompressData(signature, *sig_len, &no_of_params, &bytes_read);
+  hr = ParseCompressedBytes(signature, sig_len, &no_of_params);
   if (FAILED(hr)) {
     return hr;
   }
-  *sig_len -= bytes_read;
 
   // Parses the type.
   return ParseTypeFromSig(signature, sig_len, metadata_import,
                           property_type_name);
 }
 
-HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
+HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                          IMetaDataImport *metadata_import,
                          std::string *type_name) {
   HRESULT hr;
-  CorElementType cor_type = CorSigUncompressElementType(signature);
+  CorElementType cor_type = CorSigUncompressElementType(*signature);
   *sig_len -= 1;
 
   // This handles "simple" type like numeric, boolean or string.
@@ -459,12 +470,10 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
 
       // Now we read the array ranks.
       ULONG array_rank = 0;
-      ULONG bytes_read = 0;
-      hr = CorSigUncompressData(signature, *sig_len, &array_rank, &bytes_read);
+      hr = ParseCompressedBytes(signature, sig_len, &array_rank);
       if (FAILED(hr)) {
         return hr;
       }
-      *sig_len -= bytes_read;
 
       // All we actually need is the rank but we have to skip
       // the additional information about the array stored.
@@ -497,13 +506,10 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
 
       // Next byte would be the number of generic arguments.
       ULONG generic_param_count = 0;
-      ULONG bytes_read = 0;
-      hr = CorSigUncompressData(signature, *sig_len, &generic_param_count,
-                                &bytes_read);
+      hr = ParseCompressedBytes(signature, sig_len, &generic_param_count);
       if (FAILED(hr)) {
         return hr;
       }
-      *sig_len -= bytes_read;
 
       // Now we get the generic arguments.
       *type_name += "<";
@@ -524,14 +530,12 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
     }
     case CorElementType::ELEMENT_TYPE_CLASS:
     case CorElementType::ELEMENT_TYPE_VALUETYPE: {
-      ULONG bytes_read = 0;
-      mdToken extracted_token;
-      hr = CorSigUncompressToken(signature, *sig_len, &extracted_token,
-                                 &bytes_read);
+      ULONG byte_read = 0;
+      hr = ParseCompressedBytes(signature, sig_len, &byte_read);
       if (FAILED(hr)) {
         return hr;
       }
-      *sig_len -= bytes_read;
+      mdToken extracted_token = (mdToken)byte_read;
       // Checks whether this token is mdTypeDef or mdTypeRef. Don't support
       // other types.
       CorTokenType token_type = (CorTokenType)(TypeFromToken(extracted_token));
@@ -552,46 +556,40 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE signature, ULONG *sig_len,
   }
 }
 
-HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE signature,
+HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE *signature,
                                               ULONG *sig_len) {
-  ULONG bytes_read = 0;
   ULONG number_of_compressed_bytes_to_skip = 0;
-  HRESULT hr = CorSigUncompressData(signature, *sig_len,
-                            &number_of_compressed_bytes_to_skip, &bytes_read);
+  HRESULT hr = ParseCompressedBytes(signature, sig_len,
+                                    &number_of_compressed_bytes_to_skip);
   if (FAILED(hr)) {
     return hr;
   }
-  *sig_len -= bytes_read;
 
   // Skip the next number_of_sizes byte since we don't need
   // to know the sizes.
   for (size_t i = 0; i < number_of_compressed_bytes_to_skip; ++i) {
     ULONG compressed_byte = 0;
-    hr = CorSigUncompressData(signature, *sig_len, &compressed_byte,
-                              &bytes_read);
+    hr = ParseCompressedBytes(signature, sig_len, &compressed_byte);
     if (FAILED(hr)) {
       return hr;
     }
-    *sig_len -= bytes_read;
   }
 
   return S_OK;
 }
 
-HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE signature, ULONG *sig_len,
+HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                                CorCallingConvention calling_convention) {
-  ULONG bytes_read = 0;
   ULONG field_bit = 0;
   HRESULT hr =
-      CorSigUncompressData(signature, *sig_len, &field_bit, &bytes_read);
+      ParseCompressedBytes(signature, sig_len, &field_bit);
   if (FAILED(hr)) {
     return hr;
   }
 
-  if (bytes_read != 1 || (field_bit & calling_convention) == 0) {
+  if (field_bit & calling_convention == 0) {
     return META_E_BAD_SIGNATURE;
   }
-  *sig_len -= bytes_read;
 
   return S_OK;
 }

@@ -80,7 +80,8 @@ HRESULT DbgReferenceObject::GetNonStaticField(
     return hr;
   }
 
-  if (!is_static) {
+  if (is_static) {
+    WriteError("GetNonStaticField cannot get static field.");
     return E_FAIL;
   }
 

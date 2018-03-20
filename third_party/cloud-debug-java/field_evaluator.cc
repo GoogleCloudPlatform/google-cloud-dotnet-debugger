@@ -58,7 +58,7 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
 }
 
 HRESULT FieldEvaluator::CompileUsingInstanceSource(DbgStackFrame *stack_frame,
-                                             std::ostream *err_stream) {
+                                                   std::ostream *err_stream) {
   HRESULT hr = instance_source_->Compile(stack_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
@@ -96,7 +96,11 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
   // that class.
   HRESULT hr = stack_frame->GetClassTokenAndModule(
       class_name, &class_token_, &debug_module_, &metadata_import_);
-  if (FAILED(hr) || hr == S_FALSE) {
+  if (FAILED(hr)) {
+    return hr;
+  }
+  
+  if (hr == S_FALSE) {
     return E_FAIL;
   }
 
@@ -111,6 +115,10 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
       class_token_, member_name, &class_property_, metadata_import_, err_stream);
   if (FAILED(hr)) {
     return hr;
+  }
+
+  if (hr == S_FALSE) {
+    return E_FAIL;
   }
 
   is_static_ = class_property_->IsStatic();

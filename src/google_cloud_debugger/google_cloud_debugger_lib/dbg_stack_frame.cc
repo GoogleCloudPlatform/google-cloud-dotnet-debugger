@@ -522,14 +522,14 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
     PCCOR_SIGNATURE *signature, ULONG *signature_len,
     std::ostream *err_stream) {
   std::string underlying_field_name = member_name;
-  HRESULT hr = GetFieldInfo(metadata_import, class_token_,
+  HRESULT hr = GetFieldInfo(metadata_import, class_token,
                             underlying_field_name, field_def, field_static,
                             signature, signature_len, err_stream);
   if (FAILED(hr)) {
     // If no field matches the name, this may be an auto-implemented property.
     // In that case, there will be a backing field. Let's search for that.
     underlying_field_name = "<" + member_name + kBackingField;
-    return GetFieldInfo(metadata_import, class_token_, underlying_field_name,
+    return GetFieldInfo(metadata_import, class_token, underlying_field_name,
                         field_def, field_static, signature, signature_len,
                         err_stream);
   }
@@ -825,7 +825,7 @@ HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
   // This means we found the field/auto-implemented property.
   // Parses the field signature to get the type name.
   std::string field_type_name;
-  hr = ParseFieldSig(signature, &signature_len, metadata_import,
+  hr = ParseFieldSig(&signature, &signature_len, metadata_import,
                      &field_type_name);
   if (FAILED(hr)) {
     return hr;
