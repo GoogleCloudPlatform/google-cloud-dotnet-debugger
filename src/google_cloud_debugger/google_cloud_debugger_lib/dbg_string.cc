@@ -32,9 +32,6 @@ void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     return;
   }
 
-  // Create a handle so we won't lose the object.
-  CComPtr<ICorDebugHeapValue2> heap_value;
-
   initialize_hr_ =
       CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {

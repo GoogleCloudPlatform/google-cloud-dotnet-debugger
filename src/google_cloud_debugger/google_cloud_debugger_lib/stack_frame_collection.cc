@@ -61,7 +61,7 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
     hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator,
                                      pdb_files);
     if (FAILED(hr)) {
-      cerr << "Failed to evaluate breakpoint condition";
+      cerr << "Failed to evaluate breakpoint condition " << breakpoint_condition;
       return hr;
     }
 
@@ -96,30 +96,30 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
     StackFrame *frame = breakpoint->add_stack_frames();
     // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
-    if (dbg_stack_frame.IsEmpty()) {
+    if (dbg_stack_frame->IsEmpty()) {
       frame->set_method_name("Undebuggable code.");
       continue;
     }
 
-    frame->set_method_name(dbg_stack_frame.GetShortModuleName() + "!" +
-                           dbg_stack_frame.GetClass() + "." +
-                           dbg_stack_frame.GetMethod());
+    frame->set_method_name(dbg_stack_frame->GetShortModuleName() + "!" +
+                           dbg_stack_frame->GetClass() + "." +
+                           dbg_stack_frame->GetMethod());
     SourceLocation *frame_location = frame->mutable_location();
     if (!frame_location) {
       cerr << "Mutable location returns null.";
       continue;
     }
 
-    frame_location->set_line(dbg_stack_frame.GetLineNumber());
-    frame_location->set_path(dbg_stack_frame.GetFile());
+    frame_location->set_line(dbg_stack_frame->GetLineNumber());
+    frame_location->set_path(dbg_stack_frame->GetFile());
 
-    hr = dbg_stack_frame.PopulateStackFrame(frame, frame_max_size,
+    hr = dbg_stack_frame->PopulateStackFrame(frame, frame_max_size,
                                             eval_coordinator);
     if (FAILED(hr)) {
       return hr;
     }
 
-    if (dbg_stack_frame.IsProcessedIlFrame()) {
+    if (dbg_stack_frame->IsProcessedIlFrame()) {
       ++processed_il_frames_so_far;
     }
 
@@ -324,6 +324,16 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     return hr;
   }
 
+  // Skips the first stack if it is already processed.
+  if (first_stack_) {
+    stack_frames_.push_back(first_stack_);
+    ++frame_parsed_so_far;
+    if (first_stack_->IsProcessedIlFrame()) {
+      ++il_frame_parsed_so_far;
+    }
+    hr = debug_stack_walk->Next();
+  }
+
   // Walks through the stack and populates stack_frames_ vector.
   while (SUCCEEDED(hr)) {
     // Don't parse too many stack frames.
@@ -348,8 +358,8 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     bool process_il_frame =
         il_frame_parsed_so_far < kMaximumStackFramesWithVariables;
 
-    DbgStackFrame stack_frame;
-    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, frame, &stack_frame,
+    std::shared_ptr<DbgStackFrame> stack_frame(new DbgStackFrame());
+    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, frame, stack_frame.get(),
                                      process_il_frame);
     if (FAILED(hr)) {
       cerr << "Failed to process stack frame.";
@@ -357,7 +367,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     }
 
     ++frame_parsed_so_far;
-    if (stack_frame.IsProcessedIlFrame()) {
+    if (stack_frame->IsProcessedIlFrame()) {
       ++il_frame_parsed_so_far;
     }
 
@@ -392,21 +402,23 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     return hr;
   }
 
-  DbgStackFrame stack_frame;
-  hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame, &stack_frame,
-                                   true);
-  if (FAILED(hr)) {
-    cerr << "Failed to process stack frame.";
-    return hr;
+  if (!first_stack_) {
+    first_stack_ = std::shared_ptr<DbgStackFrame>(new DbgStackFrame);
+    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
+                                     first_stack_.get(), true);
+    if (FAILED(hr)) {
+      cerr << "Failed to process stack frame.";
+      return hr;
+    }
   }
 
-  if (stack_frame.IsEmpty() || !stack_frame.IsProcessedIlFrame()) {
+  if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
     cerr << "Conditional breakpoint and expressions are not supported on "
             "non-IL frame.";
     return E_NOTIMPL;
   }
 
-  return breakpoint->EvaluateCondition(&stack_frame, eval_coordinator);
+  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator);
 }
 
 HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(

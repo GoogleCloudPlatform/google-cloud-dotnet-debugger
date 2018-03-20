@@ -106,7 +106,7 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
   int string_size = WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, nullptr,
                                         0, nullptr, nullptr);
 
-  std::string result(string_size, 0);
+  string result(string_size, 0);
   // This time, WideCharToMultiByte will fill up the result buffer with
   // converted char.
   string_size = WideCharToMultiByte(CP_UTF8, 0, wchar_string, -1, &result[0],
@@ -121,7 +121,7 @@ string ConvertWCharPtrToString(const WCHAR *wchar_string) {
 #endif
 }
 
-string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {
+std::string ConvertWCharPtrToString(const vector<WCHAR> &wchar_vector) {
   return ConvertWCharPtrToString(wchar_vector.data());
 }
 

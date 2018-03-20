@@ -118,10 +118,6 @@ class DbgObject : public StringStreamWrapper {
   CORDB_ADDRESS GetAddress() { return address_; }
 
  protected:
-  // Handle for the object.
-  // Only applicable for class, array and string.
-  CComPtr<ICorDebugHandleValue> object_handle_;
-
    // The CorElementType of the underlying .NET object.
    CorElementType cor_element_type_;
 
