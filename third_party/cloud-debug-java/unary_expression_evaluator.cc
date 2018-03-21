@@ -31,8 +31,9 @@ UnaryExpressionEvaluator::UnaryExpressionEvaluator(
 }
 
 HRESULT UnaryExpressionEvaluator::Compile(DbgStackFrame *stack_frame,
+                                          ICorDebugILFrame *debug_frame,
                                           std::ostream *err_stream) {
-  HRESULT hr = arg_->Compile(stack_frame, err_stream);
+  HRESULT hr = arg_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToCompileFirstSubExpr;
     return hr;

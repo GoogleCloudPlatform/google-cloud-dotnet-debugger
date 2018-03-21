@@ -31,7 +31,8 @@ class StringEvaluator : public ExpressionEvaluator {
 
   // Nothing to do in Compile.
   HRESULT Compile(
-      DbgStackFrame* readers_factory, std::ostream *err_stream) override {
+      DbgStackFrame* readers_factory, ICorDebugILFrame *debug_frame,
+      std::ostream *err_stream) override {
     return S_OK;
   };
 

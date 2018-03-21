@@ -27,31 +27,29 @@ IdentifierEvaluator::IdentifierEvaluator(std::string identifier_name)
 
 HRESULT IdentifierEvaluator::Compile(
     DbgStackFrame *stack_frame,
+    ICorDebugILFrame *debug_frame,
     std::ostream *err_stream) {
   // Case 1: this is a local variable.
-  std::unique_ptr<DbgObject> identifier_obj;
   HRESULT hr = stack_frame->GetLocalVariable(identifier_name_,
-    &identifier_obj, err_stream);
+    &identifier_object_, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
   // S_FALSE means there is no match.
   if (SUCCEEDED(hr) && hr != S_FALSE) {
-    identifier_object_ = std::move(identifier_obj);
     return identifier_object_->GetTypeSignature(&result_type_);
   }
 
   // Case 2: static and non-static fields and auto-implemented properties.
   hr = stack_frame->GetFieldAndAutoPropFromFrame(identifier_name_,
-    &identifier_obj, err_stream);
+    &identifier_object_, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
   // S_FALSE means there is no match.
   if (SUCCEEDED(hr) && hr != S_FALSE) {
-    identifier_object_ = std::move(identifier_obj);
     return identifier_object_->GetTypeSignature(&result_type_);
   }
 

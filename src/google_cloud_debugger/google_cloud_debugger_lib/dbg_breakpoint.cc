@@ -156,7 +156,13 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
     return E_FAIL;
   }
 
-  HRESULT hr = compiled_expression.evaluator->Compile(stack_frame, &std::cerr);
+  CComPtr<ICorDebugILFrame> active_frame;
+  HRESULT hr = eval_coordinator->GetActiveDebugFrame(&active_frame);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = compiled_expression.evaluator->Compile(stack_frame, active_frame, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }

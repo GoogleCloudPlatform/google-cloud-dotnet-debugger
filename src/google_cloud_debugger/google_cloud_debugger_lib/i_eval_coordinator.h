@@ -100,6 +100,9 @@ class IEvalCoordinator {
   // Returns the active debug thread.
   virtual HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) = 0;
 
+  // Returns the active debug frame.
+  virtual HRESULT GetActiveDebugFrame(ICorDebugILFrame **debug_frame) = 0;
+
   // Returns true if we are waiting for an evaluation result.
   virtual BOOL WaitingForEval() = 0;
 

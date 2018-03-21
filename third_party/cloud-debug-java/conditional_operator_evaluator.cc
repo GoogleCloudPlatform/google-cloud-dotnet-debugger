@@ -35,18 +35,19 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
 
 
 HRESULT ConditionalOperatorEvaluator::Compile(
-    DbgStackFrame* stack_frame, std::ostream *err_stream) {
-  HRESULT hr = condition_->Compile(stack_frame, err_stream);
+    DbgStackFrame* stack_frame, ICorDebugILFrame *debug_frame,
+    std::ostream *err_stream) {
+  HRESULT hr = condition_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = if_true_->Compile(stack_frame, err_stream);
+  hr = if_true_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = if_false_->Compile(stack_frame, err_stream);
+  hr = if_false_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

@@ -45,7 +45,8 @@ class ExpressionEvaluator {
   // phase to improve performance of repeatedly evaluated expressions and to
   // minimize amount of time that the debugged thread is paused on breakpoint.
   virtual HRESULT Compile(
-      DbgStackFrame *stack_frame, std::ostream *err_stream) = 0;
+      DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+      std::ostream *err_stream) = 0;
 
   // Gets the type of the expression as it is known at compile time. If the
   // code is correct, the runtime type will be the same as compile time type.

@@ -35,7 +35,8 @@ class ConditionalOperatorEvaluator : public ExpressionEvaluator {
   // the helper functions CompileBoolean, CompileNumeric
   // and CompileObjects.
   HRESULT Compile(
-      DbgStackFrame *stack_frame, std::ostream *err_stream) override;
+      DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+      std::ostream *err_stream) override;
 
   // Returns the static type of this expression, determined by
   // the true and false expression.

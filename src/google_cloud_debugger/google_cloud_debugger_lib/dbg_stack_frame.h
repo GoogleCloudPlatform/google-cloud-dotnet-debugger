@@ -66,13 +66,14 @@ class DbgStackFrame {
   // Gets a local variable or method arguments with name
   // variable_name.
   HRESULT GetLocalVariable(const std::string &variable_name,
-                           std::unique_ptr<DbgObject> *dbg_object,
+                           std::shared_ptr<DbgObject> *dbg_object,
                            std::ostream *err_stream);
 
   // Gets out any field or auto-implemented property with the name
   // member_name of the class this frame is in.
   HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
-                                       std::unique_ptr<DbgObject> *dbg_object,
+                                       std::shared_ptr<DbgObject> *dbg_object,
+                                       ICorDebugILFrame *debug_frame,
                                        std::ostream *err_stream);
 
   // Gets out property with the name property_name of the class
@@ -184,9 +185,6 @@ class DbgStackFrame {
   // Returns true if the method this frame is in is a static method.
   bool IsStaticMethod() { return is_static_method_; }
 
-  // Returns the ICorDebugFrame this frame is in.
-  HRESULT GetFrame(ICorDebugILFrame **debug_frame);
-
   // Gets the ICorDebugFunction that corresponds with method represented by
   // method_info in the class class_token. This function will
   // also check the methods against the arguments vector to
@@ -205,6 +203,7 @@ class DbgStackFrame {
 
   // Extract out generic type parameters for the class the frame is in.
   HRESULT GetClassGenericTypeParameters(
+      ICorDebugILFrame *debug_frame,
       std::vector<CComPtr<ICorDebugType>> *debug_types);
 
  private:
@@ -297,9 +296,6 @@ class DbgStackFrame {
   // The module this stack frame is in.
   CComPtr<ICorDebugModule> debug_module_;
 
-  // The frame this stack frame is in.
-  CComPtr<ICorDebugILFrame> debug_frame_;
-
   // Dictionary whose key is class name and whose value
   // is the metadata token mdTypeDef of that class.
   std::map<std::string, mdTypeDef> type_def_dict_;
@@ -315,10 +311,6 @@ class DbgStackFrame {
 
   // True if type_def_dict_ and type_ref_dict_ have been populated.
   bool type_dict_populated_ = false;
-
-  // MetaData for local variables in this frame.
-  std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
-      local_variables_info_;
 };
 
 }  //  namespace google_cloud_debugger

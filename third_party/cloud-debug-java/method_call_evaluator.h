@@ -43,6 +43,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // If instance_source_ is not null, search for method with name
   // method_name_ in this class.
   HRESULT Compile(DbgStackFrame *stack_frame,
+                  ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
   const TypeSignature &GetStaticType() const override { return return_type_; }

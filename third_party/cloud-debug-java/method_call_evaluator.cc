@@ -41,6 +41,7 @@ MethodCallEvaluator::MethodCallEvaluator(
       arguments_(std::move(arguments)) {}
 
 HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
+                                     ICorDebugILFrame *debug_frame,
                                      std::ostream *err_stream) {
   HRESULT hr;
   method_info_.method_name = method_name_;
@@ -56,7 +57,7 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
 
   // Compile argument expressions.
   for (auto &argument : arguments_) {
-    hr = argument->Compile(stack_frame, err_stream);
+    hr = argument->Compile(stack_frame, debug_frame, err_stream);
     if (FAILED(hr)) {
       return hr;
     }
@@ -78,7 +79,8 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
       // TOOD(quoct): Need to find a way to do this for
       // fully qualified class name. Probably have to update ANTLR
       // grammar file to support that.
-      hr = stack_frame->GetClassGenericTypeParameters(&generic_class_types_);
+      hr = stack_frame->GetClassGenericTypeParameters(debug_frame,
+                                                      &generic_class_types_);
       if (FAILED(hr)) {
         *err_stream << "Failed to retrieve generic type parameters for class.";
         return hr;
@@ -89,7 +91,7 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
   if (!matched_method_ && instance_source_ != nullptr) {
     // Calling method on a result of prior expression (for example:
     // "a.b.startsWith(...)").
-    hr = instance_source_->Compile(stack_frame, err_stream);
+    hr = instance_source_->Compile(stack_frame, debug_frame, err_stream);
     if (FAILED(hr)) {
       return hr;
     }
@@ -120,12 +122,6 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
 
   if (!matched_method_) {
     return E_FAIL;
-  }
-
-  // We need to store the frame to get the "this" object later.
-  hr = stack_frame->GetFrame(&debug_frame_);
-  if (FAILED(hr)) {
-    return hr;
   }
 
   // TODO(quoct): Generic methods are not supported yet.
@@ -336,6 +332,7 @@ HRESULT MethodCallEvaluator::GetInvokingObject(
     return S_OK;
   }
 
+  // Returns this object.
   return debug_frame_->GetArgument(0, invoking_object);
 }
 

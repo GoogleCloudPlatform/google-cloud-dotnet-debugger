@@ -203,6 +203,26 @@ HRESULT EvalCoordinator::GetActiveDebugThread(ICorDebugThread **debug_thread) {
   return E_FAIL;
 }
 
+HRESULT EvalCoordinator::GetActiveDebugFrame(ICorDebugILFrame **debug_il_frame) {
+  if (!debug_il_frame) {
+    return E_INVALIDARG;
+  }
+
+  if (active_debug_thread_) {
+    CComPtr<ICorDebugFrame> debug_frame;
+    HRESULT hr = active_debug_thread_->GetActiveFrame(&debug_frame);
+    if (FAILED(hr)) {
+      cerr << "Failed to get active frame.";
+      return hr;
+    }
+
+    return debug_frame->QueryInterface(__uuidof(ICorDebugILFrame),
+                                       reinterpret_cast<void **>(debug_il_frame));
+  }
+
+  return E_FAIL;
+}
+
 BOOL EvalCoordinator::WaitingForEval() {
   lock_guard<mutex> lk(mutex_);
   return waiting_for_eval_;
