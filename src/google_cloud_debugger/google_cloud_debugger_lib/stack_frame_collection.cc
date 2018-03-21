@@ -36,6 +36,10 @@ using std::string;
 using std::vector;
 
 namespace google_cloud_debugger {
+StackFrameCollection::StackFrameCollection(
+    std::shared_ptr<ICorDebugHelper> debug_helper) {
+  debug_helper_ = debug_helper;
+}
 
 HRESULT StackFrameCollection::ProcessBreakpoint(
     const vector<
@@ -58,10 +62,10 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
   // TODO(quoct): Add expressions handling.
   const std::string &breakpoint_condition = breakpoint->GetCondition();
   if (!breakpoint_condition.empty()) {
-    hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator,
-                                     pdb_files);
+    hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator, pdb_files);
     if (FAILED(hr)) {
-      cerr << "Failed to evaluate breakpoint condition " << breakpoint_condition;
+      cerr << "Failed to evaluate breakpoint condition "
+           << breakpoint_condition;
       return hr;
     }
 
@@ -114,7 +118,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     frame_location->set_path(dbg_stack_frame->GetFile());
 
     hr = dbg_stack_frame->PopulateStackFrame(frame, frame_max_size,
-                                            eval_coordinator);
+                                             eval_coordinator);
     if (FAILED(hr)) {
       return hr;
     }
@@ -224,8 +228,9 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
                                  local_scope.local_variables.end());
         }
 
-        hr = dbg_stack_frame->Initialize(
-            il_frame, local_variables, target_function_token, metadata_import);
+        hr = dbg_stack_frame->Initialize(il_frame, local_variables,
+                                         target_function_token, metadata_import,
+                                         debug_helper_);
       }
 
       return S_OK;
@@ -418,7 +423,8 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     return E_NOTIMPL;
   }
 
-  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator);
+  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,
+                                       debug_helper_.get());
 }
 
 HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
@@ -462,7 +468,8 @@ HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
   }
 
   vector<WCHAR> module_name;
-  hr = GetModuleNameFromICorDebugModule(frame_module, &module_name, &cerr);
+  hr = debug_helper_->GetModuleNameFromICorDebugModule(frame_module,
+                                                       &module_name, &cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -471,8 +478,8 @@ HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
   string target_module_name = stack_frame->GetModule();
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromICorDebugModule(frame_module, &metadata_import,
-                                            &cerr);
+  hr = debug_helper_->GetMetadataImportFromICorDebugModule(
+      frame_module, &metadata_import, &cerr);
   if (FAILED(hr)) {
     return hr;
   }
