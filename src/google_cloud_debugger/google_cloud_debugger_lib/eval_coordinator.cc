@@ -260,14 +260,15 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
   for (auto &&breakpoint : breakpoints) {
     hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(), this);
     if (FAILED(hr)) {
-      std::cerr << "Failed to process breakpoint " << breakpoint->GetId();
+      std::cerr << "Failed to process breakpoint \"" << breakpoint->GetId()
+                << "\" with HRESULT: " << std::hex << hr;
       break;
     }
 
     if (!breakpoint->GetEvaluatedCondition()) {
-      std::cout << "Breakpoint condition " << breakpoint->GetCondition()
-                << " for breakpoint " << breakpoint->GetId()
-                << " is not met.";
+      std::cerr << "Breakpoint condition \"" << breakpoint->GetCondition()
+                << "\" for breakpoint \"" << breakpoint->GetId()
+                << "\" is not met.";
       continue;
     }
 
