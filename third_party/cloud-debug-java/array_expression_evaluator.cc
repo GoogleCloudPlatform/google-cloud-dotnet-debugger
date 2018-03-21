@@ -102,7 +102,7 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
       return hr;
     }
 
-    DbgArray *array_obj = dynamic_cast<DbgArray *>(index_obj.get());
+    DbgArray *array_obj = dynamic_cast<DbgArray *>(source_obj.get());
     if (array_obj == nullptr) {
       return E_INVALIDARG;
     }
