@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "i_cor_debug_helper.h"
+#include "cor_debug_helper.h"
 
 #include <assert.h>
 #include <iostream>
@@ -22,20 +22,25 @@
 #include "class_names.h"
 #include "compiler_helpers.h"
 #include "constants.h"
+#include "dbg_array.h"
+#include "dbg_class.h"
 #include "dbg_class_property.h"
+#include "dbg_primitive.h"
 #include "dbg_stack_frame.h"
+#include "dbg_string.h"
 #include "error_messages.h"
 #include "string_stream_wrapper.h"
 
 using std::cerr;
 using std::ostream;
+using std::unique_ptr;
 using std::vector;
 
 namespace google_cloud_debugger {
 
-HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
-                                            IMetaDataImport **metadata_import,
-                                            ostream *err_stream) {
+HRESULT CorDebugHelper::GetMetadataImportFromICorDebugClass(
+    ICorDebugClass *debug_class, IMetaDataImport **metadata_import,
+    ostream *err_stream) {
   if (!debug_class) {
     *err_stream << "ICorDebugClass cannot be null.";
     return E_INVALIDARG;
@@ -57,9 +62,9 @@ HRESULT GetMetadataImportFromICorDebugClass(ICorDebugClass *debug_class,
                                               err_stream);
 }
 
-HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
-                                             IMetaDataImport **metadata_import,
-                                             ostream *err_stream) {
+HRESULT CorDebugHelper::GetMetadataImportFromICorDebugModule(
+    ICorDebugModule *debug_module, IMetaDataImport **metadata_import,
+    ostream *err_stream) {
   if (!debug_module) {
     *err_stream << "ICorDebugModule cannot be null.";
     return E_INVALIDARG;
@@ -90,9 +95,9 @@ HRESULT GetMetadataImportFromICorDebugModule(ICorDebugModule *debug_module,
   return S_OK;
 }
 
-HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
-                                         std::vector<WCHAR> *module_name,
-                                         ostream *err_stream) {
+HRESULT CorDebugHelper::GetModuleNameFromICorDebugModule(
+    ICorDebugModule *debug_module, std::vector<WCHAR> *module_name,
+    ostream *err_stream) {
   if (!module_name || !debug_module) {
     return E_INVALIDARG;
   }
@@ -114,8 +119,9 @@ HRESULT GetModuleNameFromICorDebugModule(ICorDebugModule *debug_module,
   return hr;
 }
 
-HRESULT GetICorDebugType(ICorDebugValue *debug_value,
-                         ICorDebugType **debug_type, ostream *err_stream) {
+HRESULT CorDebugHelper::GetICorDebugType(ICorDebugValue *debug_value,
+                                         ICorDebugType **debug_type,
+                                         ostream *err_stream) {
   if (!debug_value || !debug_type) {
     return E_INVALIDARG;
   }
@@ -137,9 +143,9 @@ HRESULT GetICorDebugType(ICorDebugValue *debug_value,
   return hr;
 }
 
-HRESULT Dereference(ICorDebugValue *debug_value,
-                    ICorDebugValue **dereferenced_value, BOOL *is_null,
-                    ostream *err_stream) {
+HRESULT CorDebugHelper::Dereference(ICorDebugValue *debug_value,
+                                    ICorDebugValue **dereferenced_value,
+                                    BOOL *is_null, ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!debug_value || !dereferenced_value) {
@@ -154,7 +160,7 @@ HRESULT Dereference(ICorDebugValue *debug_value,
   CComPtr<ICorDebugValue> temp_value;
   temp_value = debug_value;
 
-  while (reference_depth < kReferenceDepth) {
+  while (reference_depth < ICorDebugHelper::kReferenceDepth) {
     CComPtr<ICorDebugReferenceValue> debug_reference;
 
     hr =
@@ -191,9 +197,9 @@ HRESULT Dereference(ICorDebugValue *debug_value,
     reference_depth++;
   }
 
-  if (reference_depth == kReferenceDepth) {
-    *err_stream << "Cannot dereference more than " << kReferenceDepth
-                << " times!";
+  if (reference_depth == ICorDebugHelper::kReferenceDepth) {
+    *err_stream << "Cannot dereference more than "
+                << ICorDebugHelper::kReferenceDepth << " times!";
     return E_FAIL;
   }
 
@@ -203,8 +209,9 @@ HRESULT Dereference(ICorDebugValue *debug_value,
   return S_OK;
 }
 
-HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
-              ostream *err_stream) {
+HRESULT CorDebugHelper::Unbox(ICorDebugValue *debug_value,
+                              ICorDebugValue **unboxed_value,
+                              ostream *err_stream) {
   if (!unboxed_value) {
     *err_stream << "dereferenced_value cannot be a null pointer.";
     return E_INVALIDARG;
@@ -239,9 +246,10 @@ HRESULT Unbox(ICorDebugValue *debug_value, ICorDebugValue **unboxed_value,
   return S_OK;
 }
 
-HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
-                            ICorDebugValue **dereferenced_and_unboxed_value,
-                            BOOL *isNull, ostream *err_stream) {
+HRESULT CorDebugHelper::DereferenceAndUnbox(
+    ICorDebugValue *debug_value,
+    ICorDebugValue **dereferenced_and_unboxed_value, BOOL *isNull,
+    ostream *err_stream) {
   assert(err_stream != nullptr);
 
   HRESULT hr;
@@ -265,8 +273,9 @@ HRESULT DereferenceAndUnbox(ICorDebugValue *debug_value,
   return S_OK;
 }
 
-HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
-                           ICorDebugHandleValue **handle, ostream *err_stream) {
+HRESULT CorDebugHelper::CreateStrongHandle(ICorDebugValue *debug_value,
+                                           ICorDebugHandleValue **handle,
+                                           ostream *err_stream) {
   assert(err_stream != nullptr);
 
   if (!debug_value) {
@@ -287,7 +296,7 @@ HRESULT CreateStrongHandle(ICorDebugValue *debug_value,
   return heap_value->CreateHandle(CorDebugHandleType::HANDLE_STRONG, handle);
 }
 
-HRESULT ExtractStringFromICorDebugStringValue(
+HRESULT CorDebugHelper::ExtractStringFromICorDebugStringValue(
     ICorDebugStringValue *debug_string, std::string *returned_string,
     std::ostream *err_stream) {
   if (!returned_string || !debug_string || !err_stream) {
@@ -323,9 +332,10 @@ HRESULT ExtractStringFromICorDebugStringValue(
   return S_OK;
 }
 
-HRESULT ExtractParamName(IMetaDataImport *metadata_import,
-                         mdParamDef param_token, std::string *param_name,
-                         std::ostream *err_stream) {
+HRESULT CorDebugHelper::ExtractParamName(IMetaDataImport *metadata_import,
+                                         mdParamDef param_token,
+                                         std::string *param_name,
+                                         std::ostream *err_stream) {
   mdMethodDef method_token;
   ULONG ordinal_position;
   ULONG param_name_size;
@@ -360,9 +370,9 @@ HRESULT ExtractParamName(IMetaDataImport *metadata_import,
   return hr;
 }
 
-HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
-                                             ICorDebugModule **debug_module,
-                                             std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetICorDebugModuleFromICorDebugFrame(
+    ICorDebugFrame *debug_frame, ICorDebugModule **debug_module,
+    std::ostream *err_stream) {
   CComPtr<ICorDebugFunction> debug_function;
   HRESULT hr = debug_frame->GetFunction(&debug_function);
   if (FAILED(hr)) {
@@ -378,8 +388,8 @@ HRESULT GetICorDebugModuleFromICorDebugFrame(ICorDebugFrame *debug_frame,
   return hr;
 }
 
-HRESULT ParseCompressedBytes(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                             ULONG *result) {
+HRESULT CorDebugHelper::ParseCompressedBytes(PCCOR_SIGNATURE *signature,
+                                             ULONG *sig_len, ULONG *result) {
   ULONG bytes_read;
   HRESULT hr = CorSigUncompressData(*signature, *sig_len, result, &bytes_read);
   if (FAILED(hr)) {
@@ -391,9 +401,10 @@ HRESULT ParseCompressedBytes(PCCOR_SIGNATURE *signature, ULONG *sig_len,
   return hr;
 }
 
-HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                      IMetaDataImport *metadata_import,
-                      std::string *field_type_name) {
+HRESULT CorDebugHelper::ParseFieldSig(PCCOR_SIGNATURE *signature,
+                                      ULONG *sig_len,
+                                      IMetaDataImport *metadata_import,
+                                      std::string *field_type_name) {
   // Field signature has the form: FIELD CustomModification* Type
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
   // I think this is not used in C#?
@@ -408,9 +419,10 @@ HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
   return ParseTypeFromSig(signature, sig_len, metadata_import, field_type_name);
 }
 
-HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                         IMetaDataImport *metadata_import,
-                         std::string *property_type_name) {
+HRESULT CorDebugHelper::ParsePropertySig(PCCOR_SIGNATURE *signature,
+                                         ULONG *sig_len,
+                                         IMetaDataImport *metadata_import,
+                                         std::string *property_type_name) {
   // Field signature has the form:
   // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
@@ -434,9 +446,10 @@ HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
                           property_type_name);
 }
 
-HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                         IMetaDataImport *metadata_import,
-                         std::string *type_name) {
+HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
+                                         ULONG *sig_len,
+                                         IMetaDataImport *metadata_import,
+                                         std::string *type_name) {
   HRESULT hr;
   CorElementType cor_type = CorSigUncompressElementType(*signature);
   *sig_len -= 1;
@@ -556,8 +569,8 @@ HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
   }
 }
 
-HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE *signature,
-                                              ULONG *sig_len) {
+HRESULT CorDebugHelper::ParseAndSkipBasedOnFirstByteSignature(
+    PCCOR_SIGNATURE *signature, ULONG *sig_len) {
   ULONG number_of_compressed_bytes_to_skip = 0;
   HRESULT hr = ParseCompressedBytes(signature, sig_len,
                                     &number_of_compressed_bytes_to_skip);
@@ -578,11 +591,11 @@ HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE *signature,
   return S_OK;
 }
 
-HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                               CorCallingConvention calling_convention) {
+HRESULT CorDebugHelper::ParseAndCheckFirstByte(
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    CorCallingConvention calling_convention) {
   ULONG field_bit = 0;
-  HRESULT hr =
-      ParseCompressedBytes(signature, sig_len, &field_bit);
+  HRESULT hr = ParseCompressedBytes(signature, sig_len, &field_bit);
   if (FAILED(hr)) {
     return hr;
   }
@@ -594,10 +607,13 @@ HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE *signature, ULONG *sig_len,
   return S_OK;
 }
 
-HRESULT GetFieldInfo(IMetaDataImport *metadata_import, mdTypeDef class_token,
-                     const std::string &field_name, mdFieldDef *field_def,
-                     bool *is_static, PCCOR_SIGNATURE *field_sig,
-                     ULONG *signature_len, std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetFieldInfo(IMetaDataImport *metadata_import,
+                                     mdTypeDef class_token,
+                                     const std::string &field_name,
+                                     mdFieldDef *field_def, bool *is_static,
+                                     PCCOR_SIGNATURE *field_sig,
+                                     ULONG *signature_len,
+                                     std::ostream *err_stream) {
   std::vector<WCHAR> wchar_field_name = ConvertStringToWCharPtr(field_name);
   HRESULT hr = metadata_import->FindField(class_token, wchar_field_name.data(),
                                           nullptr, 0, field_def);
@@ -623,10 +639,10 @@ HRESULT GetFieldInfo(IMetaDataImport *metadata_import, mdTypeDef class_token,
   return S_OK;
 }
 
-HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
-                        mdProperty class_token, const std::string &prop_name,
-                        std::unique_ptr<DbgClassProperty> *result,
-                        std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetPropertyInfo(
+    IMetaDataImport *metadata_import, mdProperty class_token,
+    const std::string &prop_name, std::unique_ptr<DbgClassProperty> *result,
+    std::ostream *err_stream) {
   HRESULT hr;
   std::vector<mdProperty> property_defs(kDefaultVectorSize, 0);
   HCORENUM cor_enum = nullptr;
@@ -645,10 +661,11 @@ HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
     }
 
     for (int i = 0; i < property_defs_returned; ++i) {
+      std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
       // We creates DbgClassProperty object and calls the Initialize
       // function to populate the name of the property.
-      std::unique_ptr<DbgClassProperty> class_property(new (std::nothrow)
-                                                           DbgClassProperty());
+      std::unique_ptr<DbgClassProperty> class_property(
+          new (std::nothrow) DbgClassProperty(debug_helper));
       if (!class_property) {
         *err_stream
             << "Ran out of memory while trying to initialize class property ";
@@ -680,10 +697,9 @@ HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
   return S_FALSE;
 }
 
-HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
-                                 IMetaDataImport *metadata_import,
-                                 std::string *type_name, mdToken *base_token,
-                                 std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
+    mdTypeDef type_token, IMetaDataImport *metadata_import,
+    std::string *type_name, mdToken *base_token, std::ostream *err_stream) {
   if (metadata_import == nullptr || type_name == nullptr) {
     return E_INVALIDARG;
   }
@@ -711,10 +727,9 @@ HRESULT GetTypeNameFromMdTypeDef(mdTypeDef type_token,
   return hr;
 }
 
-HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
-                                 IMetaDataImport *metadata_import,
-                                 std::string *type_name,
-                                 std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetTypeNameFromMdTypeRef(
+    mdTypeRef type_token, IMetaDataImport *metadata_import,
+    std::string *type_name, std::ostream *err_stream) {
   if (metadata_import == nullptr || type_name == nullptr) {
     return E_INVALIDARG;
   }
@@ -740,7 +755,7 @@ HRESULT GetTypeNameFromMdTypeRef(mdTypeRef type_token,
   return hr;
 }
 
-HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
+HRESULT CorDebugHelper::GetMdTypeDefAndMetaDataFromTypeRef(
     mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
     mdTypeDef *result_type_def, IMetaDataImport **result_type_def_metadata) {
   CComPtr<IUnknown> i_unknown;
@@ -754,9 +769,9 @@ HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
       IID_IMetaDataImport, reinterpret_cast<void **>(result_type_def_metadata));
 }
 
-HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
-                                       ICorDebugAppDomain **app_domain,
-                                       std::ostream *err_stream) {
+HRESULT CorDebugHelper::GetAppDomainFromICorDebugFrame(
+    ICorDebugFrame *debug_frame, ICorDebugAppDomain **app_domain,
+    std::ostream *err_stream) {
   CComPtr<ICorDebugFunction> debug_function;
   HRESULT hr = debug_frame->GetFunction(&debug_function);
   if (FAILED(hr)) {
@@ -786,8 +801,9 @@ HRESULT GetAppDomainFromICorDebugFrame(ICorDebugFrame *debug_frame,
   return hr;
 }
 
-HRESULT CountGenericParams(IMetaDataImport *metadata_import,
-                           const mdToken &token, uint32_t *result) {
+HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
+                                           const mdToken &token,
+                                           uint32_t *result) {
   HRESULT hr;
   CComPtr<IMetaDataImport2> metadata_import_2;
 
