@@ -29,6 +29,10 @@ namespace google_cloud_debugger {
 // function is called.
 class DbgClassProperty : public IDbgClassMember {
  public:
+  DbgClassProperty(std::shared_ptr<ICorDebugHelper> debug_helper,
+                   std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : IDbgClassMember(debug_helper, obj_factory){};
+
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
   // property_def is the metadata token for the property.
@@ -45,10 +49,9 @@ class DbgClassProperty : public IDbgClassMember {
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  HRESULT Evaluate(
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
+  HRESULT Evaluate(ICorDebugReferenceValue *reference_value,
+                   IEvalCoordinator *eval_coordinator,
+                   std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Sets the TypeSignature of the property.
   HRESULT SetTypeSignature(IMetaDataImport *metadata_import);
