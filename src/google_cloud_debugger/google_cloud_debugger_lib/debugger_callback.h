@@ -266,6 +266,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // manage breakpoints.
   std::unique_ptr<IBreakpointCollection> breakpoint_collection_;
 
+  // Helper methods for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
   bool initialized_success_ = false;
 
   // The name of the pipe the debugger will use to communicate with the agent.

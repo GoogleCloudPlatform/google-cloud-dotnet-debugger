@@ -19,12 +19,19 @@
 
 namespace google_cloud_debugger {
 
+class IDbgObjectFactory;
+
 // This class represents a .NET object of reference type.
 class DbgReferenceObject : public DbgObject {
  public:
-  DbgReferenceObject(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
-   
+  // obj_factory is needed to create members of reference object.
+  DbgReferenceObject(ICorDebugType *debug_type, int depth,
+                     std::shared_ptr<ICorDebugHelper> debug_helper,
+                     std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : DbgObject(debug_type, depth, debug_helper) {
+    object_factory_ = obj_factory;
+  }
+
   // Searches the object for non-static field field_name and returns
   // the value in field_value.
   virtual HRESULT GetNonStaticField(const std::string &field_name,
@@ -41,6 +48,8 @@ class DbgReferenceObject : public DbgObject {
   // Handle for the object.
   // Only applicable for class, array and string.
   CComPtr<ICorDebugHandleValue> object_handle_;
+
+  std::shared_ptr<IDbgObjectFactory> object_factory_;
 };
 
 }  //  namespace google_cloud_debugger

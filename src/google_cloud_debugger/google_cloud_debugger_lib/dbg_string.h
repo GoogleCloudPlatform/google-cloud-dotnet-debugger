@@ -18,6 +18,7 @@
 #include "dbg_reference_object.h"
 
 namespace google_cloud_debugger {
+
 class EvalCoordinator;
 
 // This class represents .NET System.String.
@@ -25,7 +26,9 @@ class EvalCoordinator;
 // so we won't lose reference to it.
 class DbgString : public DbgReferenceObject {
  public:
-  DbgString(ICorDebugType *pType) : DbgReferenceObject(pType, 0) {}
+  DbgString(ICorDebugType *pType, std::shared_ptr<ICorDebugHelper> debug_helper)
+      : DbgReferenceObject(pType, 0, debug_helper,
+                           std::shared_ptr<IDbgObjectFactory>()) {}
 
   // Creates a strong handle to the object and stores it in string_handle_.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
@@ -46,7 +49,7 @@ class DbgString : public DbgReferenceObject {
   // Dereferences the string handle and extracts out the string
   // into string_obj_. Will not do anything if string_obj_set_ is true.
   HRESULT ExtractStringFromReference();
-   
+
   // The underlying string object.
   std::string string_obj_;
 

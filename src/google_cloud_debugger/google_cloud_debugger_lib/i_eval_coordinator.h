@@ -29,6 +29,7 @@ namespace google_cloud_debugger {
 
 class IBreakpointCollection;
 class DbgBreakpoint;
+class IDbgObjectFactory;
 
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
 // and print out variables. It does so by creating a StackFrame on a new

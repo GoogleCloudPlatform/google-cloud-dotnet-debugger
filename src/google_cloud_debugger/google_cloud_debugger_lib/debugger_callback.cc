@@ -24,7 +24,7 @@
 #include "ccomptr.h"
 #include "constants.h"
 #include "dbg_stack_frame.h"
-#include "i_cor_debug_helper.h"
+#include "cor_debug_helper.h"
 #include "portable_pdb_file.h"
 #include "eval_coordinator.h"
 
@@ -58,6 +58,8 @@ HRESULT DebuggerCallback::Initialize() {
     cerr << "Breakpoint collection failed to initialize.";
     return hr;
   }
+
+  debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
 
   initialized_success_ = true;
   return S_OK;
@@ -186,7 +188,7 @@ HRESULT DebuggerCallback::LoadModule(ICorDebugAppDomain *appdomain,
     return E_OUTOFMEMORY;
   }
 
-  HRESULT hr = portable_pdb->Initialize(debug_module);
+  HRESULT hr = portable_pdb->Initialize(debug_module, debug_helper_.get());
   if (FAILED(hr)) {
     cerr << "Failed set debug module for PortablePdbFile.";
     return appdomain->Continue(FALSE);
@@ -242,7 +244,7 @@ HRESULT DebuggerCallback::GetFunctionTokenAndILOffset(
     return hr;
   }
 
-  hr = GetMetadataImportFromICorDebugModule(debug_module, metadata_import,
+  hr = debug_helper_->GetMetadataImportFromICorDebugModule(debug_module, metadata_import,
                                             &cerr);
   if (FAILED(hr)) {
     return hr;

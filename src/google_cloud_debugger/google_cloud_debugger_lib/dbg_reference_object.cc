@@ -15,6 +15,7 @@
 #include "dbg_reference_object.h"
 
 #include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 
 namespace google_cloud_debugger {
 HRESULT DbgReferenceObject::GetNonStaticField(
@@ -29,7 +30,7 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   // Dereferences the object to get ICorDebugObjectValue.
   BOOL is_null = FALSE;
   CComPtr<ICorDebugValue> debug_value;
-  hr = Dereference(object_handle_, &debug_value,
+  hr = debug_helper_->Dereference(object_handle_, &debug_value,
                    &is_null, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
@@ -63,7 +64,7 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   }
 
   CComPtr<IMetaDataImport> metadata_import;
-  hr = GetMetadataImportFromICorDebugClass(debug_class,
+  hr = debug_helper_->GetMetadataImportFromICorDebugClass(debug_class,
       &metadata_import, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
@@ -73,7 +74,7 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   bool is_static;
   PCCOR_SIGNATURE field_sig;
   ULONG field_sig_len = 0;
-  hr = GetFieldInfo(metadata_import, class_token,
+  hr = debug_helper_->GetFieldInfo(metadata_import, class_token,
       field_name, &field_def, &is_static, &field_sig,
       &field_sig_len, GetErrorStream());
   if (FAILED(hr)) {
@@ -92,7 +93,8 @@ HRESULT DbgReferenceObject::GetNonStaticField(
   }
 
   std::unique_ptr<DbgObject> dbg_object;
-  hr = DbgObject::CreateDbgObject(field_debug_value, GetCreationDepth() - 1,
+  hr = object_factory_->CreateDbgObject(field_debug_value,
+      GetCreationDepth() - 1,
       &dbg_object, GetErrorStream());
   if (FAILED(hr)) {
     return hr;

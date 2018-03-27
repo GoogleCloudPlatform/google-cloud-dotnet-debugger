@@ -28,8 +28,11 @@ class EvalCoordinator;
 // This includes multi-dimensional as well as jagged arrays.
 class DbgArray : public DbgReferenceObject {
  public:
-  DbgArray(ICorDebugType *debug_type, int depth)
-      : DbgReferenceObject(debug_type, depth) {}
+  DbgArray(ICorDebugType *debug_type, int depth,
+           std::shared_ptr<ICorDebugHelper> debug_helper,
+           std::shared_ptr<IDbgObjectFactory> object_factory)
+      : DbgReferenceObject(debug_type, depth, debug_helper,
+                           object_factory) {}
 
   // Retrieves information about array rank, array dimensions, array type and
   // creates a strong handle to the array.

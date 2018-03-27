@@ -23,8 +23,6 @@
 
 #include "breakpoint.pb.h"
 #include "constants.h"
-#include "cor.h"
-#include "cordebug.h"
 #include "dbg_object.h"
 #include "document_index.h"
 
@@ -36,6 +34,7 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
 
 class DebuggerCallback;
 class IEvalCoordinator;
+class IDbgObjectFactory;
 class DbgClassProperty;
 struct MethodInfo;
 
@@ -45,6 +44,10 @@ struct MethodInfo;
 // method name, class name, file name and line number.
 class DbgStackFrame {
  public:
+  DbgStackFrame(std::shared_ptr<ICorDebugHelper> debug_helper,
+      std::shared_ptr<IDbgObjectFactory> obj_factory) :
+    debug_helper_(debug_helper), obj_factory_(obj_factory) {}
+
   // Populate method_name_, file_name_, line_number_ and breakpoint_id_.
   // Also populate local variables and method arguments into variables_
   // vectors.
@@ -207,6 +210,12 @@ class DbgStackFrame {
       std::vector<CComPtr<ICorDebugType>> *debug_types);
 
  private:
+  // Helper for ICorDebug method.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // Factory to create DbgObject.
+  std::shared_ptr<IDbgObjectFactory> obj_factory_;
+   
   // Gets the metadata import of the module this frame is in.
   // We cannot store the IMetaDataImport directly because
   // they may be invalidated.

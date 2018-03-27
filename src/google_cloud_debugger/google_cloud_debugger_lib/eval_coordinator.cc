@@ -22,8 +22,10 @@
 
 #include "breakpoint.pb.h"
 #include "breakpoint_collection.h"
+#include "cor_debug_helper.h"
 #include "dbg_breakpoint.h"
 #include "dbg_class.h"
+#include "dbg_object_factory.h"
 #include "stack_frame_collection.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
@@ -203,7 +205,8 @@ HRESULT EvalCoordinator::GetActiveDebugThread(ICorDebugThread **debug_thread) {
   return E_FAIL;
 }
 
-HRESULT EvalCoordinator::GetActiveDebugFrame(ICorDebugILFrame **debug_il_frame) {
+HRESULT EvalCoordinator::GetActiveDebugFrame(
+    ICorDebugILFrame **debug_il_frame) {
   if (!debug_il_frame) {
     return E_INVALIDARG;
   }
@@ -216,8 +219,8 @@ HRESULT EvalCoordinator::GetActiveDebugFrame(ICorDebugILFrame **debug_il_frame) 
       return hr;
     }
 
-    return debug_frame->QueryInterface(__uuidof(ICorDebugILFrame),
-                                       reinterpret_cast<void **>(debug_il_frame));
+    return debug_frame->QueryInterface(
+        __uuidof(ICorDebugILFrame), reinterpret_cast<void **>(debug_il_frame));
   }
 
   return E_FAIL;
@@ -235,7 +238,8 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   // Vector of PDB files that are parsed successfully.
-  std::vector<std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+  std::vector<
+      std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       parsed_pdb_files;
   for (auto &&pdb_file : pdb_files) {
     if (!pdb_file) {
@@ -249,8 +253,10 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
 
   // Creates and initializes stack frame collection based on the
   // ICorDebugStackWalk object.
-  unique_ptr<IStackFrameCollection> stack_frames(new (std::nothrow)
-                                                     StackFrameCollection);
+  unique_ptr<IStackFrameCollection> stack_frames(
+      new (std::nothrow) StackFrameCollection(
+          std::shared_ptr<ICorDebugHelper>(new CorDebugHelper()),
+          std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory())));
   if (!stack_frames) {
     cerr << "Failed to create DbgStack.";
     return E_OUTOFMEMORY;
@@ -258,7 +264,8 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
 
   HRESULT hr = S_OK;
   for (auto &&breakpoint : breakpoints) {
-    hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(), this);
+    hr = stack_frames->ProcessBreakpoint(parsed_pdb_files, breakpoint.get(),
+                                         this);
     if (FAILED(hr)) {
       std::cerr << "Failed to process breakpoint \"" << breakpoint->GetId()
                 << "\" with HRESULT: " << std::hex << hr;

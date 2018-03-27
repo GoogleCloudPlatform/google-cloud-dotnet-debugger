@@ -26,8 +26,10 @@ namespace google_cloud_debugger {
 // Dictionary).
 class DbgBuiltinCollection : public DbgClass {
  public:
-  DbgBuiltinCollection(ICorDebugType *debug_type, int depth)
-      : DbgClass(debug_type, depth) {}
+  DbgBuiltinCollection(ICorDebugType *debug_type, int depth,
+                       std::shared_ptr<ICorDebugHelper> debug_helper,
+                       std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : DbgClass(debug_type, depth, debug_helper, obj_factory) {}
 
   HRESULT PopulateMembers(
       google::cloud::diagnostics::debug::Variable *variable_proto,
@@ -37,10 +39,9 @@ class DbgBuiltinCollection : public DbgClass {
  protected:
   // Stores the items in the collection depending on whether
   // this is a list, set or dictionary.
-  HRESULT ProcessClassMembersHelper(
-      ICorDebugValue *debug_value,
-      ICorDebugClass *debug_class,
-      IMetaDataImport *metadata_import) override;
+  HRESULT ProcessClassMembersHelper(ICorDebugValue *debug_value,
+                                    ICorDebugClass *debug_class,
+                                    IMetaDataImport *metadata_import) override;
 
   // Populates variables with a field count (number of items in this hash set
   // or dictionary) and the members of this hash set or dictionary.
@@ -116,4 +117,4 @@ class DbgBuiltinCollection : public DbgClass {
 
 }  //  namespace google_cloud_debugger
 
-#endif  //  DBG_ENUM_H_
+#endif  //  DBG_BUILTIN_COLLECTION_H_

@@ -22,6 +22,7 @@
 #include "class_names.h"
 #include "dbg_array.h"
 #include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
 #include "variable_wrapper.h"
 
@@ -234,8 +235,8 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
     // So a dictionary entry is essentially the same as a set slot except
     // that the dictionary entry has a key.
     unique_ptr<DbgObject> slot_item_obj;
-    hr = CreateDbgObject(array_item, GetCreationDepth(), &slot_item_obj,
-                         GetErrorStream());
+    hr = object_factory_->CreateDbgObject(array_item, GetCreationDepth(),
+                                          &slot_item_obj, GetErrorStream());
     if (FAILED(hr)) {
       WriteError("Failed to create DbgObject for item at index " +
                  std::to_string(index));
@@ -268,7 +269,8 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
 
     // Gets the underlying DbgObject that represents value field.
     shared_ptr<DbgObject> value_obj = nullptr;
-    hr = slot_item->GetNonStaticField(kHashSetAndDictValueFieldName, &value_obj);
+    hr =
+        slot_item->GetNonStaticField(kHashSetAndDictValueFieldName, &value_obj);
     if (FAILED(hr)) {
       WriteError("Failed to evaluate the value of item at index " +
                  std::to_string(index));

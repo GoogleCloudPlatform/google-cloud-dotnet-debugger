@@ -24,7 +24,8 @@ namespace google_cloud_debugger {
 
 class StackFrameCollection : public IStackFrameCollection {
  public:
-  StackFrameCollection(std::shared_ptr<ICorDebugHelper> debug_helper);
+  StackFrameCollection(std::shared_ptr<ICorDebugHelper> debug_helper,
+                       std::shared_ptr<IDbgObjectFactory> obj_factory);
 
   // This function first checks whether breakpoint has a condition.
   // If the condition evaluated to false, do nothing.
@@ -48,6 +49,9 @@ class StackFrameCollection : public IStackFrameCollection {
  private:
   // Class that contains helper method for ICorDebug objects.
   std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // Factory for creating DbgObject.
+  std::shared_ptr<IDbgObjectFactory> obj_factory_;
 
   // Given a PDB file, this function tries to find the metadata of the function
   // with token target_function_token in the PDB file. If found, this function
