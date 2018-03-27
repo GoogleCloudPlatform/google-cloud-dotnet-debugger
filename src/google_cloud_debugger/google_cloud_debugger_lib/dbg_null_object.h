@@ -15,8 +15,8 @@
 #ifndef DBG_NULL_OBJECT_H_
 #define DBG_NULL_OBJECT_H_
 
-#include "dbg_object.h"
 #include "class_names.h"
+#include "dbg_object.h"
 
 namespace google_cloud_debugger {
 class EvalCoordinator;
@@ -27,15 +27,16 @@ class EvalCoordinator;
 // the type to create it).
 class DbgNullObject : public DbgObject {
  public:
-  DbgNullObject(ICorDebugType *pType) : DbgObject(pType, 0) {}
+  DbgNullObject(ICorDebugType *pType)
+      : DbgObject(pType, 0, std::shared_ptr<ICorDebugHelper>()) {}
 
   // Inherited via DbgObject.
-  virtual void Initialize(ICorDebugValue * debug_value, BOOL is_null) override {}
+  virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) override {}
 
   // This should not be called because we cannot create a
   // ICorDebugValue that represents a null object.
   HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
-    ICorDebugEval *debug_eval) override {
+                            ICorDebugEval *debug_eval) override {
     return E_NOTIMPL;
   }
 

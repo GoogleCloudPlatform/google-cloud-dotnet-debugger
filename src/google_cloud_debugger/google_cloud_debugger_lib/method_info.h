@@ -24,6 +24,7 @@
 namespace google_cloud_debugger {
 
 class DbgStackFrame;
+class ICorDebugHelper;
 
 // Utility class that contains the properties
 // of a function needed to perform a method call.
@@ -52,7 +53,7 @@ struct MethodInfo {
   // is_static and has_generic_types field.
   HRESULT PopulateMethodDefFromNameAndArguments(
       IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-      DbgStackFrame *stack_frame);
+      DbgStackFrame *stack_frame, ICorDebugHelper *debug_helper);
 
  private:
   // Helper function to find all methods that matches the name
@@ -69,7 +70,8 @@ struct MethodInfo {
   // and method_token if the method matched.
   HRESULT MatchMethodArgument(IMetaDataImport *metadata_import,
                               mdMethodDef method_def,
-                              DbgStackFrame *stack_frame);
+                              DbgStackFrame *stack_frame,
+                              ICorDebugHelper *debug_helper);
 };
 
 }  //  namespace google_cloud_debugger

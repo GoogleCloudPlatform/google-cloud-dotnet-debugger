@@ -25,7 +25,7 @@ namespace google_cloud_debugger {
 
 HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
     IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-    DbgStackFrame *stack_frame) {
+    DbgStackFrame *stack_frame, ICorDebugHelper *debug_helper) {
   if (metadata_import == nullptr) {
     return E_INVALIDARG;
   }
@@ -42,7 +42,8 @@ HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
   }
 
   for (const mdMethodDef &method_def : method_defs) {
-    hr = MatchMethodArgument(metadata_import, method_def, stack_frame);
+    hr = MatchMethodArgument(metadata_import, method_def,
+                             stack_frame, debug_helper);
     if (FAILED(hr)) {
       continue;
     }
@@ -87,7 +88,8 @@ HRESULT MethodInfo::GetMethodDefsFromName(
 
 HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
                                         mdMethodDef method_def,
-                                        DbgStackFrame *stack_frame) {
+                                        DbgStackFrame *stack_frame,
+                                        ICorDebugHelper *debug_helper) {
   HRESULT hr;
   mdTypeDef class_type;
   ULONG method_name_len;
@@ -105,7 +107,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   }
 
   ULONG calling_convention;
-  hr = ParseCompressedBytes(&method_sig, &method_sig_len, &calling_convention);
+  hr = debug_helper->ParseCompressedBytes(&method_sig, &method_sig_len, &calling_convention);
   if (FAILED(hr)) {
     return hr;
   }
@@ -115,8 +117,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   if ((calling_convention &
       CorCallingConvention::IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
     ULONG generic_param_count = 0;
-    hr = ParseCompressedBytes(&method_sig, &method_sig_len,
-                              &generic_param_count);
+    hr = debug_helper->ParseCompressedBytes(&method_sig, &method_sig_len,
+                                            &generic_param_count);
     if (FAILED(hr)) {
       return hr;
     }
@@ -124,7 +126,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
 
   // Now we get the number of parameters in the signature.
   ULONG param_count = 0;
-  hr = ParseCompressedBytes(&method_sig, &method_sig_len, &param_count);
+  hr = debug_helper->ParseCompressedBytes(&method_sig, &method_sig_len, &param_count);
   if (FAILED(hr)) {
     return hr;
   }
@@ -145,8 +147,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
 
   // Now we can extract the return type.
   std::string returned_type;
-  hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                        &returned_type);
+  hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
+                                      &returned_type);
   if (FAILED(hr)) {
     return hr;
   }
@@ -156,8 +158,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
       CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS) != 0) {
     // Extracts out this "this" parameter.
     std::string this_type;
-    hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                          &returned_type);
+    hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
+                                        &returned_type);
     if (FAILED(hr)) {
       return hr;
     }
@@ -169,8 +171,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   // types.
   for (size_t i = 0; i < param_count; ++i) {
     std::string parameter_type;
-    hr = ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                          &parameter_type);
+    hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
+                                        &parameter_type);
     if (FAILED(hr)) {
       return hr;
     }
@@ -196,8 +198,8 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   method_token = method_def;
   // Checks the generic types.
   uint32_t method_generic_types = 0;
-  hr = CountGenericParams(metadata_import, method_def,
-                          &method_generic_types);
+  hr = debug_helper->CountGenericParams(metadata_import, method_def,
+                                        &method_generic_types);
   if (FAILED(hr)) {
     return hr;
   }

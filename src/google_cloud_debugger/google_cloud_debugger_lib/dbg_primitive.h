@@ -15,13 +15,14 @@
 #ifndef DBG_PRIMITIVE_H_
 #define DBG_PRIMITIVE_H_
 
+#include <math.h>
 #include <iostream>
 #include <type_traits>
-#include <math.h>
 
 #include "ccomptr.h"
 #include "class_names.h"
 #include "dbg_object.h"
+#include "i_cor_debug_helper.h"
 
 namespace google_cloud_debugger {
 // Template class for DbgObject of primitive type.
@@ -35,9 +36,11 @@ class DbgPrimitive : public DbgObject {
   static_assert(std::is_fundamental<T>::value, "Fundamental types required.");
 
  public:
-  DbgPrimitive(ICorDebugType *debug_type) : DbgObject(debug_type, 0) {}
+  DbgPrimitive(ICorDebugType *debug_type)
+      : DbgObject(debug_type, 0, std::shared_ptr<ICorDebugHelper>()) {}
 
-  DbgPrimitive(T value) : DbgObject(nullptr, 0) {
+  DbgPrimitive(T value)
+      : DbgObject(nullptr, 0, std::shared_ptr<ICorDebugHelper>()) {
     value_ = value;
     SetCorElementType(value);
   }
@@ -86,7 +89,8 @@ class DbgPrimitive : public DbgObject {
 
   // Cast DbgObject to a DbgPrimitive and retrieves the value.
   static HRESULT GetValue(DbgObject *dbg_object, T *value) {
-    DbgPrimitive<T> *dbg_primitive = dynamic_cast<DbgPrimitive<T> *>(dbg_object);
+    DbgPrimitive<T> *dbg_primitive =
+        dynamic_cast<DbgPrimitive<T> *>(dbg_object);
     if (!dbg_primitive) {
       return E_INVALIDARG;
     }
@@ -113,8 +117,7 @@ class DbgPrimitive : public DbgObject {
     return S_OK;
   }
 
-  HRESULT GetTypeString(
-      std::string *type_string) override {
+  HRESULT GetTypeString(std::string *type_string) override {
     if (!type_string) {
       return E_INVALIDARG;
     }
@@ -132,20 +135,21 @@ class DbgPrimitive : public DbgObject {
   // Creates a value in memory that corresponds with value_
   // and returns an ICorDebugValue for that value.
   HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
-    ICorDebugEval *debug_eval) override {
+                            ICorDebugEval *debug_eval) override {
     if (debug_eval == nullptr) {
       return E_INVALIDARG;
     }
 
-    HRESULT hr = debug_eval->CreateValue(cor_element_type_, nullptr,
-        debug_value);
+    HRESULT hr =
+        debug_eval->CreateValue(cor_element_type_, nullptr, debug_value);
     if (FAILED(hr)) {
       return hr;
     }
 
     CComPtr<ICorDebugGenericValue> generic_value;
-    hr = (*debug_value)->QueryInterface(__uuidof(ICorDebugGenericValue),
-      reinterpret_cast<void **>(&generic_value));
+    hr = (*debug_value)
+             ->QueryInterface(__uuidof(ICorDebugGenericValue),
+                              reinterpret_cast<void **>(&generic_value));
     if (FAILED(hr)) {
       return hr;
     }
@@ -154,42 +158,18 @@ class DbgPrimitive : public DbgObject {
   }
 
  private:
-  const std::string GetTypeCore(char value) {
-    return kCharClassName;
-  }
-  const std::string GetTypeCore(bool value) {
-    return kBooleanClassName;
-  }
-  const std::string GetTypeCore(std::int8_t) {
-    return kSByteClassName;
-  }
-  const std::string GetTypeCore(std::uint8_t) {
-    return kByteClassName;
-  }
-  const std::string GetTypeCore(std::int16_t) {
-    return kInt16ClassName;
-  }
-  const std::string GetTypeCore(std::uint16_t) {
-    return kUInt16ClassName;
-  }
-  const std::string GetTypeCore(std::int32_t) {
-    return kInt32ClassName;
-  }
-  const std::string GetTypeCore(std::uint32_t) {
-    return kUInt32ClassName;
-  }
-  const std::string GetTypeCore(std::int64_t) {
-    return kInt64ClassName;
-  }
-  const std::string GetTypeCore(std::uint64_t) {
-    return kUInt64ClassName;
-  }
-  const std::string GetTypeCore(float_t) {
-    return kSingleClassName;
-  }
-  const std::string GetTypeCore(double_t) {
-    return kDoubleClassName;
-  }
+  const std::string GetTypeCore(char value) { return kCharClassName; }
+  const std::string GetTypeCore(bool value) { return kBooleanClassName; }
+  const std::string GetTypeCore(std::int8_t) { return kSByteClassName; }
+  const std::string GetTypeCore(std::uint8_t) { return kByteClassName; }
+  const std::string GetTypeCore(std::int16_t) { return kInt16ClassName; }
+  const std::string GetTypeCore(std::uint16_t) { return kUInt16ClassName; }
+  const std::string GetTypeCore(std::int32_t) { return kInt32ClassName; }
+  const std::string GetTypeCore(std::uint32_t) { return kUInt32ClassName; }
+  const std::string GetTypeCore(std::int64_t) { return kInt64ClassName; }
+  const std::string GetTypeCore(std::uint64_t) { return kUInt64ClassName; }
+  const std::string GetTypeCore(float_t) { return kSingleClassName; }
+  const std::string GetTypeCore(double_t) { return kDoubleClassName; }
 
   void SetCorElementType(char value) {
     cor_element_type_ = CorElementType::ELEMENT_TYPE_CHAR;

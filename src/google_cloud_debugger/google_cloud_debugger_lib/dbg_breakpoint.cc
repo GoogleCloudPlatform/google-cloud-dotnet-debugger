@@ -144,7 +144,8 @@ bool DbgBreakpoint::TrySetBreakpoint(
 }
 
 HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
-    IEvalCoordinator *eval_coordinator) {
+    IEvalCoordinator *eval_coordinator,
+    IDbgObjectFactory *obj_factory) {
   if (condition_.empty()) {
     evaluated_condition_ = true;
     return S_OK;
@@ -175,7 +176,7 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
 
   std::shared_ptr<DbgObject> condition_result;
   hr = compiled_expression.evaluator->Evaluate(&condition_result,
-      eval_coordinator, &std::cerr);
+      eval_coordinator, obj_factory, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }

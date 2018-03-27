@@ -16,9 +16,9 @@
 
 #include <iostream>
 
+#include "class_names.h"
 #include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
-#include "class_names.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
@@ -32,8 +32,8 @@ void DbgString::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     return;
   }
 
-  initialize_hr_ =
-      CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
+  initialize_hr_ = debug_helper_->CreateStrongHandle(
+      debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create a handle for the string.");
   }
@@ -118,8 +118,8 @@ HRESULT DbgString::ExtractStringFromReference() {
     return hr;
   }
 
-  hr = ExtractStringFromICorDebugStringValue(debug_string,
-      &string_obj_, GetErrorStream());
+  hr = debug_helper_->ExtractStringFromICorDebugStringValue(
+      debug_string, &string_obj_, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
   }

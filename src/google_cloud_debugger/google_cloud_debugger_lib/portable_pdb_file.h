@@ -42,7 +42,8 @@ class PortablePdbFile : public IPortablePdbFile {
   // Populates the name, metadata import and debug module.
   // This function will returns error if the name of the module
   // does not end with ".dll".
-  HRESULT Initialize(ICorDebugModule *debug_module);
+  HRESULT Initialize(ICorDebugModule *debug_module,
+                     google_cloud_debugger::ICorDebugHelper *debug_helper);
 
   // Parses the pdb file. The name of the file will come from the
   // ICorDebugModule object that is used to initialize this object.

@@ -34,6 +34,7 @@ namespace google_cloud_debugger {
 class IEvalCoordinator;
 class IStackFrameCollection;
 class DbgStackFrame;
+class IDbgObjectFactory;
 
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
@@ -147,7 +148,8 @@ class DbgBreakpoint {
   // Evaluates condition condition_ using the provided stack frame
   // and eval coordinator. Sets the result to evaluated_condition_.
   HRESULT EvaluateCondition(DbgStackFrame *stack_frame,
-                            IEvalCoordinator *eval_coordinator);
+                            IEvalCoordinator *eval_coordinator,
+                            IDbgObjectFactory *obj_factory);
 
   // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator

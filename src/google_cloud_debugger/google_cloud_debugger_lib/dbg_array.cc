@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "i_dbg_object_factory.h"
 #include "i_cor_debug_helper.h"
 #include "variable_wrapper.h"
 
@@ -46,7 +47,8 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
 
   // Create an empty object for the type.
   initialize_hr_ =
-      DbgObject::CreateDbgObject(array_type_, &empty_object_, GetErrorStream());
+      object_factory_->CreateDbgObject(array_type_, &empty_object_,
+                                       GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create an empty object for the array type.");
     if (empty_object_) {
@@ -73,8 +75,8 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     return;
   }
 
-  initialize_hr_ =
-      CreateStrongHandle(debug_value, &object_handle_, GetErrorStream());
+  initialize_hr_ = debug_helper_->CreateStrongHandle(
+      debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create a handle for the array.");
     return;
@@ -137,7 +139,8 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
 
 HRESULT DbgArray::PopulateMembers(
     google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
+    std::vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
@@ -219,8 +222,9 @@ HRESULT DbgArray::PopulateMembers(
     }
 
     unique_ptr<DbgObject> result_object;
-    hr = DbgObject::CreateDbgObject(array_item, GetCreationDepth() - 1,
-                                    &result_object, GetErrorStream());
+    hr = object_factory_->CreateDbgObject(
+        array_item, GetCreationDepth() - 1,
+        &result_object, GetErrorStream());
     if (FAILED(hr)) {
       if (result_object) {
         WriteError(result_object->GetErrorString());

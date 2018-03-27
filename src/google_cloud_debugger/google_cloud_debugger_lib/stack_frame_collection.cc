@@ -21,6 +21,7 @@
 #include "dbg_breakpoint.h"
 #include "expression_util.h"
 #include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
@@ -37,8 +38,10 @@ using std::vector;
 
 namespace google_cloud_debugger {
 StackFrameCollection::StackFrameCollection(
-    std::shared_ptr<ICorDebugHelper> debug_helper) {
+    std::shared_ptr<ICorDebugHelper> debug_helper,
+    std::shared_ptr<IDbgObjectFactory> obj_factory) {
   debug_helper_ = debug_helper;
+  obj_factory_ = obj_factory;
 }
 
 HRESULT StackFrameCollection::ProcessBreakpoint(
@@ -228,9 +231,8 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
                                  local_scope.local_variables.end());
         }
 
-        hr = dbg_stack_frame->Initialize(il_frame, local_variables,
-                                         target_function_token, metadata_import,
-                                         debug_helper_);
+        hr = dbg_stack_frame->Initialize(
+            il_frame, local_variables, target_function_token, metadata_import);
       }
 
       return S_OK;
@@ -363,7 +365,8 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     bool process_il_frame =
         il_frame_parsed_so_far < kMaximumStackFramesWithVariables;
 
-    std::shared_ptr<DbgStackFrame> stack_frame(new DbgStackFrame());
+    std::shared_ptr<DbgStackFrame> stack_frame(
+        new DbgStackFrame(debug_helper_, obj_factory_));
     hr = PopulateDbgStackFrameHelper(parsed_pdb_files, frame, stack_frame.get(),
                                      process_il_frame);
     if (FAILED(hr)) {
@@ -408,7 +411,8 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
   }
 
   if (!first_stack_) {
-    first_stack_ = std::shared_ptr<DbgStackFrame>(new DbgStackFrame);
+    first_stack_ = std::shared_ptr<DbgStackFrame>(
+        new DbgStackFrame(debug_helper_, obj_factory_));
     hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
                                      first_stack_.get(), true);
     if (FAILED(hr)) {
@@ -424,7 +428,7 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
   }
 
   return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,
-                                       debug_helper_.get());
+                                       obj_factory_.get());
 }
 
 HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
