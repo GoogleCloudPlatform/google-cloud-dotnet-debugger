@@ -19,6 +19,7 @@
 #include "error_messages.h"
 #include "compiler_helpers.h"
 #include "dbg_array.h"
+#include "i_dbg_object_factory.h"
 #include "constants.h"
 
 namespace google_cloud_debugger {
@@ -76,9 +77,12 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(
 
 HRESULT IndexerAccessExpressionEvaluator::Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const {
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const {
   std::shared_ptr<DbgObject> source_obj;
-  HRESULT hr = source_collection_->Evaluate(&source_obj, eval_coordinator, err_stream);
+  HRESULT hr = source_collection_->Evaluate(&source_obj, eval_coordinator,
+                                            obj_factory, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -88,7 +92,8 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
   }
 
   std::shared_ptr<DbgObject> index_obj;
-  hr = source_index_->Evaluate(&index_obj, eval_coordinator, err_stream);
+  hr = source_index_->Evaluate(&index_obj, eval_coordinator,
+                               obj_factory, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -115,8 +120,8 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
 
     std::unique_ptr<DbgObject> target_object;
     std::ostringstream err_stream;
-    hr = DbgObject::CreateDbgObject(array_item, kDefaultObjectEvalDepth, &target_object,
-        &err_stream);
+    hr = obj_factory->CreateDbgObject(array_item, kDefaultObjectEvalDepth,
+        &target_object, &err_stream);
     if (FAILED(hr)) {
       return hr;
     }

@@ -51,6 +51,7 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
   // Evalutes the expression by calling the appropriate computer_.
   HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                    IEvalCoordinator *eval_coordinator,
+                   IDbgObjectFactory *obj_factory,
                    std::ostream *err_stream) const override;
 
  private:

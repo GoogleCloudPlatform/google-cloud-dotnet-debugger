@@ -128,10 +128,12 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
 HRESULT ConditionalOperatorEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object,
     IEvalCoordinator *eval_coordinator,
+    IDbgObjectFactory *obj_factory,
     std::ostream *err_stream) const {
   std::shared_ptr<DbgObject> condition_obj;
   HRESULT hr =
-      condition_->Evaluate(&condition_obj, eval_coordinator, err_stream);
+      condition_->Evaluate(&condition_obj, eval_coordinator,
+                           obj_factory, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -142,10 +144,12 @@ HRESULT ConditionalOperatorEvaluator::Evaluate(
   }
 
   if (condition_value->GetValue()) {
-    return if_true_->Evaluate(dbg_object, eval_coordinator, err_stream);
+    return if_true_->Evaluate(dbg_object, eval_coordinator,
+                              obj_factory, err_stream);
   }
 
-  return if_false_->Evaluate(dbg_object, eval_coordinator, err_stream);
+  return if_false_->Evaluate(dbg_object, eval_coordinator,
+                             obj_factory, err_stream);
 }
 
 }  // namespace google_cloud_debugger

@@ -18,6 +18,7 @@
 
 #include "compiler_helpers.h"
 #include "dbg_class_property.h"
+#include "dbg_object_factory.h"
 #include "dbg_reference_object.h"
 #include "dbg_stack_frame.h"
 #include "error_messages.h"
@@ -41,8 +42,7 @@ FieldEvaluator::FieldEvaluator(
 HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
                                 ICorDebugILFrame *debug_frame,
                                 std::ostream *err_stream) {
-  HRESULT hr = CompileUsingInstanceSource(stack_frame,
-      debug_frame, err_stream);
+  HRESULT hr = CompileUsingInstanceSource(stack_frame, debug_frame, err_stream);
   if (SUCCEEDED(hr)) {
     return hr;
   }
@@ -55,9 +55,9 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
   return E_FAIL;
 }
 
-HRESULT FieldEvaluator::CompileUsingInstanceSource(DbgStackFrame *stack_frame,
-                                                   ICorDebugILFrame *debug_frame,
-                                                   std::ostream *err_stream) {
+HRESULT FieldEvaluator::CompileUsingInstanceSource(
+    DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+    std::ostream *err_stream) {
   HRESULT hr = instance_source_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
     return hr;
@@ -76,7 +76,7 @@ HRESULT FieldEvaluator::CompileUsingInstanceSource(DbgStackFrame *stack_frame,
 }
 
 HRESULT FieldEvaluator::CompileUsingClassName(DbgStackFrame *stack_frame,
-                                           std::ostream *err_stream) {
+                                              std::ostream *err_stream) {
   if (possible_class_name_.empty()) {
     return E_FAIL;
   }
@@ -98,20 +98,21 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
   if (FAILED(hr)) {
     return hr;
   }
-  
+
   if (hr == S_FALSE) {
     return E_FAIL;
   }
 
-  hr = stack_frame->GetFieldFromClass(
-      class_token_, member_name, &field_def_, &is_static_,
-      &result_type_, metadata_import_, err_stream);
+  hr = stack_frame->GetFieldFromClass(class_token_, member_name, &field_def_,
+                                      &is_static_, &result_type_,
+                                      metadata_import_, err_stream);
   if (SUCCEEDED(hr)) {
     return hr;
   }
 
-  hr = stack_frame->GetPropertyFromClass(
-      class_token_, member_name, &class_property_, metadata_import_, err_stream);
+  hr = stack_frame->GetPropertyFromClass(class_token_, member_name,
+                                         &class_property_, metadata_import_,
+                                         err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -127,6 +128,7 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
 
 HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                                  IEvalCoordinator *eval_coordinator,
+                                 IDbgObjectFactory *obj_factory,
                                  std::ostream *err_stream) const {
   HRESULT hr;
   CComPtr<ICorDebugValue> debug_field_value;
@@ -147,13 +149,15 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
         return hr;
       }
 
-      hr = debug_class->GetStaticFieldValue(field_def_, debug_frame, &debug_field_value);
+      hr = debug_class->GetStaticFieldValue(field_def_, debug_frame,
+                                            &debug_field_value);
       if (FAILED(hr)) {
         return hr;
       }
 
-      hr = DbgObject::CreateDbgObject(debug_field_value, kDefaultObjectEvalDepth,
-          &field_value_obj, err_stream);
+      hr = obj_factory->CreateDbgObject(debug_field_value,
+                                        kDefaultObjectEvalDepth,
+                                        &field_value_obj, err_stream);
       if (FAILED(hr)) {
         return hr;
       }
@@ -167,7 +171,8 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
 
   // Moving on to non-static field/property so we need to get the source.
   std::shared_ptr<DbgObject> source_obj;
-  hr = instance_source_->Evaluate(&source_obj, eval_coordinator, err_stream);
+  hr = instance_source_->Evaluate(&source_obj, eval_coordinator,
+                                  obj_factory, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -176,9 +181,11 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
     return E_FAIL;
   }
 
-  // We can directly get the field/non-auto property without function evaluation.
+  // We can directly get the field/non-auto property without function
+  // evaluation.
   if (class_property_ == nullptr) {
-    DbgReferenceObject *reference_object = dynamic_cast<DbgReferenceObject *>(source_obj.get());
+    DbgReferenceObject *reference_object =
+        dynamic_cast<DbgReferenceObject *>(source_obj.get());
     if (!reference_object) {
       return E_FAIL;
     }

@@ -206,6 +206,7 @@
     <ClInclude Include="class_names.h" />
     <ClInclude Include="compiler_helpers.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="cor_debug_helper.h" />
     <ClInclude Include="custom_binary_reader.h" />
     <ClInclude Include="dbg_array.h" />
     <ClInclude Include="dbg_breakpoint.h" />
@@ -213,6 +214,7 @@
     <ClInclude Include="dbg_class_field.h" />
     <ClInclude Include="dbg_class_property.h" />
     <ClInclude Include="dbg_enum.h" />
+    <ClInclude Include="dbg_object_factory.h" />
     <ClInclude Include="dbg_reference_object.h" />
     <ClInclude Include="dbg_stack_frame.h" />
     <ClInclude Include="dbg_string.h" />
@@ -227,6 +229,7 @@
     <ClInclude Include="i_breakpoint_collection.h" />
     <ClInclude Include="i_cor_debug_helper.h" />
     <ClInclude Include="i_dbg_class_member.h" />
+    <ClInclude Include="i_dbg_object_factory.h" />
     <ClInclude Include="i_eval_coordinator.h" />
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="i_portable_pdb_file.h" />
@@ -270,6 +273,7 @@
     <ClCompile Include="dbg_class_field.cc" />
     <ClCompile Include="dbg_class_property.cc" />
     <ClCompile Include="dbg_enum.cc" />
+    <ClCompile Include="dbg_object_factory.cc" />
     <ClCompile Include="dbg_reference_object.cc" />
     <ClCompile Include="dbg_stack_frame.cc" />
     <ClCompile Include="dbg_string.cc" />
@@ -279,7 +283,7 @@
     <ClCompile Include="dbg_object.cc" />
     <ClCompile Include="document_index.cc" />
     <ClCompile Include="eval_coordinator.cc" />
-    <ClCompile Include="i_cor_debug_helper.cc" />
+    <ClCompile Include="cor_debug_helper.cc" />
     <ClCompile Include="metadata_headers.cc" />
     <ClCompile Include="metadata_tables.cc" />
     <ClCompile Include="method_info.cc" />

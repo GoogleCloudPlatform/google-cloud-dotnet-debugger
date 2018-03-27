@@ -39,7 +39,9 @@ class LiteralEvaluator : public ExpressionEvaluator {
   const TypeSignature& GetStaticType() const override { return result_type_; }
 
   HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override {
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const override {
     *dbg_object = n_;
     return S_OK;
   }

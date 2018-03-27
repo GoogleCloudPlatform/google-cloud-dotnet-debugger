@@ -20,6 +20,7 @@
 #include <string>
 
 #include "cordebug.h"
+#include "dbg_object_factory.h"
 #include "dbg_reference_object.h"
 #include "dbg_stack_frame.h"
 #include "debugger_callback.h"
@@ -138,6 +139,7 @@ HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
 
 HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                                       IEvalCoordinator *eval_coordinator,
+                                      IDbgObjectFactory *obj_factory,
                                       std::ostream *err_stream) const {
   // Create ICorDebugEval with the ICorDebugFunction.
   CComPtr<ICorDebugEval> debug_eval;
@@ -160,7 +162,8 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   // (so instance_source_is_invoking_obj_ is true), we would also need
   // to retrieve A to get the instantiated generic class types of A.
   if (instance_source_is_invoking_obj_ || !method_info_.is_static) {
-    hr = GetInvokingObject(&invoking_object, eval_coordinator, err_stream);
+    hr = GetInvokingObject(&invoking_object, eval_coordinator, obj_factory,
+                           err_stream);
     if (FAILED(hr)) {
       *err_stream << "Failed to get invoking object for method call "
                   << method_name_;
@@ -173,8 +176,8 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
     arg_debug_values.push_back(invoking_object);
   }
 
-  hr = EvaluateArgumentsHelper(&arg_debug_values, debug_eval,
-    eval_coordinator, err_stream);
+  hr = EvaluateArgumentsHelper(&arg_debug_values, debug_eval, eval_coordinator,
+                               obj_factory, err_stream);
   if (FAILED(hr)) {
     *err_stream << "Failed to evaluate arguments.";
     return hr;
@@ -226,8 +229,8 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   }
 
   std::unique_ptr<DbgObject> eval_obj_result;
-  hr = DbgObject::CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
-                                  &eval_obj_result, &std::cerr);
+  hr = obj_factory->CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
+                                    &eval_obj_result, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -237,14 +240,14 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
 }
 
 HRESULT MethodCallEvaluator::EvaluateArgumentsHelper(
-      std::vector<ICorDebugValue*>* arg_debug_values,
-      ICorDebugEval *debug_eval,
-      IEvalCoordinator *eval_coordinator,
-      std::ostream *err_stream) const {
+    std::vector<ICorDebugValue *> *arg_debug_values, ICorDebugEval *debug_eval,
+    IEvalCoordinator *eval_coordinator, IDbgObjectFactory *obj_factory,
+    std::ostream *err_stream) const {
   HRESULT hr;
   for (auto &argument : arguments_) {
     std::shared_ptr<DbgObject> arg_obj;
-    hr = argument->Evaluate(&arg_obj, eval_coordinator, err_stream);
+    hr =
+        argument->Evaluate(&arg_obj, eval_coordinator, obj_factory, err_stream);
     if (FAILED(hr)) {
       return hr;
     }
@@ -300,12 +303,13 @@ HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
 
 HRESULT MethodCallEvaluator::GetInvokingObject(
     ICorDebugValue **invoking_object, IEvalCoordinator *eval_coordinator,
-    std::ostream *err_stream) const {
+    IDbgObjectFactory *obj_factory, std::ostream *err_stream) const {
   HRESULT hr = E_FAIL;
 
   if (instance_source_is_invoking_obj_) {
     std::shared_ptr<DbgObject> source_obj;
-    hr = instance_source_->Evaluate(&source_obj, eval_coordinator, err_stream);
+    hr = instance_source_->Evaluate(&source_obj, eval_coordinator, obj_factory,
+                                    err_stream);
     if (FAILED(hr)) {
       *err_stream << "Failed to evaluate source object.";
       return hr;
@@ -340,11 +344,21 @@ HRESULT MethodCallEvaluator::PopulateGenericClassTypesFromClassObject(
     ICorDebugValue *class_object,
     std::vector<CComPtr<ICorDebugType>> *generic_types,
     std::ostream *err_stream) const {
-  HRESULT hr;
-  CComPtr<ICorDebugType> debug_type;
-  hr = GetICorDebugType(class_object, &debug_type, err_stream);
+  // TODO(quoct): Refactor this code so that this logic doesn't
+  // have to be called from this evaluator (maybe put in IEvalCoordinator?).
+  CComPtr<ICorDebugValue2> debug_value_2;
+  HRESULT hr = class_object->QueryInterface(
+      __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
+
   if (FAILED(hr)) {
+    *err_stream << "Failed to query ICorDebugValue2 from ICorDebugValue.";
     return hr;
+  }
+
+  CComPtr<ICorDebugType> debug_type;
+  hr = debug_value_2->GetExactType(&debug_type);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get exact type from ICorDebugValue2.";
   }
 
   CComPtr<ICorDebugTypeEnum> type_enum;

@@ -43,6 +43,7 @@ class FieldEvaluator : public ExpressionEvaluator {
 
   HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                    IEvalCoordinator *eval_coordinator,
+                   IDbgObjectFactory *obj_factory,
                    std::ostream *err_stream) const override;
 
  private:

@@ -39,7 +39,9 @@ class IdentifierEvaluator : public ExpressionEvaluator {
 
   HRESULT Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override;
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const override;
 
  private:
   // Name of the identifier (whether it is local variable or something else).

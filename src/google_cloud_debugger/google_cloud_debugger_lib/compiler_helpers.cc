@@ -312,8 +312,7 @@ CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
 }
 
 HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
-    const CorElementType &cor_type,
-    std::string *result) {
+    const CorElementType &cor_type, std::string *result) {
   static std::map<CorElementType, std::string> cor_type_to_string{
       {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName},
       {CorElementType::ELEMENT_TYPE_I1, kSByteClassName},
@@ -343,6 +342,7 @@ HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
 HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
                                         IMetaDataImport *source_class_metadata,
                                         const std::string &target_class,
+                                        ICorDebugHelper *debug_helper,
                                         std::ostream *err_stream) {
   HRESULT hr;
   mdTypeDef current_class_token = 0;
@@ -354,9 +354,9 @@ HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
   int max_class_to_traverse = 10;
   while (max_class_to_traverse >= 0) {
     max_class_to_traverse -= 1;
-    hr = GetTypeNameFromMdTypeDef(current_class_token, current_metadata_import,
-                                  &current_class_name,
-                                  &current_base_class_token, err_stream);
+    hr = debug_helper->GetTypeNameFromMdTypeDef(
+        current_class_token, current_metadata_import, &current_class_name,
+        &current_base_class_token, err_stream);
     if (FAILED(hr)) {
       return hr;
     }
@@ -379,7 +379,7 @@ HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
     } else if (token_type == CorTokenType::mdtTypeRef) {
       CComPtr<IMetaDataImport> resolved_metadata_import;
       mdTypeDef resolved_class_token;
-      hr = GetMdTypeDefAndMetaDataFromTypeRef(
+      hr = debug_helper->GetMdTypeDefAndMetaDataFromTypeRef(
           current_base_class_token, current_metadata_import,
           &resolved_class_token, &resolved_metadata_import);
       if (FAILED(hr)) {
