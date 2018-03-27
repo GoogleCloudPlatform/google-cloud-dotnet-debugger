@@ -19,7 +19,9 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "cor_debug_helper.h"
 #include "dbg_breakpoint.h"
+#include "dbg_object_factory.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
@@ -30,7 +32,11 @@ using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::StackFrame;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::CorDebugHelper;
 using google_cloud_debugger::DbgBreakpoint;
+using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::ICorDebugHelper;
+using google_cloud_debugger::IDbgObjectFactory;
 using google_cloud_debugger::StackFrameCollection;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::MethodInfo;
@@ -132,8 +138,7 @@ class FrameFixture {
         .WillByDefault(DoAll(SetArgPointee<1>(&il_frame_), Return(S_OK)));
 
     ON_CALL(il_frame_, GetFunction(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&frame_function_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&frame_function_), Return(S_OK)));
 
     // Sets up the instruction pointer (IP) for this IL frame.
     ON_CALL(il_frame_, GetIP(_, _))
@@ -216,7 +221,12 @@ class StackFrameCollectionTest : public ::testing::Test {
   virtual void SetUp() {
     // Sets up the EvalCoordinator to return stack walk.
     ON_CALL(eval_coordinator_, CreateStackWalk(_))
-      .WillByDefault(DoAll(SetArgPointee<0>(&debug_stack_walk_), Return(S_OK)));
+        .WillByDefault(
+            DoAll(SetArgPointee<0>(&debug_stack_walk_), Return(S_OK)));
+
+    debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
+    dbg_object_factory_ =
+        std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory());
   }
 
   // Sets up the StackFrameCollection to return 3 frames.
@@ -276,12 +286,10 @@ class StackFrameCollectionTest : public ::testing::Test {
             Return(S_OK)));
 
     ON_CALL(debug_module_, GetAssembly(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
 
     ON_CALL(debug_assembly_, GetAppDomain(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&debug_domain_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_domain_), Return(S_OK)));
   }
 
   virtual void SetUpPDBFile() {
@@ -321,6 +329,12 @@ class StackFrameCollectionTest : public ::testing::Test {
     first_frame_.file_name_ = "First file";
     pdb_file_fixture_.first_doc_.file_name_ = first_frame_.file_name_;
   }
+
+  // ICorDebugHelper used for StackFrameCollection constructor.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // IDbgObjectFactory used for StackFrameCollection constructor.
+  std::shared_ptr<IDbgObjectFactory> dbg_object_factory_;
 
   // Vector of PDB files that will be fed to the Initialize function
   // of StackFrameCollection.
@@ -367,7 +381,8 @@ class StackFrameCollectionTest : public ::testing::Test {
 // Tests the Initialize function of stack frame collection when
 // no PDB file matches the module.
 TEST_F(StackFrameCollectionTest, TestInitializeWithoutPDBFile) {
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
   SetUpStackWalk();
   HRESULT hr = stack_frame_collection.ProcessBreakpoint(
       pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
@@ -377,7 +392,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithoutPDBFile) {
 // Tests the Initialize function of stack frame collection
 // when we have a PDB that matches the module.
 TEST_F(StackFrameCollectionTest, TestInitializeWithPDBFile) {
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
   SetUpStackWalk();
   SetUpPDBFile();
   HRESULT hr = stack_frame_collection.ProcessBreakpoint(
@@ -392,7 +408,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeError) {
   {
     EXPECT_CALL(debug_stack_walk_, GetFrame(_))
         .WillRepeatedly(Return(E_ACCESSDENIED));
-    StackFrameCollection stack_frame_collection;
+    StackFrameCollection stack_frame_collection(debug_helper_,
+                                                dbg_object_factory_);
     EXPECT_EQ(stack_frame_collection.ProcessBreakpoint(
                   pdb_files_, &dbg_breakpoint_, &eval_coordinator_),
               E_ACCESSDENIED);
@@ -400,7 +417,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeError) {
 
   // Null tests.
   {
-    StackFrameCollection stack_frame_collection;
+    StackFrameCollection stack_frame_collection(debug_helper_,
+                                                dbg_object_factory_);
     EXPECT_EQ(stack_frame_collection.ProcessBreakpoint(pdb_files_, nullptr,
                                                        &eval_coordinator_),
               E_INVALIDARG);
@@ -413,7 +431,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeError) {
 // Tests that if we have more than 20 frames, only the first
 // 20 will be processed in Initialize function.
 TEST_F(StackFrameCollectionTest, TestInitializeWithMoreThan20Frames) {
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
 
   // This should only be called 20 times.
   EXPECT_CALL(debug_stack_walk_, GetFrame(_))
@@ -477,7 +496,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithFourILFrames) {
 
   SetUpDebugModule();
 
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
   HRESULT hr = stack_frame_collection.ProcessBreakpoint(
       pdb_files_, &dbg_breakpoint_, &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -485,7 +505,8 @@ TEST_F(StackFrameCollectionTest, TestInitializeWithFourILFrames) {
 
 // Tests the PopulateStackFrames function of stack frame collection.
 TEST_F(StackFrameCollectionTest, TestPopulateStackFrames) {
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
   SetUpStackWalk();
   SetUpPDBFile();
   HRESULT hr = stack_frame_collection.ProcessBreakpoint(
@@ -532,7 +553,8 @@ TEST_F(StackFrameCollectionTest, TestPopulateStackFrames) {
 // Tests the error case for PopulateStackFrames function of stack frame
 // collection.
 TEST_F(StackFrameCollectionTest, TestPopulateStackFramesError) {
-  StackFrameCollection stack_frame_collection;
+  StackFrameCollection stack_frame_collection(debug_helper_,
+                                              dbg_object_factory_);
   SetUpStackWalk();
   SetUpPDBFile();
   HRESULT hr = stack_frame_collection.ProcessBreakpoint(

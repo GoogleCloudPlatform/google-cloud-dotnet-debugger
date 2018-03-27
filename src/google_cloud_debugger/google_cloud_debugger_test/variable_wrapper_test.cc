@@ -24,12 +24,16 @@
 #include "cor.h"
 #include "cordebug.h"
 #include "dbg_object.h"
+#include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator_mock.h"
 #include "variable_wrapper.h"
 #include "winerror.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::DbgObject;
+using google_cloud_debugger::ICorDebugHelper;
+using google_cloud_debugger::IDbgObjectFactory;
 using google_cloud_debugger::IEvalCoordinator;
 using google_cloud_debugger::VariableWrapper;
 using std::queue;
@@ -49,7 +53,7 @@ namespace google_cloud_debugger_test {
 class FakeDbgObjectBase : public DbgObject {
  public:
   FakeDbgObjectBase(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+      : DbgObject(debug_type, depth, std::shared_ptr<ICorDebugHelper>()) {}
 
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) override {}
 
@@ -59,13 +63,13 @@ class FakeDbgObjectBase : public DbgObject {
   }
 
   virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
-      ICorDebugEval *debug_eval) override {
+                                    ICorDebugEval *debug_eval) override {
     return E_NOTIMPL;
   }
 
   // Type of the object.
-  std::string type_ =  "Type" + std::to_string(rand());
- 
+  std::string type_ = "Type" + std::to_string(rand());
+
   // Proto of the object.
   Variable variable_proto_;
 };
@@ -95,7 +99,7 @@ class FakeDbgObjectValue : public FakeDbgObjectBase {
     return VariableWrapper(&object->variable_proto_, object);
   }
   // Value of the object.
-  std::string value_ =  "Value" + std::to_string(rand()); 
+  std::string value_ = "Value" + std::to_string(rand());
 };
 
 // Helper class that implements DbgObject.
@@ -117,7 +121,8 @@ class FakeDbgObjectMembers : public FakeDbgObjectBase {
   // Creates a variable wrapper. The proto of the wrapper
   // will be variable_proto_ field of the object.
   static VariableWrapper GetVariableWrapper() {
-    shared_ptr<FakeDbgObjectMembers> object(new FakeDbgObjectMembers(nullptr, 0));
+    shared_ptr<FakeDbgObjectMembers> object(
+        new FakeDbgObjectMembers(nullptr, 0));
     return VariableWrapper(&object->variable_proto_, object);
   }
 
@@ -135,8 +140,10 @@ class VariableWrapperTest : public ::testing::Test {
   VariableWrapper value_wrapper_4_ = FakeDbgObjectValue::GetVariableWrapper();
 
   VariableWrapper members_wrapper_ = FakeDbgObjectMembers::GetVariableWrapper();
-  VariableWrapper members_wrapper_2_ = FakeDbgObjectMembers::GetVariableWrapper();
-  VariableWrapper members_wrapper_3_ = FakeDbgObjectMembers::GetVariableWrapper();
+  VariableWrapper members_wrapper_2_ =
+      FakeDbgObjectMembers::GetVariableWrapper();
+  VariableWrapper members_wrapper_3_ =
+      FakeDbgObjectMembers::GetVariableWrapper();
 
   IEvalCoordinatorMock eval_coordinator_;
 };
@@ -144,21 +151,24 @@ class VariableWrapperTest : public ::testing::Test {
 // Helper function to check the value populated in the variable proto
 // of wrapper matches the value of the FakeDbgObjectValue in VariableWrapper.
 void CheckValue(VariableWrapper *wrapper) {
-  FakeDbgObjectValue *fake_dbg_object = (FakeDbgObjectValue *)wrapper->GetVariableValue().get();
+  FakeDbgObjectValue *fake_dbg_object =
+      (FakeDbgObjectValue *)wrapper->GetVariableValue().get();
   EXPECT_EQ(wrapper->GetVariableProto()->value(), fake_dbg_object->value_);
 }
 
 // Helper function to check the type populated in the variable proto
 // of wrapper matches the value of the FakeDbgObjectBase in VariableWrapper.
 void CheckType(VariableWrapper *wrapper) {
-  FakeDbgObjectBase *fake_dbg_object = (FakeDbgObjectBase *)wrapper->GetVariableValue().get();
+  FakeDbgObjectBase *fake_dbg_object =
+      (FakeDbgObjectBase *)wrapper->GetVariableValue().get();
   EXPECT_EQ(wrapper->GetVariableProto()->type(), fake_dbg_object->type_);
 }
 
 // Helper function to add variable wrapper item to the FakeDbgObjectMembers
 // in wrapper container.
 void AddMembers(VariableWrapper *container, const VariableWrapper &item) {
-  FakeDbgObjectMembers *fake_members_ = (FakeDbgObjectMembers *)container->GetVariableValue().get();
+  FakeDbgObjectMembers *fake_members_ =
+      (FakeDbgObjectMembers *)container->GetVariableValue().get();
   fake_members_->members_.push_back(item);
 }
 
@@ -216,7 +226,8 @@ TEST_F(VariableWrapperTest, TestPopulateMembers) {
 TEST_F(VariableWrapperTest, TestPopulateMembersError) {
   vector<VariableWrapper> members;
 
-  EXPECT_EQ(members_wrapper_.PopulateMembers(nullptr, &eval_coordinator_), E_INVALIDARG);
+  EXPECT_EQ(members_wrapper_.PopulateMembers(nullptr, &eval_coordinator_),
+            E_INVALIDARG);
   EXPECT_EQ(members_wrapper_.PopulateMembers(&members, nullptr), E_INVALIDARG);
 }
 
@@ -224,8 +235,8 @@ TEST_F(VariableWrapperTest, TestPopulateMembersError) {
 TEST_F(VariableWrapperTest, TestBFSOneItem) {
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(value_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
-      []() { return false; }, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, []() { return false; },
+                                           &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with both value and type.
@@ -240,8 +251,8 @@ TEST_F(VariableWrapperTest, TestBFSTwoChildren) {
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
-      []() { return false; }, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, []() { return false; },
+                                           &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with correct type.
@@ -266,14 +277,16 @@ TEST_F(VariableWrapperTest, TestBFSTwoChildrenWithTerminatingCondition) {
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
   HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
-      [&first_time]() {
-        // Terminates the BFS after processing the first item.
-        if (first_time) {
-          first_time = false;
-          return false;
-        }
-        return true;
-      }, &eval_coordinator_);
+                                           [&first_time]() {
+                                             // Terminates the BFS after
+                                             // processing the first item.
+                                             if (first_time) {
+                                               first_time = false;
+                                               return false;
+                                             }
+                                             return true;
+                                           },
+                                           &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with correct type.
@@ -294,12 +307,13 @@ TEST_F(VariableWrapperTest, TestBFSTwoLevels) {
   AddMembers(&members_wrapper_, members_wrapper_2_);
   AddMembers(&members_wrapper_2_, value_wrapper_2_);
   AddMembers(&members_wrapper_2_, value_wrapper_3_);
-  members_wrapper_.SetBFSLevel(google_cloud_debugger::kDefaultObjectEvalDepth - 2);
+  members_wrapper_.SetBFSLevel(google_cloud_debugger::kDefaultObjectEvalDepth -
+                               2);
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
-      []() { return false; }, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, []() { return false; },
+                                           &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // BFS should fill up the proto with correct type.
@@ -314,10 +328,10 @@ TEST_F(VariableWrapperTest, TestBFSTwoLevels) {
   // The other children should have errors set.
   EXPECT_TRUE(value_wrapper_2_.GetVariableProto()->status().iserror());
   EXPECT_EQ(value_wrapper_2_.GetVariableProto()->status().message(),
-      "Object evaluation limit reached");
+            "Object evaluation limit reached");
   EXPECT_TRUE(value_wrapper_3_.GetVariableProto()->status().iserror());
   EXPECT_EQ(value_wrapper_3_.GetVariableProto()->status().message(),
-      "Object evaluation limit reached");
+            "Object evaluation limit reached");
 }
 
 // Tests PerformBFS method when there is 1 item with 2 children
@@ -333,8 +347,8 @@ TEST_F(VariableWrapperTest, TestBFSThreeLevels) {
 
   queue<VariableWrapper> bfs_queue;
   bfs_queue.push(members_wrapper_);
-  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue,
-      []() { return false; }, &eval_coordinator_);
+  HRESULT hr = VariableWrapper::PerformBFS(&bfs_queue, []() { return false; },
+                                           &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that BFS fill up everything correctly.

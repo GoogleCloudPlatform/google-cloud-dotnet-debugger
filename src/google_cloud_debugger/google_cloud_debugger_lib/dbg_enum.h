@@ -26,9 +26,10 @@ namespace google_cloud_debugger {
 // (CorElementType as ELEMENT_TYPE_CLASS and ELEMENT_TYPE_VALUETYPE).
 class DbgEnum : public DbgClass {
  public:
-  DbgEnum(ICorDebugType *debug_type, int depth)
-      : DbgClass(debug_type, depth, std::shared_ptr<ICorDebugHelper>(),
-                 std::shared_ptr<IDbgObjectFactory>()) {}
+  DbgEnum(ICorDebugType *debug_type, int depth,
+          std::shared_ptr<ICorDebugHelper> debug_helper,
+          std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : DbgClass(debug_type, depth, debug_helper, obj_factory) {}
 
   // Populate variable with the value of the enum.
   HRESULT PopulateValue(

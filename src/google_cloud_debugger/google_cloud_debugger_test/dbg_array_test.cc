@@ -18,22 +18,28 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "cor_debug_helper.h"
 #include "dbg_array.h"
+#include "dbg_object_factory.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "variable_wrapper.h"
 
+using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::CorDebugHelper;
+using google_cloud_debugger::DbgArray;
+using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::ICorDebugHelper;
+using google_cloud_debugger::IDbgObjectFactory;
+using google_cloud_debugger::VariableWrapper;
+using std::string;
+using std::vector;
+using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using ::testing::_;
-using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::CComPtr;
-using google_cloud_debugger::DbgArray;
-using google_cloud_debugger::VariableWrapper;
-using std::string;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -46,6 +52,10 @@ class DbgArrayTest : public ::testing::Test {
     // whenever QueryInterface is called.
     ON_CALL(array_value_, QueryInterface(_, _))
         .WillByDefault(DoAll(SetArgPointee<1>(&array_value_), Return(S_OK)));
+
+    debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
+    dbg_object_factory_ =
+        std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory());
   }
 
   // Sets up various mock objects so when we use them with
@@ -86,6 +96,12 @@ class DbgArrayTest : public ::testing::Test {
   // An array with 2 elements.
   ULONG32 dimensions_[1] = {2};
 
+  // ICorDebugHelper used for array constructor.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // IDbgObjectFactory used for array constructor.
+  std::shared_ptr<IDbgObjectFactory> dbg_object_factory_;
+
   // Types of the array.
   ICorDebugTypeMock array_type_;
   ICorDebugTypeMock array_element_type_;
@@ -109,7 +125,7 @@ TEST_F(DbgArrayTest, Initialize) {
   // the destructor of DbgArray is called, otherwise, DbgArray
   // may try to delete value that is obselete.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     dbgarray.Initialize(&array_value_, FALSE);
     HRESULT hr = dbgarray.GetInitializeHr();
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -120,14 +136,14 @@ TEST_F(DbgArrayTest, Initialize) {
 TEST_F(DbgArrayTest, InitializeError) {
   // Null type.
   {
-    DbgArray dbgarray(nullptr, 1);
+    DbgArray dbgarray(nullptr, 1, debug_helper_, dbg_object_factory_);
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), E_INVALIDARG);
   }
 
   // Makes GetFirstTypeParameter returns error.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     EXPECT_CALL(array_type_, GetFirstTypeParameter(_))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_CONTEXT_UNVAILABLE));
@@ -141,7 +157,7 @@ TEST_F(DbgArrayTest, InitializeError) {
 
   // Returns failure when querying the element type of the array.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     EXPECT_CALL(array_element_type_, GetType(_))
         .WillRepeatedly(Return(E_ACCESSDENIED));
     dbgarray.Initialize(&array_value_, FALSE);
@@ -154,7 +170,7 @@ TEST_F(DbgArrayTest, InitializeError) {
 
   // Makes GetRank returns error.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     EXPECT_CALL(array_type_, GetRank(_))
         .WillRepeatedly(
             DoAll(SetArgPointee<0>(1), Return(COR_E_SAFEARRAYRANKMISMATCH)));
@@ -172,7 +188,7 @@ TEST_F(DbgArrayTest, InitializeError) {
 
   // Returns error when trying to create a handle for the array.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     ON_CALL(array_value_, QueryInterface(__uuidof(ICorDebugHeapValue2), _))
         .WillByDefault(Return(E_NOINTERFACE));
     dbgarray.Initialize(&array_value_, FALSE);
@@ -184,7 +200,7 @@ TEST_F(DbgArrayTest, InitializeError) {
 
   // Returns error when trying to create a handle for the array.
   {
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     EXPECT_CALL(heap_value_, CreateHandle(_, _))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
@@ -201,7 +217,7 @@ TEST_F(DbgArrayTest, InitializeError) {
     EXPECT_CALL(array_value_, GetDimensions(_, _))
         .Times(1)
         .WillRepeatedly(Return(CORDBG_S_BAD_START_SEQUENCE_POINT));
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
     dbgarray.Initialize(&array_value_, FALSE);
     EXPECT_EQ(dbgarray.GetInitializeHr(), CORDBG_S_BAD_START_SEQUENCE_POINT);
   }
@@ -211,7 +227,7 @@ TEST_F(DbgArrayTest, InitializeError) {
 TEST_F(DbgArrayTest, TestGetArrayItem) {
   SetUpArray();
 
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
   dbgarray.Initialize(&array_value_, FALSE);
   HRESULT hr = dbgarray.GetInitializeHr();
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -230,7 +246,7 @@ TEST_F(DbgArrayTest, TestGetArrayItem) {
 TEST_F(DbgArrayTest, TestGetArrayItemError) {
   SetUpArray();
 
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
   int position = 3;
   CComPtr<ICorDebugValue> array_item;
 
@@ -250,7 +266,7 @@ TEST_F(DbgArrayTest, TestPopulateType) {
   SetUpArray();
 
   Variable variable;
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
   dbgarray.Initialize(&array_value_, FALSE);
 
   dbgarray.PopulateType(&variable);
@@ -265,7 +281,7 @@ TEST_F(DbgArrayTest, TestPopulateTypeError) {
     Variable variable;
     // Since the type given is null, Initialize function will return
     // E_INVALIDARG.
-    DbgArray dbgarray(nullptr, 1);
+    DbgArray dbgarray(nullptr, 1, debug_helper_, dbg_object_factory_);
     dbgarray.Initialize(&array_value_, FALSE);
 
     // PopulateType should return E_INVALIDARG since Initialize
@@ -274,7 +290,7 @@ TEST_F(DbgArrayTest, TestPopulateTypeError) {
     EXPECT_EQ(dbgarray.GetInitializeHr(), dbgarray.PopulateType(&variable));
   }
 
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
   dbgarray.Initialize(&array_value_, FALSE);
 
   // Should throws error for null variable.
@@ -289,7 +305,7 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
   {
     Variable variable;
     vector<VariableWrapper> variable_wrappers;
-    DbgArray dbgarray(&array_type_, 1);
+    DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
 
     // Initialize to a null array.
     dbgarray.Initialize(&array_value_, TRUE);
@@ -303,7 +319,7 @@ TEST_F(DbgArrayTest, TestPopulateMembers) {
 
   Variable variable;
   vector<VariableWrapper> variable_wrappers;
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
 
   dbgarray.Initialize(&array_value_, FALSE);
 
@@ -353,7 +369,7 @@ TEST_F(DbgArrayTest, TestPopulateMembersError) {
   {
     // Since the type given is null, Initialize function will return
     // E_INVALIDARG.
-    DbgArray dbgarray(nullptr, 1);
+    DbgArray dbgarray(nullptr, 1, debug_helper_, dbg_object_factory_);
     dbgarray.Initialize(&array_value_, FALSE);
 
     // PopulateMembers should return E_INVALIDARG since Initialize
@@ -366,14 +382,14 @@ TEST_F(DbgArrayTest, TestPopulateMembersError) {
                                        &eval_coordinator_));
   }
 
-  DbgArray dbgarray(&array_type_, 1);
+  DbgArray dbgarray(&array_type_, 1, debug_helper_, dbg_object_factory_);
   dbgarray.Initialize(&array_value_, FALSE);
 
   // Should throws error for null variable.
   vector<VariableWrapper> variable_wrappers;
-  EXPECT_EQ(dbgarray.PopulateMembers(nullptr, &variable_wrappers,
-                                     &eval_coordinator_),
-            E_INVALIDARG);
+  EXPECT_EQ(
+      dbgarray.PopulateMembers(nullptr, &variable_wrappers, &eval_coordinator_),
+      E_INVALIDARG);
 
   Variable variable;
   // Should throws error for null variable wrappers vector.

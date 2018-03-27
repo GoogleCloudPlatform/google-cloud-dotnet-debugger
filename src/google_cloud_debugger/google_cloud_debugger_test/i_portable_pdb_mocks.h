@@ -21,6 +21,7 @@
 
 #include "document_index.h"
 #include "i_portable_pdb_file.h"
+#include "i_cor_debug_helper.h"
 
 namespace google_cloud_debugger_test {
 
@@ -28,7 +29,8 @@ namespace google_cloud_debugger_test {
 class IPortablePdbFileMock
     : public google_cloud_debugger_portable_pdb::IPortablePdbFile {
  public:
-  MOCK_METHOD1(Initialize, HRESULT(ICorDebugModule *debug_module));
+  MOCK_METHOD2(Initialize, HRESULT(ICorDebugModule *debug_module,
+      google_cloud_debugger::ICorDebugHelper *debug_helper));
   MOCK_METHOD0(ParsePdbFile, bool());
   MOCK_CONST_METHOD2(
       GetStream,
