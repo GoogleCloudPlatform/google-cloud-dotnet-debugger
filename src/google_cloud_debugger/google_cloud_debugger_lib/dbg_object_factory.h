@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DBG_OBJECT_FACTORY_
-#define DBG_OBJECT_FACTORY_
+#ifndef DBG_OBJECT_FACTORY_H__
+#define DBG_OBJECT_FACTORY_H__
 
 #include "i_dbg_object_factory.h"
 
 namespace google_cloud_debugger {
 
-// This is a factory class to help create DbgObject.
+// This is a factory class to help create DbgObjects.
 class DbgObjectFactory : public IDbgObjectFactory {
  public:
+  // This constructor will create a default ICorDebugHelper
+  // of the type CorDebugHelper.
   DbgObjectFactory();
+
+  // This constructor will set debug_helper_ to debug_helper.
+  DbgObjectFactory(std::shared_ptr<ICorDebugHelper> debug_helper);
 
   // Create a DbgObject with an evaluation depth of depth.
   HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
@@ -102,4 +107,4 @@ class DbgObjectFactory : public IDbgObjectFactory {
 
 }  //  namespace google_cloud_debugger
 
-#endif  //  DBG_OBJECT_FACTORY_
+#endif  //  DBG_OBJECT_FACTORY_H__

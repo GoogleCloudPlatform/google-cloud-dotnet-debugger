@@ -36,6 +36,11 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
+DbgObjectFactory::DbgObjectFactory() : debug_helper_(new CorDebugHelper()) {}
+
+DbgObjectFactory::DbgObjectFactory(std::shared_ptr<ICorDebugHelper> debug_helper)
+  : debug_helper_(debug_helper) { }
+  
 HRESULT DbgObjectFactory::CreateDbgObjectHelper(
     ICorDebugValue *debug_value, ICorDebugType *debug_type,
     CorElementType cor_element_type, BOOL is_null, int depth,
@@ -168,8 +173,6 @@ HRESULT DbgObjectFactory::CreateDbgObject(ICorDebugType *debug_type,
   return CreateDbgObjectHelper(nullptr, debug_type, cor_element_type, TRUE, 0,
                                result_object, err_stream);
 }
-
-DbgObjectFactory::DbgObjectFactory() : debug_helper_(new CorDebugHelper()) {}
 
 HRESULT DbgObjectFactory::CreateDbgObject(ICorDebugValue *debug_value,
                                           int depth,

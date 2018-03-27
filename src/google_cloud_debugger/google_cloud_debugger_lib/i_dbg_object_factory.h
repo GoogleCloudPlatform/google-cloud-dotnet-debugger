@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef I_DBG_OBJECT_FACTORY_
-#define I_DBG_OBJECT_FACTORY_
+#ifndef I_DBG_OBJECT_FACTORY_H__
+#define I_DBG_OBJECT_FACTORY_H__
 
 #include <string>
 #include <vector>
@@ -32,7 +32,7 @@ class ICorDebugHelper;
 class DbgObject;
 struct TypeSignature;
 
-// This is a factory class to help create DbgObject.
+// This is a factory class to help create DbgObjects.
 class IDbgObjectFactory {
  public:
   virtual ~IDbgObjectFactory() = default;
@@ -51,4 +51,4 @@ class IDbgObjectFactory {
 
 }  //  namespace google_cloud_debugger
 
-#endif  //  I_DBG_OBJECT_FACTORY_
+#endif  //  I_DBG_OBJECT_FACTORY_H__

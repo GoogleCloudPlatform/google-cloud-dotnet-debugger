@@ -52,8 +52,6 @@ class DbgObject : public StringStreamWrapper {
   // error stream of this object using OutputError.
   // With this, the PrintJSON object can just check and print
   // out the object with the correct error status.
-  // object_factory is needed in case we have to create new DbgObjects
-  // to represent type or fields.
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
   // Sets the type of proto variable to the type of this object.
