@@ -64,9 +64,6 @@
     <ClCompile Include="eval_coordinator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="i_cor_debug_helper.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="metadata_headers.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -137,6 +134,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="breakpoint_location_collection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cor_debug_helper.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dbg_object_factory.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -334,6 +337,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="breakpoint_location_collection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cor_debug_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_object_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_dbg_object_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

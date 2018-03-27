@@ -26,6 +26,8 @@ namespace google_cloud_debugger {
 class DbgObject;
 class DbgStackFrame;
 class IEvalCoordinator;
+class ICorDebugHelper;
+class IDbgObjectFactory;
 
 // Interface representing compiled expression or subexpression.
 class ExpressionEvaluator {
@@ -59,7 +61,9 @@ class ExpressionEvaluator {
   // eval_coordinator is used for method call evaluation.
   virtual HRESULT Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const = 0;
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const = 0;
 };
 
 

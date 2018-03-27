@@ -401,9 +401,10 @@ HRESULT BinaryExpressionEvaluator::CompileShift(std::ostream *err_stream) {
 
 HRESULT BinaryExpressionEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
-    std::ostream *err_stream) const {
+    IDbgObjectFactory *obj_factory, std::ostream *err_stream) const {
   std::shared_ptr<DbgObject> arg1_obj;
-  HRESULT hr = arg1_->Evaluate(&arg1_obj, eval_coordinator, err_stream);
+  HRESULT hr = arg1_->Evaluate(&arg1_obj, eval_coordinator,
+                               obj_factory, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToEvalFirstSubExpr;
     return hr;
@@ -442,7 +443,7 @@ HRESULT BinaryExpressionEvaluator::Evaluate(
   }
 
   std::shared_ptr<DbgObject> arg2_obj;
-  hr = arg2_->Evaluate(&arg2_obj, eval_coordinator, err_stream);
+  hr = arg2_->Evaluate(&arg2_obj, eval_coordinator, obj_factory, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToEvalSecondSubExpr;
     return hr;

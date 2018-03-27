@@ -70,6 +70,7 @@ HRESULT IdentifierEvaluator::Compile(
 HRESULT IdentifierEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object,
     IEvalCoordinator *eval_coordinator,
+    IDbgObjectFactory *obj_factory,
     std::ostream * err_stream) const {
   if (class_property_ == nullptr) {
     *dbg_object = identifier_object_;

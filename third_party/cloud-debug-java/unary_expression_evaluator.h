@@ -49,7 +49,9 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
   // This simply calls computer_, which should have been assigned in Compile call. 
   HRESULT Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const override;
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const override;
 
  private:
   // Tries to compile the expression for unary plus and minus operators.

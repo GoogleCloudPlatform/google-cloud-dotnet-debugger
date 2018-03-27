@@ -157,9 +157,10 @@ HRESULT TypeCastOperatorEvaluator::CompileNumericalCast(
 
 HRESULT TypeCastOperatorEvaluator::Evaluate(
     std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
-    std::ostream *err_stream) const {
+    IDbgObjectFactory *obj_factory, std::ostream *err_stream) const {
   std::shared_ptr<DbgObject> source_obj;
-  HRESULT hr = source_->Evaluate(&source_obj, eval_coordinator, err_stream);
+  HRESULT hr = source_->Evaluate(&source_obj, eval_coordinator,
+                                 obj_factory, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

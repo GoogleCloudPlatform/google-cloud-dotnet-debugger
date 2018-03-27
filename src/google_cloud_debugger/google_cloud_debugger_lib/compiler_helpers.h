@@ -24,6 +24,7 @@
 namespace google_cloud_debugger {
 
 class DbgObject;
+class ICorDebugHelper;
 
 class NumericCompilerHelper {
  public:
@@ -212,6 +213,7 @@ class TypeCompilerHelper {
   static HRESULT IsBaseClass(mdTypeDef source_class,
     IMetaDataImport *source_class_metadata,
     const std::string &target_class,
+    ICorDebugHelper *debug_helper,
     std::ostream *err_stream);
 };
 

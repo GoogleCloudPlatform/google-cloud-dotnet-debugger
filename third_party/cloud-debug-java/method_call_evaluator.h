@@ -50,6 +50,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
   HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                    IEvalCoordinator *eval_coordinator,
+                   IDbgObjectFactory *obj_factory,
                    std::ostream *err_stream) const override;
 
  private:
@@ -59,6 +60,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
       std::vector<ICorDebugValue *> *arg_debug_values,
       ICorDebugEval *debug_eval,
       IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
       std::ostream *err_stream) const;
 
   // Gets method method_info from class with name class_name.
@@ -74,6 +76,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // this method call.
   HRESULT GetInvokingObject(ICorDebugValue **invoking_object,
                             IEvalCoordinator *eval_coordinator,
+                            IDbgObjectFactory *obj_factory,
                             std::ostream *err_stream) const;
 
   // Given a class object, populates generic_class_types_

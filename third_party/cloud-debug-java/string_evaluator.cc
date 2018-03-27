@@ -20,6 +20,7 @@
 #include "i_eval_coordinator.h"
 #include "error_messages.h"
 #include "dbg_object.h"
+#include "dbg_object_factory.h"
 #include "constants.h"
 
 namespace google_cloud_debugger {
@@ -40,7 +41,9 @@ const TypeSignature& StringEvaluator::GetStaticType() const {
 
 HRESULT StringEvaluator::Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
-      IEvalCoordinator *eval_coordinator, std::ostream *err_stream) const {
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const {
   if (!dbg_object || !eval_coordinator || !err_stream) {
     return E_INVALIDARG;
   }
@@ -71,8 +74,8 @@ HRESULT StringEvaluator::Evaluate(
   }
 
   std::unique_ptr<DbgObject> result_string_obj;
-  hr = DbgObject::CreateDbgObject(debug_string, kDefaultObjectEvalDepth,
-      &result_string_obj, err_stream);
+  hr = obj_factory->CreateDbgObject(debug_string, kDefaultObjectEvalDepth,
+                                    &result_string_obj, err_stream);
   if (FAILED(hr)) {
     *err_stream << kFailedToCreateDbgObject;
     return hr;
