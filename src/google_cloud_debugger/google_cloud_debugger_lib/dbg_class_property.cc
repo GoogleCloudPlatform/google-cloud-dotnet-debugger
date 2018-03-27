@@ -19,7 +19,10 @@
 #include <mutex>
 
 #include "breakpoint.pb.h"
+#include "compiler_helpers.h"
 #include "constants.h"
+#include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -189,8 +192,8 @@ HRESULT DbgClassProperty::Evaluate(
   }
 
   std::unique_ptr<DbgObject> member_value;
-  hr = DbgObject::CreateDbgObject(eval_result, creation_depth_, &member_value,
-                                  GetErrorStream());
+  hr = obj_factory_->CreateDbgObject(eval_result, creation_depth_,
+                                     &member_value, GetErrorStream());
   if (FAILED(hr)) {
     if (member_value) {
       WriteError(member_value->GetErrorString());
@@ -202,6 +205,38 @@ HRESULT DbgClassProperty::Evaluate(
   member_value_ = std::move(member_value);
 
   return PopulateVariableValueHelper(eval_coordinator);
+}
+
+HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
+  std::string type_name;
+  // Use a copy of the pointer to the signature because the function
+  // ParseTypeFromSig will modify it.
+  PCCOR_SIGNATURE signature_pointer_copy = signature_metadata_;
+  ULONG signature_length_copy = sig_metadata_length_;
+  HRESULT hr = debug_helper_->ParseTypeFromSig(&signature_pointer_copy,
+                                               &signature_length_copy,
+                                               metadata_import, &type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  type_signature_ = TypeSignature{
+      TypeCompilerHelper::ConvertStringToCorElementType(type_name), type_name};
+  type_signature_set_ = true;
+  return S_OK;
+}
+
+HRESULT DbgClassProperty::GetTypeSignature(TypeSignature *type_signature) {
+  if (!type_signature_set_) {
+    return E_FAIL;
+  }
+
+  if (!type_signature) {
+    return E_INVALIDARG;
+  }
+
+  *type_signature = type_signature_;
+  return S_OK;
 }
 
 HRESULT DbgClassProperty::PopulateVariableValueHelper(

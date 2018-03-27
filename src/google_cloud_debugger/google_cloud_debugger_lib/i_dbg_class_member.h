@@ -21,15 +21,23 @@
 
 #include "constants.h"
 #include "string_stream_wrapper.h"
+#include "i_cor_debug_helper.h"
 
 namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class DbgObject;
+class IDbgObjectFactory;
 
 // This class represents a member (property or field) in a .NET class.
 class IDbgClassMember : public StringStreamWrapper {
  public:
+  IDbgClassMember(std::shared_ptr<ICorDebugHelper> debug_helper,
+                  std::shared_ptr<IDbgObjectFactory> obj_factory) {
+    debug_helper_ = debug_helper;
+    obj_factory_ = obj_factory;
+  }
+
   virtual ~IDbgClassMember() = default;
 
   // Evaluates the member and stores the value in member_value_.
@@ -63,6 +71,12 @@ class IDbgClassMember : public StringStreamWrapper {
   std::shared_ptr<DbgObject> GetMemberValue() { return member_value_; }
 
  protected:
+  // Factory to create DbgObject.
+  std::shared_ptr<IDbgObjectFactory> obj_factory_;
+
+  // Helper methods for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
   // Token to the type that implements the member.
   mdTypeDef parent_token_ = 0;
   

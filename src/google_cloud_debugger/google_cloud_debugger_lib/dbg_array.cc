@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "i_dbg_object_factory.h"
 #include "i_cor_debug_helper.h"
 #include "variable_wrapper.h"
 
@@ -46,7 +47,8 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
 
   // Create an empty object for the type.
   initialize_hr_ =
-      DbgObject::CreateDbgObject(array_type_, &empty_object_, GetErrorStream());
+      object_factory_->CreateDbgObject(array_type_, &empty_object_,
+                                       GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create an empty object for the array type.");
     if (empty_object_) {
@@ -73,8 +75,8 @@ void DbgArray::Initialize(ICorDebugValue *debug_value, BOOL is_null) {
     return;
   }
 
-  initialize_hr_ =
-      CreateStrongHandle(debug_value, &array_handle_, GetErrorStream());
+  initialize_hr_ = debug_helper_->CreateStrongHandle(
+      debug_value, &object_handle_, GetErrorStream());
   if (FAILED(initialize_hr_)) {
     WriteError("Failed to create a handle for the array.");
     return;
@@ -114,12 +116,12 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
   CComPtr<ICorDebugArrayValue> array_value;
   CComPtr<ICorDebugValue> dereferenced_value;
 
-  if (!array_handle_) {
+  if (!object_handle_) {
     WriteError("Cannot retrieve the array.");
     return E_FAIL;
   }
 
-  hr = array_handle_->Dereference(&dereferenced_value);
+  hr = object_handle_->Dereference(&dereferenced_value);
   if (FAILED(hr)) {
     WriteError("Failed to dereference array handle.");
     return hr;
@@ -137,7 +139,8 @@ HRESULT DbgArray::GetArrayItem(int position, ICorDebugValue **array_item) {
 
 HRESULT DbgArray::PopulateMembers(
     google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members, IEvalCoordinator *eval_coordinator) {
+    std::vector<VariableWrapper> *members,
+    IEvalCoordinator *eval_coordinator) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
@@ -219,8 +222,9 @@ HRESULT DbgArray::PopulateMembers(
     }
 
     unique_ptr<DbgObject> result_object;
-    hr = DbgObject::CreateDbgObject(array_item, GetCreationDepth() - 1,
-                                    &result_object, GetErrorStream());
+    hr = object_factory_->CreateDbgObject(
+        array_item, GetCreationDepth() - 1,
+        &result_object, GetErrorStream());
     if (FAILED(hr)) {
       if (result_object) {
         WriteError(result_object->GetErrorString());
@@ -236,12 +240,12 @@ HRESULT DbgArray::PopulateMembers(
   return S_OK;
 }
 
-HRESULT DbgArray::PopulateType(Variable *variable) {
+HRESULT DbgArray::GetTypeString(std::string *type_string) {
   if (FAILED(initialize_hr_)) {
     return initialize_hr_;
   }
 
-  if (!variable) {
+  if (!type_string) {
     return E_INVALIDARG;
   }
 
@@ -250,13 +254,16 @@ HRESULT DbgArray::PopulateType(Variable *variable) {
     return E_FAIL;
   }
 
-  empty_object_->PopulateType(variable);
-  std::string array_type = variable->type();
-  for (int i = 0; i < dimensions_.size(); ++i) {
-    array_type += "[]";
+  // Gets the base type first.
+  HRESULT hr = empty_object_->GetTypeString(type_string);
+  if (FAILED(hr)) {
+    return hr;
   }
 
-  variable->set_type(array_type);
+  for (int i = 0; i < dimensions_.size(); ++i) {
+    *type_string += "[]";
+  }
+
   return S_OK;
 }
 

@@ -15,13 +15,14 @@
 #ifndef DBG_PRIMITIVE_H_
 #define DBG_PRIMITIVE_H_
 
+#include <math.h>
 #include <iostream>
 #include <type_traits>
-#include <math.h>
 
 #include "ccomptr.h"
 #include "class_names.h"
 #include "dbg_object.h"
+#include "i_cor_debug_helper.h"
 
 namespace google_cloud_debugger {
 // Template class for DbgObject of primitive type.
@@ -35,7 +36,14 @@ class DbgPrimitive : public DbgObject {
   static_assert(std::is_fundamental<T>::value, "Fundamental types required.");
 
  public:
-  DbgPrimitive(ICorDebugType *debug_type) : DbgObject(debug_type, 0) {}
+  DbgPrimitive(ICorDebugType *debug_type)
+      : DbgObject(debug_type, 0, std::shared_ptr<ICorDebugHelper>()) {}
+
+  DbgPrimitive(T value)
+      : DbgObject(nullptr, 0, std::shared_ptr<ICorDebugHelper>()) {
+    value_ = value;
+    SetCorElementType(value);
+  }
 
   // debug_value can be a null pointer, in which case value_ is just the default
   // value for the type.
@@ -75,7 +83,20 @@ class DbgPrimitive : public DbgObject {
       return hr;
     }
 
+    SetCorElementType(value_);
     return generic_value->GetValue(&value_);
+  }
+
+  // Cast DbgObject to a DbgPrimitive and retrieves the value.
+  static HRESULT GetValue(DbgObject *dbg_object, T *value) {
+    DbgPrimitive<T> *dbg_primitive =
+        dynamic_cast<DbgPrimitive<T> *>(dbg_object);
+    if (!dbg_primitive) {
+      return E_INVALIDARG;
+    }
+
+    *value = dbg_primitive->GetValue();
+    return S_OK;
   }
 
   // Returns the primitive value stored.
@@ -96,74 +117,98 @@ class DbgPrimitive : public DbgObject {
     return S_OK;
   }
 
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override {
-    if (!variable) {
+  HRESULT GetTypeString(std::string *type_string) override {
+    if (!type_string) {
       return E_INVALIDARG;
     }
 
     if (cor_element_type_ == ELEMENT_TYPE_I) {
-      variable->set_type(kIntPtrClassName);
+      *type_string = kIntPtrClassName;
     } else if (cor_element_type_ == ELEMENT_TYPE_U) {
-      variable->set_type(kUIntPtrClassName);
+      *type_string = kUIntPtrClassName;
     } else {
-      SetTypeCore(variable, value_);
+      *type_string = GetTypeCore(value_);
     }
     return S_OK;
   }
 
+  // Creates a value in memory that corresponds with value_
+  // and returns an ICorDebugValue for that value.
+  HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+                            ICorDebugEval *debug_eval) override {
+    if (debug_eval == nullptr) {
+      return E_INVALIDARG;
+    }
+
+    HRESULT hr =
+        debug_eval->CreateValue(cor_element_type_, nullptr, debug_value);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    CComPtr<ICorDebugGenericValue> generic_value;
+    hr = (*debug_value)
+             ->QueryInterface(__uuidof(ICorDebugGenericValue),
+                              reinterpret_cast<void **>(&generic_value));
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    return generic_value->SetValue(&value_);
+  }
+
  private:
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   char value) {
-    variable->set_type(kCharClassName);
+  const std::string GetTypeCore(char value) { return kCharClassName; }
+  const std::string GetTypeCore(bool value) { return kBooleanClassName; }
+  const std::string GetTypeCore(std::int8_t) { return kSByteClassName; }
+  const std::string GetTypeCore(std::uint8_t) { return kByteClassName; }
+  const std::string GetTypeCore(std::int16_t) { return kInt16ClassName; }
+  const std::string GetTypeCore(std::uint16_t) { return kUInt16ClassName; }
+  const std::string GetTypeCore(std::int32_t) { return kInt32ClassName; }
+  const std::string GetTypeCore(std::uint32_t) { return kUInt32ClassName; }
+  const std::string GetTypeCore(std::int64_t) { return kInt64ClassName; }
+  const std::string GetTypeCore(std::uint64_t) { return kUInt64ClassName; }
+  const std::string GetTypeCore(float_t) { return kSingleClassName; }
+  const std::string GetTypeCore(double_t) { return kDoubleClassName; }
+
+  void SetCorElementType(char value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_CHAR;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   bool value) {
-    variable->set_type(kBooleanClassName);
+  void SetCorElementType(bool value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_BOOLEAN;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::int8_t value) {
-    variable->set_type(kSByteClassName);
+  void SetCorElementType(std::int8_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I1;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::uint8_t value) {
-    variable->set_type(kByteClassName);
+  void SetCorElementType(std::uint8_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U1;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::int16_t value) {
-    variable->set_type(kInt16ClassName);
+  void SetCorElementType(std::int16_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I2;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::uint16_t) {
-    variable->set_type(kUInt16ClassName);
+  void SetCorElementType(std::uint16_t) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U2;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::int32_t value) {
-    variable->set_type(kInt32ClassName);
+  void SetCorElementType(std::int32_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I4;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::uint32_t) {
-    variable->set_type(kUInt32ClassName);
+  void SetCorElementType(std::uint32_t) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U4;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::int64_t value) {
-    variable->set_type(kInt64ClassName);
+  void SetCorElementType(std::int64_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_I8;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::uint64_t value) {
-    variable->set_type(kUInt64ClassName);
+  void SetCorElementType(std::uint64_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_U8;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::float_t value) {
-    variable->set_type(kSingleClassName);
+  void SetCorElementType(float_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_R4;
   }
-  void SetTypeCore(google::cloud::diagnostics::debug::Variable *variable,
-                   std::double_t value) {
-    variable->set_type(kDoubleClassName);
+  void SetCorElementType(double_t value) {
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_R8;
   }
 
   T value_;
-  CorElementType cor_element_type_;
 };
 
 }  //  namespace google_cloud_debugger

@@ -23,29 +23,31 @@ namespace Google.Cloud.Diagnostics.Debug {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBicmVha3BvaW50LnByb3RvEh5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3Mu",
-            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8ipQIKCkJy",
+            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8ilgMKCkJy",
             "ZWFrcG9pbnQSCgoCaWQYASABKAkSQAoIbG9jYXRpb24YAiABKAsyLi5nb29n",
             "bGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuU291cmNlTG9jYXRpb24SQAoM",
             "c3RhY2tfZnJhbWVzGAMgAygLMiouZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNz",
             "LmRlYnVnLlN0YWNrRnJhbWUSEQoJYWN0aXZhdGVkGAQgASgIEi8KC2NyZWF0",
             "ZV90aW1lGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpm",
             "aW5hbF90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIT",
-            "CgtraWxsX3NlcnZlchgHIAEoCCLaAQoKU3RhY2tGcmFtZRITCgttZXRob2Rf",
-            "bmFtZRgBIAEoCRJACghsb2NhdGlvbhgCIAEoCzIuLmdvb2dsZS5jbG91ZC5k",
-            "aWFnbm9zdGljcy5kZWJ1Zy5Tb3VyY2VMb2NhdGlvbhI7Cglhcmd1bWVudHMY",
-            "AyADKAsyKC5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFi",
-            "bGUSOAoGbG9jYWxzGAQgAygLMiguZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNz",
-            "LmRlYnVnLlZhcmlhYmxlIiwKDlNvdXJjZUxvY2F0aW9uEgwKBHBhdGgYASAB",
-            "KAkSDAoEbGluZRgCIAEoBSKoAQoIVmFyaWFibGUSDAoEbmFtZRgBIAEoCRIM",
-            "CgR0eXBlGAIgASgJEg0KBXZhbHVlGAMgASgJEjkKB21lbWJlcnMYBCADKAsy",
-            "KC5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFibGUSNgoG",
-            "c3RhdHVzGAUgASgLMiYuZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVn",
-            "LlN0YXR1cyIqCgZTdGF0dXMSDwoHaXNlcnJvchgBIAEoCBIPCgdtZXNzYWdl",
-            "GAIgASgJYgZwcm90bzM="));
+            "CgtraWxsX3NlcnZlchgHIAEoCBITCgtleHByZXNzaW9ucxgIIAMoCRIRCglj",
+            "b25kaXRpb24YCSABKAkSRwoVZXZhbHVhdGVkX2V4cHJlc3Npb25zGAogAygL",
+            "MiguZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlZhcmlhYmxlItoB",
+            "CgpTdGFja0ZyYW1lEhMKC21ldGhvZF9uYW1lGAEgASgJEkAKCGxvY2F0aW9u",
+            "GAIgASgLMi4uZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlNvdXJj",
+            "ZUxvY2F0aW9uEjsKCWFyZ3VtZW50cxgDIAMoCzIoLmdvb2dsZS5jbG91ZC5k",
+            "aWFnbm9zdGljcy5kZWJ1Zy5WYXJpYWJsZRI4CgZsb2NhbHMYBCADKAsyKC5n",
+            "b29nbGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuVmFyaWFibGUiLAoOU291",
+            "cmNlTG9jYXRpb24SDAoEcGF0aBgBIAEoCRIMCgRsaW5lGAIgASgFIqgBCghW",
+            "YXJpYWJsZRIMCgRuYW1lGAEgASgJEgwKBHR5cGUYAiABKAkSDQoFdmFsdWUY",
+            "AyABKAkSOQoHbWVtYmVycxgEIAMoCzIoLmdvb2dsZS5jbG91ZC5kaWFnbm9z",
+            "dGljcy5kZWJ1Zy5WYXJpYWJsZRI2CgZzdGF0dXMYBSABKAsyJi5nb29nbGUu",
+            "Y2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuU3RhdHVzIioKBlN0YXR1cxIPCgdp",
+            "c2Vycm9yGAEgASgIEg8KB21lc3NhZ2UYAiABKAliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime", "KillServer" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime", "KillServer", "Expressions", "Condition", "EvaluatedExpressions" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.StackFrame), global::Google.Cloud.Diagnostics.Debug.StackFrame.Parser, new[]{ "MethodName", "Location", "Arguments", "Locals" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.SourceLocation), global::Google.Cloud.Diagnostics.Debug.SourceLocation.Parser, new[]{ "Path", "Line" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Variable), global::Google.Cloud.Diagnostics.Debug.Variable.Parser, new[]{ "Name", "Type", "Value", "Members", "Status" }, null, null, null),
@@ -87,6 +89,9 @@ namespace Google.Cloud.Diagnostics.Debug {
       CreateTime = other.createTime_ != null ? other.CreateTime.Clone() : null;
       FinalTime = other.finalTime_ != null ? other.FinalTime.Clone() : null;
       killServer_ = other.killServer_;
+      expressions_ = other.expressions_.Clone();
+      condition_ = other.condition_;
+      evaluatedExpressions_ = other.evaluatedExpressions_.Clone();
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -170,6 +175,37 @@ namespace Google.Cloud.Diagnostics.Debug {
       }
     }
 
+    /// <summary>Field number for the "expressions" field.</summary>
+    public const int ExpressionsFieldNumber = 8;
+    private static readonly pb::FieldCodec<string> _repeated_expressions_codec
+        = pb::FieldCodec.ForString(66);
+    private readonly pbc::RepeatedField<string> expressions_ = new pbc::RepeatedField<string>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<string> Expressions {
+      get { return expressions_; }
+    }
+
+    /// <summary>Field number for the "condition" field.</summary>
+    public const int ConditionFieldNumber = 9;
+    private string condition_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Condition {
+      get { return condition_; }
+      set {
+        condition_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "evaluated_expressions" field.</summary>
+    public const int EvaluatedExpressionsFieldNumber = 10;
+    private static readonly pb::FieldCodec<global::Google.Cloud.Diagnostics.Debug.Variable> _repeated_evaluatedExpressions_codec
+        = pb::FieldCodec.ForMessage(82, global::Google.Cloud.Diagnostics.Debug.Variable.Parser);
+    private readonly pbc::RepeatedField<global::Google.Cloud.Diagnostics.Debug.Variable> evaluatedExpressions_ = new pbc::RepeatedField<global::Google.Cloud.Diagnostics.Debug.Variable>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public pbc::RepeatedField<global::Google.Cloud.Diagnostics.Debug.Variable> EvaluatedExpressions {
+      get { return evaluatedExpressions_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Breakpoint);
@@ -190,6 +226,9 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (!object.Equals(CreateTime, other.CreateTime)) return false;
       if (!object.Equals(FinalTime, other.FinalTime)) return false;
       if (KillServer != other.KillServer) return false;
+      if(!expressions_.Equals(other.expressions_)) return false;
+      if (Condition != other.Condition) return false;
+      if(!evaluatedExpressions_.Equals(other.evaluatedExpressions_)) return false;
       return true;
     }
 
@@ -203,6 +242,9 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (createTime_ != null) hash ^= CreateTime.GetHashCode();
       if (finalTime_ != null) hash ^= FinalTime.GetHashCode();
       if (KillServer != false) hash ^= KillServer.GetHashCode();
+      hash ^= expressions_.GetHashCode();
+      if (Condition.Length != 0) hash ^= Condition.GetHashCode();
+      hash ^= evaluatedExpressions_.GetHashCode();
       return hash;
     }
 
@@ -238,6 +280,12 @@ namespace Google.Cloud.Diagnostics.Debug {
         output.WriteRawTag(56);
         output.WriteBool(KillServer);
       }
+      expressions_.WriteTo(output, _repeated_expressions_codec);
+      if (Condition.Length != 0) {
+        output.WriteRawTag(74);
+        output.WriteString(Condition);
+      }
+      evaluatedExpressions_.WriteTo(output, _repeated_evaluatedExpressions_codec);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -262,6 +310,11 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (KillServer != false) {
         size += 1 + 1;
       }
+      size += expressions_.CalculateSize(_repeated_expressions_codec);
+      if (Condition.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Condition);
+      }
+      size += evaluatedExpressions_.CalculateSize(_repeated_evaluatedExpressions_codec);
       return size;
     }
 
@@ -298,6 +351,11 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (other.KillServer != false) {
         KillServer = other.KillServer;
       }
+      expressions_.Add(other.expressions_);
+      if (other.Condition.Length != 0) {
+        Condition = other.Condition;
+      }
+      evaluatedExpressions_.Add(other.evaluatedExpressions_);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -343,6 +401,18 @@ namespace Google.Cloud.Diagnostics.Debug {
           }
           case 56: {
             KillServer = input.ReadBool();
+            break;
+          }
+          case 66: {
+            expressions_.AddEntriesFrom(input, _repeated_expressions_codec);
+            break;
+          }
+          case 74: {
+            Condition = input.ReadString();
+            break;
+          }
+          case 82: {
+            evaluatedExpressions_.AddEntriesFrom(input, _repeated_evaluatedExpressions_codec);
             break;
           }
         }

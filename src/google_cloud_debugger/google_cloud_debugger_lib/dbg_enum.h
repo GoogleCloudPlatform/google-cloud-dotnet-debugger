@@ -26,7 +26,10 @@ namespace google_cloud_debugger {
 // (CorElementType as ELEMENT_TYPE_CLASS and ELEMENT_TYPE_VALUETYPE).
 class DbgEnum : public DbgClass {
  public:
-  DbgEnum(ICorDebugType *debug_type, int depth) : DbgClass(debug_type, depth) {}
+  DbgEnum(ICorDebugType *debug_type, int depth,
+          std::shared_ptr<ICorDebugHelper> debug_helper,
+          std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : DbgClass(debug_type, depth, debug_helper, obj_factory) {}
 
   // Populate variable with the value of the enum.
   HRESULT PopulateValue(
@@ -34,8 +37,7 @@ class DbgEnum : public DbgClass {
 
   // Extracts out the enum value of this Enum class and processes
   // the fields of this enum.
-  HRESULT ProcessEnum(ICorDebugValue *debug_value,
-                      ICorDebugClass *debug_class,
+  HRESULT ProcessEnum(ICorDebugValue *debug_value, ICorDebugClass *debug_class,
                       IMetaDataImport *metadata_import);
 
  private:

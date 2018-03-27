@@ -69,6 +69,9 @@
     <ClCompile Include="variable_wrapper_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cor_debug_helper_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">

@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include "breakpoint_location_collection.h"
 #include "dbg_object.h"
 #include "debugger_callback.h"
 #include "i_eval_coordinator.h"
@@ -54,7 +55,8 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
     return E_INVALIDARG;
   }
 
-  unique_ptr<NamedPipeClient> pipe(new (std::nothrow) NamedPipeClient(pipe_name));
+  unique_ptr<NamedPipeClient> pipe(new (std::nothrow)
+                                       NamedPipeClient(pipe_name));
   if (!pipe) {
     cerr << "Cannot create named pipe client.";
     return E_OUTOFMEMORY;
@@ -87,7 +89,7 @@ HRESULT BreakpointCollection::CreateAndInitializeBreakpointClient(
 HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
   if (!breakpoint_client_write_) {
     HRESULT hr = CreateAndInitializeBreakpointClient(
-      &breakpoint_client_write_, debugger_callback_->GetPipeName());
+        &breakpoint_client_write_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for writing breakpoints.";
       return hr;
@@ -100,7 +102,7 @@ HRESULT BreakpointCollection::WriteBreakpoint(const Breakpoint &breakpoint) {
 HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
   if (!breakpoint_client_read_) {
     HRESULT hr = CreateAndInitializeBreakpointClient(
-		&breakpoint_client_read_, debugger_callback_->GetPipeName());
+        &breakpoint_client_read_, debugger_callback_->GetPipeName());
     if (FAILED(hr)) {
       cerr << "Failed to initialize breakpoint client for reading breakpoints.";
       return hr;
@@ -113,22 +115,34 @@ HRESULT BreakpointCollection::ReadBreakpoint(Breakpoint *breakpoint) {
 HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
     mdMethodDef function_token, ULONG32 il_offset,
     IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
-    ICorDebugStackWalk *debug_stack_walk,
     const std::vector<
-        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files) {
   HRESULT hr = S_FALSE;
-  for (auto &&breakpoint : breakpoints_) {
-    if (breakpoint->GetMethodToken() == function_token &&
-        il_offset == breakpoint->GetILOffset()) {
-      hr = eval_coordinator->PrintBreakpoint(debug_stack_walk, debug_thread,
-                                             this, breakpoint.get(), pdb_files);
-      if (FAILED(hr)) {
-        cerr << "Failed to get stack frame's information.";
-      }
+  std::vector<std::shared_ptr<DbgBreakpoint>> matched_breakpoints;
 
-      return hr;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto &&kvp : location_to_breakpoints_) {
+      // Since the breakpoints are grouped by location, if
+      // one matches, all of them do.
+      if (kvp.second->GetMethodToken() == function_token
+        && kvp.second->GetILOffset() == il_offset) {
+        matched_breakpoints = kvp.second->GetBreakpoints();
+        break;
+      }
     }
+  }
+
+  if (matched_breakpoints.empty()) {
+    std::cout << "No matching breakpoints found.";
+    return S_FALSE;
+  }
+
+  hr = eval_coordinator->ProcessBreakpoints(
+      debug_thread, this, std::move(matched_breakpoints), pdb_files);
+  if (FAILED(hr)) {
+    cerr << "Failed to get stack frame's information.";
   }
 
   return hr;
@@ -148,67 +162,91 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   SourceLocation location = breakpoint_read.location();
 
   // For now, we don't have a use for column so we just assign it to 0.
-  breakpoint->Initialize(location.path(), breakpoint_read.id(), location.line(),
-                         0);
+  breakpoint->Initialize(
+      location.path(), breakpoint_read.id(), location.line(), 0,
+      breakpoint_read.condition(),
+      std::vector<std::string>(breakpoint_read.expressions().begin(),
+                               breakpoint_read.expressions().end()));
   breakpoint->SetActivated(breakpoint_read.activated());
   breakpoint->SetKillServer(breakpoint_read.kill_server());
 
   return S_OK;
 }
 
-HRESULT BreakpointCollection::ActivateOrDeactivate(
+HRESULT BreakpointCollection::UpdateBreakpoint(
     const DbgBreakpoint &breakpoint) {
-  HRESULT hr = ActivateOrDeactivateExistingBreakpoint(breakpoint,
-                                                      breakpoint.Activated());
-  if (FAILED(hr)) {
-    cerr << "Failed to activate breakpoint.";
-    return hr;
-  }
+  HRESULT hr;
+  // Find group of breakpoints at the same location.
+  std::string breakpoint_location = breakpoint.GetBreakpointLocation();
 
-  if (hr == S_OK) {
-    return hr;
-  }
-
-  // This means the breakpoint is not in the existing breakpoint list.
-  if (hr == S_FALSE) {
-    // Nothing to do if the breakpoint is deactivated.
-    if (!breakpoint.Activated()) {
-      return S_OK;
-    }
-
-    unique_ptr<DbgBreakpoint> new_breakpoint(new (std::nothrow) DbgBreakpoint);
-    if (!new_breakpoint) {
-      return E_OUTOFMEMORY;
-    }
-    new_breakpoint->Initialize(breakpoint);
-
-    for (auto &pdb_file : debugger_callback_->GetPdbFiles()) {
-      if (!pdb_file) {
-        continue;
-      }
-
-      if (!pdb_file->ParsePdbFile()) {
-        continue;
-      }
-
-      if (!new_breakpoint->TrySetBreakpoint(pdb_file.get())) {
-        continue;
-      }
-
-      std::lock_guard<std::mutex> lock(mutex_);
-      hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file.get());
+  {
+    std::lock_guard<std::mutex> lock(mutex_);  
+    if (location_to_breakpoints_.find(breakpoint_location)
+      != location_to_breakpoints_.end()) {
+      hr = location_to_breakpoints_[breakpoint_location]->UpdateBreakpoints(breakpoint);
       if (FAILED(hr)) {
         cerr << "Failed to activate breakpoint.";
         return hr;
       }
 
-      breakpoints_.push_back(std::move(new_breakpoint));
-
-      return hr;
+      if (hr == S_OK) {
+        return hr;
+      }
     }
   }
 
-  return E_FAIL;
+  // Otherwise, we have to create a new breakpoint from scratch.
+  std::shared_ptr<DbgBreakpoint> new_breakpoint(new (std::nothrow)
+                                                    DbgBreakpoint);
+  if (!new_breakpoint) {
+    return E_OUTOFMEMORY;
+  }
+
+  new_breakpoint->Initialize(breakpoint);
+
+  // No existing breakpoint with the same location so we have to
+  // try to set and activate the breakpoint by searching through PDB files
+  // for a matching location.
+  bool found_bp = false;
+  for (auto pdb_file : debugger_callback_->GetPdbFiles()) {
+    if (!pdb_file) {
+      continue;
+    }
+
+    if (!pdb_file->ParsePdbFile()) {
+      continue;
+    }
+
+    if (!new_breakpoint->TrySetBreakpoint(pdb_file.get())) {
+      continue;
+    }
+
+    hr = ActivateBreakpointHelper(new_breakpoint.get(), pdb_file.get());
+    if (FAILED(hr)) {
+      cerr << "Failed to activate breakpoint.";
+      return hr;
+    }
+    found_bp = true;
+    break;
+  }
+
+  if (!found_bp) {
+    return S_FALSE;
+  }
+
+  // Create a new location collection.
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_ptr<BreakpointLocationCollection> bp_location(new BreakpointLocationCollection());
+    hr = bp_location->AddFirstBreakpoint(std::move(new_breakpoint));
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    location_to_breakpoints_[breakpoint.GetBreakpointLocation()]
+      = std::move(bp_location);
+  }
+  return S_OK;
 }
 
 HRESULT BreakpointCollection::SyncBreakpoints() {
@@ -221,11 +259,11 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
       return hr;
     }
 
-	if (breakpoint.GetKillServer()) {
-	  return S_OK;
-	}
+    if (breakpoint.GetKillServer()) {
+      return S_OK;
+    }
 
-    hr = ActivateOrDeactivate(breakpoint);
+    hr = UpdateBreakpoint(breakpoint);
     if (FAILED(hr)) {
       cerr << "Failed to activate breakpoint.";
     }
@@ -252,11 +290,6 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
 
   if (!portable_pdb) {
     cerr << "Null Portable PDB File.";
-    return E_INVALIDARG;
-  }
-
-  if (!breakpoint->IsSet()) {
-    cerr << "Breakpoint is not set yet. Call TryGetBreakpoint first.";
     return E_INVALIDARG;
   }
 
@@ -396,52 +429,6 @@ HRESULT BreakpointCollection::ActivateBreakpointHelper(
   }
 
   return S_OK;
-}
-
-HRESULT BreakpointCollection::ActivateOrDeactivateExistingBreakpoint(
-    const DbgBreakpoint &breakpoint, BOOL activate) {
-  HRESULT hr;
-  bool found_breakpoint = false;
-
-  std::lock_guard<std::mutex> lock(mutex_);
-
-  // Try to find if the breakpoint is available.
-  for (auto &&existing_breakpoint : breakpoints_) {
-    // We use file name and line instead of id in case user reactivates a
-    // breakpoint, then we just need to reactivate it.
-    if (EqualsIgnoreCase(existing_breakpoint->GetFileName(),
-                         breakpoint.GetFileName()) &&
-        existing_breakpoint->GetLine() == breakpoint.GetLine()) {
-      CComPtr<ICorDebugBreakpoint> cor_debug_breakpoint;
-      hr = existing_breakpoint->GetCorDebugBreakpoint(&cor_debug_breakpoint);
-      if (FAILED(hr)) {
-        cerr << "Failed to get ICorDebugBreakpoint from existing breakpoint.";
-        return hr;
-      }
-
-      BOOL active;
-      hr = cor_debug_breakpoint->IsActive(&active);
-      if (FAILED(hr)) {
-        cerr << "Failed to check whether breakpoint " << breakpoint.GetId()
-             << " is active or not.";
-        return hr;
-      }
-
-      if (active == activate) {
-        return S_OK;
-      }
-
-      hr = cor_debug_breakpoint->Activate(activate);
-      if (FAILED(hr)) {
-        cerr << "Failed to activate breakpoint " << breakpoint.GetId();
-        return hr;
-      }
-
-      return S_OK;
-    }
-  }
-
-  return S_FALSE;
 }
 
 HRESULT BreakpointCollection::GetMethodData(IMetaDataImport *metadata_import,

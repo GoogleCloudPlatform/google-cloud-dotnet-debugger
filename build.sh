@@ -8,6 +8,7 @@ ROOT_DIR=$(dirname "$SCRIPT")
 
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
+ANTLR_DIR=$ROOT_DIR/third_party/antlr/lib/cpp
 
 dotnet build $AGENT_DIR
 
@@ -22,6 +23,7 @@ then
   fi
   msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=Debug //p:Platform=x64
 else
+  make -C $ANTLR_DIR
   make -C $DEBUGGER_DIR/google_cloud_debugger_lib
   make -C $DEBUGGER_DIR/google_cloud_debugger
   make -C $DEBUGGER_DIR/google_cloud_debugger_test

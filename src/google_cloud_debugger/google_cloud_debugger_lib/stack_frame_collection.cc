@@ -19,7 +19,9 @@
 #include <string>
 
 #include "dbg_breakpoint.h"
+#include "expression_util.h"
 #include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
@@ -29,181 +31,53 @@ using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
 using std::cerr;
+using std::cout;
 using std::max;
 using std::string;
 using std::vector;
 
 namespace google_cloud_debugger {
+StackFrameCollection::StackFrameCollection(
+    std::shared_ptr<ICorDebugHelper> debug_helper,
+    std::shared_ptr<IDbgObjectFactory> obj_factory) {
+  debug_helper_ = debug_helper;
+  obj_factory_ = obj_factory;
+}
 
-HRESULT StackFrameCollection::Initialize(
-    ICorDebugStackWalk *debug_stack_walk,
+HRESULT StackFrameCollection::ProcessBreakpoint(
     const vector<
-        std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-        &pdb_files) {
-  if (!debug_stack_walk) {
-    cerr << "Debug stack walk is null.";
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &pdb_files,
+    DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
+  if (!eval_coordinator) {
+    cerr << "Eval coordinator is null.";
     return E_INVALIDARG;
   }
 
-  // Index of the PDB files that are parsed successfully.
-  vector<uint32_t> parsed_pdb_indices;
-  uint32_t pdb_index = 0;
-  for (auto &&pdb_file : pdb_files) {
-    if (!pdb_file) {
-      continue;
-    }
-
-    if (pdb_file->ParsePdbFile()) {
-      parsed_pdb_indices.push_back(pdb_index);
-    }
-    ++pdb_index;
+  if (!breakpoint) {
+    cerr << "DbgBreakpoint is null.";
+    return E_INVALIDARG;
   }
 
-  CComPtr<ICorDebugFrame> frame;
-  int il_frame_parsed_so_far = 0;
-  int frame_parsed_so_far = 0;
-  HRESULT hr = S_OK;
+  HRESULT hr;
 
-  // Walks through the stack and populates stack_frames_ vector.
-  while (SUCCEEDED(hr)) {
-    // Don't parse too many stack frames.
-    if (frame_parsed_so_far >= kMaximumStackFrames) {
-      return S_OK;
-    }
-
-    hr = debug_stack_walk->GetFrame(&frame);
-    // No more stacks.
-    if (hr == S_FALSE) {
-      return S_OK;
-    }
-
-    ++frame_parsed_so_far;
+  // If there are conditions or expressions, handle them first.
+  // TODO(quoct): Add expressions handling.
+  const std::string &breakpoint_condition = breakpoint->GetCondition();
+  if (!breakpoint_condition.empty()) {
+    hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator, pdb_files);
     if (FAILED(hr)) {
-      cerr << "Failed to get active frame.";
+      cerr << "Failed to evaluate breakpoint condition "
+           << breakpoint_condition;
       return hr;
     }
 
-    // Gets ICorDebugFunction that corresponds to the function at this frame.
-    // We delay the logic to query the IL frame until we have to get the
-    // variables and method arguments.
-    CComPtr<ICorDebugFunction> frame_function;
-    hr = frame->GetFunction(&frame_function);
-    // This means the debug function is not available (mostly because of
-    // native code) so we skip to the next frame.
-    if (hr == CORDBG_E_CODE_NOT_AVAILABLE) {
-      // Adds an empty stack frame.
-      DbgStackFrame stack_frame;
-      stack_frame.SetEmpty(true);
-      stack_frames_.push_back(std::move(stack_frame));
-      hr = debug_stack_walk->Next();
-      continue;
+    if (!breakpoint->GetEvaluatedCondition()) {
+      return S_FALSE;
     }
-
-    if (FAILED(hr)) {
-      cerr << "Failed to get ICorDebugFunction from IL Frame.";
-      return hr;
-    }
-
-    // Gets the token of the function above.
-    mdMethodDef target_function_token;
-    hr = frame_function->GetToken(&target_function_token);
-    if (FAILED(hr)) {
-      cerr << "Failed to extract token from debug function.";
-      return hr;
-    }
-
-    // Gets the ICorDebugModule of the module at this frame.
-    CComPtr<ICorDebugModule> frame_module;
-    hr = frame_function->GetModule(&frame_module);
-    if (FAILED(hr)) {
-      cerr << "Failed to get ICorDebugModule from ICorDebugFunction.";
-      return hr;
-    }
-
-    vector<WCHAR> module_name;
-    hr = GetModuleNameFromICorDebugModule(frame_module, &module_name, &cerr);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    DbgStackFrame stack_frame;
-    stack_frame.SetModuleName(module_name);
-    string target_module_name = stack_frame.GetModule();
-
-    CComPtr<IMetaDataImport> metadata_import;
-    hr = GetMetadataImportFromICorDebugModule(frame_module, &metadata_import,
-                                              &cerr);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    // Populates the module, class and function name of this stack frame
-    // so we can report this even if we don't have local variables or
-    // method arguments.
-    hr = PopulateModuleClassAndFunctionName(&stack_frame, target_function_token,
-                                            metadata_import);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    CComPtr<ICorDebugILFrame> il_frame;
-    hr = frame->QueryInterface(__uuidof(ICorDebugILFrame),
-                               reinterpret_cast<void **>(&il_frame));
-    // If this is a non-IL frame, we cannot get local variables
-    // and method arguments so simply skip that step.
-    if (hr == E_NOINTERFACE) {
-      stack_frames_.push_back(std::move(stack_frame));
-      hr = debug_stack_walk->Next();
-      continue;
-    }
-
-    if (FAILED(hr)) {
-      cerr << "Failed to get ILFrame";
-      return hr;
-    }
-
-    // If we have populate local variables for 4 frames,
-    // don't do it for the rest.
-    if (il_frame_parsed_so_far >= kMaximumStackFramesWithVariables) {
-      ++il_frame_parsed_so_far;
-      stack_frames_.push_back(std::move(stack_frame));
-      hr = debug_stack_walk->Next();
-      continue;
-    }
-
-    for (auto index : parsed_pdb_indices) {
-      // Gets the PDB file that has the same name as the module.
-      CComPtr<ICorDebugModule> pdb_debug_module;
-      // TODO(quoct): Possible performance improvement by caching the pdb_file
-      // based on token.
-      string pdb_module_name = pdb_files[index]->GetModuleName();
-      if (pdb_module_name.compare(target_module_name) != 0) {
-        continue;
-      }
-
-      // Tries to populate local variables and method arguments of this frame.
-      hr = PopulateLocalVarsAndMethodArgs(target_function_token, &stack_frame,
-                                          il_frame, metadata_import,
-                                          pdb_files[index].get());
-      if (FAILED(hr)) {
-        cerr << "Failed to populate stack frame information.";
-        return hr;
-      }
-
-      ++number_of_processed_il_frames_;
-      break;
-    }
-
-    ++il_frame_parsed_so_far;
-    stack_frames_.push_back(std::move(stack_frame));
-    hr = debug_stack_walk->Next();
   }
 
-  if (FAILED(hr)) {
-    cerr << "Failed to get stack frame's information.";
-  }
-
-  return hr;
+  return WalkStackAndProcessStackFrame(eval_coordinator, pdb_files);
 }
 
 HRESULT StackFrameCollection::PopulateStackFrames(
@@ -229,31 +103,30 @@ HRESULT StackFrameCollection::PopulateStackFrames(
 
     StackFrame *frame = breakpoint->add_stack_frames();
     // If dbg_stack_frame is an empty stack frame, just says it's undebuggable.
-    if (dbg_stack_frame.IsEmpty()) {
+    if (dbg_stack_frame->IsEmpty()) {
       frame->set_method_name("Undebuggable code.");
       continue;
     }
 
-    frame->set_method_name(dbg_stack_frame.GetShortModuleName() + "!" +
-                           dbg_stack_frame.GetClass() + "." +
-                           dbg_stack_frame.GetMethod());
+    frame->set_method_name(dbg_stack_frame->GetShortModuleName() + "!" +
+                           dbg_stack_frame->GetClass() + "." +
+                           dbg_stack_frame->GetMethod());
     SourceLocation *frame_location = frame->mutable_location();
     if (!frame_location) {
       cerr << "Mutable location returns null.";
       continue;
     }
 
-    frame_location->set_line(dbg_stack_frame.GetLineNumber());
-    frame_location->set_path(dbg_stack_frame.GetFile());
+    frame_location->set_line(dbg_stack_frame->GetLineNumber());
+    frame_location->set_path(dbg_stack_frame->GetFile());
 
-    hr = dbg_stack_frame.PopulateStackFrame(frame, frame_max_size,
-                                            eval_coordinator);
+    hr = dbg_stack_frame->PopulateStackFrame(frame, frame_max_size,
+                                             eval_coordinator);
     if (FAILED(hr)) {
-      eval_coordinator->SignalFinishedPrintingVariable();
       return hr;
     }
 
-    if (dbg_stack_frame.IsProcessedIlFrame()) {
+    if (dbg_stack_frame->IsProcessedIlFrame()) {
       ++processed_il_frames_so_far;
     }
 
@@ -265,7 +138,6 @@ HRESULT StackFrameCollection::PopulateStackFrames(
     frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 
-  eval_coordinator->SignalFinishedPrintingVariable();
   return S_OK;
 }
 
@@ -438,6 +310,234 @@ HRESULT StackFrameCollection::PopulateModuleClassAndFunctionName(
   dbg_stack_frame->SetFuncVirtualAddr(target_method_virtual_addr);
 
   return S_OK;
+}
+
+HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
+    IEvalCoordinator *eval_coordinator,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files) {
+  if (stack_walked) {
+    return S_OK;
+  }
+
+  CComPtr<ICorDebugStackWalk> debug_stack_walk;
+  CComPtr<ICorDebugFrame> frame;
+  int il_frame_parsed_so_far = 0;
+  int frame_parsed_so_far = 0;
+  HRESULT hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
+  if (FAILED(hr)) {
+    cerr << "Failed to create stack walk.";
+    return hr;
+  }
+
+  // Skips the first stack if it is already processed.
+  if (first_stack_) {
+    stack_frames_.push_back(first_stack_);
+    ++frame_parsed_so_far;
+    if (first_stack_->IsProcessedIlFrame()) {
+      ++il_frame_parsed_so_far;
+    }
+    hr = debug_stack_walk->Next();
+  }
+
+  // Walks through the stack and populates stack_frames_ vector.
+  while (SUCCEEDED(hr)) {
+    // Don't parse too many stack frames.
+    if (frame_parsed_so_far >= kMaximumStackFrames) {
+      stack_walked = true;
+      return S_OK;
+    }
+
+    hr = debug_stack_walk->GetFrame(&frame);
+    // No more stacks.
+    if (hr == S_FALSE) {
+      stack_walked = true;
+      return S_OK;
+    }
+
+    if (FAILED(hr)) {
+      cerr << "Failed to get active frame.";
+      return hr;
+    }
+
+    // Do not process too many IL frames to minimize breakpoint size.
+    bool process_il_frame =
+        il_frame_parsed_so_far < kMaximumStackFramesWithVariables;
+
+    std::shared_ptr<DbgStackFrame> stack_frame(
+        new DbgStackFrame(debug_helper_, obj_factory_));
+    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, frame, stack_frame.get(),
+                                     process_il_frame);
+    if (FAILED(hr)) {
+      cerr << "Failed to process stack frame.";
+      return hr;
+    }
+
+    ++frame_parsed_so_far;
+    if (stack_frame->IsProcessedIlFrame()) {
+      ++il_frame_parsed_so_far;
+    }
+
+    stack_frames_.push_back(std::move(stack_frame));
+    hr = debug_stack_walk->Next();
+  }
+
+  if (FAILED(hr)) {
+    cerr << "Failed to get stack frame's information.";
+  }
+
+  stack_walked = true;
+  return hr;
+}
+
+HRESULT StackFrameCollection::EvaluateBreakpointCondition(
+    DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files) {
+  CComPtr<ICorDebugThread> debug_thread;
+  HRESULT hr = eval_coordinator->GetActiveDebugThread(&debug_thread);
+  if (FAILED(hr)) {
+    cerr << "Failed to get active thread.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugFrame> debug_frame;
+  hr = debug_thread->GetActiveFrame(&debug_frame);
+  if (FAILED(hr)) {
+    cerr << "Failed to get active frame.";
+    return hr;
+  }
+
+  if (!first_stack_) {
+    first_stack_ = std::shared_ptr<DbgStackFrame>(
+        new DbgStackFrame(debug_helper_, obj_factory_));
+    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
+                                     first_stack_.get(), true);
+    if (FAILED(hr)) {
+      cerr << "Failed to process stack frame.";
+      return hr;
+    }
+  }
+
+  if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
+    cerr << "Conditional breakpoint and expressions are not supported on "
+            "non-IL frame.";
+    return E_NOTIMPL;
+  }
+
+  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,
+                                       obj_factory_.get());
+}
+
+HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files,
+    ICorDebugFrame *debug_frame, DbgStackFrame *stack_frame,
+    bool process_il_frame) {
+  // Gets ICorDebugFunction that corresponds to the function at this frame.
+  // We delay the logic to query the IL frame until we have to get the
+  // variables and method arguments.
+  CComPtr<ICorDebugFunction> frame_function;
+  HRESULT hr = debug_frame->GetFunction(&frame_function);
+  // This means the debug function is not available (mostly because of
+  // native code) so we skip to the next frame.
+  if (hr == CORDBG_E_CODE_NOT_AVAILABLE) {
+    // Adds an empty stack frame.
+    stack_frame->SetEmpty(true);
+    return S_OK;
+  }
+
+  if (FAILED(hr)) {
+    cerr << "Failed to get ICorDebugFunction from IL Frame.";
+    return hr;
+  }
+
+  // Gets the token of the function above.
+  mdMethodDef target_function_token;
+  hr = frame_function->GetToken(&target_function_token);
+  if (FAILED(hr)) {
+    cerr << "Failed to extract token from debug function.";
+    return hr;
+  }
+
+  // Gets the ICorDebugModule of the module at this frame.
+  CComPtr<ICorDebugModule> frame_module;
+  hr = frame_function->GetModule(&frame_module);
+  if (FAILED(hr)) {
+    cerr << "Failed to get ICorDebugModule from ICorDebugFunction.";
+    return hr;
+  }
+
+  vector<WCHAR> module_name;
+  hr = debug_helper_->GetModuleNameFromICorDebugModule(frame_module,
+                                                       &module_name, &cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  stack_frame->SetModuleName(module_name);
+  string target_module_name = stack_frame->GetModule();
+
+  CComPtr<IMetaDataImport> metadata_import;
+  hr = debug_helper_->GetMetadataImportFromICorDebugModule(
+      frame_module, &metadata_import, &cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // Populates the module, class and function name of this stack frame
+  // so we can report this even if we don't have local variables or
+  // method arguments.
+  hr = PopulateModuleClassAndFunctionName(stack_frame, target_function_token,
+                                          metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  if (!process_il_frame) {
+    return S_OK;
+  }
+
+  CComPtr<ICorDebugILFrame> il_frame;
+  hr = debug_frame->QueryInterface(__uuidof(ICorDebugILFrame),
+                                   reinterpret_cast<void **>(&il_frame));
+  // If this is a non-IL frame, we cannot get local variables
+  // and method arguments so simply skip that step.
+  if (hr == E_NOINTERFACE) {
+    return S_OK;
+  }
+
+  if (FAILED(hr)) {
+    cerr << "Failed to get ILFrame";
+    return hr;
+  }
+
+  for (auto &&pdb_file : parsed_pdb_files) {
+    // Gets the PDB file that has the same name as the module.
+    CComPtr<ICorDebugModule> pdb_debug_module;
+    // TODO(quoct): Possible performance improvement by caching the pdb_file
+    // based on token.
+    string pdb_module_name = pdb_file->GetModuleName();
+    if (pdb_module_name.compare(target_module_name) != 0) {
+      continue;
+    }
+
+    // Tries to populate local variables and method arguments of this frame.
+    hr = PopulateLocalVarsAndMethodArgs(target_function_token, stack_frame,
+                                        il_frame, metadata_import,
+                                        pdb_file.get());
+    if (FAILED(hr)) {
+      cerr << "Failed to populate stack frame information.";
+      return hr;
+    }
+
+    return S_OK;
+  }
+
+  return S_FALSE;
 }
 
 }  //  namespace google_cloud_debugger

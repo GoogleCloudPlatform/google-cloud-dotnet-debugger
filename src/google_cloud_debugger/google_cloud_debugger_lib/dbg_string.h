@@ -15,17 +15,20 @@
 #ifndef DBG_STRING_H_
 #define DBG_STRING_H_
 
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 
 namespace google_cloud_debugger {
+
 class EvalCoordinator;
 
 // This class represents .NET System.String.
 // A strong handle to the underlying string object is stored
 // so we won't lose reference to it.
-class DbgString : public DbgObject {
+class DbgString : public DbgReferenceObject {
  public:
-  DbgString(ICorDebugType *pType) : DbgObject(pType, 0) {}
+  DbgString(ICorDebugType *pType, std::shared_ptr<ICorDebugHelper> debug_helper)
+      : DbgReferenceObject(pType, 0, debug_helper,
+                           std::shared_ptr<IDbgObjectFactory>()) {}
 
   // Creates a strong handle to the object and stores it in string_handle_.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
@@ -36,16 +39,22 @@ class DbgString : public DbgObject {
       google::cloud::diagnostics::debug::Variable *variable) override;
 
   // Sets type of variable to System.String.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  HRESULT GetTypeString(std::string *type_string) override;
 
-  // Extracts out a string from ICorDebugStringValue.
-  HRESULT GetString(ICorDebugStringValue *debug_string,
-                    std::string *returned_string);
+  // Extracts string from DbgObject.
+  // Fails if DbgObject is not a DbgString.
+  static HRESULT GetString(DbgObject *object, std::string *returned_string);
 
  private:
-  // Handle to the underlying string object.
-  CComPtr<ICorDebugHandleValue> string_handle_;
+  // Dereferences the string handle and extracts out the string
+  // into string_obj_. Will not do anything if string_obj_set_ is true.
+  HRESULT ExtractStringFromReference();
+
+  // The underlying string object.
+  std::string string_obj_;
+
+  // True if string_obj_ is set.
+  bool string_obj_set_ = false;
 };
 
 }  //  namespace google_cloud_debugger

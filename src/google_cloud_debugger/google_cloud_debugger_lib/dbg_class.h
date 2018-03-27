@@ -22,8 +22,8 @@
 
 #include "dbg_class_field.h"
 #include "dbg_class_property.h"
-#include "dbg_object.h"
 #include "dbg_primitive.h"
+#include "dbg_reference_object.h"
 
 namespace google_cloud_debugger {
 
@@ -33,10 +33,12 @@ namespace google_cloud_debugger {
 // HashSet and Dictionary, see DbgEnum and DbgBuiltinCollection class.
 // IMPORTANT: This class is not thread-safe and is only supposed
 // to be used in 1 thread.
-class DbgClass : public DbgObject {
+class DbgClass : public DbgReferenceObject {
  public:
-  DbgClass(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+  DbgClass(ICorDebugType *debug_type, int depth,
+           std::shared_ptr<ICorDebugHelper> debug_helper,
+           std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : DbgReferenceObject(debug_type, depth, debug_helper, obj_factory) {}
 
   // This function populates parameterized type of the class if needed.
   void Initialize(ICorDebugValue *debug_value, BOOL is_null) override;
@@ -51,16 +53,26 @@ class DbgClass : public DbgObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
-  // Populates variable with type of this class.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  // Populates type_string with type of this class.
+  HRESULT GetTypeString(std::string *type_string) override;
 
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
-  // This function assumes that the class_fields_ and class_property_
-  // vector are populated.
-  HRESULT ExtractField(const std::string &field_name,
-                       std::shared_ptr<DbgObject> *field_value);
+  // If class_fields_ are not populated, then this will call the
+  // base class GetNonStaticField of DbgObject.
+  HRESULT GetNonStaticField(const std::string &field_name,
+                            std::shared_ptr<DbgObject> *field_value) override;
+
+  // Helper method to process the members of this class.
+  // If not overriden, this method will process this object as if
+  // it is a simple class (extracting out fields and properties).
+  // Debug_value is the ICorDebugValue represents this
+  // class object, metadata_import is the IMetaDataImport from this
+  // class' module and debug_class is the ICorDebugClass representing
+  // this class.
+  virtual HRESULT ProcessClassMembersHelper(ICorDebugValue *debug_value,
+                                            ICorDebugClass *debug_class,
+                                            IMetaDataImport *metadata_import);
 
   // Various .NET class types that we need to process differently
   // rather than just printing out fields and properties.
@@ -73,65 +85,24 @@ class DbgClass : public DbgObject {
     DICTIONARY      // System.Collections.Generic.Dictionary type.
   };
 
-  // Creates a DbgObject that represents the debug_value object.
-  // This object will either be DbgEnum, DbgBuiltinCollection
-  // or just a DbgClass object.
-  static HRESULT CreateDbgClassObject(ICorDebugType *debug_type, int depth,
-                                      ICorDebugValue *debug_value, BOOL is_null,
-                                      std::unique_ptr<DbgObject> *result_object,
-                                      std::ostream *err_stream);
-
   // Clear cache of static field and properties.
   static void ClearStaticCache() { static_class_members_.clear(); }
 
+  // Sets the name of the module this class is in.
+  void SetModuleName(const std::string &module_name) { module_name_ = module_name; };
+
+  // Sets the name of this class.
+  void SetClassName(const std::string &class_name) { class_name_ = class_name; };
+
+  // Sets the class token.
+  void SetClassToken(const mdTypeDef &class_token) { class_token_ = class_token; };
+
+  // Sets whether the class members has been processed or not.
+  void SetProcessedClassMembers(bool processed) { processed_ = processed; }
+
  private:
-  // Processes the class name and stores the result in class_name.
-  static HRESULT ProcessClassName(mdTypeDef class_token,
-                                  IMetaDataImport *metadata_import,
-                                  std::string *class_name,
-                                  std::ostream *err_stream);
-
-  // Processes the base class' name and stores the result in base_class_name.
-  static HRESULT ProcessBaseClassName(ICorDebugType *debug_type,
-                                      std::string *base_class_name,
-                                      std::ostream *err_stream);
-
   // Processes the generic parameters of the class.
   HRESULT ProcessParameterizedType();
-
-  // Evaluates and creates a DbgPrimitive object and stores it
-  // in result_class_obj if this class is an integral types
-  // (int, short, long, double).
-  static HRESULT ProcessPrimitiveType(
-      ICorDebugValue *debug_value, const std::string &class_name,
-      std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostream *err_stream);
-
-  // Template functions to help create different primitive ValueType.
-  // Supported types are char, bool, int8_t, uint8_t,
-  // int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
-  // float, double, intptr_t, uintptr_t.
-  template <typename T>
-  static HRESULT ProcessValueTypeHelper(
-      ICorDebugValue *debug_value, std::unique_ptr<DbgObject> *result_class_obj,
-      std::ostream *err_stream) {
-    HRESULT hr;
-    std::unique_ptr<DbgPrimitive<T>> primitive_value(
-        new (std::nothrow) DbgPrimitive<T>(nullptr));
-    if (!primitive_value) {
-      *err_stream << "Failed to allocate memory for ValueType.";
-      return E_OUTOFMEMORY;
-    }
-    hr = primitive_value->SetValue(debug_value);
-
-    if (FAILED(hr)) {
-      *err_stream << "Failed to set ValueType's value.";
-      return hr;
-    }
-
-    *result_class_obj = std::move(primitive_value);
-    return S_OK;
-  }
 
   // Given a void pointer and type of the enum, extract out the enum
   // value.
@@ -191,18 +162,6 @@ class DbgClass : public DbgObject {
   // for each of them.
   HRESULT ProcessClassMembers();
 
-  // Helper method to process the members of this class.
-  // If not overriden, this method will process this object as if
-  // it is a simple class (extracting out fields and properties).
-  // Debug_value is the ICorDebugValue represents this
-  // class object, metadata_import is the IMetaDataImport from this
-  // class' module and debug_class is the ICorDebugClass representing
-  // this class.
-  virtual HRESULT ProcessClassMembersHelper(
-      ICorDebugValue *debug_value,
-      ICorDebugClass *debug_class,
-      IMetaDataImport *metadata_import);
-
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
   HRESULT ExtractField(ICorDebugObjectValue *debug_obj_value,
@@ -210,9 +169,6 @@ class DbgClass : public DbgObject {
                        IMetaDataImport *metadata_import,
                        const std::string &field_name,
                        std::unique_ptr<DbgObject> *field_value);
-
-  // A strong handle to the class object.
-  CComPtr<ICorDebugHandleValue> class_handle_;
 
   // String that represents the name of the module this class is in.
   std::string module_name_;

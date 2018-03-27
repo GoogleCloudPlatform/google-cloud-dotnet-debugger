@@ -18,7 +18,7 @@
 #include <memory>
 #include <vector>
 
-#include "dbg_object.h"
+#include "dbg_reference_object.h"
 
 namespace google_cloud_debugger {
 
@@ -26,10 +26,13 @@ class EvalCoordinator;
 
 // This class represents a .NET array object.
 // This includes multi-dimensional as well as jagged arrays.
-class DbgArray : public DbgObject {
+class DbgArray : public DbgReferenceObject {
  public:
-  DbgArray(ICorDebugType *debug_type, int depth)
-      : DbgObject(debug_type, depth) {}
+  DbgArray(ICorDebugType *debug_type, int depth,
+           std::shared_ptr<ICorDebugHelper> debug_helper,
+           std::shared_ptr<IDbgObjectFactory> object_factory)
+      : DbgReferenceObject(debug_type, depth, debug_helper,
+                           object_factory) {}
 
   // Retrieves information about array rank, array dimensions, array type and
   // creates a strong handle to the array.
@@ -62,9 +65,10 @@ class DbgArray : public DbgObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
-  // Sets the type of variable to this array type.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) override;
+  // Gets the type of the array.
+  // For example, if this array represents an int array,
+  // type_string will be set to int[].
+  HRESULT GetTypeString(std::string *type_string) override;
 
   // Sets the maximum amount of items that the array will retrieve
   // when PopulateMembers is called.
@@ -73,9 +77,6 @@ class DbgArray : public DbgObject {
   }
 
  private:
-  // A strong handle to the underlying array object.
-  CComPtr<ICorDebugHandleValue> array_handle_;
-
   // The type of the array.
   CComPtr<ICorDebugType> array_type_;
 

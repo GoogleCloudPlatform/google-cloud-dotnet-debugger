@@ -28,6 +28,8 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class VariableWrapper;
+class ICorDebugHelper;
+struct TypeSignature;
 
 // This class represents a .NET object.
 // We try to store either a copy of the object itself (with value type)
@@ -38,7 +40,9 @@ class DbgObject : public StringStreamWrapper {
  public:
   // Create a DbgObject with ICorDebugType debug_type.
   // The object will only be created to a depth of depth.
-  DbgObject(ICorDebugType *debug_type, int depth);
+  DbgObject(ICorDebugType *debug_type, int depth,
+            std::shared_ptr<ICorDebugHelper> debug_helper);
+
   virtual ~DbgObject() {}
 
   // Initialize the DbgObject based on an ICorDebugValue object
@@ -51,8 +55,10 @@ class DbgObject : public StringStreamWrapper {
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
   // Sets the type of proto variable to the type of this object.
-  virtual HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable) = 0;
+  HRESULT PopulateType(google::cloud::diagnostics::debug::Variable *variable);
+
+  // Gets a string of object type.
+  virtual HRESULT GetTypeString(std::string *type_string) = 0;
 
   // Sets the value of proto variable to the value of this object.
   // PopulateValue will return S_FALSE if this object has members.
@@ -61,28 +67,25 @@ class DbgObject : public StringStreamWrapper {
     return S_OK;
   }
 
+  // Extracts the type signature of this object.
+  HRESULT GetTypeSignature(TypeSignature *type_signature);
+
   // Populates the members vector using this object's members.
   // Returns S_FALSE by default (no members).
   // Variable_proto is used to create children variable protos.
   // These protos, combined with this object's members' values
   // will be used to populate members vector.
+  // object_factory is needed to create new DbgObjects for members.
   virtual HRESULT PopulateMembers(
-    google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator) {
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator) {
     return S_FALSE;
   }
 
-  // Create a DbgObject with an evaluation depth of depth.
-  static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
-                                 std::unique_ptr<DbgObject> *result_object,
-                                 std::ostringstream *err_stream);
-
-  // Create an empty DbgObject. This object is mainly used
-  // to store complex type and printing them out later.
-  static HRESULT CreateDbgObject(ICorDebugType *debug_type,
-                                 std::unique_ptr<DbgObject> *result_object,
-                                 std::ostringstream *err_stream);
+  // Returns an ICorDebugValue representing the object.
+  virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
+                                    ICorDebugEval *debug_eval) = 0;
 
   // Returns the ICorDebugType of the object.
   ICorDebugType *GetDebugType() const { return debug_type_; }
@@ -100,19 +103,36 @@ class DbgObject : public StringStreamWrapper {
   // Returns the HRESULT when Initialize function is called.
   HRESULT GetInitializeHr() const { return initialize_hr_; }
 
- private:
-  // Helper function to create a DbgObject.
-  static HRESULT CreateDbgObjectHelper(
-      ICorDebugValue *debug_value, ICorDebugType *debug_type,
-      CorElementType cor_element_type, BOOL is_null, int depth,
-      std::unique_ptr<DbgObject> *result_object,
-      std::ostringstream *err_stream);
+  // Returns the CorElementType of this object.
+  CorElementType GetCorElementType() const { return cor_element_type_; }
 
+  // Sets the CorElementType of the object.
+  void SetCorElementType(const CorElementType &element_type) {
+    cor_element_type_ = element_type;
+  }
+
+  // Returns the address of the object.
+  CORDB_ADDRESS GetAddress() const { return address_; }
+
+  // Sets the address of the object.
+  void SetAddress(const CORDB_ADDRESS &address) { address_ = address; }
+
+ protected:
+  // The CorElementType of the underlying .NET object.
+  CorElementType cor_element_type_;
+
+  // Contains helper methods used for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+ private:
   // The underlying type of the object.
   CComPtr<ICorDebugType> debug_type_;
 
   // True if the object is null.
   BOOL is_null_ = FALSE;
+
+  // The address of the object.
+  CORDB_ADDRESS address_ = 0;
 
   // The depth of creation for this object.
   // Once this is 0, we don't create the fields and properties of the object.

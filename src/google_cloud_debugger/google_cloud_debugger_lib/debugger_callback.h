@@ -168,7 +168,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   // Returns all the PDB files that are parsed.
   const std::vector<
-      std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+      std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       &GetPdbFiles() const {
     return portable_pdbs_;
   }
@@ -192,6 +192,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // All the enumerated items will be stored in vector result.
   // Even if HRESULT returned is not SUCCEED, the result array may
   // be filled too.
+  // TODO(quoct): Move this to i_cor_debug_helper file.
   template <typename ICorDebugSpecifiedTypeEnum,
             typename ICorDebugSpecifiedType>
   static HRESULT EnumerateICorDebugSpecifiedType(
@@ -255,7 +256,7 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
 
   // Vector containing all the portable PDB files that are parsed.
   std::vector<
-      std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+      std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       portable_pdbs_;
 
   // The ICorDebugProcess of the debugged process.
@@ -264,6 +265,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   // The collection of breakpoint used by the callback to store and
   // manage breakpoints.
   std::unique_ptr<IBreakpointCollection> breakpoint_collection_;
+
+  // Helper methods for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 
   bool initialized_success_ = false;
 

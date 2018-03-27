@@ -18,6 +18,7 @@ using System.Linq;
 using Xunit;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 using StackdriverSourceLocation = Google.Cloud.Debugger.V2.SourceLocation;
+using System.Collections.Generic;
 
 namespace Google.Cloud.Diagnostics.Debug.Tests
 {
@@ -25,6 +26,11 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     {
         private const string _id = "breakpoint-id";
         private const string _path = "C:\\breakpoint-Path";
+        private const string _condition = "x == 2";
+        private string[] _expressions =
+        {
+            "a", "b.c"
+        };
         private const int _line = 11;
 
         [Fact]
@@ -39,6 +45,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                     Line = _line
                 },
                 CreateTime = Timestamp.FromDateTime(DateTime.UtcNow),
+                Condition = _condition,
+                Expressions = { _expressions }
             };
 
             var breakpoint = sdBreakpoint.Convert();
@@ -47,6 +55,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(_line, breakpoint.Location.Line);
             Assert.True(breakpoint.Activated);
             Assert.Null(breakpoint.CreateTime);
+            Assert.Equal(_condition, breakpoint.Condition);
+            Assert.Equal(_expressions, breakpoint.Expressions);
         }
 
         [Fact]
@@ -87,6 +97,17 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                             new Variable(),
                         },
                     }
+                },
+                EvaluatedExpressions =
+                {
+                    new Variable()
+                    {
+                        Name = "first-expression"
+                    },
+                    new Variable()
+                    {
+                        Name = "second-expression"
+                    }
                 }
             };
 
@@ -100,34 +121,11 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Single(sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-one")));
             var sfTwo = sdBreakpoint.StackFrames.Where(sf => sf.Function.Equals("method-two"));
             Assert.Equal(2, sfTwo.Single().Arguments.Count);
-        }
-
-        [Fact]
-        public void GetLocationIdentifier_Breakpoint()
-        {
-            var breakpoint = new Breakpoint
-            {
-                Location = new SourceLocation
-                {
-                    Path = _path,
-                    Line = _line
-                }
-            };
-            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
-        }
-
-        [Fact]
-        public void GetLocationIdentifier_StackdriverBreakpoint()
-        {
-            var breakpoint = new StackdriverBreakpoint
-            {
-                Location = new StackdriverSourceLocation
-                {
-                    Path = _path,
-                    Line = _line
-                }
-            };
-            Assert.Equal("c:/breakpoint-path:11", breakpoint.GetLocationIdentifier());
+            Assert.Equal(2, sdBreakpoint.EvaluatedExpressions.Count);
+            Assert.Single(
+                sdBreakpoint.EvaluatedExpressions.Where(ee => ee.Name.Equals("first-expression")));
+            Assert.Single(
+                sdBreakpoint.EvaluatedExpressions.Where(ee => ee.Name.Equals("second-expression")));
         }
     }
 }
