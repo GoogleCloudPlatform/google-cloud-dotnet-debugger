@@ -28,6 +28,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class VariableWrapper;
+class ICorDebugHelper;
 struct TypeSignature;
 
 // This class represents a .NET object.
@@ -39,7 +40,9 @@ class DbgObject : public StringStreamWrapper {
  public:
   // Create a DbgObject with ICorDebugType debug_type.
   // The object will only be created to a depth of depth.
-  DbgObject(ICorDebugType *debug_type, int depth);
+  DbgObject(ICorDebugType *debug_type, int depth,
+            std::shared_ptr<ICorDebugHelper> debug_helper);
+
   virtual ~DbgObject() {}
 
   // Initialize the DbgObject based on an ICorDebugValue object
@@ -52,8 +55,7 @@ class DbgObject : public StringStreamWrapper {
   virtual void Initialize(ICorDebugValue *debug_value, BOOL is_null) = 0;
 
   // Sets the type of proto variable to the type of this object.
-  HRESULT PopulateType(
-      google::cloud::diagnostics::debug::Variable *variable);
+  HRESULT PopulateType(google::cloud::diagnostics::debug::Variable *variable);
 
   // Gets a string of object type.
   virtual HRESULT GetTypeString(std::string *type_string) = 0;
@@ -73,27 +75,17 @@ class DbgObject : public StringStreamWrapper {
   // Variable_proto is used to create children variable protos.
   // These protos, combined with this object's members' values
   // will be used to populate members vector.
+  // object_factory is needed to create new DbgObjects for members.
   virtual HRESULT PopulateMembers(
-    google::cloud::diagnostics::debug::Variable *variable_proto,
-    std::vector<VariableWrapper> *members,
-    IEvalCoordinator *eval_coordinator) {
+      google::cloud::diagnostics::debug::Variable *variable_proto,
+      std::vector<VariableWrapper> *members,
+      IEvalCoordinator *eval_coordinator) {
     return S_FALSE;
   }
 
   // Returns an ICorDebugValue representing the object.
   virtual HRESULT GetICorDebugValue(ICorDebugValue **debug_value,
-    ICorDebugEval *debug_eval) = 0;
-
-  // Create a DbgObject with an evaluation depth of depth.
-  static HRESULT CreateDbgObject(ICorDebugValue *debug_value, int depth,
-                                 std::unique_ptr<DbgObject> *result_object,
-                                 std::ostream *err_stream);
-
-  // Create an empty DbgObject. This object is mainly used
-  // to store complex type and printing them out later.
-  static HRESULT CreateDbgObject(ICorDebugType *debug_type,
-                                 std::unique_ptr<DbgObject> *result_object,
-                                 std::ostream *err_stream);
+                                    ICorDebugEval *debug_eval) = 0;
 
   // Returns the ICorDebugType of the object.
   ICorDebugType *GetDebugType() const { return debug_type_; }
@@ -112,23 +104,27 @@ class DbgObject : public StringStreamWrapper {
   HRESULT GetInitializeHr() const { return initialize_hr_; }
 
   // Returns the CorElementType of this object.
-  CorElementType GetCorElementType() { return cor_element_type_; }
+  CorElementType GetCorElementType() const { return cor_element_type_; }
+
+  // Sets the CorElementType of the object.
+  void SetCorElementType(const CorElementType &element_type) {
+    cor_element_type_ = element_type;
+  }
 
   // Returns the address of the object.
-  CORDB_ADDRESS GetAddress() { return address_; }
+  CORDB_ADDRESS GetAddress() const { return address_; }
+
+  // Sets the address of the object.
+  void SetAddress(const CORDB_ADDRESS &address) { address_ = address; }
 
  protected:
-   // The CorElementType of the underlying .NET object.
-   CorElementType cor_element_type_;
+  // The CorElementType of the underlying .NET object.
+  CorElementType cor_element_type_;
+
+  // Contains helper methods used for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 
  private:
-  // Helper function to create a DbgObject.
-  static HRESULT CreateDbgObjectHelper(
-      ICorDebugValue *debug_value, ICorDebugType *debug_type,
-      CorElementType cor_element_type, BOOL is_null, int depth,
-      std::unique_ptr<DbgObject> *result_object,
-      std::ostream *err_stream);
-
   // The underlying type of the object.
   CComPtr<ICorDebugType> debug_type_;
 

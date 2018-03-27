@@ -25,6 +25,7 @@
 #include "dbg_array.h"
 #include "dbg_class.h"
 #include "dbg_class_property.h"
+#include "dbg_object_factory.h"
 #include "dbg_primitive.h"
 #include "dbg_stack_frame.h"
 #include "dbg_string.h"
@@ -660,12 +661,13 @@ HRESULT CorDebugHelper::GetPropertyInfo(
       return hr;
     }
 
+    std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
+    std::shared_ptr<IDbgObjectFactory> obj_factory(new DbgObjectFactory());
     for (int i = 0; i < property_defs_returned; ++i) {
-      std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
       // We creates DbgClassProperty object and calls the Initialize
       // function to populate the name of the property.
       std::unique_ptr<DbgClassProperty> class_property(
-          new (std::nothrow) DbgClassProperty(debug_helper));
+          new (std::nothrow) DbgClassProperty(debug_helper, obj_factory));
       if (!class_property) {
         *err_stream
             << "Ran out of memory while trying to initialize class property ";
