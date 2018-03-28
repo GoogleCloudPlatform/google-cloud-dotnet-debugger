@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef I_DBG_OBJECT_FACTORY_H_
-#define I_DBG_OBJECT_FACTORY_H_
+#ifndef I_DBG_OBJECT_FACTORY_MOCK_H_
+#define I_DBG_OBJECT_FACTORY_MOCK_H_
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -38,4 +38,4 @@ class IDbgObjectFactoryMock : public google_cloud_debugger::IDbgObjectFactory {
 
 }  // namespace google_cloud_debugger_test
 
-#endif  //  I_DBG_OBJECT_FACTORY_H_
+#endif  //  I_DBG_OBJECT_FACTORY_MOCK_H_
