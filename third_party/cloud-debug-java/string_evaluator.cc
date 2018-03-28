@@ -44,7 +44,7 @@ HRESULT StringEvaluator::Evaluate(
       IEvalCoordinator *eval_coordinator,
       IDbgObjectFactory *obj_factory,
       std::ostream *err_stream) const {
-  if (!dbg_object || !eval_coordinator || !err_stream) {
+  if (!dbg_object || !obj_factory || !eval_coordinator || !err_stream) {
     return E_INVALIDARG;
   }
 
