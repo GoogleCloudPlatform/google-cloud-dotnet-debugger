@@ -601,7 +601,7 @@ HRESULT CorDebugHelper::ParseAndCheckFirstByte(
     return hr;
   }
 
-  if (field_bit & calling_convention == 0) {
+  if ((field_bit & calling_convention) == 0) {
     return META_E_BAD_SIGNATURE;
   }
 
