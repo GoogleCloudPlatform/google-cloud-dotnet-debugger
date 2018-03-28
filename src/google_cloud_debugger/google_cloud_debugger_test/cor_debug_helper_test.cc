@@ -19,12 +19,13 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
-#include "i_cor_debug_helper.h"
+#include "cor_debug_helper.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
 
 using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::CorDebugHelper;
 using std::string;
 using std::vector;
 using ::testing::_;
@@ -39,7 +40,7 @@ namespace google_cloud_debugger_test {
 
 // Test Fixture for i_cor_debug_helper.h.
 // Contains various ICorDebug mock objects needed.
-class ICorDebugHelperTest : public ::testing::Test {
+class CorDebugHelperTest : public ::testing::Test {
  protected:
   // Sets up mock calls to retrieve metadata import from ICorDebugModule.
   virtual void SetUpMetadataImportFromModule(int times_called = 1) {
@@ -84,6 +85,8 @@ class ICorDebugHelperTest : public ::testing::Test {
 
   vector<WCHAR> wchar_module_name_;
 
+  CorDebugHelper debug_helper_;
+
   // Class used in the test.
   ICorDebugClassMock debug_class_;
 
@@ -95,23 +98,23 @@ class ICorDebugHelperTest : public ::testing::Test {
 };
 
 // Tests GetMetadataImportFromICorDebugModule function.
-TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugModule) {
+TEST_F(CorDebugHelperTest, GetMetadataImportFromICorDebugModule) {
   SetUpMetadataImportFromModule();
   CComPtr<IMetaDataImport> retrieved_metadata_import;
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
+  HRESULT hr = debug_helper_.GetMetadataImportFromICorDebugModule(
       &debug_module_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, S_OK);
   EXPECT_EQ((IMetaDataImport *)retrieved_metadata_import, &metadata_import_);
 }
 
 // Tests error cases for GetMetadataImportFromICorDebugModule function.
-TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugModuleError) {
+TEST_F(CorDebugHelperTest, GetMetadataImportFromICorDebugModuleError) {
   CComPtr<IMetaDataImport> retrieved_metadata_import;
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
+  HRESULT hr = debug_helper_.GetMetadataImportFromICorDebugModule(
       nullptr, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
-  hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
+  hr = debug_helper_.GetMetadataImportFromICorDebugModule(
       &debug_module_, nullptr, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
@@ -119,30 +122,30 @@ TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugModuleError) {
       .Times(1)
       .WillRepeatedly(Return(E_ABORT));
 
-  hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
+  hr = debug_helper_.GetMetadataImportFromICorDebugModule(
       &debug_module_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, E_ABORT);
 }
 
 // Tests GetMetadataImportFromICorDebugClass function.
-TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugClass) {
+TEST_F(CorDebugHelperTest, GetMetadataImportFromICorDebugClass) {
   SetUpMetadataImportFromClass();
 
   CComPtr<IMetaDataImport> retrieved_metadata_import;
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugClass(
+  HRESULT hr = debug_helper_.GetMetadataImportFromICorDebugClass(
       &debug_class_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, S_OK);
   EXPECT_EQ((IMetaDataImport *)retrieved_metadata_import, &metadata_import_);
 }
 
 // Tests error cases for GetMetadataImportFromICorDebugClass function.
-TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugClassError) {
+TEST_F(CorDebugHelperTest, GetMetadataImportFromICorDebugClassError) {
   CComPtr<IMetaDataImport> retrieved_metadata_import;
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugClass(
+  HRESULT hr = debug_helper_.GetMetadataImportFromICorDebugClass(
       nullptr, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
-  hr = google_cloud_debugger::GetMetadataImportFromICorDebugClass(
+  hr = debug_helper_.GetMetadataImportFromICorDebugClass(
       &debug_class_, nullptr, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
@@ -150,17 +153,17 @@ TEST_F(ICorDebugHelperTest, GetMetadataImportFromICorDebugClassError) {
       .Times(1)
       .WillRepeatedly(Return(E_ABORT));
 
-  hr = google_cloud_debugger::GetMetadataImportFromICorDebugClass(
+  hr = debug_helper_.GetMetadataImportFromICorDebugClass(
       &debug_class_, &retrieved_metadata_import, &std::cerr);
   EXPECT_EQ(hr, E_ABORT);
 }
 
 // Tests GetModuleNameFromICorDebugModule function.
-TEST_F(ICorDebugHelperTest, GetModuleNameFromICorDebugModule) {
+TEST_F(CorDebugHelperTest, GetModuleNameFromICorDebugModule) {
   SetUpModuleNameFromModule();
 
   std::vector<WCHAR> module_name;
-  HRESULT hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(
+  HRESULT hr = debug_helper_.GetModuleNameFromICorDebugModule(
       &debug_module_, &module_name, &std::cerr);
   EXPECT_EQ(hr, S_OK);
   EXPECT_EQ(google_cloud_debugger::ConvertWCharPtrToString(module_name),
@@ -168,13 +171,13 @@ TEST_F(ICorDebugHelperTest, GetModuleNameFromICorDebugModule) {
 }
 
 // Tests error cases for GetModuleNameFromICorDebugModule function.
-TEST_F(ICorDebugHelperTest, GetModuleNameFromICorDebugModuleError) {
+TEST_F(CorDebugHelperTest, GetModuleNameFromICorDebugModuleError) {
   std::vector<WCHAR> module_name;
-  HRESULT hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(
+  HRESULT hr = debug_helper_.GetModuleNameFromICorDebugModule(
       nullptr, &module_name, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
-  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(
+  hr = debug_helper_.GetModuleNameFromICorDebugModule(
       &debug_module_, nullptr, &std::cerr);
   EXPECT_EQ(hr, E_INVALIDARG);
 
@@ -182,7 +185,7 @@ TEST_F(ICorDebugHelperTest, GetModuleNameFromICorDebugModuleError) {
       .Times(1)
       .WillRepeatedly(Return(E_FAIL));
 
-  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(
+  hr = debug_helper_.GetModuleNameFromICorDebugModule(
       &debug_module_, &module_name, &std::cerr);
   EXPECT_EQ(hr, E_FAIL);
 }

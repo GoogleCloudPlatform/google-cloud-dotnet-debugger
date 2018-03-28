@@ -19,25 +19,31 @@
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "cor_debug_helper.h"
+#include "dbg_object_factory.h"
 #include "dbg_stack_frame.h"
 #include "document_index.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
 
+using google::cloud::diagnostics::debug::StackFrame;
+using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::CorDebugHelper;
+using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::DbgStackFrame;
+using google_cloud_debugger::ICorDebugHelper;
+using google_cloud_debugger::IDbgObjectFactory;
+using google_cloud_debugger_portable_pdb::LocalVariableInfo;
+using std::string;
+using std::vector;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Mock;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using google::cloud::diagnostics::debug::StackFrame;
-using google_cloud_debugger::CComPtr;
-using google_cloud_debugger::ConvertStringToWCharPtr;
-using google_cloud_debugger::DbgStackFrame;
-using google_cloud_debugger_portable_pdb::LocalVariableInfo;
-using std::string;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -69,20 +75,20 @@ class DbgStackFrameTest : public ::testing::Test {
   virtual void SetUp() {
     // Sets up chain from ICorDebugFrame to ICorDebugAppDomain.
     ON_CALL(frame_mock_, GetFunction(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&debug_function_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_function_), Return(S_OK)));
 
     ON_CALL(debug_function_, GetModule(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
 
     ON_CALL(debug_module_, GetAssembly(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&debug_assembly_), Return(S_OK)));
 
     ON_CALL(debug_assembly_, GetAppDomain(_))
-        .WillByDefault(
-            DoAll(SetArgPointee<0>(&app_domain_), Return(S_OK)));
+        .WillByDefault(DoAll(SetArgPointee<0>(&app_domain_), Return(S_OK)));
+
+    debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
+    dbg_object_factory_ =
+        std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory());
   }
 
   // Sets up mock calls to process local variables.
@@ -232,6 +238,12 @@ class DbgStackFrameTest : public ::testing::Test {
   // LocalVariableInfo vector that is used to extract local variables' names.
   std::vector<LocalVariableInfo> local_variables_info_;
 
+  // ICorDebugHelper used for DbgStackFrame constructor.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // IDbgObjectFactory used for DbgStackFrame constructor.
+  std::shared_ptr<IDbgObjectFactory> dbg_object_factory_;
+
   // MetaDataImport used by the test.
   IMetaDataImportMock metadata_import_;
 
@@ -263,7 +275,7 @@ class DbgStackFrameTest : public ::testing::Test {
 
 // Tests the Initialize function of DbgStackFrame.
 TEST_F(DbgStackFrameTest, TestInitialize) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
   SetUpLocalVariables();
   SetUpMethodArguments();
@@ -277,7 +289,7 @@ TEST_F(DbgStackFrameTest, TestInitialize) {
 // Tests the error case of Initialize function of DbgStackFrame
 // when the arguments are null.
 TEST_F(DbgStackFrameTest, TestInitializeNullError) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
   HRESULT hr = stack_frame.Initialize(nullptr, local_variables_info_,
                                       method_token_, &metadata_import_);
@@ -291,7 +303,7 @@ TEST_F(DbgStackFrameTest, TestInitializeNullError) {
 // Tests the error case of Initialize function of DbgStackFrame
 // when we cannot enumerate local variables.
 TEST_F(DbgStackFrameTest, TestInitializeEnumerateLocalVariableError) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
   EXPECT_CALL(frame_mock_, EnumerateLocalVariables(_))
       .WillRepeatedly(Return(CORDBG_E_ENC_METHOD_NO_LOCAL_SIG));
@@ -304,7 +316,7 @@ TEST_F(DbgStackFrameTest, TestInitializeEnumerateLocalVariableError) {
 // Tests the error case of Initialize function of DbgStackFrame
 // when we cannot enumerate method arguments.
 TEST_F(DbgStackFrameTest, TestInitializeEnumerateArgumentsError) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
   SetUpLocalVariables();
   EXPECT_CALL(frame_mock_, EnumerateArguments(_))
@@ -317,7 +329,7 @@ TEST_F(DbgStackFrameTest, TestInitializeEnumerateArgumentsError) {
 
 // Tests the PopulateStackFrame function of DbgStackFrame.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
   StackFrame proto_stack_frame;
 
   SetUpLocalVariables();
@@ -328,8 +340,8 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
-      2000, &eval_coordinator_);
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 2000,
+                                      &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the frame has the correct local variables.
@@ -354,7 +366,7 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
 // Tests the PopulateStackFrame function of DbgStackFrame when we restrict
 // the amount of information that can be populated into the proto.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrameRestricted) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
   StackFrame proto_stack_frame;
 
   SetUpLocalVariables();
@@ -365,8 +377,8 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameRestricted) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
-      100, &eval_coordinator_);
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 100,
+                                      &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the frame has the correct local variables.
@@ -390,7 +402,7 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameRestricted) {
 // Tests the PopulateStackFrame function of DbgStackFrame
 // when we don't have a variable's information.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
   StackFrame proto_stack_frame;
 
   SetUpLocalVariables();
@@ -405,8 +417,8 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
                                       method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
-  hr = stack_frame.PopulateStackFrame(&proto_stack_frame,
-      2000, &eval_coordinator_);
+  hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 2000,
+                                      &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the frame has the correct local variables.
@@ -432,7 +444,7 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
 
 // Tests the error case of DbgStackFrame when arguments are null.
 TEST_F(DbgStackFrameTest, TestPopulateStackFrameError) {
-  DbgStackFrame stack_frame;
+  DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
   StackFrame proto_stack_frame;
 
   SetUpLocalVariables();

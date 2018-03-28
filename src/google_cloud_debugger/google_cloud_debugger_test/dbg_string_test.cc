@@ -18,11 +18,14 @@
 
 #include "class_names.h"
 #include "common_action_mocks.h"
+#include "cor_debug_helper.h"
 #include "i_cor_debug_mocks.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::CorDebugHelper;
 using google_cloud_debugger::DbgString;
+using google_cloud_debugger::ICorDebugHelper;
 using std::string;
 using std::vector;
 using ::testing::_;
@@ -36,6 +39,7 @@ namespace google_cloud_debugger_test {
 class DbgStringTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
+    debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
   }
 
   // Sets up various mock objects for DbgString class.
@@ -65,11 +69,14 @@ class DbgStringTest : public ::testing::Test {
   // Heap and handle value created for the string.
   ICorDebugHeapValue2Mock heap_value_;
   ICorDebugHandleValueMock handle_value_;
+
+  // ICorDebugHelper used for DbgString constructor.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 };
 
 // Tests Initialize function of DbgString.
 TEST_F(DbgStringTest, Initialize) {
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
 
   SetUpString();
 
@@ -82,7 +89,7 @@ TEST_F(DbgStringTest, Initialize) {
 
 // Tests error cases for Initialize function of DbgString.
 TEST_F(DbgStringTest, InitializeError) {
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
 
   // If ICorDebugStringValue is null, E_INVALIDARG is returned.
   dbg_string.Initialize(nullptr, FALSE);
@@ -98,7 +105,7 @@ TEST_F(DbgStringTest, InitializeError) {
 
 // Tests that PopulateType function always return System.String.
 TEST_F(DbgStringTest, PopulateType) {
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
 
   Variable variable;
   EXPECT_EQ(dbg_string.PopulateType(&variable), S_OK);
@@ -108,7 +115,7 @@ TEST_F(DbgStringTest, PopulateType) {
 
 // Tests error cases for PopulateType.
 TEST_F(DbgStringTest, PopulateTypeError) {
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
   EXPECT_EQ(dbg_string.PopulateType(nullptr), E_INVALIDARG);
 }
 
@@ -129,7 +136,7 @@ TEST_F(DbgStringTest, GetString) {
                                     wchar_string.data() + string_size),
                 Return(S_OK)));
 
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
   SetUpString();
   dbg_string.Initialize(&string_value_, FALSE);
 
@@ -147,7 +154,7 @@ TEST_F(DbgStringTest, GetStringError) {
   std::string returned_string;
 
   SetUpString();
-  DbgString dbg_string(nullptr);
+  DbgString dbg_string(nullptr, debug_helper_);
   dbg_string.Initialize(&string_value_, FALSE);
 
   // Test null cases.

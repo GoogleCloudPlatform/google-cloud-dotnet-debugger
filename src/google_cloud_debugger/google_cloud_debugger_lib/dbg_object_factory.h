@@ -40,10 +40,6 @@ class DbgObjectFactory : public IDbgObjectFactory {
                           std::unique_ptr<DbgObject> *result_object,
                           std::ostream *err_stream) override;
 
- private:
-  // This will be injected into the DbgObject created by this factory.
-  std::shared_ptr<ICorDebugHelper> debug_helper_;
-
   // Creates a DbgObject that represents the debug_value object.
   // This object will either be DbgEnum, DbgBuiltinCollection
   // or just a DbgClass object.
@@ -51,6 +47,10 @@ class DbgObjectFactory : public IDbgObjectFactory {
                                ICorDebugValue *debug_value, BOOL is_null,
                                std::unique_ptr<DbgObject> *result_object,
                                std::ostream *err_stream);
+
+ private:
+  // This will be injected into the DbgObject created by this factory.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 
   // Helper function to create a DbgObject.
   HRESULT CreateDbgObjectHelper(ICorDebugValue *debug_value,
