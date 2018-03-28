@@ -16,6 +16,7 @@
 #define DBG_OBJECT_FACTORY_H__
 
 #include "i_dbg_object_factory.h"
+#include "dbg_primitive.h"
 
 namespace google_cloud_debugger {
 
