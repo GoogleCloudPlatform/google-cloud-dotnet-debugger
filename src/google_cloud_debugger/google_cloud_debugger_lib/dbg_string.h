@@ -26,6 +26,13 @@ class EvalCoordinator;
 // so we won't lose reference to it.
 class DbgString : public DbgReferenceObject {
  public:
+  // This constructor is used for testing.
+  DbgString(std::string string_content)
+      : DbgReferenceObject(nullptr, 0, std::shared_ptr<ICorDebugHelper>(), std::shared_ptr<IDbgObjectFactory>()) {
+    string_obj_ = string_content;
+    string_obj_set_ = true;
+  }
+
   DbgString(ICorDebugType *pType, std::shared_ptr<ICorDebugHelper> debug_helper)
       : DbgReferenceObject(pType, 0, debug_helper,
                            std::shared_ptr<IDbgObjectFactory>()) {}

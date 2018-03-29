@@ -33,11 +33,14 @@ ANTLR_INC = $(THIRD_PARTY_DIR)/antlr/lib/cpp/antlr
 GMOCK_LIB = $(GMOCK_DIR)make/
 GTEST_LIB = $(GTEST_DIR)make/
 
+# Cloud Debug Java directory.
+DEBUG_JAVA = $(THIRD_PARTY_DIR)/cloud-debug-java/
+
 # .NET Core libraries.
 CORE_CLR_LIB = $(THIRD_PARTY_DIR)/coreclr/bin/Product/Linux.x64.Debug/lib/
 CORE_CLR_LIB2 = $(THIRD_PARTY_DIR)/coreclr/bin/Product/Linux.x64.Debug/
 
-INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
+INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${DEBUG_JAVA} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${ANTLR_LIB} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -lm -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib -lantlr_lib
 CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined 
 
