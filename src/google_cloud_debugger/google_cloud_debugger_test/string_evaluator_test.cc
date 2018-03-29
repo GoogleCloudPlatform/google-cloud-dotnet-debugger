@@ -32,6 +32,7 @@ using google_cloud_debugger::StringEvaluator;
 using google_cloud_debugger::TypeSignature;
 using std::string;
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
@@ -61,11 +62,13 @@ class StringEvaluatorTest : public ::testing::Test {
   }
 
   // Sets up object factory for object creation.
-  virtual void SetUpObjFactory() {
+  // This will take ownership of created_obj.
+  virtual void SetUpObjFactory(DbgObject *created_obj) {
     EXPECT_CALL(object_factory_mock_,
-                CreateDbgObject(&debug_string_mock_, _, _, _))
+                CreateDbgObjectMockHelper(&debug_string_mock_, _, _, _))
         .Times(1)
-        .WillRepeatedly(Return(S_OK));
+        .WillRepeatedly(
+            DoAll(SetArgPointee<2>(created_obj), Return(S_OK)));
   }
 
   // Mock of IEvalCoordinator used for evaluate.
@@ -107,14 +110,16 @@ TEST_F(StringEvaluatorTest, GetStaticType) {
 TEST_F(StringEvaluatorTest, Evaluate) {
   StringEvaluator evaluator(string_content_);
 
+  DbgString *object_created = new DbgString(nullptr, nullptr);
   SetUpEvalCoordinator();
-  SetUpObjFactory();
+  SetUpObjFactory(object_created);
 
   std::shared_ptr<DbgObject> result;
   std::ostringstream err_stream;
   EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
                                &object_factory_mock_, &err_stream),
             S_OK);
+  EXPECT_EQ(result.get(), object_created);
 }
 
 // Tests null error cases for Evaluate function.
@@ -158,7 +163,7 @@ TEST_F(StringEvaluatorTest, EvaluateErrorObjCreation) {
 
   SetUpEvalCoordinator();
   EXPECT_CALL(object_factory_mock_,
-              CreateDbgObject(&debug_string_mock_, _, _, _))
+              CreateDbgObjectMockHelper(&debug_string_mock_, _, _, _))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
 

@@ -75,6 +75,12 @@
     <ClCompile Include="string_evaluator_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="binary_expression_evaluator_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="i_dbg_object_factory_mock.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">
@@ -99,6 +105,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_dbg_object_factory_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="expression_evaluator_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

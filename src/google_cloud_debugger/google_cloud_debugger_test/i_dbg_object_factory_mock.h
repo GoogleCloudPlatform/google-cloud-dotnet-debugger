@@ -24,11 +24,17 @@ namespace google_cloud_debugger_test {
 
 class IDbgObjectFactoryMock : public google_cloud_debugger::IDbgObjectFactory {
  public:
-  MOCK_METHOD4(
-      CreateDbgObject,
-      HRESULT(ICorDebugValue* debug_value, int depth,
-              std::unique_ptr<google_cloud_debugger::DbgObject>* result_object,
-              std::ostream* err_stream));
+  // Create a DbgObject with an evaluation depth of depth.
+  HRESULT CreateDbgObject(
+      ICorDebugValue* debug_value, int depth,
+      std::unique_ptr<google_cloud_debugger::DbgObject>* result_object,
+      std::ostream* err_stream) override;
+
+  MOCK_METHOD4(CreateDbgObjectMockHelper,
+               HRESULT(ICorDebugValue* debug_value, int depth,
+                       google_cloud_debugger::DbgObject **result_object,
+                       std::ostream* err_stream));
+
   MOCK_METHOD3(
       CreateDbgObject,
       HRESULT(ICorDebugType* debug_type,
