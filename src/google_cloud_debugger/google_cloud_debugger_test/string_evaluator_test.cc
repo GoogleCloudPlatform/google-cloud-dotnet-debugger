@@ -18,13 +18,16 @@
 
 #include "class_names.h"
 #include "common_action_mocks.h"
+#include "dbg_string.h"
 #include "i_dbg_object_factory_mock.h"
 #include "i_eval_coordinator_mock.h"
 #include "string_evaluator.h"
 #include "type_signature.h"
+#include "error_messages.h"
 
 using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::DbgObject;
+using google_cloud_debugger::DbgString;
 using google_cloud_debugger::StringEvaluator;
 using google_cloud_debugger::TypeSignature;
 using std::string;
@@ -35,7 +38,7 @@ using ::testing::SetArrayArgument;
 
 namespace google_cloud_debugger_test {
 
-// Test Fixture for DbgString.
+// Test Fixture for StringEvaluator.
 class StringEvaluatorTest : public ::testing::Test {
  protected:
   virtual void SetUp() {}
@@ -79,6 +82,9 @@ class StringEvaluatorTest : public ::testing::Test {
 
   // Content of the string.
   string string_content_ = "String Content";
+
+  // Error stream.
+  std::ostringstream err_stream_;
 };
 
 // Tests Compile function of DbgString.
@@ -111,48 +117,55 @@ TEST_F(StringEvaluatorTest, Evaluate) {
             S_OK);
 }
 
-// Tests that error cases for Evaluate function.
+// Tests null error cases for Evaluate function.
 TEST_F(StringEvaluatorTest, EvaluateError) {
   StringEvaluator evaluator(string_content_);
-
   std::shared_ptr<DbgObject> result;
-  std::ostringstream err_stream;
-  // Null tests.
+
   EXPECT_EQ(evaluator.Evaluate(nullptr, &eval_coordinator_mock_,
-                               &object_factory_mock_, &err_stream),
-            E_INVALIDARG);
+    &object_factory_mock_, &err_stream_),
+    E_INVALIDARG);
   EXPECT_EQ(
-      evaluator.Evaluate(&result, nullptr, &object_factory_mock_, &err_stream),
-      E_INVALIDARG);
+    evaluator.Evaluate(&result, nullptr, &object_factory_mock_, &err_stream_),
+    E_INVALIDARG);
   EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_, nullptr,
-                               &err_stream),
-            E_INVALIDARG);
+    &err_stream_),
+    E_INVALIDARG);
   EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
-                               &object_factory_mock_, nullptr),
-            E_INVALIDARG);
+    &object_factory_mock_, nullptr),
+    E_INVALIDARG);
+}
 
-  {
-    // Tests that Evaluate fails if we cannot create ICorDebugEval.
-    EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
-        .Times(1)
-        .WillRepeatedly(Return(E_ACCESSDENIED));
-    EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
-                                 &object_factory_mock_, &err_stream),
-              E_ACCESSDENIED);
-  }
+// Tests that Evaluate fails if we cannot create ICorDebugEval.
+TEST_F(StringEvaluatorTest, EvaluateErrorEvalCoordinator) {
+  StringEvaluator evaluator(string_content_);
+  std::shared_ptr<DbgObject> result;
 
-  {
-    // Tests that Evaluate fails if we cannot Object Factory fails.
-    SetUpEvalCoordinator();
-    EXPECT_CALL(object_factory_mock_,
-                CreateDbgObject(&debug_string_mock_, _, _, _))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
+  EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
+      .Times(1)
+      .WillRepeatedly(Return(E_ACCESSDENIED));
+  EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
+                                &object_factory_mock_, &err_stream_),
+            E_ACCESSDENIED);
+  EXPECT_EQ(err_stream_.str(), google_cloud_debugger::kFailedEvalCreation.c_str());
+}
 
-    EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
-                                 &object_factory_mock_, &err_stream),
-              CORDBG_E_PROCESS_TERMINATED);
-  }
+// Tests that Evaluate fails if the IDbgObjectFactory cannot create
+// a new object.
+TEST_F(StringEvaluatorTest, EvaluateErrorObjCreation) {
+  StringEvaluator evaluator(string_content_);
+  std::shared_ptr<DbgObject> result;
+
+  SetUpEvalCoordinator();
+  EXPECT_CALL(object_factory_mock_,
+              CreateDbgObject(&debug_string_mock_, _, _, _))
+      .Times(1)
+      .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
+
+  EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
+                                &object_factory_mock_, &err_stream_),
+            CORDBG_E_PROCESS_TERMINATED);
+  EXPECT_EQ(err_stream_.str(), google_cloud_debugger::kFailedToCreateDbgObject.c_str());
 }
 
 }  // namespace google_cloud_debugger_test
