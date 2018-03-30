@@ -49,7 +49,7 @@ using ::testing::SetArrayArgument;
 
 namespace google_cloud_debugger_test {
 
-// Test Fixture for DbgString.
+// Test Fixture for BinaryExpressionEvaluator.
 class BinaryExpressionEvaluatorTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
@@ -57,12 +57,24 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
         shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(first_int_obj_value_));
     second_int_obj_ =
         shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(second_int_obj_value_));
+    first_negative_int_obj_ =
+        shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(first_negative_int_obj_value_));
+    second_negative_int_obj_ =
+        shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(second_negative_int_obj_value_));
     first_long_obj_ =
         shared_ptr<DbgObject>(new DbgPrimitive<int64_t>(first_long_obj_value_));
     first_double_obj_ = shared_ptr<DbgObject>(
         new DbgPrimitive<double_t>(first_double_obj_value_));
     second_double_obj_ = shared_ptr<DbgObject>(
         new DbgPrimitive<double_t>(second_double_obj_value_));
+
+    zero_obj_ = shared_ptr<DbgObject>(
+      new DbgPrimitive<int32_t>(0));
+    double_zero_obj_ = shared_ptr<DbgObject>(new DbgPrimitive<double_t>(0.0));
+    negative_one_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(-1));
+    min_int_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(INT_MIN));
+    max_int_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(INT_MAX));
+    min_long_ = shared_ptr<DbgObject>(new DbgPrimitive<int64_t>(LONG_MIN));
   }
 
   // Tests the binary expression operator_type on numerical operands
@@ -75,7 +87,8 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
   void TestNumericalOperands(BinaryCSharpExpression::Type operator_type,
                              std::shared_ptr<DbgObject> first_obj,
                              std::shared_ptr<DbgObject> second_obj,
-                             CorElementType static_type, T evaluate_result) {
+                             CorElementType static_type, T evaluate_result,
+                             HRESULT evaluate_hr = S_OK) {
     unique_ptr<ExpressionEvaluator> first_arg(new LiteralEvaluator(first_obj));
     unique_ptr<ExpressionEvaluator> second_arg(
         new LiteralEvaluator(second_obj));
@@ -90,10 +103,13 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
     std::shared_ptr<DbgObject> result;
     EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
                                  &object_factory_mock_, &err_stream_),
-              S_OK);
+              evaluate_hr);
 
-    // The result should be an int with value of int_obj_value_ +
-    // int_obj_value_.
+    if (FAILED(evaluate_hr)) {
+      return;
+    }
+
+    // The result should be first_arg operator_type second_arg.
     DbgPrimitive<T> *cast_result =
         dynamic_cast<DbgPrimitive<T> *>(result.get());
     EXPECT_TRUE(cast_result != nullptr);
@@ -167,6 +183,14 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
   shared_ptr<DbgObject> second_int_obj_;
   int32_t second_int_obj_value_ = 5;
 
+  // Negative int object used for testing.
+  shared_ptr<DbgObject> first_negative_int_obj_;
+  int32_t first_negative_int_obj_value_ = -10;
+
+  // Negative int object used for testing.
+  shared_ptr<DbgObject> second_negative_int_obj_;
+  int32_t second_negative_int_obj_value_ = -10;
+
   // Long object used for testing.
   shared_ptr<DbgObject> first_long_obj_;
   int64_t first_long_obj_value_ = 20;
@@ -179,6 +203,24 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
   shared_ptr<DbgObject> second_double_obj_;
   double_t second_double_obj_value_ = 3.2;
 
+  // Int object representing 0.
+  shared_ptr<DbgObject> zero_obj_;
+
+  // Double object representing 0.
+  shared_ptr<DbgObject> double_zero_obj_;
+
+  // Negative 1.
+  shared_ptr<DbgObject> negative_one_;
+
+  // Minimum int.
+  shared_ptr<DbgObject> min_int_;
+
+  // Minimum long.
+  shared_ptr<DbgObject> min_long_;
+
+  // Maximum int.
+  shared_ptr<DbgObject> max_int_;
+
   // Signature for string object.
   TypeSignature string_sig_{CorElementType::ELEMENT_TYPE_STRING};
 
@@ -188,25 +230,90 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
 // Tests arithmetic operators on numerical operands.
 TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalOperands) {
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ + second_int_obj_value_);
+    first_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ + second_int_obj_value_);
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::sub,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ - second_int_obj_value_);
+    first_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ - second_int_obj_value_);
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ * second_int_obj_value_);
+    first_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ * second_int_obj_value_);
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ / second_int_obj_value_);
+    first_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ / second_int_obj_value_);
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mod,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ % second_int_obj_value_);
+    first_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ % second_int_obj_value_);
+
+  // Tests adding negative number.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
+    first_negative_int_obj_, second_negative_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_negative_int_obj_value_ + second_negative_int_obj_value_);
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
+    first_negative_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_negative_int_obj_value_ + second_int_obj_value_);
+}
+
+// Tests arithmetic operators on negative operands.
+TEST_F(BinaryExpressionEvaluatorTest, TestNegativeArithmeticNumericalOperands) {
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
+    first_negative_int_obj_, second_negative_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_negative_int_obj_value_ + second_negative_int_obj_value_);
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::sub,
+    first_int_obj_, second_negative_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ - second_negative_int_obj_value_);
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
+    first_negative_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_negative_int_obj_value_ * second_int_obj_value_);
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
+    first_int_obj_, second_negative_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_int_obj_value_ / second_negative_int_obj_value_);
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mod,
+    first_negative_int_obj_, second_int_obj_,
+    CorElementType::ELEMENT_TYPE_I4,
+    first_negative_int_obj_value_ % second_int_obj_value_);
+}
+
+// Tests arithmetic operators on special cases like division by 0.
+TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalSpecialCase) {
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
+    first_int_obj_, zero_obj_,
+    CorElementType::ELEMENT_TYPE_I4, 0);
+
+  // Division by 0 will throw error if 0 is not dobule type.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
+    first_int_obj_, zero_obj_,
+    CorElementType::ELEMENT_TYPE_I4, 0, E_INVALIDARG);
+
+  // Otherwise, division by 0 will return inf.
+  TestNumericalOperands<double_t>(BinaryCSharpExpression::Type::div,
+    first_int_obj_, double_zero_obj_,
+    CorElementType::ELEMENT_TYPE_R8, std::numeric_limits<double>::infinity());
+
+  // Division overflow.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
+    min_int_, negative_one_,
+    CorElementType::ELEMENT_TYPE_I4, 0, E_INVALIDARG);
+  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::div,
+    min_long_, negative_one_,
+    CorElementType::ELEMENT_TYPE_I8, 0, E_INVALIDARG);
+
+  // Adding maximum ints together.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
+    max_int_, max_int_,
+    CorElementType::ELEMENT_TYPE_I4,
+    INT_MAX + INT_MAX);
 }
 
 // Tests arithmetic operators on numerical operands which are of double type.
@@ -240,10 +347,18 @@ TEST_F(BinaryExpressionEvaluatorTest,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
                                  first_long_obj_value_ + second_int_obj_value_);
+  TestNumericalOperands<double_t>(BinaryCSharpExpression::Type::add,
+                                 first_double_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_R8,
+                                 first_double_obj_value_ + second_int_obj_value_);
   TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::sub,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
                                  first_long_obj_value_ - second_int_obj_value_);
+  TestNumericalOperands<double_t>(BinaryCSharpExpression::Type::sub,
+                                 first_long_obj_, second_double_obj_,
+                                 CorElementType::ELEMENT_TYPE_R8,
+                                 first_long_obj_value_ - second_double_obj_value_);
   TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::mul,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
@@ -252,6 +367,10 @@ TEST_F(BinaryExpressionEvaluatorTest,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
                                  first_long_obj_value_ / second_int_obj_value_);
+  TestNumericalOperands<double_t>(BinaryCSharpExpression::Type::div,
+                                 first_double_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_R8,
+                                 first_double_obj_value_ / second_int_obj_value_);
   TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::mod,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
