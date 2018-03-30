@@ -226,30 +226,31 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
   std::ostringstream err_stream_;
 };
 
-// Tests arithmetic operators on numerical operands.
-TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalOperands) {
+// Tests addition operation.
+TEST_F(BinaryExpressionEvaluatorTest, TestAddition) {
+  // Adding ints together.
   TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add,
                                  first_int_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I4,
                                  first_int_obj_value_ + second_int_obj_value_);
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::sub,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ - second_int_obj_value_);
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ * second_int_obj_value_);
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ / second_int_obj_value_);
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mod,
-                                 first_int_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4,
-                                 first_int_obj_value_ % second_int_obj_value_);
 
-  // Tests adding negative number.
+  // Adding doubles.
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::add, first_double_obj_, second_double_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ + second_double_obj_value_);
+
+  // Numerical promotion.
+  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::add,
+                                 first_long_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I8,
+                                 first_long_obj_value_ + second_int_obj_value_);
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::add, first_double_obj_, second_int_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ + second_int_obj_value_);
+
+  // Adding negative number.
   TestNumericalOperands<int32_t>(
       BinaryCSharpExpression::Type::add, first_negative_int_obj_,
       second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
@@ -258,39 +259,123 @@ TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalOperands) {
       BinaryCSharpExpression::Type::add, first_negative_int_obj_,
       second_int_obj_, CorElementType::ELEMENT_TYPE_I4,
       first_negative_int_obj_value_ + second_int_obj_value_);
+
+  // Adding maximum ints together.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add, max_int_,
+                                 max_int_, CorElementType::ELEMENT_TYPE_I4,
+                                 INT_MAX + INT_MAX);
 }
 
-// Tests arithmetic operators on negative operands.
-TEST_F(BinaryExpressionEvaluatorTest, TestNegativeArithmeticNumericalOperands) {
-  TestNumericalOperands<int32_t>(
-      BinaryCSharpExpression::Type::add, first_negative_int_obj_,
-      second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
-      first_negative_int_obj_value_ + second_negative_int_obj_value_);
+// Tests subtraction operation.
+TEST_F(BinaryExpressionEvaluatorTest, TestSubtraction) {
+  // Subtracting ints together.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::sub,
+                                 first_int_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I4,
+                                 first_int_obj_value_ - second_int_obj_value_);
+
+  // Subtracting doubles.
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::sub, first_double_obj_, second_double_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ - second_double_obj_value_);
+
+  // Numerical promotion.
+  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::sub,
+                                 first_long_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I8,
+                                 first_long_obj_value_ - second_int_obj_value_);
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::sub, first_long_obj_, second_double_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_long_obj_value_ - second_double_obj_value_);
+
+  // Subtracting negative int.
   TestNumericalOperands<int32_t>(
       BinaryCSharpExpression::Type::sub, first_int_obj_,
       second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
       first_int_obj_value_ - second_negative_int_obj_value_);
   TestNumericalOperands<int32_t>(
+      BinaryCSharpExpression::Type::sub, first_negative_int_obj_,
+      second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
+      first_negative_int_obj_value_ - second_negative_int_obj_value_);
+}
+
+// Tests multiplication operation.
+TEST_F(BinaryExpressionEvaluatorTest, TestMultiplication) {
+  // Multiplying ints.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
+                                 first_int_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I4,
+                                 first_int_obj_value_ * second_int_obj_value_);
+
+  // Multiplying doubles.
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::mul, first_double_obj_, second_double_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ * second_double_obj_value_);
+
+  // Numerical promotion.
+  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::mul,
+                                 first_long_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I8,
+                                 first_long_obj_value_ * second_int_obj_value_);
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::mul, first_double_obj_, second_int_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ * second_int_obj_value_);
+
+  // Multiplying negative ints.
+  TestNumericalOperands<int32_t>(
       BinaryCSharpExpression::Type::mul, first_negative_int_obj_,
       second_int_obj_, CorElementType::ELEMENT_TYPE_I4,
       first_negative_int_obj_value_ * second_int_obj_value_);
+  TestNumericalOperands<int32_t>(
+      BinaryCSharpExpression::Type::mul, first_negative_int_obj_,
+      second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
+      first_negative_int_obj_value_ * second_negative_int_obj_value_);
+
+  // Multiplying with 0.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
+                                 first_int_obj_, zero_obj_,
+                                 CorElementType::ELEMENT_TYPE_I4, 0);
+}
+
+// Tests division operation.
+TEST_F(BinaryExpressionEvaluatorTest, TestDivision) {
+  // Dividing ints.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::div,
+                                 first_int_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I4,
+                                 first_int_obj_value_ / second_int_obj_value_);
+
+  // Dividing doubles.
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::div, first_double_obj_, second_double_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ / second_double_obj_value_);
+
+  // Numerical promotion.
+  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::div,
+                                 first_long_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I8,
+                                 first_long_obj_value_ / second_int_obj_value_);
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::div, first_double_obj_, second_int_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      first_double_obj_value_ / second_int_obj_value_);
+
+  // Dividing negative numbers.
   TestNumericalOperands<int32_t>(
       BinaryCSharpExpression::Type::div, first_int_obj_,
       second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
       first_int_obj_value_ / second_negative_int_obj_value_);
   TestNumericalOperands<int32_t>(
-      BinaryCSharpExpression::Type::mod, first_negative_int_obj_,
-      second_int_obj_, CorElementType::ELEMENT_TYPE_I4,
-      first_negative_int_obj_value_ % second_int_obj_value_);
-}
+      BinaryCSharpExpression::Type::div, first_negative_int_obj_,
+      second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
+      first_negative_int_obj_value_ / second_negative_int_obj_value_);
 
-// Tests arithmetic operators on special cases like division by 0.
-TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalSpecialCase) {
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mul,
-                                 first_int_obj_, zero_obj_,
-                                 CorElementType::ELEMENT_TYPE_I4, 0);
-
-  // Division by 0 will throw error if 0 is not dobule type.
+  // Division by 0 will throw error if 0 is not of double type.
   TestNumericalOperands<int32_t>(
       BinaryCSharpExpression::Type::div, first_int_obj_, zero_obj_,
       CorElementType::ELEMENT_TYPE_I4, 0, E_INVALIDARG);
@@ -307,72 +392,41 @@ TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticNumericalSpecialCase) {
   TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::div, min_long_,
                                  negative_one_, CorElementType::ELEMENT_TYPE_I8,
                                  0, E_INVALIDARG);
-
-  // Adding maximum ints together.
-  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::add, max_int_,
-                                 max_int_, CorElementType::ELEMENT_TYPE_I4,
-                                 INT_MAX + INT_MAX);
 }
 
-// Tests arithmetic operators on numerical operands which are of double type.
-TEST_F(BinaryExpressionEvaluatorTest, TestArithmeticDoubleNumericalOperands) {
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::add, first_double_obj_, second_double_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ + second_double_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::sub, first_double_obj_, second_double_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ - second_double_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::mul, first_double_obj_, second_double_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ * second_double_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::div, first_double_obj_, second_double_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ / second_double_obj_value_);
+// Tests mod operation.
+TEST_F(BinaryExpressionEvaluatorTest, TestModulus) {
+  // Moding ints.
+  TestNumericalOperands<int32_t>(BinaryCSharpExpression::Type::mod,
+                                 first_int_obj_, second_int_obj_,
+                                 CorElementType::ELEMENT_TYPE_I4,
+                                 first_int_obj_value_ % second_int_obj_value_);
+
+  // Moding doubles.
   TestNumericalOperands<double_t>(
       BinaryCSharpExpression::Type::mod, first_double_obj_, second_double_obj_,
       CorElementType::ELEMENT_TYPE_R8,
       fmod(first_double_obj_value_, second_double_obj_value_));
-}
 
-// Tests arithmetic operators on numerical operands with binary promotion.
-TEST_F(BinaryExpressionEvaluatorTest,
-       TestArithmeticNumericalOperandsWithPromotion) {
-  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::add,
-                                 first_long_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I8,
-                                 first_long_obj_value_ + second_int_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::add, first_double_obj_, second_int_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ + second_int_obj_value_);
-  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::sub,
-                                 first_long_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I8,
-                                 first_long_obj_value_ - second_int_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::sub, first_long_obj_, second_double_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_long_obj_value_ - second_double_obj_value_);
-  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::mul,
-                                 first_long_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I8,
-                                 first_long_obj_value_ * second_int_obj_value_);
-  TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::div,
-                                 first_long_obj_, second_int_obj_,
-                                 CorElementType::ELEMENT_TYPE_I8,
-                                 first_long_obj_value_ / second_int_obj_value_);
-  TestNumericalOperands<double_t>(
-      BinaryCSharpExpression::Type::div, first_double_obj_, second_int_obj_,
-      CorElementType::ELEMENT_TYPE_R8,
-      first_double_obj_value_ / second_int_obj_value_);
+  // Numerical promotion.
   TestNumericalOperands<int64_t>(BinaryCSharpExpression::Type::mod,
                                  first_long_obj_, second_int_obj_,
                                  CorElementType::ELEMENT_TYPE_I8,
                                  first_long_obj_value_ % second_int_obj_value_);
+  TestNumericalOperands<double_t>(
+      BinaryCSharpExpression::Type::mod, first_double_obj_, second_int_obj_,
+      CorElementType::ELEMENT_TYPE_R8,
+      fmod(first_double_obj_value_, second_int_obj_value_));
+
+  // Moding negative numbers.
+  TestNumericalOperands<int32_t>(
+      BinaryCSharpExpression::Type::mod, first_negative_int_obj_,
+      second_int_obj_, CorElementType::ELEMENT_TYPE_I4,
+      first_negative_int_obj_value_ % second_int_obj_value_);
+  TestNumericalOperands<int32_t>(
+      BinaryCSharpExpression::Type::mod, first_negative_int_obj_,
+      second_negative_int_obj_, CorElementType::ELEMENT_TYPE_I4,
+      first_negative_int_obj_value_ % second_negative_int_obj_value_);
 }
 
 // Tests bitwise operators.
