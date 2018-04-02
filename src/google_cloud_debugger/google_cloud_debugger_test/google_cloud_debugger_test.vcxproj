@@ -155,6 +155,7 @@
     <ClCompile Include="binary_expression_evaluator_test.cc" />
     <ClCompile Include="breakpoint_client_test.cc" />
     <ClCompile Include="common_action_mocks.cc" />
+    <ClCompile Include="common_fixtures.cc" />
     <ClCompile Include="dbg_breakpoint_test.cc" />
     <ClCompile Include="dbg_array_test.cc" />
     <ClCompile Include="dbg_class_field_test.cc" />
@@ -172,11 +173,13 @@
     <ClCompile Include="i_portable_pdb_mocks.cc" />
     <ClCompile Include="stack_frame_collection_test.cc" />
     <ClCompile Include="string_evaluator_test.cc" />
+    <ClCompile Include="unary_expression_evaluator_test.cc" />
     <ClCompile Include="unit_test_main.cc" />
     <ClCompile Include="variable_wrapper_test.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h" />
+    <ClInclude Include="common_fixtures.h" />
     <ClInclude Include="expression_evaluator_mock.h" />
     <ClInclude Include="i_breakpoint_collection_mock.h" />
     <ClInclude Include="i_dbg_object_factory_mock.h" />

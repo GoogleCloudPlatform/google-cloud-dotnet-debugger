@@ -47,13 +47,16 @@ CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATU
 SRC_TEST_FILES := $(wildcard *_test.cc)
 OBJ_TEST_FILES := $(patsubst %_test.cc,%_test.o,${SRC_TEST_FILES})
 
-TESTS = unit_test_main.o ${OBJ_TEST_FILES} common_action_mocks.o i_portable_pdb_mocks.o i_dbg_object_factory_mock.o
+TESTS = unit_test_main.o ${OBJ_TEST_FILES} common_action_mocks.o common_fixtures.o i_portable_pdb_mocks.o i_dbg_object_factory_mock.o
 
 google_cloud_debugger_test: ${TESTS}
 	clang-3.9 -o google_cloud_debugger_test ${TESTS} ${INCDIRS} ${CC_FLAGS} ${COVERAGE_ARG} ${INCLIBS} -v
 
 common_action_mocks.o: common_action_mocks.h common_action_mocks.cc
 	clang-3.9 common_action_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o common_action_mocks.o
+
+common_fixtures.o: common_fixtures.h common_fixtures.cc
+	clang-3.9 common_fixtures.cc ${INCDIRS} ${CC_FLAGS} -c -o common_fixtures.o
 
 i_portable_pdb_mocks.o: i_portable_pdb_mocks.h i_portable_pdb_mocks.cc
 	clang-3.9 i_portable_pdb_mocks.cc ${INCDIRS} ${CC_FLAGS} -c -o i_portable_pdb_mocks.o
