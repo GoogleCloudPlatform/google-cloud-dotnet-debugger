@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The script builds and packages the debugger and agent into a minium set
+# The script builds and packages the debugger and agent into a minimum set
 # to be used alone.
 #
 # TODO(talarico): This script currently assumes build.sh and build-deps.sh
@@ -21,14 +21,23 @@ TEMP_DIR=package-"$COMMIT_HASH"
 TEMP_AGENT_DIR=$TEMP_DIR/agent
 TEMP_DEBUGGER_DIR=$TEMP_DIR/debugger
 
+configuration=Release
+while (( "$#" )); do
+  if [[ "$1" == "--debug" ]]
+  then
+    configuration=Debug
+  fi
+  shift
+done
+
 mkdir -p $TEMP_DIR
 mkdir -p $TEMP_AGENT_DIR
 mkdir -p $TEMP_DEBUGGER_DIR
 
 # Publish the agent.
 dotnet restore -r debian.8-x64 $AGENT_DIR 
-dotnet publish -c Debug -f netcoreapp2.0 -r debian.8-x64 $AGENT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
-cp -r $AGENT_DIR/Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp2.0/debian.8-x64/publish/* $TEMP_AGENT_DIR
+dotnet publish -c $configuration -f netcoreapp2.0 -r debian.8-x64 $AGENT_DIR/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.csproj
+cp -r $AGENT_DIR/Google.Cloud.Diagnostics.Debug/bin/$configuration/netcoreapp2.0/debian.8-x64/publish/* $TEMP_AGENT_DIR
 
 # Copy over the debugger.
 cp $DEBUGGER_DIR/google_cloud_debugger/google_cloud_debugger $TEMP_DEBUGGER_DIR

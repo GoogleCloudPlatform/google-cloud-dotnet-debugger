@@ -9,7 +9,16 @@ ROOT_DIR=$(dirname "$SCRIPT")
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
 
-dotnet build $AGENT_DIR
+configuration=Debug
+while (( "$#" )); do
+  if [[ "$1" == "--release" ]]
+  then
+    configuration=Release
+  fi
+  shift
+done
+
+dotnet build $AGENT_DIR --configuration $configuration
 
 if [[ "$OS" == "Windows_NT" ]]
 then
@@ -20,7 +29,8 @@ then
     echo $error_message
     exit 1
   fi
-  msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=Debug //p:Platform=x64
+  echo $configuration
+  msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=$configuration //p:Platform=x64
 else
   make -C $DEBUGGER_DIR/google_cloud_debugger_lib
   make -C $DEBUGGER_DIR/google_cloud_debugger
