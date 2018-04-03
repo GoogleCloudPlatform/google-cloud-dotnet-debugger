@@ -39,7 +39,7 @@ using ::testing::SetArrayArgument;
 
 namespace google_cloud_debugger_test {
 
-// Test Fixture for BinaryExpressionEvaluator.
+// Test Fixture for UnaryExpressionEvaluator.
 class UnaryExpressionEvaluatorTest : public NumericalEvaluatorTestFixture {
  protected:
   // Tests the unary expression operator_type on numerical operands
@@ -47,7 +47,7 @@ class UnaryExpressionEvaluatorTest : public NumericalEvaluatorTestFixture {
   // The result of the expression evaluation should be of type T.
   // operand should be a numeric object.
   // static_type and evaluate_result are used to validate
-  // Compile and Evaluate call to the binary expression.
+  // Compile and Evaluate call to the unary expression.
   template <typename T>
   void TestNumericalOperand(UnaryCSharpExpression::Type operator_type,
                              std::shared_ptr<DbgObject> operand,
