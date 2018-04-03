@@ -17,15 +17,7 @@
 #include <string>
 
 #include "binary_expression_evaluator.h"
-#include "class_names.h"
-#include "common_action_mocks.h"
-#include "dbg_primitive.h"
-#include "expression_evaluator_mock.h"
-#include "i_dbg_object_factory_mock.h"
-#include "i_eval_coordinator_mock.h"
-#include "literal_evaluator.h"
-#include "string_evaluator.h"
-#include "type_signature.h"
+#include "common_fixtures.h"
 
 using google_cloud_debugger::BinaryCSharpExpression;
 using google_cloud_debugger::BinaryExpressionEvaluator;
@@ -35,7 +27,6 @@ using google_cloud_debugger::DbgPrimitive;
 using google_cloud_debugger::DbgString;
 using google_cloud_debugger::ExpressionEvaluator;
 using google_cloud_debugger::LiteralEvaluator;
-using google_cloud_debugger::StringEvaluator;
 using google_cloud_debugger::TypeSignature;
 using std::shared_ptr;
 using std::string;
@@ -50,32 +41,8 @@ using ::testing::SetArrayArgument;
 namespace google_cloud_debugger_test {
 
 // Test Fixture for BinaryExpressionEvaluator.
-class BinaryExpressionEvaluatorTest : public ::testing::Test {
+class BinaryExpressionEvaluatorTest : public NumericalEvaluatorTestFixture {
  protected:
-  virtual void SetUp() {
-    first_int_obj_ =
-        shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(first_int_obj_value_));
-    second_int_obj_ =
-        shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(second_int_obj_value_));
-    first_negative_int_obj_ = shared_ptr<DbgObject>(
-        new DbgPrimitive<int32_t>(first_negative_int_obj_value_));
-    second_negative_int_obj_ = shared_ptr<DbgObject>(
-        new DbgPrimitive<int32_t>(second_negative_int_obj_value_));
-    first_long_obj_ =
-        shared_ptr<DbgObject>(new DbgPrimitive<int64_t>(first_long_obj_value_));
-    first_double_obj_ = shared_ptr<DbgObject>(
-        new DbgPrimitive<double_t>(first_double_obj_value_));
-    second_double_obj_ = shared_ptr<DbgObject>(
-        new DbgPrimitive<double_t>(second_double_obj_value_));
-
-    zero_obj_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(0));
-    double_zero_obj_ = shared_ptr<DbgObject>(new DbgPrimitive<double_t>(0.0));
-    negative_one_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(-1));
-    min_int_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(INT_MIN));
-    max_int_ = shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(INT_MAX));
-    min_long_ = shared_ptr<DbgObject>(new DbgPrimitive<int64_t>(LONG_MIN));
-  }
-
   // Tests the binary expression operator_type on numerical operands
   // first_obj and second_obj.
   // The result of the expression evaluation should be of type T.
@@ -167,63 +134,6 @@ class BinaryExpressionEvaluatorTest : public ::testing::Test {
     EXPECT_TRUE(cast_result != nullptr);
     EXPECT_EQ(cast_result->GetValue(), comparison_result);
   }
-
-  // Mock of IEvalCoordinator used for evaluate.
-  IEvalCoordinatorMock eval_coordinator_mock_;
-
-  // Mock used for object creation.
-  IDbgObjectFactoryMock object_factory_mock_;
-
-  // Int object used for testing.
-  shared_ptr<DbgObject> first_int_obj_;
-  int32_t first_int_obj_value_ = 10;
-
-  // Int object used for testing.
-  shared_ptr<DbgObject> second_int_obj_;
-  int32_t second_int_obj_value_ = 5;
-
-  // Negative int object used for testing.
-  shared_ptr<DbgObject> first_negative_int_obj_;
-  int32_t first_negative_int_obj_value_ = -10;
-
-  // Negative int object used for testing.
-  shared_ptr<DbgObject> second_negative_int_obj_;
-  int32_t second_negative_int_obj_value_ = -10;
-
-  // Long object used for testing.
-  shared_ptr<DbgObject> first_long_obj_;
-  int64_t first_long_obj_value_ = 20;
-
-  // Double object used for testing.
-  shared_ptr<DbgObject> first_double_obj_;
-  double_t first_double_obj_value_ = 6.4;
-
-  // Double object used for testing.
-  shared_ptr<DbgObject> second_double_obj_;
-  double_t second_double_obj_value_ = 3.2;
-
-  // Int object representing 0.
-  shared_ptr<DbgObject> zero_obj_;
-
-  // Double object representing 0.
-  shared_ptr<DbgObject> double_zero_obj_;
-
-  // Negative 1.
-  shared_ptr<DbgObject> negative_one_;
-
-  // Minimum int.
-  shared_ptr<DbgObject> min_int_;
-
-  // Minimum long.
-  shared_ptr<DbgObject> min_long_;
-
-  // Maximum int.
-  shared_ptr<DbgObject> max_int_;
-
-  // Signature for string object.
-  TypeSignature string_sig_{CorElementType::ELEMENT_TYPE_STRING};
-
-  std::ostringstream err_stream_;
 };
 
 // Tests addition operation.

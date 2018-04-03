@@ -201,6 +201,7 @@ HRESULT UnaryExpressionEvaluator::LogicalComplementComputer(
 HRESULT UnaryExpressionEvaluator::DoNothingComputer(
     std::shared_ptr<DbgObject> arg_object,
     std::shared_ptr<DbgObject> *dbg_object) {
+  *dbg_object = arg_object;
   return S_OK;
 }
 
