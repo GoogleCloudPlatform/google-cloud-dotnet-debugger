@@ -8,7 +8,7 @@ ROOT_DIR=$(dirname "$SCRIPT")
 CONFIG=debug
 CONFIG_CAP=Debug
 PROTOBUF_CXXFLAGS=-g
-REBUILD_PROTOBUF=False
+REBUILD_PROTOBUF=false
 while (( "$#" )); do
   if [[ "$1" == "--release" ]]
   then
@@ -17,7 +17,7 @@ while (( "$#" )); do
     PROTOBUF_CXXFLAGS=
   # We have the option to rebuild protobuf as it installs
   # itself and will need to be relinked it switching between
-  # debug and release.
+  # debug and release.gi
   elif [[ "$1" == "--rebuild-protobuf" ]]
   then 
     REBUILD_PROTOBUF=true
