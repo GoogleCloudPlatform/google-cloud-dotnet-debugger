@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Builds all source in the repo.
-# TODO(talarico): Allow configuration of platform and config
 
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
@@ -9,16 +8,25 @@ ROOT_DIR=$(dirname "$SCRIPT")
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
 
-configuration=Debug
+CONFIG=Debug
+MAKE_CONFIG_RELEASE=false
+REBUILD=
 while (( "$#" )); do
   if [[ "$1" == "--release" ]]
   then
-    configuration=Release
+    CONFIG=Release
+    MAKE_CONFIG_RELEASE=true
+  # We have the option to rebuild as make doesn't pick up
+  # on the flag change when doing release vs debug so you
+  # may need to force it.
+  elif [[ "$1" == "--rebuild" ]]
+  then 
+    REBUILD=--always-make
   fi
   shift
 done
 
-dotnet build $AGENT_DIR --configuration $configuration
+dotnet build $AGENT_DIR --configuration $CONFIG
 
 if [[ "$OS" == "Windows_NT" ]]
 then
@@ -29,10 +37,9 @@ then
     echo $error_message
     exit 1
   fi
-  echo $configuration
-  msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=$configuration //p:Platform=x64
+  msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=$CONFIG //p:Platform=x64
 else
-  make -C $DEBUGGER_DIR/google_cloud_debugger_lib
-  make -C $DEBUGGER_DIR/google_cloud_debugger
-  make -C $DEBUGGER_DIR/google_cloud_debugger_test
+  make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger_lib RELEASE=$MAKE_CONFIG_RELEASE 
+  make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger RELEASE=$MAKE_CONFIG_RELEASE
+  make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger_test RELEASE=$MAKE_CONFIG_RELEASE
 fi
