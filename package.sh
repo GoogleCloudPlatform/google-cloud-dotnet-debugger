@@ -6,9 +6,6 @@
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
-$ROOT_DIR/build-deps.sh --release --rebuild-protobuf
-$ROOT_DIR/build.sh --release --rebuild
-
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
 THIRD_PARTY_DIR=$ROOT_DIR/third_party
@@ -22,6 +19,14 @@ TEMP_DEBUGGER_DIR=$TEMP_DIR/debugger
 mkdir -p $TEMP_DIR
 mkdir -p $TEMP_AGENT_DIR
 mkdir -p $TEMP_DEBUGGER_DIR
+
+# Rebuild everything from scratch.
+$ROOT_DIR/build-deps.sh --release --rebuild-protobuf
+$ROOT_DIR/build.sh --release --rebuild
+
+# Run unit and integration tests.
+$ROOT_DIR/run_unit_tests.sh --release 
+$ROOT_DIR/run_integration_tests.sh --release 
 
 # Publish the agent.
 dotnet restore -r debian.8-x64 $AGENT_DIR 
