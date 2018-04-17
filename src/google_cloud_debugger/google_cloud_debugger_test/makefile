@@ -6,6 +6,11 @@ ifeq ($(COVERAGE),true)
   COVERAGE_ARG = -coverage
 endif
 
+CONFIGURATION_ARG = -g
+ifeq ($(RELEASE),true)
+  CONFIGURATION_ARG = 
+endif
+
 # Directories of Google Test and Google Mock.
 GTEST_DIR = $(THIRD_PARTY_DIR)/googletest/googletest/
 GMOCK_DIR = $(THIRD_PARTY_DIR)/googletest/googlemock/
@@ -35,7 +40,7 @@ CORE_CLR_LIB2 = $(THIRD_PARTY_DIR)/coreclr/bin/Product/Linux.x64.Debug/
 
 INCDIRS = -I${PREBUILT_PAL_INC} -I${BUILT_PAL_INC} -I${PAL_RT_INC} -I${PAL_INC} -I${CORE_CLR_INC} -I${DBGSHIM_INC} -I${GCLOUD_DEBUGGER} -I${GMOCK_INC} -I${GTEST_INC} `pkg-config --cflags protobuf`
 INCLIBS = -L${CORE_CLR_LIB} -L${CORE_CLR_LIB2} -L${GCLOUD_DEBUGGER} -L${GMOCK_LIB} -L${GTEST_LIB} -lcorguids -lcoreclrpal -lpalrt -leventprovider -lpthread -ldl -luuid -lunwind-x86_64 -lstdc++ `pkg-config --libs protobuf` -l:gtest.a -l:gmock.a -lgoogle_cloud_debugger_lib
-CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -g -Wmacro-redefined 
+CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX ${CONFIGURATION_ARG} -Wmacro-redefined 
 
 TESTS = unit_test_main.o breakpoint_client_test.o dbg_breakpoint_test.o dbg_string_test.o dbg_class_field_test.o \
 dbg_class_property_test.o dbg_class_test.o dbg_array_test.o dbg_stack_frame_test.o debugger_callback_test.o variable_wrapper_test.o \

@@ -6,6 +6,11 @@ ifeq ($(COVERAGE),true)
   COVERAGE_ARG = -coverage
 endif
 
+CONFIGURATION_ARG = -g
+ifeq ($(RELEASE),true)
+  CONFIGURATION_ARG =
+endif
+
 # .NET Core headers.
 PREBUILT_PAL_INC = $(THIRD_PARTY_DIR)/coreclr/src/pal/prebuilt/inc/
 PAL_RT_INC = $(THIRD_PARTY_DIR)/coreclr/src/pal/inc/rt/
@@ -19,7 +24,7 @@ DBG_OBJECTS = dbg_object.o dbg_string.o dbg_array.o dbg_class.o dbg_class_field.
 PDB_PARSERS = metadata_headers.o metadata_tables.o document_index.o custom_binary_reader.o portable_pdb_file.o
 BREAKPOINTS = dbg_breakpoint.o breakpoint_collection.o breakpoint.o breakpoint_client.o variable_wrapper.o
 ALL_O_FILES = string_stream_wrapper.o stack_frame_collection.o eval_coordinator.o debugger_callback.o debugger.o namedpiped.o i_cor_debug_helper.o ${BREAKPOINTS} ${DBG_OBJECTS} ${PDB_PARSERS}
-CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -Wignored-attributes -g ${COVERAGE_ARG}
+CC_FLAGS = -x c++ -std=c++11 -fPIC -fms-extensions -fsigned-char -fwrapv -DFEATURE_PAL -DPAL_STDCPP_COMPAT -DBIT64 -DPLATFORM_UNIX -Wignored-attributes ${CONFIGURATION_ARG} ${COVERAGE_ARG}
 
 google_cloud_debugger_lib: ${ALL_O_FILES}
 	ar rcs libgoogle_cloud_debugger_lib.a ${ALL_O_FILES}

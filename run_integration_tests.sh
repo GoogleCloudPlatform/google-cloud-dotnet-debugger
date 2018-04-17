@@ -1,31 +1,34 @@
 #!/bin/bash
 
 # This script runs all integration tests.
-# This script assumes that build-deps.sh has already been run.
-#
-# TODO(talarico): Make sure this works with debug and release builds
-# TODO(talarico): This should also build deps but other scrips need to be fixed first
+# This script assumes that build.sh and build-deps.sh have been run.
 
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 
-performance-tests=false
+cd $AGENT_DIR
+
+PERFORMANCE_TESTS=false
+CONFIG=Debug
 while (( "$#" )); do
   if [[ "$1" == "--performance-tests" ]]
   then 
-    performance-tests=true
+    PERFORMANCE_TESTS=true
+  elif [[ "$1" == "--release" ]]
+  then
+    CONFIG=Release
   fi
   shift
 done
 
-export LD_LIBRARY_PATH=$ROOT_DIR/coreclr/bin/Product/Linux.x64.Debug
+export LD_LIBRARY_PATH=$ROOT_DIR/coreclr/bin/Product/Linux.x64.$CONFIG
 
-dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug.TestApp
-dotnet test $AGENT_DIR/Google.Cloud.Diagnostics.Debug.IntegrationTests
+dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug.TestApp --configuration $CONFIG
+dotnet test $AGENT_DIR/Google.Cloud.Diagnostics.Debug.IntegrationTests --configuration $CONFIG
 
-if [[ "$performance-tests" == true ]]
+if [[ "$PERFORMANCE_TESTS" == true ]]
 then
-  dotnet test $AGENT_DIR/Google.Cloud.Diagnostics.Debug.PerformanceTests
+  dotnet test $AGENT_DIR/Google.Cloud.Diagnostics.Debug.PerformanceTests --configuration $CONFIG
 fi
