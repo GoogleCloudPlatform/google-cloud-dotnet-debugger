@@ -156,6 +156,7 @@
     <ClCompile Include="breakpoint_client_test.cc" />
     <ClCompile Include="common_action_mocks.cc" />
     <ClCompile Include="common_fixtures.cc" />
+    <ClCompile Include="conditional_operator_evaluator_test.cc" />
     <ClCompile Include="dbg_breakpoint_test.cc" />
     <ClCompile Include="dbg_array_test.cc" />
     <ClCompile Include="dbg_class_field_test.cc" />
