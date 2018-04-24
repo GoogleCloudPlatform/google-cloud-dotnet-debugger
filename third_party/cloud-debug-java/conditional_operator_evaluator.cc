@@ -60,17 +60,17 @@ HRESULT ConditionalOperatorEvaluator::Compile(
 
   // Case 1: both "if_true_" and "if_false_" are of a boolean type.
   if (CompileBoolean()) {
-    return true;
+    return S_OK;
   }
 
   // Case 2: both "if_true_" and "if_false_" are numeric.
   if (CompileNumeric()) {
-    return true;
+    return S_OK;
   }
 
   // Case 3: both "if_true_" and "if_false_" are objects.
   if (CompileObjects()) {
-    return true;
+    return S_OK;
   }
 
   *err_stream << kTypeMismatch;
@@ -111,9 +111,9 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
   const TypeSignature &true_type = if_true_->GetStaticType();
   const TypeSignature &false_type = if_false_->GetStaticType();
   if (true_type.cor_type == false_type.cor_type &&
-      (true_type.cor_type == CorElementType::ELEMENT_TYPE_OBJECT
-       || true_type.cor_type == CorElementType::ELEMENT_TYPE_CLASS
-       || true_type.cor_type == CorElementType::ELEMENT_TYPE_VALUETYPE)) {
+      (TypeCompilerHelper::IsObjectType(true_type.cor_type)
+        || TypeCompilerHelper::IsArrayType(true_type.cor_type)
+        || true_type.cor_type == CorElementType::ELEMENT_TYPE_STRING)) {
     if (true_type.type_name.compare(false_type.type_name) == 0) {
       result_type_ = true_type;
     } else {
