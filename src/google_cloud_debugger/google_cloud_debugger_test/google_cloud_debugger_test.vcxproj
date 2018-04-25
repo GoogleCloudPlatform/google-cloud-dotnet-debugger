@@ -172,6 +172,7 @@
     <ClCompile Include="dbg_string_test.cc" />
     <ClCompile Include="i_dbg_object_factory_mock.cc" />
     <ClCompile Include="i_portable_pdb_mocks.cc" />
+    <ClCompile Include="literal_evaluator_test.cc" />
     <ClCompile Include="stack_frame_collection_test.cc" />
     <ClCompile Include="string_evaluator_test.cc" />
     <ClCompile Include="unary_expression_evaluator_test.cc" />

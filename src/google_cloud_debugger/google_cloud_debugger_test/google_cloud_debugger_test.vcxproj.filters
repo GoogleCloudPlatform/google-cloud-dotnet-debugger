@@ -86,6 +86,9 @@
     <ClCompile Include="conditional_operator_evaluator_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="literal_evaluator_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">
