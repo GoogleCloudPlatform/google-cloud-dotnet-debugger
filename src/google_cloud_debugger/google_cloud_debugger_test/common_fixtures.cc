@@ -21,7 +21,7 @@ namespace google_cloud_debugger_test {
 
 void NumericalEvaluatorTestFixture::SetUp() {
   first_short_obj_ =
-      shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(first_short_obj_value_));
+      shared_ptr<DbgObject>(new DbgPrimitive<int16_t>(first_short_obj_value_));
 
   first_int_obj_ =
       shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(first_int_obj_value_));
