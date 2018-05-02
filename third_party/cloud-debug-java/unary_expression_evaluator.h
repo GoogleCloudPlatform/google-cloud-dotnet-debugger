@@ -36,7 +36,7 @@ class UnaryExpressionEvaluator : public ExpressionEvaluator {
   // This function will also select the appropriate member function to
   // evaluate the expressoin and assign that to computer_.
   HRESULT Compile(
-      DbgStackFrame *stack_frame,
+      IDbgStackFrame *stack_frame,
       ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 

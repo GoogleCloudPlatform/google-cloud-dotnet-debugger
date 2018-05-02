@@ -120,7 +120,7 @@ BinaryExpressionEvaluator::BinaryExpressionEvaluator(
   result_type_ = TypeSignature::Object;
 }
 
-HRESULT BinaryExpressionEvaluator::Compile(DbgStackFrame *readers_factory,
+HRESULT BinaryExpressionEvaluator::Compile(IDbgStackFrame *readers_factory,
                                            ICorDebugILFrame *debug_frame,
                                            std::ostream *error_stream) {
   HRESULT hr;

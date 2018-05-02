@@ -230,6 +230,7 @@
     <ClInclude Include="i_cor_debug_helper.h" />
     <ClInclude Include="i_dbg_class_member.h" />
     <ClInclude Include="i_dbg_object_factory.h" />
+    <ClInclude Include="i_dbg_stack_frame.h" />
     <ClInclude Include="i_eval_coordinator.h" />
     <ClInclude Include="i_named_pipe.h" />
     <ClInclude Include="i_portable_pdb_file.h" />

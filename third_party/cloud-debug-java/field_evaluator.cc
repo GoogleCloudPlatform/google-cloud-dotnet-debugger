@@ -20,7 +20,7 @@
 #include "dbg_class_property.h"
 #include "dbg_object_factory.h"
 #include "dbg_reference_object.h"
-#include "dbg_stack_frame.h"
+#include "i_dbg_stack_frame.h"
 #include "error_messages.h"
 #include "i_eval_coordinator.h"
 
@@ -39,7 +39,7 @@ FieldEvaluator::FieldEvaluator(
       possible_class_name_(std::move(possible_class_name)),
       field_name_(std::move(field_name)) {}
 
-HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
+HRESULT FieldEvaluator::Compile(IDbgStackFrame *stack_frame,
                                 ICorDebugILFrame *debug_frame,
                                 std::ostream *err_stream) {
   HRESULT hr = CompileUsingInstanceSource(stack_frame, debug_frame, err_stream);
@@ -56,7 +56,7 @@ HRESULT FieldEvaluator::Compile(DbgStackFrame *stack_frame,
 }
 
 HRESULT FieldEvaluator::CompileUsingInstanceSource(
-    DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+    IDbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
     std::ostream *err_stream) {
   HRESULT hr = instance_source_->Compile(stack_frame, debug_frame, err_stream);
   if (FAILED(hr)) {
@@ -75,7 +75,7 @@ HRESULT FieldEvaluator::CompileUsingInstanceSource(
                                   field_name_, stack_frame, err_stream);
 }
 
-HRESULT FieldEvaluator::CompileUsingClassName(DbgStackFrame *stack_frame,
+HRESULT FieldEvaluator::CompileUsingClassName(IDbgStackFrame *stack_frame,
                                               std::ostream *err_stream) {
   if (possible_class_name_.empty()) {
     return E_FAIL;
@@ -87,7 +87,7 @@ HRESULT FieldEvaluator::CompileUsingClassName(DbgStackFrame *stack_frame,
 
 HRESULT FieldEvaluator::CompileClassMemberHelper(const std::string &class_name,
                                                  const std::string &member_name,
-                                                 DbgStackFrame *stack_frame,
+                                                 IDbgStackFrame *stack_frame,
                                                  std::ostream *err_stream) {
   // To find member of a class, we need the corresponding
   // ICorDebugModule and IMetaDataImport of the module that class

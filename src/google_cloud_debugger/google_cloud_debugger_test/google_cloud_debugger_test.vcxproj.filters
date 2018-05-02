@@ -89,6 +89,9 @@
     <ClCompile Include="literal_evaluator_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="identifier_evaluator_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">
@@ -119,6 +122,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="common_fixtures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_dbg_stack_frame_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
