@@ -19,6 +19,7 @@
 #include <ostream>
 #include <vector>
 
+#include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
 
@@ -150,6 +151,7 @@ class ICorDebugHelper {
                                   mdProperty class_token,
                                   const std::string &prop_name,
                                   std::unique_ptr<DbgClassProperty> *result,
+                                  ICorDebugModule *debug_module,
                                   std::ostream *err_stream) = 0;
 
   // Gets name from mdTypeDef token type_token.
@@ -182,6 +184,58 @@ class ICorDebugHelper {
   virtual HRESULT CountGenericParams(IMetaDataImport *metadata_import,
                                      const mdToken &token,
                                      uint32_t *result) = 0;
+
+  // Template function to enumerate different ICorDebug enumerations.
+  // All the enumerated items will be stored in vector result.
+  // Even if HRESULT returned is not SUCCEED, the result array may
+  // be filled too.
+  template <typename ICorDebugSpecifiedTypeEnum,
+            typename ICorDebugSpecifiedType>
+  static HRESULT EnumerateICorDebugSpecifiedType(
+      ICorDebugSpecifiedTypeEnum *debug_enum,
+      std::vector<CComPtr<ICorDebugSpecifiedType>> *result) {
+    if (!result) {
+      return E_INVALIDARG;
+    }
+
+    size_t result_index = 0;
+    result->clear();
+    HRESULT hr = E_FAIL;
+    while (true) {
+      ULONG value_to_retrieve = 20;
+      ULONG value_retrieved = 0;
+
+      std::vector<ICorDebugSpecifiedType *> temp_values(value_to_retrieve,
+                                                        nullptr);
+
+      hr = debug_enum->Next(value_to_retrieve, temp_values.data(),
+                            &value_retrieved);
+      if (value_retrieved == 0) {
+        break;
+      }
+
+      result->resize(result->size() + value_retrieved);
+      for (size_t k = 0; k < value_retrieved; ++k) {
+        (*result)[result_index] = temp_values[k];
+        temp_values[k]->Release();
+        ++result_index;
+      }
+
+      if (FAILED(hr)) {
+        std::cerr << "Failed to enumerate ICorDebug " << std::hex << hr;
+        return hr;
+      }
+    }
+
+    return S_OK;
+  }
+
+  // Given a class object, populates generic_class_types_
+  // with the generic types from the class object.
+  virtual HRESULT PopulateGenericClassTypesFromClassObject(
+      ICorDebugValue *class_object,
+      std::vector<CComPtr<ICorDebugType>> *generic_types,
+      std::ostream *err_stream) = 0;
 
   // The depth at which we will stop dereferencing.
   static const int kReferenceDepth = 10;

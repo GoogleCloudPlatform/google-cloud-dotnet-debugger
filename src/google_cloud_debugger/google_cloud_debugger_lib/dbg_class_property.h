@@ -39,8 +39,9 @@ class DbgClassProperty : public IDbgClassMember {
   // metadata_import is used to extract metadata from the property.
   // Creation_depth sets the depth used when creating a DbgObject
   // representing this property.
+  // Stores debug module in ICorDebugModule.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
-                  int creation_depth);
+                  ICorDebugModule *debug_module, int creation_depth);
 
   // Evaluates the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
@@ -49,7 +50,7 @@ class DbgClassProperty : public IDbgClassMember {
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  HRESULT Evaluate(ICorDebugReferenceValue *reference_value,
+  HRESULT Evaluate(ICorDebugValue *reference_value,
                    IEvalCoordinator *eval_coordinator,
                    std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
@@ -100,6 +101,9 @@ class DbgClassProperty : public IDbgClassMember {
 
   // TypeSignature of the class property.
   TypeSignature type_signature_;
+
+  // The ICorDebugModule this property is in.
+  CComPtr<ICorDebugModule> debug_module_;
 };
 
 }  //  namespace google_cloud_debugger

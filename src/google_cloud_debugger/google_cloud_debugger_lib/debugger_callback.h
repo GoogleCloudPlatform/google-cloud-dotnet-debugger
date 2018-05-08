@@ -188,52 +188,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     eval_coordinator_->SetPropertyEvaluation(eval);
   }
 
-  // Template function to enumerate different ICorDebug enumerations.
-  // All the enumerated items will be stored in vector result.
-  // Even if HRESULT returned is not SUCCEED, the result array may
-  // be filled too.
-  // TODO(quoct): Move this to i_cor_debug_helper file.
-  template <typename ICorDebugSpecifiedTypeEnum,
-            typename ICorDebugSpecifiedType>
-  static HRESULT EnumerateICorDebugSpecifiedType(
-      ICorDebugSpecifiedTypeEnum *debug_enum,
-      std::vector<CComPtr<ICorDebugSpecifiedType>> *result) {
-    if (!result) {
-      return E_INVALIDARG;
-    }
-
-    size_t result_index = 0;
-    result->clear();
-    HRESULT hr = E_FAIL;
-    while (true) {
-      ULONG value_to_retrieve = 20;
-      ULONG value_retrieved = 0;
-
-      std::vector<ICorDebugSpecifiedType *> temp_values(value_to_retrieve,
-                                                        nullptr);
-
-      hr = debug_enum->Next(value_to_retrieve, temp_values.data(),
-                            &value_retrieved);
-      if (value_retrieved == 0) {
-        break;
-      }
-
-      result->resize(result->size() + value_retrieved);
-      for (size_t k = 0; k < value_retrieved; ++k) {
-        (*result)[result_index] = temp_values[k];
-        temp_values[k]->Release();
-        ++result_index;
-      }
-
-      if (FAILED(hr)) {
-        std::cerr << "Failed to enumerate ICorDebug " << std::hex << hr;
-        return hr;
-      }
-    }
-
-    return S_OK;
-  }
-
   // Gets the name of the pipe the debugger will use to communicate with
   // the agent.
   std::string GetPipeName() { return pipe_name_; }

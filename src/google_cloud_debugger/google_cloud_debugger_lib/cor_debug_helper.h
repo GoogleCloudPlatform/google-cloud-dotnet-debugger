@@ -146,6 +146,7 @@ class CorDebugHelper : public ICorDebugHelper {
                                   mdProperty class_token,
                                   const std::string &prop_name,
                                   std::unique_ptr<DbgClassProperty> *result,
+                                  ICorDebugModule *debug_module,
                                   std::ostream *err_stream) override;
 
   // Gets name from mdTypeDef token type_token.
@@ -178,6 +179,13 @@ class CorDebugHelper : public ICorDebugHelper {
   virtual HRESULT CountGenericParams(IMetaDataImport *metadata_import,
                                      const mdToken &token,
                                      uint32_t *result) override;
+
+  // Given a class object, populates generic_class_types_
+  // with the generic types from the class object.
+  virtual HRESULT PopulateGenericClassTypesFromClassObject(
+      ICorDebugValue *class_object,
+      std::vector<CComPtr<ICorDebugType>> *generic_types,
+      std::ostream *err_stream) override;
 
  private:
   static std::shared_ptr<ICorDebugHelper> common_helper_;

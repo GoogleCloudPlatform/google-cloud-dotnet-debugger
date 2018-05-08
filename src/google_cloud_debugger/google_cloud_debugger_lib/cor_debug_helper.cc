@@ -643,7 +643,7 @@ HRESULT CorDebugHelper::GetFieldInfo(IMetaDataImport *metadata_import,
 HRESULT CorDebugHelper::GetPropertyInfo(
     IMetaDataImport *metadata_import, mdProperty class_token,
     const std::string &prop_name, std::unique_ptr<DbgClassProperty> *result,
-    std::ostream *err_stream) {
+    ICorDebugModule *debug_module, std::ostream *err_stream) {
   HRESULT hr;
   std::vector<mdProperty> property_defs(kDefaultVectorSize, 0);
   HCORENUM cor_enum = nullptr;
@@ -677,7 +677,7 @@ HRESULT CorDebugHelper::GetPropertyInfo(
       class_property->Initialize(property_defs[i], metadata_import,
                                  // The depth does not matter for now because we
                                  // are not evaluating any object.
-                                 kDefaultObjectEvalDepth);
+                                 debug_module, kDefaultObjectEvalDepth);
       if (FAILED(class_property->GetInitializeHr())) {
         *err_stream << "Failed to get property information.";
         metadata_import->CloseEnum(cor_enum);
@@ -836,6 +836,36 @@ HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
 
   metadata_import_2->CloseEnum(cor_enum);
   return S_OK;
+}
+
+HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
+    ICorDebugValue *class_object,
+    std::vector<CComPtr<ICorDebugType>> *generic_types,
+    std::ostream *err_stream) {
+  CComPtr<ICorDebugValue2> debug_value_2;
+  HRESULT hr = class_object->QueryInterface(
+      __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
+
+  if (FAILED(hr)) {
+    *err_stream << "Failed to query ICorDebugValue2 from ICorDebugValue.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugType> debug_type;
+  hr = debug_value_2->GetExactType(&debug_type);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get exact type from ICorDebugValue2.";
+  }
+
+  CComPtr<ICorDebugTypeEnum> type_enum;
+  hr = debug_type->EnumerateTypeParameters(&type_enum);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
+                                         ICorDebugType>(
+      type_enum, generic_types);
 }
 
 }  // namespace google_cloud_debugger

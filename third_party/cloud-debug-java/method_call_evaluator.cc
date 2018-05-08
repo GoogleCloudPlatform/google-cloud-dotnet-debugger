@@ -34,12 +34,13 @@ namespace google_cloud_debugger {
 
 MethodCallEvaluator::MethodCallEvaluator(
     string method_name, std::unique_ptr<ExpressionEvaluator> instance_source,
-    string possible_class_name,
+    string possible_class_name, std::shared_ptr<ICorDebugHelper> debug_helper,
     std::vector<std::unique_ptr<ExpressionEvaluator>> arguments)
     : method_name_(std::move(method_name)),
       instance_source_(std::move(instance_source)),
       possible_class_name_(std::move(possible_class_name)),
-      arguments_(std::move(arguments)) {}
+      arguments_(std::move(arguments)),
+      debug_helper_(debug_helper) {}
 
 HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
                                      ICorDebugILFrame *debug_frame,
@@ -190,7 +191,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   // instantiated.
   if (instance_source_is_invoking_obj_) {
     std::vector<CComPtr<ICorDebugType>> generic_class_types;
-    hr = PopulateGenericClassTypesFromClassObject(
+    hr = debug_helper_->PopulateGenericClassTypesFromClassObject(
         invoking_object, &generic_class_types, err_stream);
     if (FAILED(hr)) {
       return hr;
@@ -336,40 +337,15 @@ HRESULT MethodCallEvaluator::GetInvokingObject(
     return S_OK;
   }
 
+  CComPtr<ICorDebugILFrame> debug_frame;
+  hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get the active debug frame.";
+    return hr;
+  }
+
   // Returns this object.
-  return debug_frame_->GetArgument(0, invoking_object);
-}
-
-HRESULT MethodCallEvaluator::PopulateGenericClassTypesFromClassObject(
-    ICorDebugValue *class_object,
-    std::vector<CComPtr<ICorDebugType>> *generic_types,
-    std::ostream *err_stream) const {
-  // TODO(quoct): Refactor this code so that this logic doesn't
-  // have to be called from this evaluator (maybe put in IEvalCoordinator?).
-  CComPtr<ICorDebugValue2> debug_value_2;
-  HRESULT hr = class_object->QueryInterface(
-      __uuidof(ICorDebugValue2), reinterpret_cast<void **>(&debug_value_2));
-
-  if (FAILED(hr)) {
-    *err_stream << "Failed to query ICorDebugValue2 from ICorDebugValue.";
-    return hr;
-  }
-
-  CComPtr<ICorDebugType> debug_type;
-  hr = debug_value_2->GetExactType(&debug_type);
-  if (FAILED(hr)) {
-    *err_stream << "Failed to get exact type from ICorDebugValue2.";
-  }
-
-  CComPtr<ICorDebugTypeEnum> type_enum;
-  hr = debug_type->EnumerateTypeParameters(&type_enum);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  return DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
-                                                           ICorDebugType>(
-      type_enum, generic_types);
+  return debug_frame->GetArgument(0, invoking_object);
 }
 
 }  // namespace google_cloud_debugger

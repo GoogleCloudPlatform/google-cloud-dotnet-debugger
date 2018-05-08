@@ -24,6 +24,8 @@
 
 namespace google_cloud_debugger {
 
+class ICorDebugHelper;
+
 // Invokes methods specified in expressions.
 class MethodCallEvaluator : public ExpressionEvaluator {
  public:
@@ -31,6 +33,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
       std::string method_name,
       std::unique_ptr<ExpressionEvaluator> instance_source,
       std::string possible_class_name,
+      std::shared_ptr<ICorDebugHelper> debug_helper,
       std::vector<std::unique_ptr<ExpressionEvaluator>> arguments);
 
   // Compiles the expression.
@@ -79,13 +82,6 @@ class MethodCallEvaluator : public ExpressionEvaluator {
                             IDbgObjectFactory *obj_factory,
                             std::ostream *err_stream) const;
 
-  // Given a class object, populates generic_class_types_
-  // with the generic types from the class object.
-  HRESULT PopulateGenericClassTypesFromClassObject(
-      ICorDebugValue *class_object,
-      std::vector<CComPtr<ICorDebugType>> *generic_types,
-      std::ostream *err_stream) const;
-
   // Method name (whether it's an instance method or a static method).
   const std::string method_name_;
 
@@ -105,10 +101,6 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // Arguments to the method call.
   std::vector<std::unique_ptr<ExpressionEvaluator>> arguments_;
 
-  // Debug frame that the method call is in.
-  // This is needed to get "this" object.
-  CComPtr<ICorDebugILFrame> debug_frame_;
-
   // The ICorDebugFunction that represents the method being called.
   CComPtr<ICorDebugFunction> matched_method_;
 
@@ -121,6 +113,9 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
   // Return value of the method.
   TypeSignature return_type_;
+
+  // Helper methods for dealing with ICorDebug.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 
   DISALLOW_COPY_AND_ASSIGN(MethodCallEvaluator);
 };
