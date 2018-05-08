@@ -37,7 +37,7 @@ class BinaryExpressionEvaluator : public ExpressionEvaluator {
   // Compiles the subexpressions. Based on the static type of the subexpressions
   // and the binary operator, compiles and sets the static type of this expression.
   HRESULT Compile(
-      DbgStackFrame* readers_factory,
+      IDbgStackFrame* readers_factory,
       ICorDebugILFrame *debug_frame,
       std::ostream* err_stream) override;
 

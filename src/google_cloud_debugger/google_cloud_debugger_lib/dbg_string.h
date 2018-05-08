@@ -31,6 +31,7 @@ class DbgString : public DbgReferenceObject {
       : DbgReferenceObject(nullptr, 0, std::shared_ptr<ICorDebugHelper>(), std::shared_ptr<IDbgObjectFactory>()) {
     string_obj_ = string_content;
     string_obj_set_ = true;
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_STRING;
   }
 
   DbgString(ICorDebugType *pType, std::shared_ptr<ICorDebugHelper> debug_helper)

@@ -35,7 +35,7 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
   // the source_collection_ expression is an array. We need
   // to do this for any expression that has get_Item() function.
   HRESULT Compile(
-      DbgStackFrame *stack_frame,
+      IDbgStackFrame *stack_frame,
       ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 

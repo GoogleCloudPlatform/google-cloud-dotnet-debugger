@@ -56,6 +56,12 @@ class DbgClassProperty : public IDbgClassMember {
   // Sets the TypeSignature of the property.
   HRESULT SetTypeSignature(IMetaDataImport *metadata_import);
 
+  // Sets the TypeSignature of the property to type_signature
+  void SetTypeSignature(TypeSignature type_signature) {
+    type_signature_ = type_signature;
+    type_signature_set_ = true;
+  }
+
   // Retrieves the TypeSignature of the property.
   // Will fail if this is not set.
   HRESULT GetTypeSignature(TypeSignature *type_signature);

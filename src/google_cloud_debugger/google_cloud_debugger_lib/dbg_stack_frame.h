@@ -21,9 +21,7 @@
 #include <string>
 #include <tuple>
 
-#include "breakpoint.pb.h"
-#include "constants.h"
-#include "dbg_object.h"
+#include "i_dbg_stack_frame.h"
 #include "document_index.h"
 
 namespace google_cloud_debugger {
@@ -32,17 +30,11 @@ namespace google_cloud_debugger {
 typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
     VariableTuple;
 
-class DebuggerCallback;
-class IEvalCoordinator;
-class IDbgObjectFactory;
-class DbgClassProperty;
-struct MethodInfo;
-
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
 // at a stack frame. It also stores useful debugging information like
 // method name, class name, file name and line number.
-class DbgStackFrame {
+class DbgStackFrame : public IDbgStackFrame {
  public:
   DbgStackFrame(std::shared_ptr<ICorDebugHelper> debug_helper,
       std::shared_ptr<IDbgObjectFactory> obj_factory) :

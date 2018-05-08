@@ -36,7 +36,7 @@ class FieldEvaluator : public ExpressionEvaluator {
                  std::string identifier_name, std::string possible_class_name,
                  std::string field_name);
 
-  HRESULT Compile(DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+  HRESULT Compile(IDbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
   const TypeSignature &GetStaticType() const override { return result_type_; }
@@ -50,13 +50,13 @@ class FieldEvaluator : public ExpressionEvaluator {
   // Tries to compile the subexpression instance_source
   // and then uses that to extract out information about field
   // field_name_.
-  HRESULT CompileUsingInstanceSource(DbgStackFrame *stack_frame,
+  HRESULT CompileUsingInstanceSource(IDbgStackFrame *stack_frame,
                                      ICorDebugILFrame *debug_frame,
                                      std::ostream *err_stream);
 
   // Tries to use possible_class_name_ to extract out information
   // about field field_name_.
-  HRESULT CompileUsingClassName(DbgStackFrame *stack_frame,
+  HRESULT CompileUsingClassName(IDbgStackFrame *stack_frame,
                                 std::ostream *err_stream);
 
   // Helper function to find member_name in class_name.
@@ -64,7 +64,7 @@ class FieldEvaluator : public ExpressionEvaluator {
   // and sets class_property if it is a non-auto class.
   HRESULT CompileClassMemberHelper(const std::string &class_name,
                                    const std::string &member_name,
-                                   DbgStackFrame *stack_frame,
+                                   IDbgStackFrame *stack_frame,
                                    std::ostream *err_stream);
 
  private:

@@ -32,7 +32,7 @@ IndexerAccessExpressionEvaluator::IndexerAccessExpressionEvaluator(
 }
 
 HRESULT IndexerAccessExpressionEvaluator::Compile(
-    DbgStackFrame *stack_frame,
+    IDbgStackFrame *stack_frame,
     ICorDebugILFrame *debug_frame,
     std::ostream *err_stream) {
   HRESULT hr = source_collection_->Compile(stack_frame, debug_frame,

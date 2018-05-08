@@ -41,7 +41,7 @@ class TypeCastOperatorEvaluator : public ExpressionEvaluator {
   // If both source and target are object types, this will check whether
   // either of them is a base class of the other. If not, this function will
   // fail. Otherwise, sets result_type_ to target_type_ and do nothing.
-  HRESULT Compile(DbgStackFrame *stack_frame,
+  HRESULT Compile(IDbgStackFrame *stack_frame,
                   ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 

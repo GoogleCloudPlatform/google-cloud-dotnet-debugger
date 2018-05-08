@@ -26,7 +26,7 @@ class ExpressionEvaluatorMock
     : public google_cloud_debugger::ExpressionEvaluator {
  public:
   MOCK_METHOD3(Compile,
-               HRESULT(google_cloud_debugger::DbgStackFrame *stack_frame,
+               HRESULT(google_cloud_debugger::IDbgStackFrame *stack_frame,
                        ICorDebugILFrame *debug_frame,
                        std::ostream *err_stream));
   MOCK_CONST_METHOD0(GetStaticType,

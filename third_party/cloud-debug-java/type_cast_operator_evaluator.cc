@@ -19,7 +19,7 @@
 #include "class_names.h"
 #include "common_headers.h"
 #include "compiler_helpers.h"
-#include "dbg_stack_frame.h"
+#include "i_dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
 
 namespace google_cloud_debugger {
@@ -33,7 +33,7 @@ TypeCastOperatorEvaluator::TypeCastOperatorEvaluator(
   target_type_ = TypeSignature{target_cor_type, target_type};
 }
 
-HRESULT TypeCastOperatorEvaluator::Compile(DbgStackFrame *stack_frame,
+HRESULT TypeCastOperatorEvaluator::Compile(IDbgStackFrame *stack_frame,
                                            ICorDebugILFrame *debug_frame,
                                            std::ostream *err_stream) {
   HRESULT hr = source_->Compile(stack_frame, debug_frame, err_stream);

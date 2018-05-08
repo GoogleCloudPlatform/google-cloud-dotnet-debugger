@@ -15,7 +15,7 @@
  */
 
 #include "identifier_evaluator.h"
-#include "dbg_stack_frame.h"
+#include "i_dbg_stack_frame.h"
 #include "dbg_object.h"
 #include "dbg_class_property.h"
 
@@ -26,9 +26,15 @@ IdentifierEvaluator::IdentifierEvaluator(std::string identifier_name)
 }
 
 HRESULT IdentifierEvaluator::Compile(
-    DbgStackFrame *stack_frame,
+    IDbgStackFrame *stack_frame,
     ICorDebugILFrame *debug_frame,
     std::ostream *err_stream) {
+  // Only needs to check null for stack frame because we don't
+  // invoke the other arguments.
+  if (!stack_frame) {
+    return E_INVALIDARG;
+  }
+
   // Case 1: this is a local variable.
   HRESULT hr = stack_frame->GetLocalVariable(identifier_name_,
     &identifier_object_, err_stream);

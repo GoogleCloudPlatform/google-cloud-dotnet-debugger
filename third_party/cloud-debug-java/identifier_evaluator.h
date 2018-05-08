@@ -31,7 +31,7 @@ class IdentifierEvaluator : public ExpressionEvaluator {
   explicit IdentifierEvaluator(std::string identifier_name);
 
   virtual HRESULT Compile(
-      DbgStackFrame *stack_frame,
+      IDbgStackFrame *stack_frame,
       ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) override;
 

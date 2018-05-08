@@ -42,7 +42,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // in this class.
   // If instance_source_ is not null, search for method with name
   // method_name_ in this class.
-  HRESULT Compile(DbgStackFrame *stack_frame,
+  HRESULT Compile(IDbgStackFrame *stack_frame,
                   ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
@@ -67,7 +67,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // This will set ICorDebugFunction result_method if such a method
   // is found.
   HRESULT GetDebugFunctionFromClassNameHelper(const std::string &class_name,
-                                              DbgStackFrame *stack_frame,
+                                              IDbgStackFrame *stack_frame,
                                               MethodInfo *method_info,
                                               ICorDebugFunction **result_method,
                                               std::ostream *err_stream);

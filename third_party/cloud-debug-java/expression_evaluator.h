@@ -24,7 +24,7 @@
 namespace google_cloud_debugger {
 
 class DbgObject;
-class DbgStackFrame;
+class IDbgStackFrame;
 class IEvalCoordinator;
 class ICorDebugHelper;
 class IDbgObjectFactory;
@@ -47,7 +47,7 @@ class ExpressionEvaluator {
   // phase to improve performance of repeatedly evaluated expressions and to
   // minimize amount of time that the debugged thread is paused on breakpoint.
   virtual HRESULT Compile(
-      DbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
+      IDbgStackFrame *stack_frame, ICorDebugILFrame *debug_frame,
       std::ostream *err_stream) = 0;
 
   // Gets the type of the expression as it is known at compile time. If the
@@ -65,7 +65,6 @@ class ExpressionEvaluator {
       IDbgObjectFactory *obj_factory,
       std::ostream *err_stream) const = 0;
 };
-
 
 }  // namespace google_cloud_debugger
 

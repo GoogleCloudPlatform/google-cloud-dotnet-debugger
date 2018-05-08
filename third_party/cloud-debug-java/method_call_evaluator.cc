@@ -22,7 +22,7 @@
 #include "cordebug.h"
 #include "dbg_object_factory.h"
 #include "dbg_reference_object.h"
-#include "dbg_stack_frame.h"
+#include "i_dbg_stack_frame.h"
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
@@ -41,7 +41,7 @@ MethodCallEvaluator::MethodCallEvaluator(
       possible_class_name_(std::move(possible_class_name)),
       arguments_(std::move(arguments)) {}
 
-HRESULT MethodCallEvaluator::Compile(DbgStackFrame *stack_frame,
+HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
                                      ICorDebugILFrame *debug_frame,
                                      std::ostream *err_stream) {
   HRESULT hr;
@@ -267,7 +267,7 @@ HRESULT MethodCallEvaluator::EvaluateArgumentsHelper(
 }
 
 HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
-    const std::string &class_name, DbgStackFrame *stack_frame,
+    const std::string &class_name, IDbgStackFrame *stack_frame,
     MethodInfo *method_info, ICorDebugFunction **result_method,
     std::ostream *err_stream) {
   HRESULT hr;
