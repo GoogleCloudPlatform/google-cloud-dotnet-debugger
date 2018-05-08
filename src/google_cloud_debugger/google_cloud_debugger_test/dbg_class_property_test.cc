@@ -83,7 +83,7 @@ class DbgClassPropertyTest : public ::testing::Test {
         .Times(2)
         .WillRepeatedly(DoAll(SetArgPointee<7>(1), Return(S_OK)));
 
-    class_property_->Initialize(property_def_, &metadataimport_mock_,
+    class_property_->Initialize(property_def_, &metadataimport_mock_, &debug_module_,
                                 google_cloud_debugger::kDefaultObjectEvalDepth);
 
     HRESULT hr = class_property_->GetInitializeHr();
@@ -91,6 +91,7 @@ class DbgClassPropertyTest : public ::testing::Test {
   }
 
   virtual void SetUpPropertyValue() {
+    /*
     // Sets various expectation for Evaluate call.
     EXPECT_CALL(reference_value_, Dereference(_))
         .Times(1)
@@ -110,7 +111,7 @@ class DbgClassPropertyTest : public ::testing::Test {
     EXPECT_CALL(debug_class_, GetModule(_))
         .Times(1)
         .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
-
+        */
     // ICorDebugFunction extracted from Module.
     EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
         .Times(1)
@@ -204,7 +205,7 @@ TEST_F(DbgClassPropertyTest, TestInitialize) {
 
 // Tests error cases for the Initialize function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestInitializeError) {
-  class_property_->Initialize(property_def_, nullptr,
+  class_property_->Initialize(property_def_, nullptr, &debug_module_,
                               google_cloud_debugger::kDefaultObjectEvalDepth);
   EXPECT_EQ(class_property_->GetInitializeHr(), E_INVALIDARG);
 
@@ -218,7 +219,7 @@ TEST_F(DbgClassPropertyTest, TestInitializeError) {
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
-  class_property_->Initialize(property_def_, &metadataimport_mock_,
+  class_property_->Initialize(property_def_, &metadataimport_mock_, &debug_module_,
                               google_cloud_debugger::kDefaultObjectEvalDepth);
   EXPECT_EQ(class_property_->GetInitializeHr(), E_ACCESSDENIED);
 }
@@ -338,76 +339,6 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
 
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;
-
-  // Checks null argument error.
-  EXPECT_EQ(class_property_->Evaluate(nullptr, &eval_coordinator_mock_,
-                                      &generic_types),
-            E_INVALIDARG);
-  EXPECT_EQ(
-      class_property_->Evaluate(&reference_value_, nullptr, &generic_types),
-      E_INVALIDARG);
-  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
-                                      &eval_coordinator_mock_, nullptr),
-            E_INVALIDARG);
-
-  {
-    // Errors out if dereference fails.
-    EXPECT_CALL(reference_value_, Dereference(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
-
-    EXPECT_EQ(class_property_->Evaluate(
-                  &reference_value_, &eval_coordinator_mock_, &generic_types),
-              CORDBG_E_BAD_REFERENCE_VALUE);
-  }
-
-  // reference_value should be dereferenced to object_value.
-  EXPECT_CALL(reference_value_, Dereference(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
-
-  {
-    // Errors out if we cannot extract ICorDebugObjectValue.
-    EXPECT_CALL(object_value_, QueryInterface(_, _))
-        .Times(1)
-        .WillRepeatedly(Return(E_NOINTERFACE));
-
-    EXPECT_EQ(class_property_->Evaluate(
-                  &reference_value_, &eval_coordinator_mock_, &generic_types),
-              E_NOINTERFACE);
-  }
-
-  EXPECT_CALL(object_value_, QueryInterface(_, _))
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
-
-  {
-    // Errors out if ICorDebugClass extraction fails.
-    EXPECT_CALL(object_value_, GetClass(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
-
-    EXPECT_EQ(class_property_->Evaluate(
-                  &reference_value_, &eval_coordinator_mock_, &generic_types),
-              CORDBG_E_PROCESS_TERMINATED);
-  }
-
-  // From object_value, ICorDebugClass should be extracted.
-  EXPECT_CALL(object_value_, GetClass(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
-
-  {
-    // Errors out if ICorDebugModule extraction fails.
-    EXPECT_CALL(debug_class_, GetModule(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
-
-    EXPECT_EQ(class_property_->Evaluate(
-                  &reference_value_, &eval_coordinator_mock_, &generic_types),
-              CORDBG_E_MODULE_NOT_LOADED);
-  }
-
-  // ICorDebugModule extracted from ICorDebugClass.
-  EXPECT_CALL(debug_class_, GetModule(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
 
   {
     // Errors out if ICorDebugFunction extraction fails.
