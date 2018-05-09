@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <ostream>
+#include <iostream>
 #include <vector>
 
 #include "ccomptr.h"

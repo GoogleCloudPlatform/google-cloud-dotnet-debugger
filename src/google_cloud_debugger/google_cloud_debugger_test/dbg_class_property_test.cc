@@ -91,28 +91,6 @@ class DbgClassPropertyTest : public ::testing::Test {
   }
 
   virtual void SetUpPropertyValue() {
-    /*
-    // Sets various expectation for Evaluate call.
-    EXPECT_CALL(reference_value_, Dereference(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
-
-    // ICorDebugReferenceValue should dereference to object value.
-    EXPECT_CALL(object_value_, QueryInterface(_, _))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
-
-    // From object_value, ICorDebugClass should be extracted.
-    EXPECT_CALL(object_value_, GetClass(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
-
-    // ICorDebugModule extracted from ICorDebugClass.
-    EXPECT_CALL(debug_class_, GetModule(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
-        */
-    // ICorDebugFunction extracted from Module.
     EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
         .Times(1)
         .WillRepeatedly(

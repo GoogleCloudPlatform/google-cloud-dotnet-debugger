@@ -142,7 +142,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::Evaluate(
-    ICorDebugValue *reference_value,
+    ICorDebugValue *debug_value,
     IEvalCoordinator *eval_coordinator,
     std::vector<CComPtr<ICorDebugType>> *generic_types) {
   if (FAILED(initialized_hr_)) {

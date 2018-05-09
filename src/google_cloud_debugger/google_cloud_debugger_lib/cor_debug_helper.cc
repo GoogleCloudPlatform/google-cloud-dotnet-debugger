@@ -863,8 +863,7 @@ HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
     return hr;
   }
 
-  return EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
-                                         ICorDebugType>(
+  return EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum, ICorDebugType>(
       type_enum, generic_types);
 }
 

@@ -48,7 +48,7 @@ class IDbgClassMember : public StringStreamWrapper {
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
   virtual HRESULT Evaluate(
-      ICorDebugValue *reference_value,
+      ICorDebugValue *debug_value,
       IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types) = 0;
 

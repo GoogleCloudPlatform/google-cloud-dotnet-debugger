@@ -78,7 +78,7 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 }
 
 HRESULT DbgClassProperty::Evaluate(
-    ICorDebugValue *reference_value,
+    ICorDebugValue *debug_value,
     IEvalCoordinator *eval_coordinator,
     vector<CComPtr<ICorDebugType>> *generic_types) {
   if (!generic_types) {
@@ -136,12 +136,12 @@ HRESULT DbgClassProperty::Evaluate(
   // method, we have to supply "this" (reference to the current object)
   // as a parameter.
   if (!IsStatic()) {
-    if (!reference_value) {
+    if (!debug_value) {
       WriteError("Reference value cannot be null.");
       return E_INVALIDARG;
     }
 
-    arg_values.push_back(reference_value);
+    arg_values.push_back(debug_value);
   }
 
   vector<ICorDebugType *> local_generic_types;

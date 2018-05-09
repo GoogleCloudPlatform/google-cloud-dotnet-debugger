@@ -50,7 +50,7 @@ class DbgClassProperty : public IDbgClassMember {
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  HRESULT Evaluate(ICorDebugValue *reference_value,
+  HRESULT Evaluate(ICorDebugValue *debug_value,
                    IEvalCoordinator *eval_coordinator,
                    std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
