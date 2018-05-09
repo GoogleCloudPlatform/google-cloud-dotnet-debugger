@@ -286,6 +286,7 @@ HRESULT DbgObjectFactory::CreateDbgClassObject(
     null_obj->SetModuleName(module_name);
     null_obj->SetClassName(class_name);
     null_obj->SetClassToken(class_token);
+    null_obj->SetICorDebugModule(debug_module);
     *result_object = std::move(null_obj);
     return S_OK;
   }
@@ -342,6 +343,7 @@ HRESULT DbgObjectFactory::CreateDbgClassObject(
     class_obj->SetModuleName(module_name);
     class_obj->SetClassName(class_name);
     class_obj->SetClassToken(class_token);
+    class_obj->SetICorDebugModule(debug_module);
 
     // If this is a ValueType class, we have to process its members
     // because we can't store the reference to this class.

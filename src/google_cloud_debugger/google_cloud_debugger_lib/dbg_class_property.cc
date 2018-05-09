@@ -32,6 +32,7 @@ namespace google_cloud_debugger {
 
 void DbgClassProperty::Initialize(mdProperty property_def,
                                   IMetaDataImport *metadata_import,
+                                  ICorDebugModule *debug_module,
                                   int creation_depth) {
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
@@ -73,10 +74,11 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 
   member_name_ = ConvertWCharPtrToString(wchar_property_name);
   creation_depth_ = creation_depth;
+  debug_module_ = debug_module;
 }
 
 HRESULT DbgClassProperty::Evaluate(
-    ICorDebugReferenceValue *reference_value,
+    ICorDebugValue *debug_value,
     IEvalCoordinator *eval_coordinator,
     vector<CComPtr<ICorDebugType>> *generic_types) {
   if (!generic_types) {
@@ -89,11 +91,6 @@ HRESULT DbgClassProperty::Evaluate(
     return E_INVALIDARG;
   }
 
-  if (!reference_value) {
-    WriteError("Reference value cannot be null.");
-    return E_INVALIDARG;
-  }
-
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
   }
@@ -103,41 +100,17 @@ HRESULT DbgClassProperty::Evaluate(
     return PopulateVariableValueHelper(eval_coordinator);
   }
 
-  CComPtr<ICorDebugValue> debug_value;
-  CComPtr<ICorDebugObjectValue> debug_obj_value;
-  CComPtr<ICorDebugClass> debug_class;
-  CComPtr<ICorDebugModule> debug_module;
   CComPtr<ICorDebugFunction> debug_function;
   CComPtr<ICorDebugEval> debug_eval;
   CComPtr<ICorDebugEval2> debug_eval_2;
   HRESULT hr;
 
-  hr = reference_value->Dereference(&debug_value);
-  if (FAILED(hr)) {
-    WriteError("Failed to dereference value to evaluate property.");
-    return hr;
+  if (!debug_module_) {
+    WriteError("ICorDebugModule is needed to get the property getter.");
+    return E_FAIL;
   }
 
-  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-                                   reinterpret_cast<void **>(&debug_obj_value));
-  if (FAILED(hr)) {
-    WriteError("Failed to dereference value to evaluate property.");
-    return hr;
-  }
-
-  hr = debug_obj_value->GetClass(&debug_class);
-  if (FAILED(hr)) {
-    WriteError("Failed to get class from ICorDebugObjectValue.");
-    return hr;
-  }
-
-  hr = debug_class->GetModule(&debug_module);
-  if (FAILED(hr)) {
-    WriteError("Failed to get module from ICorDebugClass.");
-    return hr;
-  }
-
-  hr = debug_module->GetFunctionFromToken(property_getter_function,
+  hr = debug_module_->GetFunctionFromToken(property_getter_function,
                                           &debug_function);
   if (FAILED(hr)) {
     WriteError("Failed to get ICorDebugFunction from function token.");
@@ -163,7 +136,12 @@ HRESULT DbgClassProperty::Evaluate(
   // method, we have to supply "this" (reference to the current object)
   // as a parameter.
   if (!IsStatic()) {
-    arg_values.push_back(reference_value);
+    if (!debug_value) {
+      WriteError("Reference value cannot be null.");
+      return E_INVALIDARG;
+    }
+
+    arg_values.push_back(debug_value);
   }
 
   vector<ICorDebugType *> local_generic_types;
@@ -213,7 +191,7 @@ HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
   // ParseTypeFromSig will modify it.
   PCCOR_SIGNATURE signature_pointer_copy = signature_metadata_;
   ULONG signature_length_copy = sig_metadata_length_;
-  HRESULT hr = debug_helper_->ParseTypeFromSig(&signature_pointer_copy,
+  HRESULT hr = debug_helper_->ParsePropertySig(&signature_pointer_copy,
                                                &signature_length_copy,
                                                metadata_import, &type_name);
   if (FAILED(hr)) {

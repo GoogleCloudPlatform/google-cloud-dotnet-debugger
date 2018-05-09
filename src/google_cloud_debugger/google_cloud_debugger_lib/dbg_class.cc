@@ -217,7 +217,7 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
         }
 
         class_property->Initialize(property_defs[i], metadata_import,
-                                   GetCreationDepth() - 1);
+                                   debug_module_, GetCreationDepth() - 1);
         // If property name is MyProperty, checks whether there is a backing
         // field with the name <MyProperty>k__BackingField. Note that we have
         // logic to process backing fields' names to strip out the "<" and

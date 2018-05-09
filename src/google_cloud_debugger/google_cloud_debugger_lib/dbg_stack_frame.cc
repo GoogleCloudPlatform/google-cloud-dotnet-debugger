@@ -130,8 +130,8 @@ HRESULT DbgStackFrame::ProcessLocalVariables(
   HRESULT hr;
 
   vector<CComPtr<ICorDebugValue>> debug_values;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
-                                                         ICorDebugValue>(
+  hr = ICorDebugHelper::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
+                                                        ICorDebugValue>(
       local_enum, &debug_values);
 
   // If hr is a failed HRESULT, this may be because some (not all) variables
@@ -196,8 +196,8 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   HRESULT hr = S_OK;
 
   vector<CComPtr<ICorDebugValue>> method_arg_values;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
-                                                         ICorDebugValue>(
+  hr = ICorDebugHelper::EnumerateICorDebugSpecifiedType<ICorDebugValueEnum,
+                                                        ICorDebugValue>(
       method_arg_enum, &method_arg_values);
 
   if (FAILED(hr)) {
@@ -347,8 +347,8 @@ HRESULT DbgStackFrame::GetClassGenericTypeParameters(
   }
 
   vector<CComPtr<ICorDebugType>> class_and_method_generic_types;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
-                                                         ICorDebugType>(
+  hr = ICorDebugHelper::EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum,
+                                                        ICorDebugType>(
       type_enum, &class_and_method_generic_types);
   if (FAILED(hr)) {
     return hr;
@@ -720,7 +720,7 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
 
   hr = debug_helper_->GetPropertyInfo(metadata_import, class_token_,
                                       property_name, property_object,
-                                      err_stream);
+                                      debug_module_, err_stream);
   if (FAILED(hr)) {
     return hr;
   }
@@ -765,7 +765,8 @@ HRESULT DbgStackFrame::GetPropertyFromClass(
     IMetaDataImport *metadata_import, std::ostream *err_stream) {
   // Search for non-autoimplemented property.
   HRESULT hr = debug_helper_->GetPropertyInfo(
-      metadata_import, class_token, property_name, class_property, err_stream);
+      metadata_import, class_token, property_name, class_property,
+      debug_module_, err_stream);
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }

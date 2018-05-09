@@ -47,7 +47,7 @@ class DbgClassField : public IDbgClassMember {
   // Evaluates and sets member_value_ to the value of the field
   // that is represented by this class.
   // Reference_value and generic_types are ignored.
-  HRESULT Evaluate(ICorDebugReferenceValue *reference_value,
+  HRESULT Evaluate(ICorDebugValue *debug_value,
                    IEvalCoordinator *eval_coordinator,
                    std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 

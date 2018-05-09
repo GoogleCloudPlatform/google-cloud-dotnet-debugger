@@ -100,6 +100,11 @@ class DbgClass : public DbgReferenceObject {
   // Sets whether the class members has been processed or not.
   void SetProcessedClassMembers(bool processed) { processed_ = processed; }
 
+  // Sets the ICorDebugModule this class is in.
+  void SetICorDebugModule(ICorDebugModule *debug_module) {
+    debug_module_ = debug_module;
+  }
+
  private:
   // Processes the generic parameters of the class.
   HRESULT ProcessParameterizedType();
@@ -178,6 +183,9 @@ class DbgClass : public DbgReferenceObject {
 
   // Name of the base class.
   std::string base_class_name_;
+
+  // The debug module the class is in.
+  CComPtr<ICorDebugModule> debug_module_;
 
   // The type of this object. Can either be ELEMENT_TYPE_CLASS
   // or ELEMENT_TYPE_VALUETYPE or ELEMENT_TYPE_OBJECT.

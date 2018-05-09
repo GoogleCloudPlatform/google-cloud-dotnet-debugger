@@ -30,6 +30,7 @@
 #include "unary_expression_evaluator.h"
 #include "dbg_primitive.h"
 #include "dbg_null_object.h"
+#include "cor_debug_helper.h"
 
 using std::string;
 
@@ -829,12 +830,14 @@ CompiledExpression MethodCallExpression::CreateEvaluator() {
     argument_evaluators.push_back(std::move(argument_evaluator.evaluator));
   }
 
+  std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
   return {
     std::unique_ptr<ExpressionEvaluator>(
         new MethodCallEvaluator(
             method_,
             std::move(source_evaluator.evaluator),
             possible_class_name,
+            std::move(debug_helper),
             std::move(argument_evaluators)))
   };
 }
