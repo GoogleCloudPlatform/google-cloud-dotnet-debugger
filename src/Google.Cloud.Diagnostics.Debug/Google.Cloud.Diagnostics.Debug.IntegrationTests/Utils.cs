@@ -62,7 +62,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
-        /// Gets the location of the agent.  Defaults to Google.Cloud.Diagnostics.Debug.dll
+        /// Gets the location of the agent. Defaults to Google.Cloud.Diagnostics.Debug.dll
         /// This can be overridden with the environment variable 'TEST_AGENT'.
         /// </summary>
         public static string GetAgent()

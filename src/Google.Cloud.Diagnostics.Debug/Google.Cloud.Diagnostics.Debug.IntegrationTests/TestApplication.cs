@@ -78,7 +78,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
             // Create a copy of the debugger executable with a unique name.
             // This is allows us to uniquely identify the running debugger to 
-            // test the memory and CPU.  A little ugley but this is the simplest
+            // test the memory and CPU.  A little ugly but this is the simplest
             // way to make this work cross platform.
             var debugger = Utils.GetDebugger();
             var fileName = Utils.IsWindows ? $"{Version}.exe" : Version;
