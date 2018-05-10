@@ -14,6 +14,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,8 +56,17 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>The port to run the application on.</summary>
         private readonly int _port = Utils.GetNextPort();
 
-        /// <summary>The underlying application.</summary>
-        private readonly IDisposable _app;
+        /// <summary>The underlying application, null if <see cref="_debugEnabled"/> is true.</summary>
+        private readonly Process _app;
+
+        /// <summary>The debugger agent, null if <see cref="_debugEnabled"/> is false.</summary>
+        private readonly Process _agent;
+
+        /// <summary>The path the  debugger to use for the test.</summary>
+        private readonly string _debuggerPath;
+
+        /// <summary>True if the debugger should be used. </summary>
+        private readonly bool _debugEnabled;
 
         /// <summary>
         /// Create a new <see cref="TestApplication"/>.
@@ -64,13 +74,32 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <param name="debugEnabled">True if a debugging should be enabled.</param>
         public TestApplication(bool debugEnabled)
         {
-            _app = debugEnabled ? StartAppDebug() : StartApp();
+            _debugEnabled = debugEnabled;
+
+            // Create a copy of the debugger executable with a unique name.
+            // This is allows us to uniquely identify the running debugger to 
+            // test the memory and CPU.  A little ugly but this is the simplest
+            // way to make this work cross platform.
+            var debugger = Utils.GetDebugger();
+            var fileName = Utils.IsWindows ? $"{Version}.exe" : Version;
+            var newDebugger = Path.Combine(Path.GetDirectoryName(debugger), fileName);           
+            File.Copy(debugger, newDebugger);
+            _debuggerPath = newDebugger;
+
+            if (debugEnabled)
+            {
+                _agent = StartAppDebug();
+            }
+            else
+            {
+                _app = StartApp();
+            }
         }
 
         /// <summary>
         /// Create a new <see cref="TestApplication"/> with no debugging.
         /// </summary>
-        private IDisposable StartApp()
+        private Process StartApp()
         {
             var startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                    "dotnet", $"{Utils.GetApplication()} --server.urls={AppUrlBase}", null);
@@ -80,23 +109,17 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>
         /// Create a new <see cref="TestApplication"/> with no debugging.
         /// </summary>
-        private IDisposable StartAppDebug()
+        private Process StartAppDebug()
         {
-            var options = new AgentOptions
-            {
-                Module = Module,
-                Version = Version,
-                ProjectId = ProjectId,
-                Debugger = Utils.GetDebugger(),
-                ApplicationStartCommand = GetStartCommand(),
-            };
-            Agent agent = new Agent(options);
-            new Thread(() =>
-            {
-                agent.StartAndBlock();
-
-            }).Start();
-            return agent;
+            var startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
+                  "dotnet", $"{Utils.GetAgent()} " +
+                        $"--application-start-command=\"{GetStartCommand()}\" " +
+                        $"--debugger={_debuggerPath} " +
+                        $"--module={Module} " +
+                        $"--version={Version} " +
+                        $"--project-id={ProjectId}",
+                  null);
+            return Process.Start(startInfo);
         }
 
         /// <summary>
@@ -108,14 +131,42 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>
         /// Gets the process id for the running test application.
         /// </summary>
-        public async Task<int> GetProcessId()
+        public async Task<Process> GetApplicationProcess()
         {
             using (HttpClient client = new HttpClient())
             {
                 HttpResponseMessage result = await client.GetAsync(AppUrlProcessId);
                 var resultStr = await result.Content.ReadAsStringAsync();
-                return Int32.Parse(resultStr);
+                var processId = Int32.Parse(resultStr);
+                return Process.GetProcessById(processId);
             }
+        }
+
+        /// <summary>
+        /// Gets the debugger agent process or null if the debugger is not running.
+        /// </summary>
+        public Process GetAgentProcess() => _agent;
+
+        /// <summary>
+        /// Gets the debugger process or null if the debugger is not running.
+        /// </summary>
+        public Process GetDebuggerProcess()
+        {
+            if (!_debugEnabled)
+            {
+                return null;
+            }
+
+            var processes = Process.GetProcesses();
+            foreach (var process in processes)
+            {
+                if (process.ProcessName.Contains(Version))
+                {
+                    return process;
+                }
+            }
+
+            throw new InvalidOperationException("Debugger process not found.");
         }
 
         /// <summary>
@@ -126,7 +177,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         public void Dispose()
         {
-            _app.Dispose();
+            _app?.Dispose();
+            _agent?.Dispose();
             using (HttpClient client = new HttpClient())
             {
                 try
@@ -135,6 +187,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 }
                 catch (AggregateException) { }
             }
+
+            // TODO(talarico): This will fail as the debugger is not always shut down properly.
+            //File.Delete(_debuggerPath);
         }
     }
 }

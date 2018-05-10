@@ -100,15 +100,33 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         {
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
-                var processId = await app.GetProcessId();
-                var process = Process.GetProcessById(processId);
+                var appProcess = await app.GetApplicationProcess();
+                var debugProcess = app.GetDebuggerProcess();
+                var agentProcess = app.GetAgentProcess();
 
                 var debuggee = debugEnabled ? Polling.GetDebuggee(app.Module, app.Version) : null;
 
+                int counter = 0;
+                long memory = 0;
+                var cts = new CancellationTokenSource();
+                Task.Run(() =>
+                {
+                    while (!cts.IsCancellationRequested)
+                    {
+                        memory += appProcess.WorkingSet64;
+                        if (debugEnabled)
+                        {
+                            memory += debugProcess.WorkingSet64;
+                            memory += agentProcess.WorkingSet64;
+                        }
+                        counter++;
+                        Thread.Sleep(TimeSpan.FromMilliseconds(2));
+                    }
+                });
+
                 using (HttpClient client = new HttpClient())
                 {
-                    long totalMemory = 0;
-                    for (int i = 0; i < NumberOfRequest; i++)
+                   for (int i = 0; i < NumberOfRequest; i++)
                     {
                         Debugger.V2.Breakpoint breakpoint = null;
                         if (setBreakpoint)
@@ -119,17 +137,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
-                        int counter = 0;
-                        long memory = 0;
-                        Task<HttpResponseMessage> task = client.GetAsync($"{app.AppUrlEcho}/{i}");
-                        // TODO(talarico): Can we do better?
-                        while (!task.IsCompleted)
-                        {
-                            memory += process.WorkingSet64;
-                            counter++;
-                            Thread.Sleep(TimeSpan.FromMilliseconds(2));
-                        }
-                        totalMemory += memory / counter;
+                       await client.GetAsync($"{app.AppUrlEcho}/{i}");
 
                         if (setBreakpoint)
                         {
@@ -137,7 +145,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                             Assert.Equal(hitBreakpoint, newBp.IsFinalState);
                         }
                     }
-                    return (totalMemory / NumberOfRequest) / Math.Pow(2, 20);
+                    cts.Cancel();
+                    return (memory /counter / NumberOfRequest) / Math.Pow(2, 20);
                 }
             }
         }

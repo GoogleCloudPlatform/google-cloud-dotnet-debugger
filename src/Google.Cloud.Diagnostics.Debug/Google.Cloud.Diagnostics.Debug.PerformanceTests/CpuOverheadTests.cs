@@ -107,14 +107,24 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         {
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
-                var processId = await app.GetProcessId();
-                var process = Process.GetProcessById(processId);
+                var appProcess = await app.GetApplicationProcess();
+                var debugProcess = app.GetDebuggerProcess();
+                var agentProcess = app.GetAgentProcess();
+
+                Stopwatch watch = Stopwatch.StartNew();
+                var startingAppCpu = appProcess.TotalProcessorTime;
+                var startingDebugCpu = TimeSpan.Zero;
+                var startingAgentCpu = TimeSpan.Zero;
+                if (debugEnabled)
+                {
+                    startingDebugCpu = debugProcess.TotalProcessorTime;
+                    startingAgentCpu = agentProcess.TotalProcessorTime;
+                }
+
                 var debuggee = debugEnabled ? Polling.GetDebuggee(app.Module, app.Version) : null;
 
                 using (HttpClient client = new HttpClient())
                 {
-                    TimeSpan totalTime = TimeSpan.Zero;
-                    TimeSpan totalCpuTime = TimeSpan.Zero;
                     for (int i = 0; i < NumberOfRequest; i++)
                     {
                         Debugger.V2.Breakpoint breakpoint = null;
@@ -126,11 +136,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
-                        Stopwatch watch = Stopwatch.StartNew();
-                        var startingCpu = process.TotalProcessorTime;
-                        HttpResponseMessage result = await client.GetAsync($"{app.AppUrlEcho}/{i}");
-                        totalCpuTime += process.TotalProcessorTime - startingCpu;
-                        totalTime += watch.Elapsed;
+                        await client.GetAsync($"{app.AppUrlEcho}/{i}");
 
                         if (setBreakpoint)
                         {
@@ -138,7 +144,13 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                             Assert.Equal(hitBreakpoint, newBp.IsFinalState);
                         }
                     }
-                    return totalCpuTime.TotalMilliseconds / totalTime.TotalMilliseconds;
+                    var totalCpuTime = appProcess.TotalProcessorTime - startingAppCpu;
+                    if (debugEnabled)
+                    {
+                        totalCpuTime += debugProcess.TotalProcessorTime - startingDebugCpu;
+                        totalCpuTime += agentProcess.TotalProcessorTime - startingAgentCpu;
+                    }
+                    return totalCpuTime.TotalMilliseconds / watch.ElapsedMilliseconds;
                 }
             }
         }

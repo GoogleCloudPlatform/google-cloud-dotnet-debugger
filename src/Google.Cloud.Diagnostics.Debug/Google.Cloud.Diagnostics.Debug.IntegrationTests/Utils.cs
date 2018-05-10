@@ -33,7 +33,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         private static int _port = 4999;
 
         /// <summary>True if the OS is Windows.</summary>
-        private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        public static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
         /// <summary>Gets the next port to use for a local test.</summary>
         public static int GetNextPort() => Interlocked.Increment(ref _port);
@@ -58,6 +58,24 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 return Combine(GetRootDirectory(), 
                     "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp2.0", 
                     "publish", "Google.Cloud.Diagnostics.Debug.TestApp.dll");                
+            }
+        }
+
+        /// <summary>
+        /// Gets the location of the agent. Defaults to Google.Cloud.Diagnostics.Debug.dll
+        /// This can be overridden with the environment variable 'TEST_AGENT'.
+        /// </summary>
+        public static string GetAgent()
+        {
+            try
+            {
+                return GetFromEnvironment("TEST_AGENT");
+            }
+            catch (InvalidOperationException)
+            {
+                return Combine(GetRootDirectory(),
+                    "Google.Cloud.Diagnostics.Debug", "bin", _mode, "netcoreapp2.0",
+                    "publish", "Google.Cloud.Diagnostics.Debug.dll");
             }
         }
 

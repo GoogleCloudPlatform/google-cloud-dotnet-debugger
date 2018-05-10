@@ -25,6 +25,7 @@ done
 
 export LD_LIBRARY_PATH=$ROOT_DIR/coreclr/bin/Product/Linux.x64.$CONFIG
 
+dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug --configuration $CONFIG
 dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug.TestApp --configuration $CONFIG
 dotnet test $AGENT_DIR/Google.Cloud.Diagnostics.Debug.IntegrationTests --configuration $CONFIG
 
