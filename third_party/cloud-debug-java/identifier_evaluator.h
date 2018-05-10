@@ -17,6 +17,8 @@
 #ifndef IDENTIFIER_EVALUATOR_H_
 #define IDENTIFIER_EVALUATOR_H_
 
+#include <vector>
+
 #include "expression_evaluator.h"
 
 namespace google_cloud_debugger {
@@ -50,6 +52,9 @@ class IdentifierEvaluator : public ExpressionEvaluator {
   std::shared_ptr<DbgObject> identifier_object_;
 
   std::unique_ptr<DbgClassProperty> class_property_;
+
+  // Generic type parameters for the class that the method is in.
+  std::vector<CComPtr<ICorDebugType>> generic_class_types_;
 
   // Statically computed resulting type of the expression. This is what
   // computer_ is supposed to produce.

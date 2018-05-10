@@ -16,6 +16,7 @@
 
 #include "identifier_evaluator.h"
 #include "i_dbg_stack_frame.h"
+#include "i_eval_coordinator.h"
 #include "dbg_object.h"
 #include "dbg_class_property.h"
 
@@ -70,7 +71,14 @@ HRESULT IdentifierEvaluator::Compile(
     return hr;
   }
 
-  return class_property_->GetTypeSignature(&result_type_);
+  hr = class_property_->GetTypeSignature(&result_type_);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // Generic type parameters for the class that the method is in.
+  return stack_frame->GetClassGenericTypeParameters(debug_frame,
+                                                    &generic_class_types_);
 }
 
 HRESULT IdentifierEvaluator::Evaluate(
@@ -83,7 +91,34 @@ HRESULT IdentifierEvaluator::Evaluate(
     return S_OK;
   }
 
-  // TODO(quoct): Evaluates the property.
+  CComPtr<ICorDebugValue> invoking_object;
+
+  HRESULT hr;
+  // If this is a non-static property, we have to get the invoking object.
+  if (!class_property_->IsStatic()) {
+    CComPtr<ICorDebugILFrame> debug_frame;
+    hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get the active debug frame.";
+      return hr;
+    }
+
+    // Returns this object.
+    hr = debug_frame->GetArgument(0, &invoking_object);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get the invoking object.";
+      return hr;
+    }
+  }
+
+  hr = class_property_->Evaluate(invoking_object, eval_coordinator,
+    const_cast<std::vector<CComPtr<ICorDebugType>> *>(&generic_class_types_));
+  if (FAILED(hr)) {
+    *err_stream << "Failed to evaluate property.";
+    return hr;
+  }
+
+  *dbg_object = class_property_->GetMemberValue();
   return S_OK;
 }
 
