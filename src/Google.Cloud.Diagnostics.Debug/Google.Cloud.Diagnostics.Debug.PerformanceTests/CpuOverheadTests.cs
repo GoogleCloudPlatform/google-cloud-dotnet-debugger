@@ -147,8 +147,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                     var totalCpuTime = appProcess.TotalProcessorTime - startingAppCpu;
                     if (debugEnabled)
                     {
-                        totalCpuTime += debugProcess.TotalProcessorTime;
-                        totalCpuTime += agentProcess.TotalProcessorTime;
+                        totalCpuTime += debugProcess.TotalProcessorTime - startingDebugCpu;
+                        totalCpuTime += agentProcess.TotalProcessorTime - startingAgentCpu;
                     }
                     return totalCpuTime.TotalMilliseconds / watch.ElapsedMilliseconds;
                 }

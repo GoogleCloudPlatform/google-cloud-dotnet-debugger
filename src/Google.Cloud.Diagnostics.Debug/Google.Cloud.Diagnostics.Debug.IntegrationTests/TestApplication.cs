@@ -96,7 +96,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
         }
 
-
         /// <summary>
         /// Create a new <see cref="TestApplication"/> with no debugging.
         /// </summary>
@@ -169,7 +168,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
             throw new InvalidOperationException("Debugger process not found.");
         }
-
 
         /// <summary>
         /// Shuts down a running instance of the test app.
