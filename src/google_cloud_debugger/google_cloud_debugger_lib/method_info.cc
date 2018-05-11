@@ -145,10 +145,13 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     return E_FAIL;
   }
 
+  std::vector<CComPtr<ICorDebugType>> class_generic_types;
+  hr = stack_frame->GetClassGenericTypeParameters(&class_generic_types);
+
   // Now we can extract the return type.
   std::string returned_type;
   hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                                      &returned_type);
+                                      class_generic_types, &returned_type);
   if (FAILED(hr)) {
     return hr;
   }
@@ -159,7 +162,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     // Extracts out this "this" parameter.
     std::string this_type;
     hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                                        &returned_type);
+                                        class_generic_types, &returned_type);
     if (FAILED(hr)) {
       return hr;
     }
@@ -172,7 +175,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   for (size_t i = 0; i < param_count; ++i) {
     std::string parameter_type;
     hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                                        &parameter_type);
+                                        class_generic_types, &parameter_type);
     if (FAILED(hr)) {
       return hr;
     }

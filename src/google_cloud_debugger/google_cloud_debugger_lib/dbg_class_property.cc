@@ -78,8 +78,7 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 }
 
 HRESULT DbgClassProperty::Evaluate(
-    ICorDebugValue *debug_value,
-    IEvalCoordinator *eval_coordinator,
+    ICorDebugValue *debug_value, IEvalCoordinator *eval_coordinator,
     vector<CComPtr<ICorDebugType>> *generic_types) {
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
@@ -111,7 +110,7 @@ HRESULT DbgClassProperty::Evaluate(
   }
 
   hr = debug_module_->GetFunctionFromToken(property_getter_function,
-                                          &debug_function);
+                                           &debug_function);
   if (FAILED(hr)) {
     WriteError("Failed to get ICorDebugFunction from function token.");
     return hr;
@@ -185,15 +184,17 @@ HRESULT DbgClassProperty::Evaluate(
   return PopulateVariableValueHelper(eval_coordinator);
 }
 
-HRESULT DbgClassProperty::SetTypeSignature(IMetaDataImport *metadata_import) {
+HRESULT DbgClassProperty::SetTypeSignature(
+    IMetaDataImport *metadata_import,
+    const std::vector<CComPtr<ICorDebugType>> &generic_class_types) {
   std::string type_name;
   // Use a copy of the pointer to the signature because the function
   // ParseTypeFromSig will modify it.
   PCCOR_SIGNATURE signature_pointer_copy = signature_metadata_;
   ULONG signature_length_copy = sig_metadata_length_;
-  HRESULT hr = debug_helper_->ParsePropertySig(&signature_pointer_copy,
-                                               &signature_length_copy,
-                                               metadata_import, &type_name);
+  HRESULT hr = debug_helper_->ParsePropertySig(
+      &signature_pointer_copy, &signature_length_copy, metadata_import,
+      generic_class_types, &type_name);
   if (FAILED(hr)) {
     return hr;
   }

@@ -15,9 +15,9 @@
 #ifndef I_CORDEBUG_HELPER_H_
 #define I_CORDEBUG_HELPER_H_
 
+#include <iostream>
 #include <memory>
 #include <ostream>
-#include <iostream>
 #include <vector>
 
 #include "ccomptr.h"
@@ -114,23 +114,31 @@ class ICorDebugHelper {
   // Parses the metadata signature of a field and retrieves
   // the field's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                IMetaDataImport *metadata_import,
-                                std::string *field_type_name) = 0;
+  virtual HRESULT ParseFieldSig(
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *field_type_name) = 0;
 
   // Parses the metadata signature of a property and retrieves
   // the property's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                   IMetaDataImport *metadata_import,
-                                   std::string *property_type_name) = 0;
+  virtual HRESULT ParsePropertySig(
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *property_type_name) = 0;
 
   // Given a PCCOR_SIGNATURE signature, parses the type
   // and stores the result in type_name. Also update the sig_len.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                   IMetaDataImport *metadata_import,
-                                   std::string *type_name) = 0;
+  // generic_class_types is the runtime instantiated generic type
+  // of the class that the signature is in.
+  virtual HRESULT ParseTypeFromSig(
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *type_name) = 0;
 
   // Extracts out the metadata for field field_name
   // in class with metadata token class_token.

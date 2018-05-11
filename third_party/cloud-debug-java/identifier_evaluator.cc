@@ -77,8 +77,7 @@ HRESULT IdentifierEvaluator::Compile(
   }
 
   // Generic type parameters for the class that the method is in.
-  return stack_frame->GetClassGenericTypeParameters(debug_frame,
-                                                    &generic_class_types_);
+  return stack_frame->GetClassGenericTypeParameters(&generic_class_types_);
 }
 
 HRESULT IdentifierEvaluator::Evaluate(

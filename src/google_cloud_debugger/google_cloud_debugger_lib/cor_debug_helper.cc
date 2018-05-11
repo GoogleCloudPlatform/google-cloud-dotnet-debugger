@@ -38,7 +38,6 @@ using std::unique_ptr;
 using std::vector;
 
 namespace google_cloud_debugger {
-
 HRESULT CorDebugHelper::GetMetadataImportFromICorDebugClass(
     ICorDebugClass *debug_class, IMetaDataImport **metadata_import,
     ostream *err_stream) {
@@ -402,10 +401,11 @@ HRESULT CorDebugHelper::ParseCompressedBytes(PCCOR_SIGNATURE *signature,
   return hr;
 }
 
-HRESULT CorDebugHelper::ParseFieldSig(PCCOR_SIGNATURE *signature,
-                                      ULONG *sig_len,
-                                      IMetaDataImport *metadata_import,
-                                      std::string *field_type_name) {
+HRESULT CorDebugHelper::ParseFieldSig(
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    IMetaDataImport *metadata_import,
+    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+    std::string *field_type_name) {
   // Field signature has the form: FIELD CustomModification* Type
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
   // I think this is not used in C#?
@@ -417,13 +417,15 @@ HRESULT CorDebugHelper::ParseFieldSig(PCCOR_SIGNATURE *signature,
   }
 
   // We don't support custom modifiers.
-  return ParseTypeFromSig(signature, sig_len, metadata_import, field_type_name);
+  return ParseTypeFromSig(signature, sig_len, metadata_import,
+                          generic_class_types, field_type_name);
 }
 
-HRESULT CorDebugHelper::ParsePropertySig(PCCOR_SIGNATURE *signature,
-                                         ULONG *sig_len,
-                                         IMetaDataImport *metadata_import,
-                                         std::string *property_type_name) {
+HRESULT CorDebugHelper::ParsePropertySig(
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    IMetaDataImport *metadata_import,
+    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+    std::string *property_type_name) {
   // Field signature has the form:
   // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
@@ -444,13 +446,14 @@ HRESULT CorDebugHelper::ParsePropertySig(PCCOR_SIGNATURE *signature,
 
   // Parses the type.
   return ParseTypeFromSig(signature, sig_len, metadata_import,
-                          property_type_name);
+                          generic_class_types, property_type_name);
 }
 
-HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
-                                         ULONG *sig_len,
-                                         IMetaDataImport *metadata_import,
-                                         std::string *type_name) {
+HRESULT CorDebugHelper::ParseTypeFromSig(
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    IMetaDataImport *metadata_import,
+    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+    std::string *type_name) {
   HRESULT hr;
   CorElementType cor_type = CorSigUncompressElementType(*signature);
   *sig_len -= 1;
@@ -468,7 +471,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
   switch (cor_type) {
     case CorElementType::ELEMENT_TYPE_SZARRAY: {
       // Extracts the array type.
-      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import,
+                            generic_class_types, type_name);
       if (FAILED(hr)) {
         return hr;
       }
@@ -477,7 +481,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
     }
     case CorElementType::ELEMENT_TYPE_ARRAY: {
       // First we read the type.
-      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import,
+                            generic_class_types, type_name);
       if (FAILED(hr)) {
         return hr;
       }
@@ -513,7 +518,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
     }
     case CorElementType::ELEMENT_TYPE_GENERICINST: {
       // First we read the type without generics.
-      hr = ParseTypeFromSig(signature, sig_len, metadata_import, type_name);
+      hr = ParseTypeFromSig(signature, sig_len, metadata_import,
+                            generic_class_types, type_name);
       if (FAILED(hr)) {
         return hr;
       }
@@ -530,7 +536,7 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
       for (size_t i = 0; i < generic_param_count; ++i) {
         std::string generic_type;
         hr = ParseTypeFromSig(signature, sig_len, metadata_import,
-                              &generic_type);
+                              generic_class_types, &generic_type);
         if (FAILED(hr)) {
           return hr;
         }
@@ -577,7 +583,25 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
       // step so we may just want to evaluate any object that has
       // uninstantiated type to get its type directly.
       ULONG var_number = 0;
-      return ParseCompressedBytes(signature, sig_len, &var_number);
+      hr = ParseCompressedBytes(signature, sig_len, &var_number);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      if (var_number >= generic_class_types.size()) {
+        return E_FAIL;
+      }
+
+      std::shared_ptr<DbgObjectFactory> object_factory(new DbgObjectFactory);
+      std::unique_ptr<DbgObject> type_object;
+
+      hr = object_factory->CreateDbgObject(generic_class_types[var_number],
+                                           &type_object, &std::cerr);
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      return type_object->GetTypeString(type_name);
     }
     default:
       return E_NOTIMPL;
@@ -850,7 +874,7 @@ HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
       return hr;
     }
 
-    if (generic_params_returned == 0) {
+    if (generic_params_returned == 0 || generic_params_returned == -1) {
       break;
     }
     *result += generic_params_returned;
