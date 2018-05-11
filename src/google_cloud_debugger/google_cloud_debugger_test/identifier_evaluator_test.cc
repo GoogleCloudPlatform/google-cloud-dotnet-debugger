@@ -106,6 +106,8 @@ class IdentifierEvaluatorTest : public ::testing::Test {
 
   // Error stream.
   std::ostringstream err_stream_;
+
+  ICorDebugILFrameMock debug_frame_;
 };
 
 // Tests the case when the identifier is a local variable.
@@ -162,6 +164,12 @@ TEST_F(IdentifierEvaluatorTest, PropertiesWithGetter) {
       std::shared_ptr<google_cloud_debugger::ICorDebugHelper>(),
       std::shared_ptr<google_cloud_debugger::IDbgObjectFactory>());
   class_property->SetTypeSignature(class_property_type_sig_);
+  class_property->SetMemberValue(field_);
+
+  // Makes the property signature indicate that it is non-static.
+  COR_SIGNATURE cor_sig = CorCallingConvention::IMAGE_CEE_CS_CALLCONV_HASTHIS;
+  class_property->SetMetaDataSig(&cor_sig);
+
   EXPECT_CALL(stack_mock_, GetPropertyFromFrameHelper(identifier_, _, _))
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(class_property), Return(S_OK)));
@@ -169,6 +177,18 @@ TEST_F(IdentifierEvaluatorTest, PropertiesWithGetter) {
   EXPECT_EQ(evaluator.Compile(&stack_mock_, nullptr, nullptr), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type,
             class_property_type_sig_.cor_type);
+
+  // Sets up call for retrieving the invoking object.
+  EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<0>(&debug_frame_), Return(S_OK)));
+  EXPECT_CALL(debug_frame_, GetArgument(0, _)).Times(1).WillOnce(Return(S_OK));
+
+  std::shared_ptr<DbgObject> evaluate_result;
+  EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_,
+                               &object_factory_mock_, nullptr),
+            S_OK);
+  EXPECT_EQ(evaluate_result, field_);
 }
 
 // Tests error cases for identifier evaluator.

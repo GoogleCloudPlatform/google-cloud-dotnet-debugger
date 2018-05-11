@@ -269,7 +269,7 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     if (FAILED(hr)) {
       std::cerr << "Failed to process breakpoint \"" << breakpoint->GetId()
                 << "\" with HRESULT: " << std::hex << hr;
-      break;
+      continue;
     }
 
     if (!breakpoint->GetEvaluatedCondition()) {

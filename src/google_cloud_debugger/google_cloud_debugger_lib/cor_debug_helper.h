@@ -108,23 +108,32 @@ class CorDebugHelper : public ICorDebugHelper {
   // Parses the metadata signature of a field and retrieves
   // the field's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParseFieldSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                IMetaDataImport *metadata_import,
-                                std::string *field_type_name) override;
+  virtual HRESULT ParseFieldSig(
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *field_type_name) override;
 
   // Parses the metadata signature of a property and retrieves
   // the property's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParsePropertySig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                   IMetaDataImport *metadata_import,
-                                   std::string *property_type_name) override;
+  virtual HRESULT ParsePropertySig(
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *property_type_name) override;
 
   // Given a PCCOR_SIGNATURE signature, parses the type
   // and stores the result in type_name. Also update the sig_len.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  virtual HRESULT ParseTypeFromSig(PCCOR_SIGNATURE *signature, ULONG *sig_len,
-                                   IMetaDataImport *metadata_import,
-                                   std::string *type_name) override;
+  virtual HRESULT ParseTypeFromSig(
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
+      std::string *type_name) override;
 
   // Extracts out the metadata for field field_name
   // in class with metadata token class_token.
@@ -188,20 +197,17 @@ class CorDebugHelper : public ICorDebugHelper {
       std::ostream *err_stream) override;
 
  private:
-  static std::shared_ptr<ICorDebugHelper> common_helper_;
-
   // Given a PCCOR_SIGNATURE signature, parses the next byte A.
   // Then, parses and skips the next A bytes.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  HRESULT ParseAndSkipBasedOnFirstByteSignature(
-      PCCOR_SIGNATURE *signature, ULONG *sig_len);
+  HRESULT ParseAndSkipBasedOnFirstByteSignature(PCCOR_SIGNATURE *signature,
+                                                ULONG *sig_len);
 
   // Given a PCCOR_SIGNATURE, parses the first byte
   // and checks that with calling_convention.
   // Will modify the signature pointer PCCOR_SIGNATURE.
-  HRESULT ParseAndCheckFirstByte(
-      PCCOR_SIGNATURE *signature, ULONG *sig_len,
-      CorCallingConvention calling_convention);
+  HRESULT ParseAndCheckFirstByte(PCCOR_SIGNATURE *signature, ULONG *sig_len,
+                                 CorCallingConvention calling_convention);
 };
 
 }  // namespace google_cloud_debugger

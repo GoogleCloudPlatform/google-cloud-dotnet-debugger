@@ -55,7 +55,9 @@ class DbgClassProperty : public IDbgClassMember {
                    std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Sets the TypeSignature of the property.
-  HRESULT SetTypeSignature(IMetaDataImport *metadata_import);
+  HRESULT SetTypeSignature(
+      IMetaDataImport *metadata_import,
+      const std::vector<CComPtr<ICorDebugType>> &generic_class_types);
 
   // Sets the TypeSignature of the property to type_signature
   void SetTypeSignature(TypeSignature type_signature) {
@@ -68,13 +70,12 @@ class DbgClassProperty : public IDbgClassMember {
   HRESULT GetTypeSignature(TypeSignature *type_signature);
 
   // Returns true if the property is static.
-  // If the property is static, the metadata won't have a bit mask
-  // at 0x20.
+  // If the property is static, the signature metadata won't have the bit
+  // corresponding to IMAGE_CEE_CS_CALLCONV_HASTHIS at the start.
   bool IsStatic() const override {
-    return (*signature_metadata_ & kNonStaticPropertyMask) == 0;
+    return (*signature_metadata_ &
+            CorCallingConvention::IMAGE_CEE_CS_CALLCONV_HASTHIS) == 0;
   }
-
-  static const int8_t kNonStaticPropertyMask = 0x20;
 
  private:
   // Helper function to set the value of variable to this property's value.

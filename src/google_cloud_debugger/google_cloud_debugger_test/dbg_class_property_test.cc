@@ -62,7 +62,7 @@ class DbgClassPropertyTest : public ::testing::Test {
     property_signature_ =
         static_property
             ? (COR_SIGNATURE)0x01
-            : (COR_SIGNATURE)DbgClassProperty::kNonStaticPropertyMask;
+            : (COR_SIGNATURE)IMAGE_CEE_CS_CALLCONV_HASTHIS;
 
     // GetPropertyProps should be called twice.
     EXPECT_CALL(metadataimport_mock_,
