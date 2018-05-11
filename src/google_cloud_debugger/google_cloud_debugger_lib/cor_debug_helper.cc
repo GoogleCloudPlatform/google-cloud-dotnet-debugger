@@ -544,26 +544,40 @@ HRESULT CorDebugHelper::ParseTypeFromSig(PCCOR_SIGNATURE *signature,
     }
     case CorElementType::ELEMENT_TYPE_CLASS:
     case CorElementType::ELEMENT_TYPE_VALUETYPE: {
-      ULONG byte_read = 0;
-      hr = ParseCompressedBytes(signature, sig_len, &byte_read);
+      ULONG encoded_token = 0;
+      hr = ParseCompressedBytes(signature, sig_len, &encoded_token);
       if (FAILED(hr)) {
         return hr;
       }
-      mdToken extracted_token = (mdToken)byte_read;
-      // Checks whether this token is mdTypeDef or mdTypeRef. Don't support
-      // other types.
-      CorTokenType token_type = (CorTokenType)(TypeFromToken(extracted_token));
+
+      // The first 2 least significant bits of the token tells us whether
+      // the token is a type def or type ref.
+      mdToken token_type = g_tkCorEncodeToken[encoded_token & 0x3];
+      mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
+
       mdToken base_token;
       if (token_type == CorTokenType::mdtTypeDef) {
-        return GetTypeNameFromMdTypeDef(extracted_token, metadata_import,
+        return GetTypeNameFromMdTypeDef(decoded_token, metadata_import,
                                         type_name, &base_token, &std::cerr);
       } else if (token_type == CorTokenType::mdtTypeRef) {
-        return GetTypeNameFromMdTypeRef(extracted_token, metadata_import,
+        return GetTypeNameFromMdTypeRef(decoded_token, metadata_import,
                                         type_name, &std::cerr);
       } else {
         // Don't process this.
         return E_FAIL;
       }
+    }
+    case CorElementType::ELEMENT_TYPE_VAR: {
+      // Var_number here is used to get the type from a generic class.
+      // For example, if the generic class is Class<Int, String>
+      // and var_number is 1, then the type referred to here is String.
+      // If var_number is 0, then the type referred here is Int.
+      // TODO(quoct): Currently we are not determining the exact type
+      // here. This may not be very complicated to perform during Compile
+      // step so we may just want to evaluate any object that has
+      // uninstantiated type to get its type directly.
+      ULONG var_number = 0;
+      return ParseCompressedBytes(signature, sig_len, &var_number);
     }
     default:
       return E_NOTIMPL;
@@ -711,6 +725,10 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
   mdToken extend_tokens;
   HRESULT hr = metadata_import->GetTypeDefProps(
       type_token, nullptr, 0, &type_name_len, &type_flags, &extend_tokens);
+  if (hr == S_FALSE) {
+    hr = E_FAIL;
+  }
+
   if (FAILED(hr)) {
     *err_stream << "Failed to get type name's length.";
     return hr;
@@ -739,6 +757,10 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeRef(
   ULONG type_name_len = 0;
   HRESULT hr = metadata_import->GetTypeRefProps(type_token, nullptr, nullptr, 0,
                                                 &type_name_len);
+  if (hr == S_FALSE) {
+    hr = E_FAIL;
+  }
+
   if (FAILED(hr)) {
     *err_stream << "Failed to get type name's length.";
     return hr;
