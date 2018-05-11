@@ -77,7 +77,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <inheritdoc />
         public void Dispose()
         {
-            _process?.Dispose();
+            _process?.Kill();
             _cts.Cancel();
         }
 

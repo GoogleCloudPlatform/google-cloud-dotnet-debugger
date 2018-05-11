@@ -177,8 +177,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         public void Dispose()
         {
-            _app?.Dispose();
-            _agent?.Dispose();
+            _app?.Kill();
+            _agent?.Kill();
             using (HttpClient client = new HttpClient())
             {
                 try
@@ -188,8 +188,21 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 catch (AggregateException) { }
             }
 
-            // TODO(talarico): This will fail as the debugger is not always shut down properly.
-            //File.Delete(_debuggerPath);
+            // Try to clean up the extra debugger file.  We may need to
+            // wait a bit for the file handle to be released.
+            int counter = 0;
+            while (true)
+            {
+                try
+                {
+                    File.Delete(_debuggerPath);
+                    return;
+                }
+                catch (UnauthorizedAccessException) when (counter++ < 10)
+                {
+                    Thread.Sleep(TimeSpan.FromMilliseconds(10));
+                }
+            }
         }
     }
 }
