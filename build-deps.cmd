@@ -6,7 +6,7 @@
 :: Check that the user passed in a valid parameter.
 if "%3" == "" (
   echo "Parameters should be: repository root, configuration, platform"
-  exit
+  exit /B
 )
 
 SET ROOT_DIR=%1
