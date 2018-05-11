@@ -115,7 +115,8 @@ class ICorDebugHelper {
   // the field's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParseFieldSig(
-      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
       std::string *field_type_name) = 0;
@@ -124,7 +125,8 @@ class ICorDebugHelper {
   // the property's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParsePropertySig(
-      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
       std::string *property_type_name) = 0;
@@ -135,7 +137,8 @@ class ICorDebugHelper {
   // generic_class_types is the runtime instantiated generic type
   // of the class that the signature is in.
   virtual HRESULT ParseTypeFromSig(
-      PCCOR_SIGNATURE *signature, ULONG *sig_len,
+      PCCOR_SIGNATURE *signature,
+      ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
       std::string *type_name) = 0;

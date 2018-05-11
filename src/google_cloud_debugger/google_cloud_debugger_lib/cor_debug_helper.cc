@@ -402,7 +402,8 @@ HRESULT CorDebugHelper::ParseCompressedBytes(PCCOR_SIGNATURE *signature,
 }
 
 HRESULT CorDebugHelper::ParseFieldSig(
-    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    PCCOR_SIGNATURE *signature,
+    ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
     std::string *field_type_name) {
@@ -422,7 +423,8 @@ HRESULT CorDebugHelper::ParseFieldSig(
 }
 
 HRESULT CorDebugHelper::ParsePropertySig(
-    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    PCCOR_SIGNATURE *signature,
+    ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
     std::string *property_type_name) {
@@ -450,7 +452,8 @@ HRESULT CorDebugHelper::ParsePropertySig(
 }
 
 HRESULT CorDebugHelper::ParseTypeFromSig(
-    PCCOR_SIGNATURE *signature, ULONG *sig_len,
+    PCCOR_SIGNATURE *signature,
+    ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
     std::string *type_name) {
