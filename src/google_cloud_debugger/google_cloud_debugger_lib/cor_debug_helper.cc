@@ -38,6 +38,7 @@ using std::unique_ptr;
 using std::vector;
 
 namespace google_cloud_debugger {
+
 HRESULT CorDebugHelper::GetMetadataImportFromICorDebugClass(
     ICorDebugClass *debug_class, IMetaDataImport **metadata_import,
     ostream *err_stream) {
@@ -588,6 +589,7 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       }
 
       if (var_number >= generic_class_types.size()) {
+        std::cerr << "Variable number in ELEMENT_TYPE_VAR cannot be found.";
         return E_FAIL;
       }
 

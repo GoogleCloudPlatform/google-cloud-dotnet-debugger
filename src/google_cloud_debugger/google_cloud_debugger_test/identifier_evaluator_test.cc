@@ -166,7 +166,7 @@ TEST_F(IdentifierEvaluatorTest, PropertiesWithGetter) {
   class_property->SetTypeSignature(class_property_type_sig_);
   class_property->SetMemberValue(field_);
 
-  // Makes the property signature indicates that it is non-static.
+  // Makes the property signature indicate that it is non-static.
   COR_SIGNATURE cor_sig = CorCallingConvention::IMAGE_CEE_CS_CALLCONV_HASTHIS;
   class_property->SetMetaDataSig(&cor_sig);
 
