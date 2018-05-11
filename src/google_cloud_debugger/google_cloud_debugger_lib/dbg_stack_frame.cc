@@ -321,10 +321,7 @@ HRESULT DbgStackFrame::GetClassGenericTypeParameters(
     return E_INVALIDARG;
   }
 
-  debug_types->reserve(class_generic_types_.size());
-  for (size_t i = 0; i < class_generic_types_.size(); i += 1) {
-    debug_types->push_back(class_generic_types_[i]);
-  }
+  *debug_types = class_generic_types_;
   return S_OK;
 }
 
@@ -657,7 +654,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   hr = GetFieldAndAutoPropertyInfo(metadata_import, class_token_, member_name,
                                    &field_def, &field_static, &signature,
                                    &signature_len, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == S_FALSE) {
     // Since we can't find the field, returns S_FALSE.
     return S_FALSE;
   }
@@ -690,9 +687,8 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
       }
 
       std::vector<ICorDebugType *> class_generic_type_pointers;
-      for (const auto &item : class_generic_types_) {
-        class_generic_type_pointers.push_back(item);
-      }
+      class_generic_type_pointers.assign(class_generic_types_.begin(),
+                                         class_generic_types_.end());
 
       CComPtr<ICorDebugType> class_type;
       hr = debug_class_2->GetParameterizedType(
@@ -764,7 +760,7 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
   hr = debug_helper_->GetPropertyInfo(metadata_import, class_token_,
                                       property_name, property_object,
                                       debug_module_, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
 
@@ -784,7 +780,7 @@ HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
   HRESULT hr = GetFieldAndAutoPropertyInfo(
       metadata_import, class_token, field_name, field_def, is_static,
       &signature, &signature_len, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == E_FAIL) {
     return hr;
   }
 
