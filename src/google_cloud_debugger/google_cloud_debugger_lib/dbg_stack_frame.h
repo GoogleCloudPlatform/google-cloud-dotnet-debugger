@@ -21,14 +21,13 @@
 #include <string>
 #include <tuple>
 
-#include "i_dbg_stack_frame.h"
 #include "document_index.h"
+#include "i_dbg_stack_frame.h"
 
 namespace google_cloud_debugger {
 
 // TODO(quoct): Add error stream into the tuple.
-typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
-    VariableTuple;
+typedef std::tuple<std::string, std::shared_ptr<DbgObject>> VariableTuple;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
@@ -37,8 +36,8 @@ typedef std::tuple<std::string, std::shared_ptr<DbgObject>>
 class DbgStackFrame : public IDbgStackFrame {
  public:
   DbgStackFrame(std::shared_ptr<ICorDebugHelper> debug_helper,
-      std::shared_ptr<IDbgObjectFactory> obj_factory) :
-    debug_helper_(debug_helper), obj_factory_(obj_factory) {}
+                std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : debug_helper_(debug_helper), obj_factory_(obj_factory) {}
 
   // Populate method_name_, file_name_, line_number_ and breakpoint_id_.
   // Also populate local variables and method arguments into variables_
@@ -87,8 +86,7 @@ class DbgStackFrame : public IDbgStackFrame {
   // metadata_import is the IMetaDataImport of the module the class is in.
   HRESULT GetFieldFromClass(const mdTypeDef &class_token,
                             const std::string &field_name,
-                            mdFieldDef *field_def,
-                            bool *is_static,
+                            mdFieldDef *field_def, bool *is_static,
                             TypeSignature *type_signature,
                             IMetaDataImport *metadata_import,
                             std::ostream *err_stream);
@@ -116,8 +114,7 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // Returns S_OK if source_type is a child class of target_type.
   HRESULT IsBaseType(const std::string &source_type,
-                     const std::string &target_type,
-                     std::ostream *err_stream);
+                     const std::string &target_type, std::ostream *err_stream);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -184,8 +181,8 @@ class DbgStackFrame : public IDbgStackFrame {
   // method_info in the class class_token. This function will
   // also check the methods against the arguments vector to
   // select the appropriate method. Besides returning the debug_function,
-  // the function will also populate properties like is_static or has_generic_types
-  // of method_info if succeeded.
+  // the function will also populate properties like is_static or
+  // has_generic_types of method_info if succeeded.
   HRESULT GetDebugFunctionFromClass(IMetaDataImport *metadata_import,
                                     const mdTypeDef &class_token,
                                     MethodInfo *method_info,
@@ -198,7 +195,6 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // Extract out generic type parameters for the class the frame is in.
   HRESULT GetClassGenericTypeParameters(
-      ICorDebugILFrame *debug_frame,
       std::vector<CComPtr<ICorDebugType>> *debug_types);
 
  private:
@@ -207,11 +203,19 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // Factory to create DbgObject.
   std::shared_ptr<IDbgObjectFactory> obj_factory_;
-   
+
+  // Generic types of the class the frame is in.
+  std::vector<CComPtr<ICorDebugType>> class_generic_types_;
+
   // Gets the metadata import of the module this frame is in.
   // We cannot store the IMetaDataImport directly because
   // they may be invalidated.
   HRESULT GetMetaDataImport(IMetaDataImport **metadata_import);
+
+  // Gets the ICorDebugType of the generic types of the class the frame
+  // is in and stores in class_generic_types_.
+  HRESULT InitializeClassGenericTypeParameters(IMetaDataImport *metadata_import,
+                                               ICorDebugILFrame *debug_frame);
 
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.

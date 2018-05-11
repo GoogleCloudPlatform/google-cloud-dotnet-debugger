@@ -120,6 +120,11 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
+  hr = InitializeClassGenericTypeParameters(metadata_import, il_frame);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   is_processed_il_frame_ = true;
   return S_OK;
 }
@@ -311,21 +316,25 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
 }
 
 HRESULT DbgStackFrame::GetClassGenericTypeParameters(
-    ICorDebugILFrame *debug_frame,
     std::vector<CComPtr<ICorDebugType>> *debug_types) {
   if (!debug_types) {
     return E_INVALIDARG;
   }
 
-  CComPtr<IMetaDataImport> metadata_import;
-  HRESULT hr = GetMetaDataImport(&metadata_import);
-  if (FAILED(hr)) {
-    return hr;
-  }
+  *debug_types = class_generic_types_;
+  return S_OK;
+}
 
+HRESULT DbgStackFrame::GetMetaDataImport(IMetaDataImport **metadata_import) {
+  return debug_helper_->GetMetadataImportFromICorDebugModule(
+      debug_module_, metadata_import, &std::cerr);
+}
+
+HRESULT DbgStackFrame::InitializeClassGenericTypeParameters(
+    IMetaDataImport *metadata_import, ICorDebugILFrame *debug_frame) {
   uint32_t class_generic_params = 0;
-  hr = debug_helper_->CountGenericParams(metadata_import, class_token_,
-                                         &class_generic_params);
+  HRESULT hr = debug_helper_->CountGenericParams(metadata_import, class_token_,
+                                                 &class_generic_params);
 
   if (class_generic_params == 0) {
     return S_OK;
@@ -358,16 +367,12 @@ HRESULT DbgStackFrame::GetClassGenericTypeParameters(
     return E_FAIL;
   }
 
+  class_generic_types_.reserve(class_generic_params);
   for (size_t i = 0; i < class_generic_params; ++i) {
-    debug_types->push_back(class_and_method_generic_types[i]);
+    class_generic_types_.push_back(class_and_method_generic_types[i]);
   }
 
   return S_OK;
-}
-
-HRESULT DbgStackFrame::GetMetaDataImport(IMetaDataImport **metadata_import) {
-  return debug_helper_->GetMetadataImportFromICorDebugModule(
-      debug_module_, metadata_import, &std::cerr);
 }
 
 HRESULT DbgStackFrame::PopulateTypeDict() {
@@ -649,7 +654,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   hr = GetFieldAndAutoPropertyInfo(metadata_import, class_token_, member_name,
                                    &field_def, &field_static, &signature,
                                    &signature_len, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == S_FALSE) {
     // Since we can't find the field, returns S_FALSE.
     return S_FALSE;
   }
@@ -665,7 +670,41 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
 
     hr = debug_class->GetStaticFieldValue(field_def, debug_frame, &field_value);
     if (FAILED(hr)) {
-      return hr;
+      if (hr != CORDBG_E_STATIC_VAR_NOT_AVAILABLE) {
+        return hr;
+      }
+
+      // If we are inside a generic class, ICorDebugClass will not be able to
+      // get us the static field value. This is because it only represents
+      // an uninstantiated class. So we have to construct an ICorDebugType
+      // for the instantiated type using class_generic_types_.
+      CComPtr<ICorDebugClass2> debug_class_2;
+      hr = debug_class->QueryInterface(
+          __uuidof(ICorDebugClass2), reinterpret_cast<void **>(&debug_class_2));
+      if (FAILED(hr)) {
+        *err_stream << "Cannot convert ICorDebugClass to ICorDebugClass2.";
+        return hr;
+      }
+
+      std::vector<ICorDebugType *> class_generic_type_pointers;
+      class_generic_type_pointers.assign(class_generic_types_.begin(),
+                                         class_generic_types_.end());
+
+      CComPtr<ICorDebugType> class_type;
+      hr = debug_class_2->GetParameterizedType(
+          CorElementType::ELEMENT_TYPE_CLASS,
+          class_generic_type_pointers.size(),
+          class_generic_type_pointers.data(), &class_type);
+      if (FAILED(hr)) {
+        *err_stream << "Failed to get instantiated type from ICorDebugClass.";
+        return hr;
+      }
+
+      hr =
+          class_type->GetStaticFieldValue(field_def, debug_frame, &field_value);
+      if (FAILED(hr)) {
+        return hr;
+      }
     }
 
     std::unique_ptr<DbgObject> result;
@@ -721,11 +760,12 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
   hr = debug_helper_->GetPropertyInfo(metadata_import, class_token_,
                                       property_name, property_object,
                                       debug_module_, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
 
-  return (*property_object)->SetTypeSignature(metadata_import);
+  return (*property_object)
+      ->SetTypeSignature(metadata_import, class_generic_types_);
 }
 
 HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
@@ -740,7 +780,7 @@ HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
   HRESULT hr = GetFieldAndAutoPropertyInfo(
       metadata_import, class_token, field_name, field_def, is_static,
       &signature, &signature_len, err_stream);
-  if (FAILED(hr)) {
+  if (FAILED(hr) || hr == E_FAIL) {
     return hr;
   }
 
@@ -748,7 +788,7 @@ HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
   // Parses the field signature to get the type name.
   std::string field_type_name;
   hr = debug_helper_->ParseFieldSig(&signature, &signature_len, metadata_import,
-                                    &field_type_name);
+                                    class_generic_types_, &field_type_name);
   if (FAILED(hr)) {
     return hr;
   }
@@ -764,15 +804,16 @@ HRESULT DbgStackFrame::GetPropertyFromClass(
     std::unique_ptr<DbgClassProperty> *class_property,
     IMetaDataImport *metadata_import, std::ostream *err_stream) {
   // Search for non-autoimplemented property.
-  HRESULT hr = debug_helper_->GetPropertyInfo(
-      metadata_import, class_token, property_name, class_property,
-      debug_module_, err_stream);
+  HRESULT hr = debug_helper_->GetPropertyInfo(metadata_import, class_token,
+                                              property_name, class_property,
+                                              debug_module_, err_stream);
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
 
   // Sets the type signature of the property too.
-  return (*class_property)->SetTypeSignature(metadata_import);
+  return (*class_property)
+      ->SetTypeSignature(metadata_import, class_generic_types_);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {

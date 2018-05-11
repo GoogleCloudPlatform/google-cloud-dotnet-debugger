@@ -215,6 +215,11 @@ class DbgStackFrameTest : public ::testing::Test {
             DoAll(SetArg3ToWcharArray(second_method_arg_.wchar_name_.data(),
                                       second_method_arg_name_len),
                   SetArgPointee<5>(second_method_arg_name_len), Return(S_OK)));
+
+    // Sets up metadata import for initializing class generic parameters.
+    ON_CALL(metadata_import_, QueryInterface(_, _))
+        .WillByDefault(
+            DoAll(SetArgPointee<1>(&metadata_import_), Return(S_OK)));
   }
 
   // ICorDebugILFrame used by this test to extract variables and arguments.

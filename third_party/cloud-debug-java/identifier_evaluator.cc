@@ -90,8 +90,11 @@ HRESULT IdentifierEvaluator::Evaluate(
     return S_OK;
   }
 
-  CComPtr<ICorDebugValue> invoking_object;
+  if (eval_coordinator == nullptr) {
+    return E_INVALIDARG;
+  }
 
+  CComPtr<ICorDebugValue> invoking_object;
   HRESULT hr;
   // If this is a non-static property, we have to get the invoking object.
   if (!class_property_->IsStatic()) {
