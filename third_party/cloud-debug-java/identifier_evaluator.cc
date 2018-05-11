@@ -103,7 +103,7 @@ HRESULT IdentifierEvaluator::Evaluate(
       return hr;
     }
 
-    // Returns this object.
+    // Returns 'this' object.
     hr = debug_frame->GetArgument(0, &invoking_object);
     if (FAILED(hr)) {
       *err_stream << "Failed to get the invoking object.";
