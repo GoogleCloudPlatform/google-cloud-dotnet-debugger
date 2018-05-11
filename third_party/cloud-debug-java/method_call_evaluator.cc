@@ -81,8 +81,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
       // TOOD(quoct): Need to find a way to do this for
       // fully qualified class name. Probably have to update ANTLR
       // grammar file to support that.
-      hr = stack_frame->GetClassGenericTypeParameters(debug_frame,
-                                                      &generic_class_types_);
+      hr = stack_frame->GetClassGenericTypeParameters(&generic_class_types_);
       if (FAILED(hr)) {
         *err_stream << "Failed to retrieve generic type parameters for class.";
         return hr;

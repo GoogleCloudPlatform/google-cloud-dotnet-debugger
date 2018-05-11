@@ -85,10 +85,9 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
   MOCK_METHOD2(GetDebugFunctionFromCurrentClass,
                HRESULT(google_cloud_debugger::MethodInfo *method_info,
                        ICorDebugFunction **debug_function));
-  MOCK_METHOD2(
+  MOCK_METHOD1(
       GetClassGenericTypeParameters,
-      HRESULT(ICorDebugILFrame *debug_frame,
-              std::vector<google_cloud_debugger::CComPtr<ICorDebugType>>
+      HRESULT(std::vector<google_cloud_debugger::CComPtr<ICorDebugType>>
                   *debug_types));
   MOCK_METHOD0(IsStaticMethod, bool());
 };

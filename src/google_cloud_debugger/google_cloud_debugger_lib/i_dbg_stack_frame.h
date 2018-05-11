@@ -118,7 +118,6 @@ class IDbgStackFrame {
 
   // Extract out generic type parameters for the class the frame is in.
   virtual HRESULT GetClassGenericTypeParameters(
-      ICorDebugILFrame *debug_frame,
       std::vector<CComPtr<ICorDebugType>> *debug_types) = 0;
 
   // Returns true if the method this frame is in is a static method.
