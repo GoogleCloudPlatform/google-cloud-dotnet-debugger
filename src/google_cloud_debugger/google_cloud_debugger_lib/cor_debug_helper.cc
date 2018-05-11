@@ -578,10 +578,6 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       // For example, if the generic class is Class<Int, String>
       // and var_number is 1, then the type referred to here is String.
       // If var_number is 0, then the type referred here is Int.
-      // TODO(quoct): Currently we are not determining the exact type
-      // here. This may not be very complicated to perform during Compile
-      // step so we may just want to evaluate any object that has
-      // uninstantiated type to get its type directly.
       ULONG var_number = 0;
       hr = ParseCompressedBytes(signature, sig_len, &var_number);
       if (FAILED(hr)) {
