@@ -20,6 +20,7 @@
 
 #include "cor.h"
 #include "cordebug.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -37,7 +38,7 @@ struct MethodInfo {
   mdMethodDef method_token;
 
   // The types of the arguments.
-  std::vector<std::string> argument_types;
+  std::vector<TypeSignature> argument_types;
 
   // True if the function is static.
   bool is_static;

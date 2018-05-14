@@ -72,6 +72,11 @@ HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
   }
 
   result_type_ = {cor_type};
+  HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+      cor_type, &result_type_.type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
   // For + operator, we do nothing.
   // TODO(quoct): Add support for Decimal.
@@ -126,6 +131,11 @@ HRESULT UnaryExpressionEvaluator::CompileBitwiseComplement(
   }
 
   result_type_ = { cor_type };
+  HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+      cor_type, &result_type_.type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
 
   switch (cor_type) {
     case CorElementType::ELEMENT_TYPE_I4: {
@@ -156,7 +166,7 @@ HRESULT UnaryExpressionEvaluator::CompileLogicalComplement(
   assert(type_ == UnaryCSharpExpression::Type::logical_complement);
   if (arg_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
     computer_ = LogicalComplementComputer;
-    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
+    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName };
     return S_OK;
   }
 

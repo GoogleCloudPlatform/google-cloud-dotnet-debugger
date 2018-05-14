@@ -186,7 +186,7 @@ HRESULT DbgClassProperty::Evaluate(
 
 HRESULT DbgClassProperty::SetTypeSignature(
     IMetaDataImport *metadata_import,
-    const std::vector<CComPtr<ICorDebugType>> &generic_class_types) {
+    const std::vector<TypeSignature> &generic_class_types) {
   std::string type_name;
   // Use a copy of the pointer to the signature because the function
   // ParseTypeFromSig will modify it.
@@ -194,13 +194,11 @@ HRESULT DbgClassProperty::SetTypeSignature(
   ULONG signature_length_copy = sig_metadata_length_;
   HRESULT hr = debug_helper_->ParsePropertySig(
       &signature_pointer_copy, &signature_length_copy, metadata_import,
-      generic_class_types, &type_name);
+      generic_class_types, &type_signature_);
   if (FAILED(hr)) {
     return hr;
   }
 
-  type_signature_ = TypeSignature{
-      TypeCompilerHelper::ConvertStringToCorElementType(type_name), type_name};
   type_signature_set_ = true;
   return S_OK;
 }

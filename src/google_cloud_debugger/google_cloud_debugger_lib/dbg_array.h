@@ -76,6 +76,13 @@ class DbgArray : public DbgReferenceObject {
     max_items_to_retrieved_ = target;
   }
 
+  // Returns the length of the array.
+  // This is calculated as the product of all the array dimensions.
+  int GetArrayLength();
+
+  // Returns TypeSignature of this array.
+  HRESULT GetTypeSignature(TypeSignature *type_signature) override;
+
  private:
   // The type of the array.
   CComPtr<ICorDebugType> array_type_;

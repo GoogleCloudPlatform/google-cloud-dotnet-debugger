@@ -368,8 +368,23 @@ HRESULT DbgStackFrame::InitializeClassGenericTypeParameters(
   }
 
   class_generic_types_.reserve(class_generic_params);
+  generic_type_signatures_.reserve(class_generic_params);
   for (size_t i = 0; i < class_generic_params; ++i) {
+    std::unique_ptr<DbgObject> type_object;
+    hr = obj_factory_->CreateDbgObject(class_and_method_generic_types[i],
+                                       &type_object, &std::cerr);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    TypeSignature type_sig;
+    hr = type_object->GetTypeSignature(&type_sig);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
     class_generic_types_.push_back(class_and_method_generic_types[i]);
+    generic_type_signatures_.push_back(std::move(type_sig));
   }
 
   return S_OK;
@@ -495,23 +510,35 @@ HRESULT DbgStackFrame::GetClassTokenAndModule(
 }
 
 // TODO(quoct): Checks that this logic work with Generic Type.
-HRESULT DbgStackFrame::IsBaseType(const std::string &source_type,
-                                  const std::string &target_type,
+HRESULT DbgStackFrame::IsBaseType(const TypeSignature &source_type,
+                                  const TypeSignature &target_type,
                                   std::ostream *err_stream) {
+  if (source_type.is_array != target_type.is_array ||
+      source_type.array_rank != target_type.array_rank ||
+      source_type.generic_types.size() != target_type.generic_types.size()) {
+    return E_FAIL;
+  }
+
+  // If this is an array, use the type of the array element instead.
+  if (source_type.is_array) {
+    return IsBaseType(source_type.generic_types[0],
+                      target_type.generic_types[0], err_stream);
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugModule> debug_module;
   CComPtr<IMetaDataImport> source_metadata_import;
   mdToken source_token;
 
-  hr = GetClassTokenAndModule(source_type, &source_token, &debug_module,
-                              &source_metadata_import);
+  hr = GetClassTokenAndModule(source_type.type_name, &source_token,
+                              &debug_module, &source_metadata_import);
   if (FAILED(hr)) {
     return hr;
   }
 
   return TypeCompilerHelper::IsBaseClass(source_token, source_metadata_import,
-                                         target_type, debug_helper_.get(),
-                                         err_stream);
+                                         target_type.type_name,
+                                         debug_helper_.get(), err_stream);
 }
 
 HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(
@@ -765,15 +792,14 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
   }
 
   return (*property_object)
-      ->SetTypeSignature(metadata_import, class_generic_types_);
+      ->SetTypeSignature(metadata_import, generic_type_signatures_);
 }
 
-HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
-                                         const std::string &field_name,
-                                         mdFieldDef *field_def, bool *is_static,
-                                         TypeSignature *type_signature,
-                                         IMetaDataImport *metadata_import,
-                                         std::ostream *err_stream) {
+HRESULT DbgStackFrame::GetFieldFromClass(
+    const mdTypeDef &class_token, const std::string &field_name,
+    mdFieldDef *field_def, bool *is_static, TypeSignature *type_signature,
+    const std::vector<TypeSignature> &generic_signatures,
+    IMetaDataImport *metadata_import, std::ostream *err_stream) {
   // Gets the field/auto property information and signature.
   PCCOR_SIGNATURE signature;
   ULONG signature_len = 0;
@@ -786,22 +812,15 @@ HRESULT DbgStackFrame::GetFieldFromClass(const mdTypeDef &class_token,
 
   // This means we found the field/auto-implemented property.
   // Parses the field signature to get the type name.
-  std::string field_type_name;
-  hr = debug_helper_->ParseFieldSig(&signature, &signature_len, metadata_import,
-                                    class_generic_types_, &field_type_name);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  *type_signature = TypeSignature{
-      TypeCompilerHelper::ConvertStringToCorElementType(field_type_name),
-      field_type_name};
-  return S_OK;
+  return debug_helper_->ParseFieldSig(&signature, &signature_len,
+                                      metadata_import, generic_signatures,
+                                      type_signature);
 }
 
 HRESULT DbgStackFrame::GetPropertyFromClass(
     const mdTypeDef &class_token, const std::string &property_name,
     std::unique_ptr<DbgClassProperty> *class_property,
+    const std::vector<TypeSignature> &generic_signatures,
     IMetaDataImport *metadata_import, std::ostream *err_stream) {
   // Search for non-autoimplemented property.
   HRESULT hr = debug_helper_->GetPropertyInfo(metadata_import, class_token,
@@ -813,7 +832,7 @@ HRESULT DbgStackFrame::GetPropertyFromClass(
 
   // Sets the type signature of the property too.
   return (*class_property)
-      ->SetTypeSignature(metadata_import, class_generic_types_);
+      ->SetTypeSignature(metadata_import, generic_signatures);
 }
 
 void DbgStackFrame::SetObjectInspectionDepth(int depth) {

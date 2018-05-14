@@ -64,7 +64,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
       return hr;
     }
 
-    method_info_.argument_types.push_back(argument->GetStaticType().type_name);
+    method_info_.argument_types.push_back(argument->GetStaticType());
   }
 
   if ((instance_source_ == nullptr) && possible_class_name_.empty()) {

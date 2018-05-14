@@ -565,6 +565,24 @@ HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
   return S_OK;
 }
 
+HRESULT DbgClass::GetTypeSignature(TypeSignature *type_signature) {
+  type_signature->cor_type = cor_element_type_;
+  type_signature->type_name = class_name_;
+
+  for (int i = 0; i < empty_generic_objects_.size(); ++i) {
+    if (empty_generic_objects_[i]) {
+      TypeSignature generic_sig;
+      HRESULT hr = empty_generic_objects_[i]->GetTypeSignature(&generic_sig);
+      if (FAILED(hr)) {
+        return hr;
+      }
+      type_signature->generic_types.push_back(std::move(generic_sig));
+    }
+  }
+
+  return S_OK;
+}
+
 HRESULT DbgClass::GetTypeString(std::string *type_string) {
   if (!type_string) {
     return E_INVALIDARG;

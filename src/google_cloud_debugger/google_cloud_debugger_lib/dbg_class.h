@@ -53,6 +53,8 @@ class DbgClass : public DbgReferenceObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
+  HRESULT GetTypeSignature(TypeSignature *type_signature) override;
+
   // Populates type_string with type of this class.
   HRESULT GetTypeString(std::string *type_string) override;
 

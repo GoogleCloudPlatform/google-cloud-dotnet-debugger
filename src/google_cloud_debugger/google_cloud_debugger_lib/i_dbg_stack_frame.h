@@ -68,12 +68,14 @@ class IDbgStackFrame {
   // TypeSignature of this member, the metadata token of the field
   // to field_def and is_static to whether the field is static or not.
   // metadata_import is the IMetaDataImport of the module the class is in.
-  virtual HRESULT GetFieldFromClass(const mdTypeDef &class_token,
-                                    const std::string &field_name,
-                                    mdFieldDef *field_def, bool *is_static,
-                                    TypeSignature *type_signature,
-                                    IMetaDataImport *metadata_import,
-                                    std::ostream *err_stream) = 0;
+  // generic_type_signatures is the instantiated generic type signatures
+  // of the class.
+  virtual HRESULT GetFieldFromClass(
+      const mdTypeDef &class_token, const std::string &field_name,
+      mdFieldDef *field_def, bool *is_static, TypeSignature *type_signature,
+      const std::vector<TypeSignature> &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream) = 0;
 
   // This function will try to find the property
   // property_name in the class with metadata token class_token.
@@ -84,7 +86,9 @@ class IDbgStackFrame {
   virtual HRESULT GetPropertyFromClass(
       const mdTypeDef &class_token, const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *class_property,
-      IMetaDataImport *metadata_import, std::ostream *err_stream) = 0;
+      const std::vector<TypeSignature> &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream) = 0;
 
   // Given a fully qualified class name, this function find the
   // metadata token mdTypeDef of the class. It will also
@@ -97,8 +101,8 @@ class IDbgStackFrame {
                                          IMetaDataImport **metadata_import) = 0;
 
   // Returns S_OK if source_type is a child class of target_type.
-  virtual HRESULT IsBaseType(const std::string &source_type,
-                             const std::string &target_type,
+  virtual HRESULT IsBaseType(const TypeSignature &source_type,
+                             const TypeSignature &target_type,
                              std::ostream *err_stream) = 0;
 
   // Gets the ICorDebugFunction that corresponds with method represented by

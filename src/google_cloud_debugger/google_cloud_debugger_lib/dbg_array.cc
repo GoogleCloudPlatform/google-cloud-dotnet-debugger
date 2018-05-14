@@ -18,6 +18,7 @@
 
 #include "i_dbg_object_factory.h"
 #include "i_cor_debug_helper.h"
+#include "type_signature.h"
 #include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -264,6 +265,33 @@ HRESULT DbgArray::GetTypeString(std::string *type_string) {
     *type_string += "[]";
   }
 
+  return S_OK;
+}
+
+int DbgArray::GetArrayLength() {
+  int result = 1;
+  for (int i = 0; i < dimensions_.size(); ++i) {
+    result *= dimensions_[i];
+  }
+  return result;
+}
+
+HRESULT DbgArray::GetTypeSignature(TypeSignature *type_signature) {
+  if (!type_signature || !empty_object_) {
+    return E_INVALIDARG;
+  }
+
+  type_signature->array_rank = dimensions_.size();
+  type_signature->is_array = true;
+  type_signature->cor_type = cor_element_type_;
+
+  TypeSignature element_type;
+  HRESULT hr = empty_object_->GetTypeSignature(&element_type);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  type_signature->generic_types.push_back(std::move(element_type));
   return S_OK;
 }
 

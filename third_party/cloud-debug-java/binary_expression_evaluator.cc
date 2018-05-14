@@ -180,7 +180,13 @@ HRESULT BinaryExpressionEvaluator::CompileArithmetical(
     return E_FAIL;
   }
 
-  result_type_ = {result};
+  result_type_ = { result };
+  HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+      result, &result_type_.type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   switch (result) {
     case CorElementType::ELEMENT_TYPE_I4: {
       computer_ = &BinaryExpressionEvaluator::ArithmeticComputer<int32_t>;
@@ -216,7 +222,7 @@ HRESULT BinaryExpressionEvaluator::CompileArithmetical(
 HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
   const TypeSignature &signature1 = arg1_->GetStaticType();
   const TypeSignature &signature2 = arg2_->GetStaticType();
-  result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN};
+  result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName};
 
   // If both items are numerical type, perform numeric promotion.
   if (TypeCompilerHelper::IsNumericalType(signature1.cor_type) &&
@@ -300,7 +306,7 @@ HRESULT BinaryExpressionEvaluator::CompileBooleanConditional(
   if (arg1_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN &&
       arg2_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) {
     computer_ = &BinaryExpressionEvaluator::ConditionalBooleanComputer;
-    result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN};
+    result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName};
     return S_OK;
   }
 
@@ -326,6 +332,12 @@ HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
     }
 
     result_type_ = { result };
+    HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+        result, &result_type_.type_name);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
     switch (result) {
       case CorElementType::ELEMENT_TYPE_I4: {
         computer_ = &BinaryExpressionEvaluator::BitwiseComputer<int32_t>;
@@ -375,6 +387,12 @@ HRESULT BinaryExpressionEvaluator::CompileShift(std::ostream *err_stream) {
   }
 
   result_type_ = {arg1_type};
+  HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+      arg1_type, &result_type_.type_name);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   switch (arg1_type) {
     case CorElementType::ELEMENT_TYPE_I4: {
       computer_ = &BinaryExpressionEvaluator::ShiftComputer<int32_t, 0x1f>;

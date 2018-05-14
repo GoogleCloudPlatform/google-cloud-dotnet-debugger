@@ -47,31 +47,19 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(
   }
 
   const TypeSignature &source_type = source_collection_->GetStaticType();
-  // We need to extract the type name from the base array type.
-  if (source_type.type_name.size() == 0) {
-    return E_FAIL;
-  }
 
   // TODO(quoct): Implement logic for a[b] where a is not an array.
-  if (!TypeCompilerHelper::IsArrayType(source_type.cor_type)) {
+  if (!source_type.is_array) {
     return E_NOTIMPL;
   }
 
-  // Gets the base type of the array.
-  auto last_open_bracket = source_type.type_name.find_last_of("[");
-  if (last_open_bracket == std::string::npos) {
+  // Type of each element in the array.
+  if (source_type.generic_types.size() != 1) {
+    *err_stream << "Cannot find type of each array element.";
     return E_FAIL;
   }
 
-  std::string base_type_string = source_type.type_name.substr(0, last_open_bracket);
-  CorElementType base_type_cor_type =
-      TypeCompilerHelper::ConvertStringToCorElementType(base_type_string);
-
-  return_type_ = {
-    base_type_cor_type,
-    base_type_string
-  };
-
+  return_type_ = source_type.generic_types[0];
   return S_OK;
 }
 

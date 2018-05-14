@@ -406,8 +406,8 @@ HRESULT CorDebugHelper::ParseFieldSig(
     PCCOR_SIGNATURE *signature,
     ULONG *sig_len,
     IMetaDataImport *metadata_import,
-    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-    std::string *field_type_name) {
+    const std::vector<TypeSignature> &generic_class_types,
+    TypeSignature *field_type_name) {
   // Field signature has the form: FIELD CustomModification* Type
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
   // I think this is not used in C#?
@@ -427,8 +427,8 @@ HRESULT CorDebugHelper::ParsePropertySig(
     PCCOR_SIGNATURE *signature,
     ULONG *sig_len,
     IMetaDataImport *metadata_import,
-    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-    std::string *property_type_name) {
+    const std::vector<TypeSignature> &generic_class_types,
+    TypeSignature *property_type_name) {
   // Field signature has the form:
   // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
@@ -456,15 +456,18 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
     PCCOR_SIGNATURE *signature,
     ULONG *sig_len,
     IMetaDataImport *metadata_import,
-    const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-    std::string *type_name) {
+    const std::vector<TypeSignature> &generic_class_types,
+    TypeSignature *type_signature) {
   HRESULT hr;
-  CorElementType cor_type = CorSigUncompressElementType(*signature);
+  type_signature->cor_type = CorSigUncompressElementType(*signature);
   *sig_len -= 1;
 
   // This handles "simple" type like numeric, boolean or string.
-  hr = TypeCompilerHelper::ConvertCorElementTypeToString(cor_type, type_name);
+  std::string type_name;
+  hr = TypeCompilerHelper::ConvertCorElementTypeToString(
+      type_signature->cor_type, &type_name);
   if (SUCCEEDED(hr)) {
+    type_signature->type_name;
     return hr;
   }
 
@@ -472,21 +475,24 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
   // CMOD_OPT and CMOD_REQ at the moment. Some quick research suggests
   // that C# compiler does not generate modopt so maybe we don't need
   // this yet?
-  switch (cor_type) {
+  switch (type_signature->cor_type) {
     case CorElementType::ELEMENT_TYPE_SZARRAY: {
       // Extracts the array type.
+      TypeSignature array_type;
       hr = ParseTypeFromSig(signature, sig_len, metadata_import,
-                            generic_class_types, type_name);
+                            generic_class_types, &array_type);
       if (FAILED(hr)) {
         return hr;
       }
-      *type_name += "[]";
+      type_signature->is_array = true;
+      type_signature->generic_types.push_back(std::move(array_type));
       return hr;
     }
     case CorElementType::ELEMENT_TYPE_ARRAY: {
       // First we read the type.
+      TypeSignature array_type;
       hr = ParseTypeFromSig(signature, sig_len, metadata_import,
-                            generic_class_types, type_name);
+                            generic_class_types, &array_type);
       if (FAILED(hr)) {
         return hr;
       }
@@ -513,20 +519,21 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
         return hr;
       }
 
-      *type_name += "[";
-      for (int i = 0; i < array_rank - 1; ++i) {
-        *type_name += ",";
-      }
-      *type_name = "]";
+      type_signature->is_array = true;
+      type_signature->array_rank = array_rank;
+      type_signature->generic_types.push_back(std::move(array_type));
       return S_OK;
     }
     case CorElementType::ELEMENT_TYPE_GENERICINST: {
       // First we read the type without generics.
+      TypeSignature main_type;
       hr = ParseTypeFromSig(signature, sig_len, metadata_import,
-                            generic_class_types, type_name);
+                            generic_class_types, &main_type);
       if (FAILED(hr)) {
         return hr;
       }
+
+      type_signature->type_name = main_type.type_name;
 
       // Next byte would be the number of generic arguments.
       ULONG generic_param_count = 0;
@@ -536,20 +543,15 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       }
 
       // Now we get the generic arguments.
-      *type_name += "<";
       for (size_t i = 0; i < generic_param_count; ++i) {
-        std::string generic_type;
+        TypeSignature generic_type;
         hr = ParseTypeFromSig(signature, sig_len, metadata_import,
                               generic_class_types, &generic_type);
         if (FAILED(hr)) {
           return hr;
         }
-        *type_name += generic_type;
-        if (i != generic_param_count - 1) {
-          *type_name += ", ";
-        }
+        type_signature->generic_types.push_back(std::move(generic_type));
       }
-      *type_name += ">";
       return S_OK;
     }
     case CorElementType::ELEMENT_TYPE_CLASS:
@@ -566,16 +568,27 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
 
       mdToken base_token;
+      std::string type_name;
       if (token_type == CorTokenType::mdtTypeDef) {
-        return GetTypeNameFromMdTypeDef(decoded_token, metadata_import,
-                                        type_name, &base_token, &std::cerr);
+        hr = GetTypeNameFromMdTypeDef(decoded_token, metadata_import,
+                                      &type_name, &base_token, &std::cerr);
       } else if (token_type == CorTokenType::mdtTypeRef) {
-        return GetTypeNameFromMdTypeRef(decoded_token, metadata_import,
-                                        type_name, &std::cerr);
+        hr = GetTypeNameFromMdTypeRef(decoded_token, metadata_import,
+                                      &type_name, &std::cerr);
       } else {
         // Don't process this.
         return E_FAIL;
       }
+
+      if (FAILED(hr)) {
+        return hr;
+      }
+
+      *type_signature = {
+        TypeCompilerHelper::ConvertStringToCorElementType(type_name),
+        type_name
+      };
+      return S_OK;
     }
     case CorElementType::ELEMENT_TYPE_VAR: {
       // Var_number here is used to get the type from a generic class.
@@ -593,16 +606,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
         return E_FAIL;
       }
 
-      std::shared_ptr<DbgObjectFactory> object_factory(new DbgObjectFactory);
-      std::unique_ptr<DbgObject> type_object;
-
-      hr = object_factory->CreateDbgObject(generic_class_types[var_number],
-                                           &type_object, &std::cerr);
-      if (FAILED(hr)) {
-        return hr;
-      }
-
-      return type_object->GetTypeString(type_name);
+      *type_signature = generic_class_types[var_number];
+      return S_OK;
     }
     default:
       return E_NOTIMPL;
@@ -740,7 +745,8 @@ HRESULT CorDebugHelper::GetPropertyInfo(
 
 HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
     mdTypeDef type_token, IMetaDataImport *metadata_import,
-    std::string *type_name, mdToken *base_token, std::ostream *err_stream) {
+    std::string *type_name, mdToken *base_token,
+    std::ostream *err_stream) {
   if (metadata_import == nullptr || type_name == nullptr) {
     return E_INVALIDARG;
   }

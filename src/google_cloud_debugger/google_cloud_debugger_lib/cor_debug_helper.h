@@ -112,8 +112,8 @@ class CorDebugHelper : public ICorDebugHelper {
       PCCOR_SIGNATURE *signature,
       ULONG *sig_len,
       IMetaDataImport *metadata_import,
-      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-      std::string *field_type_name) override;
+      const std::vector<TypeSignature> &generic_class_types,
+      TypeSignature *type_signature) override;
 
   // Parses the metadata signature of a property and retrieves
   // the property's type.
@@ -122,8 +122,8 @@ class CorDebugHelper : public ICorDebugHelper {
       PCCOR_SIGNATURE *signature,
       ULONG *sig_len,
       IMetaDataImport *metadata_import,
-      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-      std::string *property_type_name) override;
+      const std::vector<TypeSignature> &generic_class_types,
+      TypeSignature *type_signature) override;
 
   // Given a PCCOR_SIGNATURE signature, parses the type
   // and stores the result in type_name. Also update the sig_len.
@@ -132,8 +132,8 @@ class CorDebugHelper : public ICorDebugHelper {
       PCCOR_SIGNATURE *signature,
       ULONG *sig_len,
       IMetaDataImport *metadata_import,
-      const std::vector<CComPtr<ICorDebugType>> &generic_class_types,
-      std::string *type_name) override;
+      const std::vector<TypeSignature> &generic_class_types,
+      TypeSignature *type_signature) override;
 
   // Extracts out the metadata for field field_name
   // in class with metadata token class_token.

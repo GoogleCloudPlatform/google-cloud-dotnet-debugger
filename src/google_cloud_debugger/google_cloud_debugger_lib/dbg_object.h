@@ -68,7 +68,7 @@ class DbgObject : public StringStreamWrapper {
   }
 
   // Extracts the type signature of this object.
-  HRESULT GetTypeSignature(TypeSignature *type_signature);
+  virtual HRESULT GetTypeSignature(TypeSignature *type_signature);
 
   // Populates the members vector using this object's members.
   // Returns S_FALSE by default (no members).
