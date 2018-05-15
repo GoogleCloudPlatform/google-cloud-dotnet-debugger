@@ -473,7 +473,7 @@ HRESULT DbgStackFrame::PopulateDebugAssemblies() {
   }
 
   if (!app_domain_) {
-    cerr << "Cannot getdebug assemblies because of null ICorDebugAppDomain.";
+    cerr << "Cannot get debug assemblies because of null ICorDebugAppDomain.";
     return E_INVALIDARG;
   }
 

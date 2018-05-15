@@ -832,7 +832,7 @@ HRESULT CorDebugHelper::GetMdTypeDefAndMetaDataFromTypeRef(
   }
 
   // Look through all available modules in all loaded assemblies and check
-  // for a type name that matches type_ref_ame_wchar.
+  // for a type name that matches type_ref_name_wchar.
   for (auto &enumerated_assembly : loaded_assemblies) {
     CComPtr<ICorDebugModuleEnum> module_enum;
     hr = enumerated_assembly->EnumerateModules(&module_enum);
