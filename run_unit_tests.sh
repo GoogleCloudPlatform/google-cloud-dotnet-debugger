@@ -3,6 +3,8 @@
 # This script runs all unit tests.
 # This script assumes that build.sh and build-deps.sh have been run.
 
+set -e
+
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 

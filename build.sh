@@ -2,6 +2,8 @@
 
 # Builds all source in the repo.
 
+set -e
+
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 

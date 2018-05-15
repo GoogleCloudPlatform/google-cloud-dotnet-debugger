@@ -2,6 +2,8 @@
 
 # The script builds the submodule dependencies of this repository.
 
+set -e
+
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
