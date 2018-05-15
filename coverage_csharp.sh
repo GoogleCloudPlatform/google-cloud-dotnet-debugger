@@ -4,6 +4,8 @@
 # This script assumes that build-deps.sh has already been run.
 # A summary page will be printed and a webpage opened for finer grained details about coverage.
 
+set -e
+
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 

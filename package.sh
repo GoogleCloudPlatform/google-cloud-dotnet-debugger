@@ -3,6 +3,8 @@
 # The script builds and packages the debugger and agent into a minimum set
 # to be used alone.
 
+set -e
+
 SCRIPT=$(readlink -f "$0")
 ROOT_DIR=$(dirname "$SCRIPT")
 
