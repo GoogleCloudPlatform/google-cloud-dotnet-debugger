@@ -235,11 +235,21 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
 }
 
 HRESULT BreakpointCollection::CancelSyncBreakpoints() {
+  HRESULT hr = S_OK;
+
   if (breakpoint_client_read_) {
-    return breakpoint_client_read_->ShutDown();
+	hr = breakpoint_client_read_->ShutDown();
+  }
+  
+  if (FAILED(hr)) {
+	return hr;
   }
 
-  return S_OK;
+  if (breakpoint_client_write_) {
+	hr = breakpoint_client_write_->ShutDown();
+  }
+
+  return hr;
 }
 
 HRESULT BreakpointCollection::ActivateBreakpointHelper(

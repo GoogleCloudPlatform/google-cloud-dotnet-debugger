@@ -67,6 +67,9 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   HRESULT STDMETHODCALLTYPE LoadModule(ICorDebugAppDomain *appdomain,
                                        ICorDebugModule *debug_module) override;
 
+  // This method is called when the process the debugger is watching exits.
+  HRESULT STDMETHODCALLTYPE ExitProcess(ICorDebugProcess *process) override;
+
 // This macro creates a callback function stub to override methods in
 // ICorDebugManagedCallback and ICorDebugManagedCallback2 interfaces
 // that we are not interested in processing.
@@ -89,7 +92,6 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   DEBUGGERCALLBACK_STUB(StepComplete, ICorDebugAppDomain,
                         ICorDebugThread *debug_thread,
                         ICorDebugStepper *stepper, CorDebugStepReason reason);
-  DEBUGGERCALLBACK_STUB(ExitProcess, ICorDebugProcess);
   DEBUGGERCALLBACK_STUB(CreateThread, ICorDebugAppDomain,
                         ICorDebugThread *debug_thread);
   DEBUGGERCALLBACK_STUB(ExitThread, ICorDebugAppDomain,
