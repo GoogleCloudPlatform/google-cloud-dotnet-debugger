@@ -108,6 +108,10 @@ ULONG STDMETHODCALLTYPE DebuggerCallback::Release(void) {
   return count;
 }
 
+HRESULT STDMETHODCALLTYPE DebuggerCallback::ExitProcess(ICorDebugProcess *process) {
+	return breakpoint_collection_->CancelSyncBreakpoints();
+}
+
 HRESULT STDMETHODCALLTYPE DebuggerCallback::Breakpoint(
     ICorDebugAppDomain *appdomain, ICorDebugThread *debug_thread,
     ICorDebugBreakpoint *debug_breakpoint) {
