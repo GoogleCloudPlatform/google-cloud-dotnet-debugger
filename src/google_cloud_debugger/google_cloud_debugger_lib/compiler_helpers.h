@@ -15,9 +15,9 @@
 #ifndef COMPILER_HELPERS_H_
 #define COMPILER_HELPERS_H_
 
+#include <iostream>
 #include "common_headers.h"
 #include "dbg_primitive.h"
-#include <iostream>
 
 // Various helper functions for compiling such as numeric conversions,
 // numeric promotions, etc.
@@ -45,7 +45,9 @@ class NumericCompilerHelper {
   // https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/expressions#binary-numeric-promotions
   // Returns false if an error occurs.
   static bool BinaryNumericalPromotion(const CorElementType &arg1,
-    const CorElementType &arg2, CorElementType *result, std::ostream *err_stream);
+                                       const CorElementType &arg2,
+                                       CorElementType *result,
+                                       std::ostream *err_stream);
 
   // Given a DbgObject, try to convert it into a DbgPrimitive and extract
   // the underlying value of the DbgPrimitive object and cast it to
@@ -195,7 +197,8 @@ class TypeCompilerHelper {
 
   // Converts string type_string to CorElementType.
   // Returns Object by default.
-  static CorElementType ConvertStringToCorElementType(const std::string &type_string);
+  static CorElementType ConvertStringToCorElementType(
+      const std::string &type_string);
 
   // Converts CorElementType cor_type to a string.
   // This function only works for numerical type, boolean and string.
@@ -210,11 +213,11 @@ class TypeCompilerHelper {
   // Returns S_OK if there is a match and E_FAIL otherwise.
   // TODO(quoct): Verify that whether this works on multiple
   // interfaces.
-  static HRESULT IsBaseClass(mdTypeDef source_class,
-    IMetaDataImport *source_class_metadata,
-    const std::string &target_class,
-    ICorDebugHelper *debug_helper,
-    std::ostream *err_stream);
+  static HRESULT IsBaseClass(
+      mdTypeDef source_class, IMetaDataImport *source_class_metadata,
+      const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
+      const std::string &target_class, ICorDebugHelper *debug_helper,
+      std::ostream *err_stream);
 };
 
 }  //  namespace google_cloud_debugger

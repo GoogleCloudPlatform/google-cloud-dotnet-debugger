@@ -133,6 +133,18 @@ HRESULT DbgClass::ProcessParameterizedType() {
   return S_OK;
 }
 
+HRESULT DbgClass::GetGenericTypes(std::vector<CComPtr<ICorDebugType>> *debug_types) {
+  if (!debug_types) {
+    return E_INVALIDARG;
+  }
+
+  debug_types->resize(empty_generic_objects_.size());
+  for (int i = 0; i < empty_generic_objects_.size(); ++i) {
+    (*debug_types)[i] = empty_generic_objects_[i]->GetDebugType();
+  }
+  return S_OK;
+}
+
 HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
                                 ICorDebugObjectValue *debug_obj_value,
                                 ICorDebugClass *debug_class) {

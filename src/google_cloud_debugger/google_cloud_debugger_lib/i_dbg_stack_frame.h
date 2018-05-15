@@ -111,9 +111,11 @@ class IDbgStackFrame {
   // select the appropriate method. Besides returning the debug_function,
   // the function will also populate properties like is_static or
   // has_generic_types of method_info if succeeded.
+  // Debug_module is the module the function lives in.
   virtual HRESULT GetDebugFunctionFromClass(
-      IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-      MethodInfo *method_info, ICorDebugFunction **debug_function) = 0;
+      IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
+      const mdTypeDef &class_token, MethodInfo *method_info,
+      ICorDebugFunction **debug_function) = 0;
 
   // Similar to GetDebugFunctionFromClass except the class_token is the class
   // that the frame is in.

@@ -116,8 +116,7 @@ class ICorDebugHelper {
   // the field's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParseFieldSig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) = 0;
@@ -126,8 +125,7 @@ class ICorDebugHelper {
   // the property's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParsePropertySig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) = 0;
@@ -138,8 +136,7 @@ class ICorDebugHelper {
   // generic_class_types is the runtime instantiated generic type
   // of the class that the signature is in.
   virtual HRESULT ParseTypeFromSig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) = 0;
@@ -158,8 +155,8 @@ class ICorDebugHelper {
 
   // Creates a DbgClassProperty object that corresponds with
   // the property property_name in class with metadata token class_token.
-  // This method will also set *is_static based
-  // on whether the property is static or not.
+  // This method will also set *is_static based on whether the
+  // property is static or not.
   virtual HRESULT GetPropertyInfo(IMetaDataImport *metadata_import,
                                   mdProperty class_token,
                                   const std::string &prop_name,
@@ -184,9 +181,10 @@ class ICorDebugHelper {
   // converts it into a TypeDef token. The function will also return
   // the corresponding MetaDataImport for that token.
   virtual HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
-      mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
-      mdTypeDef *result_type_def,
-      IMetaDataImport **result_type_def_metadata) = 0;
+      mdTypeRef type_ref_token,
+      const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
+      IMetaDataImport *type_ref_token_metadata, mdTypeDef *result_type_def,
+      IMetaDataImport **result_type_def_metadata, std::ostream *err_stream) = 0;
 
   // Retrieves ICorDebugAppDomain from ICorDebugFrame.
   virtual HRESULT GetAppDomainFromICorDebugFrame(

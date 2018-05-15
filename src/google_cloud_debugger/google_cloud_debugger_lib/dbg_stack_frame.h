@@ -186,10 +186,10 @@ class DbgStackFrame : public IDbgStackFrame {
   // select the appropriate method. Besides returning the debug_function,
   // the function will also populate properties like is_static or
   // has_generic_types of method_info if succeeded.
-  HRESULT GetDebugFunctionFromClass(IMetaDataImport *metadata_import,
-                                    const mdTypeDef &class_token,
-                                    MethodInfo *method_info,
-                                    ICorDebugFunction **debug_function);
+  HRESULT GetDebugFunctionFromClass(
+      IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
+      const mdTypeDef &class_token, MethodInfo *method_info,
+      ICorDebugFunction **debug_function);
 
   // Similar to GetDebugFunctionFromClass except the class_token is the class
   // that the frame is in.
@@ -245,6 +245,10 @@ class DbgStackFrame : public IDbgStackFrame {
   // Populates the type_def_dict_ and type_ref_dict_ with all
   // the types loaded in this frame.
   HRESULT PopulateTypeDict();
+
+  // Populate debug_assemblies_ with all loaded assemblies
+  // in app_domain_.
+  HRESULT PopulateDebugAssemblies();
 
   // Helper function to search for field or backing field of an
   // auto-implemented property with the name member_name in class
@@ -327,6 +331,12 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // True if type_def_dict_ and type_ref_dict_ have been populated.
   bool type_dict_populated_ = false;
+
+  // Cache of loaded debug assemblies.
+  std::vector<CComPtr<ICorDebugAssembly>> debug_assemblies_;
+
+  // True if debug_assemblies_ has been populated.
+  bool debug_assemblies_populated_ = false;
 };
 
 }  //  namespace google_cloud_debugger

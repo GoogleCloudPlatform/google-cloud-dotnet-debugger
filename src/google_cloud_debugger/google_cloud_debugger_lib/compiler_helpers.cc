@@ -339,11 +339,11 @@ HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
   return E_FAIL;
 }
 
-HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
-                                        IMetaDataImport *source_class_metadata,
-                                        const std::string &target_class,
-                                        ICorDebugHelper *debug_helper,
-                                        std::ostream *err_stream) {
+HRESULT TypeCompilerHelper::IsBaseClass(
+    mdTypeDef source_class, IMetaDataImport *source_class_metadata,
+    const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
+    const std::string &target_class, ICorDebugHelper *debug_helper,
+    std::ostream *err_stream) {
   HRESULT hr;
   mdTypeDef current_class_token = 0;
   CComPtr<IMetaDataImport> current_metadata_import;
@@ -380,8 +380,8 @@ HRESULT TypeCompilerHelper::IsBaseClass(mdTypeDef source_class,
       CComPtr<IMetaDataImport> resolved_metadata_import;
       mdTypeDef resolved_class_token;
       hr = debug_helper->GetMdTypeDefAndMetaDataFromTypeRef(
-          current_base_class_token, current_metadata_import,
-          &resolved_class_token, &resolved_metadata_import);
+          current_base_class_token, loaded_assemblies, current_metadata_import,
+          &resolved_class_token, &resolved_metadata_import, err_stream);
       if (FAILED(hr)) {
         return hr;
       }
