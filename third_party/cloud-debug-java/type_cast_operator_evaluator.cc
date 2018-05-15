@@ -77,12 +77,12 @@ HRESULT TypeCastOperatorEvaluator::Compile(IDbgStackFrame *stack_frame,
   // class of target_type or target_type is a base class of source_type.
   if (TypeCompilerHelper::IsObjectType(target_type_.cor_type) &&
       TypeCompilerHelper::IsObjectType(source_type.cor_type)) {
-    hr = stack_frame->IsBaseType(source_type.type_name,
-                                 target_type_.type_name,
+    hr = stack_frame->IsBaseType(source_type,
+                                 target_type_,
                                  err_stream);
     if (FAILED(hr)) {
-      hr = stack_frame->IsBaseType(target_type_.type_name,
-                                   source_type.type_name,
+      hr = stack_frame->IsBaseType(target_type_,
+                                   source_type,
                                    err_stream);
       if (FAILED(hr)) {
         return hr;

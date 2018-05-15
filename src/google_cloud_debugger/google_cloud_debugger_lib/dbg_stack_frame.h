@@ -23,6 +23,7 @@
 
 #include "document_index.h"
 #include "i_dbg_stack_frame.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -84,12 +85,12 @@ class DbgStackFrame : public IDbgStackFrame {
   // TypeSignature of this member, the metadata token of the field
   // to field_def and is_static to whether the field is static or not.
   // metadata_import is the IMetaDataImport of the module the class is in.
-  HRESULT GetFieldFromClass(const mdTypeDef &class_token,
-                            const std::string &field_name,
-                            mdFieldDef *field_def, bool *is_static,
-                            TypeSignature *type_signature,
-                            IMetaDataImport *metadata_import,
-                            std::ostream *err_stream);
+  HRESULT GetFieldFromClass(
+      const mdTypeDef &class_token, const std::string &field_name,
+      mdFieldDef *field_def, bool *is_static, TypeSignature *type_signature,
+      const std::vector<TypeSignature> &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream);
 
   // This function will try to find the property
   // property_name in the class with metadata token class_token.
@@ -100,6 +101,7 @@ class DbgStackFrame : public IDbgStackFrame {
   HRESULT GetPropertyFromClass(
       const mdTypeDef &class_token, const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *class_property,
+      const std::vector<TypeSignature> &generic_signatures,
       IMetaDataImport *metadata_import, std::ostream *err_stream);
 
   // Given a fully qualified class name, this function find the
@@ -113,8 +115,9 @@ class DbgStackFrame : public IDbgStackFrame {
                                  IMetaDataImport **metadata_import);
 
   // Returns S_OK if source_type is a child class of target_type.
-  HRESULT IsBaseType(const std::string &source_type,
-                     const std::string &target_type, std::ostream *err_stream);
+  HRESULT IsBaseType(const TypeSignature &source_type,
+                     const TypeSignature &target_type,
+                     std::ostream *err_stream);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -197,6 +200,11 @@ class DbgStackFrame : public IDbgStackFrame {
   HRESULT GetClassGenericTypeParameters(
       std::vector<CComPtr<ICorDebugType>> *debug_types);
 
+  // Returns generic type signatures parameter for the class the frame is in.
+  const std::vector<TypeSignature> &GetClassGenericTypeSignatureParameters() {
+    return generic_type_signatures_;
+  }
+
  private:
   // Helper for ICorDebug method.
   std::shared_ptr<ICorDebugHelper> debug_helper_;
@@ -206,6 +214,9 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // Generic types of the class the frame is in.
   std::vector<CComPtr<ICorDebugType>> class_generic_types_;
+
+  // Type Signature of the generic types of the class the frame is in.
+  std::vector<TypeSignature> generic_type_signatures_;
 
   // Gets the metadata import of the module this frame is in.
   // We cannot store the IMetaDataImport directly because

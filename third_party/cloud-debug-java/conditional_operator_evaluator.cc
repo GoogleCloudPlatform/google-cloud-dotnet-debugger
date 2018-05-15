@@ -81,7 +81,7 @@ HRESULT ConditionalOperatorEvaluator::Compile(
 bool ConditionalOperatorEvaluator::CompileBoolean() {
   if ((if_true_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN) &&
       (if_false_->GetStaticType().cor_type == CorElementType::ELEMENT_TYPE_BOOLEAN)) {
-    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN };
+    result_type_ = { CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName };
     return true;
   }
 
@@ -112,12 +112,12 @@ bool ConditionalOperatorEvaluator::CompileObjects() {
   const TypeSignature &false_type = if_false_->GetStaticType();
   if (true_type.cor_type == false_type.cor_type &&
       (TypeCompilerHelper::IsObjectType(true_type.cor_type)
-        || TypeCompilerHelper::IsArrayType(true_type.cor_type)
+        || true_type.is_array
         || true_type.cor_type == CorElementType::ELEMENT_TYPE_STRING)) {
-    if (true_type.type_name.compare(false_type.type_name) == 0) {
+    if (true_type.compare(false_type) == 0) {
       result_type_ = true_type;
     } else {
-      result_type_ = { CorElementType::ELEMENT_TYPE_OBJECT };  // Note the lost signature.
+      result_type_ = TypeSignature::Object;  // Note the lost signature.
     }
     return true;
   }

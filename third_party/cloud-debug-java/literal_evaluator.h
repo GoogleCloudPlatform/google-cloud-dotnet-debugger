@@ -19,15 +19,16 @@
 
 #include "expression_evaluator.h"
 #include "dbg_object.h"
+#include "compiler_helpers.h"
 
 namespace google_cloud_debugger {
 
 // Represents a constant of any type (other than a string).
 class LiteralEvaluator : public ExpressionEvaluator {
  public:
-  explicit LiteralEvaluator(std::shared_ptr<DbgObject> literal_obj)
-      : result_type_({ literal_obj->GetCorElementType() }) {
+  explicit LiteralEvaluator(std::shared_ptr<DbgObject> literal_obj) {
     n_ = literal_obj;
+    literal_obj->GetTypeSignature(&result_type_);
   }
 
   virtual HRESULT Compile(
@@ -51,7 +52,7 @@ class LiteralEvaluator : public ExpressionEvaluator {
   std::shared_ptr<google_cloud_debugger::DbgObject> n_;
 
   // Statically computed resulting type of the expression.
-  const TypeSignature result_type_;
+  TypeSignature result_type_;
 
   DISALLOW_COPY_AND_ASSIGN(LiteralEvaluator);
 };

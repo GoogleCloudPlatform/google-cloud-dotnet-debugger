@@ -57,7 +57,7 @@ class DbgClassProperty : public IDbgClassMember {
   // Sets the TypeSignature of the property.
   HRESULT SetTypeSignature(
       IMetaDataImport *metadata_import,
-      const std::vector<CComPtr<ICorDebugType>> &generic_class_types);
+      const std::vector<TypeSignature> &generic_class_types);
 
   // Sets the TypeSignature of the property to type_signature
   void SetTypeSignature(TypeSignature type_signature) {

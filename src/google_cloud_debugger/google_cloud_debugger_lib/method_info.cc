@@ -20,6 +20,7 @@
 
 #include "dbg_stack_frame.h"
 #include "i_cor_debug_helper.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -145,11 +146,11 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     return E_FAIL;
   }
 
-  std::vector<CComPtr<ICorDebugType>> class_generic_types;
-  hr = stack_frame->GetClassGenericTypeParameters(&class_generic_types);
+  const std::vector<TypeSignature> &class_generic_types =
+      stack_frame->GetClassGenericTypeSignatureParameters();
 
   // Now we can extract the return type.
-  std::string returned_type;
+  TypeSignature returned_type;
   hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                                       class_generic_types, &returned_type);
   if (FAILED(hr)) {
@@ -160,9 +161,9 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   if ((calling_convention &
       CorCallingConvention::IMAGE_CEE_CS_CALLCONV_EXPLICITTHIS) != 0) {
     // Extracts out this "this" parameter.
-    std::string this_type;
+    TypeSignature this_type;
     hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
-                                        class_generic_types, &returned_type);
+                                        class_generic_types, &this_type);
     if (FAILED(hr)) {
       return hr;
     }
@@ -173,7 +174,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
   // Now we extracts the parameters and compares their types with arguments'
   // types.
   for (size_t i = 0; i < param_count; ++i) {
-    std::string parameter_type;
+    TypeSignature parameter_type;
     hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                                         class_generic_types, &parameter_type);
     if (FAILED(hr)) {
@@ -185,8 +186,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     // type of the actual or if the argument type is a child class
     // of the parameter type.
     if (argument_types[i].compare(parameter_type) != 0 ||
-        !stack_frame->IsBaseType(argument_types[i], parameter_type,
-                                  &std::cerr)) {
+        !stack_frame->IsBaseType(argument_types[i], parameter_type, &std::cerr)) {
       matched_method = false;
       break;
     }
