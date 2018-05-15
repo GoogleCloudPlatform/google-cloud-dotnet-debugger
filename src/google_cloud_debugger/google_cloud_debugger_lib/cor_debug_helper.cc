@@ -407,7 +407,7 @@ HRESULT CorDebugHelper::ParseFieldSig(
     ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<TypeSignature> &generic_class_types,
-    TypeSignature *field_type_name) {
+    TypeSignature *type_signature) {
   // Field signature has the form: FIELD CustomModification* Type
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
   // I think this is not used in C#?
@@ -420,7 +420,7 @@ HRESULT CorDebugHelper::ParseFieldSig(
 
   // We don't support custom modifiers.
   return ParseTypeFromSig(signature, sig_len, metadata_import,
-                          generic_class_types, field_type_name);
+                          generic_class_types, type_signature);
 }
 
 HRESULT CorDebugHelper::ParsePropertySig(
@@ -428,7 +428,7 @@ HRESULT CorDebugHelper::ParsePropertySig(
     ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<TypeSignature> &generic_class_types,
-    TypeSignature *property_type_name) {
+    TypeSignature *type_signature) {
   // Field signature has the form:
   // PROPERTY [HasThis] NumeberOfParameters CustomMod* Type Param*
   // However, we don't support Custom Modification (CMOD_OPT and CMOD_REQ).
@@ -449,7 +449,7 @@ HRESULT CorDebugHelper::ParsePropertySig(
 
   // Parses the type.
   return ParseTypeFromSig(signature, sig_len, metadata_import,
-                          generic_class_types, property_type_name);
+                          generic_class_types, type_signature);
 }
 
 HRESULT CorDebugHelper::ParseTypeFromSig(
@@ -467,7 +467,7 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
   hr = TypeCompilerHelper::ConvertCorElementTypeToString(
       type_signature->cor_type, &type_name);
   if (SUCCEEDED(hr)) {
-    type_signature->type_name;
+    type_signature->type_name = type_name;
     return hr;
   }
 

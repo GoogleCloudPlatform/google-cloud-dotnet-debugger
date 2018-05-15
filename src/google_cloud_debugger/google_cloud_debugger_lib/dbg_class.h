@@ -53,6 +53,10 @@ class DbgClass : public DbgReferenceObject {
       std::vector<VariableWrapper> *members,
       IEvalCoordinator *eval_coordinator) override;
 
+  // Returns the TypeSignature represented by this class.
+  // This function will also populate the generic_types vector
+  // of type_signature with the instantiated generic types
+  // of this class.
   HRESULT GetTypeSignature(TypeSignature *type_signature) override;
 
   // Populates type_string with type of this class.

@@ -76,9 +76,13 @@ class DbgArray : public DbgReferenceObject {
     max_items_to_retrieved_ = target;
   }
 
-  // Returns the length of the array.
+  // Returns the size of the array.
   // This is calculated as the product of all the array dimensions.
-  int GetArrayLength();
+  // For example:
+  //   1D array of dimensions 3 will have a size of 3.
+  //   2D array of 3x3 would have a size of 9.
+  //   3D array of 3x3x3 would have a size of 27.
+  int GetArraySize();
 
   // Returns TypeSignature of this array.
   HRESULT GetTypeSignature(TypeSignature *type_signature) override;

@@ -268,7 +268,7 @@ HRESULT DbgArray::GetTypeString(std::string *type_string) {
   return S_OK;
 }
 
-int DbgArray::GetArrayLength() {
+int DbgArray::GetArraySize() {
   int result = 1;
   for (int i = 0; i < dimensions_.size(); ++i) {
     result *= dimensions_[i];

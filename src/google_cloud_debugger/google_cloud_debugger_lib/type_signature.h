@@ -48,6 +48,11 @@ struct TypeSignature {
 
   static TypeSignature Object;
 
+  // Returns 0 if the 2 TypeSignature are equal.
+  // Two TypeSignatures are equal if they have
+  // the same cor_type, type_name, is_array, array_rank
+  // and all TypeSignatures in the generic_types vector
+  // are equal.
   int compare(const TypeSignature &other) const;
 };
   

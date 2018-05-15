@@ -566,6 +566,10 @@ HRESULT DbgClass::PopulateMembers(Variable *variable_proto,
 }
 
 HRESULT DbgClass::GetTypeSignature(TypeSignature *type_signature) {
+  if (type_signature == nullptr) {
+    return E_INVALIDARG;
+  }
+
   type_signature->cor_type = cor_element_type_;
   type_signature->type_name = class_name_;
 
