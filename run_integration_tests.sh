@@ -25,7 +25,7 @@ while (( "$#" )); do
   shift
 done
 
-export LD_LIBRARY_PATH=$ROOT_DIR/coreclr/bin/Product/Linux.x64.$CONFIG
+export LD_LIBRARY_PATH=$ROOT_DIR/third_party/coreclr/bin/Product/Linux.x64.$CONFIG
 
 dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug --configuration $CONFIG
 dotnet publish $AGENT_DIR/Google.Cloud.Diagnostics.Debug.TestApp --configuration $CONFIG
