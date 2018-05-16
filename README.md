@@ -21,6 +21,11 @@ starting the _.NET Core Debugger_ as well as maintaining communication with the 
 
 ## Building
 
+Before building ensure you have all of the dependencies installed to build:
+* [dotnet/coreclr](https://github.com/dotnet/coreclr)
+* [google/googletest](https://github.com/google/googletest)
+* [google/protobuf](https://github.com/google/protobuf)
+
 ### Linux
 
 The repository and dependencies can be built with the following:
