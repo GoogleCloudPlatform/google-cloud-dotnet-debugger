@@ -69,6 +69,10 @@ class DbgClass : public DbgReferenceObject {
   HRESULT GetNonStaticField(const std::string &field_name,
                             std::shared_ptr<DbgObject> *field_value) override;
 
+  // Returns an ICorDebugType vector that represents the generic
+  // types of the class.
+  HRESULT GetGenericTypes(std::vector<CComPtr<ICorDebugType>> *debug_types);
+
   // Helper method to process the members of this class.
   // If not overriden, this method will process this object as if
   // it is a simple class (extracting out fields and properties).

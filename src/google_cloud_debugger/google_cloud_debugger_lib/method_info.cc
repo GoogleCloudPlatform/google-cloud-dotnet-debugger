@@ -48,6 +48,7 @@ HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
     if (FAILED(hr)) {
       continue;
     }
+    return hr;
   }
 
   return S_FALSE;
@@ -150,7 +151,6 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
       stack_frame->GetClassGenericTypeSignatureParameters();
 
   // Now we can extract the return type.
-  TypeSignature returned_type;
   hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                                       class_generic_types, &returned_type);
   if (FAILED(hr)) {

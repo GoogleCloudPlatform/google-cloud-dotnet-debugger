@@ -403,8 +403,7 @@ HRESULT CorDebugHelper::ParseCompressedBytes(PCCOR_SIGNATURE *signature,
 }
 
 HRESULT CorDebugHelper::ParseFieldSig(
-    PCCOR_SIGNATURE *signature,
-    ULONG *sig_len,
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<TypeSignature> &generic_class_types,
     TypeSignature *type_signature) {
@@ -424,8 +423,7 @@ HRESULT CorDebugHelper::ParseFieldSig(
 }
 
 HRESULT CorDebugHelper::ParsePropertySig(
-    PCCOR_SIGNATURE *signature,
-    ULONG *sig_len,
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<TypeSignature> &generic_class_types,
     TypeSignature *type_signature) {
@@ -453,8 +451,7 @@ HRESULT CorDebugHelper::ParsePropertySig(
 }
 
 HRESULT CorDebugHelper::ParseTypeFromSig(
-    PCCOR_SIGNATURE *signature,
-    ULONG *sig_len,
+    PCCOR_SIGNATURE *signature, ULONG *sig_len,
     IMetaDataImport *metadata_import,
     const std::vector<TypeSignature> &generic_class_types,
     TypeSignature *type_signature) {
@@ -585,9 +582,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       }
 
       *type_signature = {
-        TypeCompilerHelper::ConvertStringToCorElementType(type_name),
-        type_name
-      };
+          TypeCompilerHelper::ConvertStringToCorElementType(type_name),
+          type_name};
       return S_OK;
     }
     case CorElementType::ELEMENT_TYPE_VAR: {
@@ -745,8 +741,7 @@ HRESULT CorDebugHelper::GetPropertyInfo(
 
 HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
     mdTypeDef type_token, IMetaDataImport *metadata_import,
-    std::string *type_name, mdToken *base_token,
-    std::ostream *err_stream) {
+    std::string *type_name, mdToken *base_token, std::ostream *err_stream) {
   if (metadata_import == nullptr || type_name == nullptr) {
     return E_INVALIDARG;
   }
@@ -811,17 +806,71 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeRef(
 }
 
 HRESULT CorDebugHelper::GetMdTypeDefAndMetaDataFromTypeRef(
-    mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
-    mdTypeDef *result_type_def, IMetaDataImport **result_type_def_metadata) {
-  CComPtr<IUnknown> i_unknown;
-  HRESULT hr = type_ref_token_metadata->ResolveTypeRef(
-      type_ref_token, IID_IMetaDataImport, &i_unknown, result_type_def);
+    mdTypeRef type_ref_token,
+    const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
+    IMetaDataImport *type_ref_token_metadata, mdTypeDef *result_type_def,
+    IMetaDataImport **result_type_def_metadata, std::ostream *err_stream) {
+  // We cannot use ResolveTypeRef here. It will just return a E_NOTIMPL
+  // See
+  // https://blogs.msdn.microsoft.com/davbr/2011/10/17/metadata-tokens-run-time-ids-and-type-loading/
+  mdToken assembly_ref;
+  ULONG type_ref_name_len = 0;
+  HRESULT hr = type_ref_token_metadata->GetTypeRefProps(
+      type_ref_token, &assembly_ref, nullptr, 0, &type_ref_name_len);
   if (FAILED(hr)) {
+    *err_stream << "Failed to get type name's length.";
     return hr;
   }
 
-  return i_unknown->QueryInterface(
-      IID_IMetaDataImport, reinterpret_cast<void **>(result_type_def_metadata));
+  std::vector<WCHAR> type_ref_name_wchar(type_ref_name_len, 0);
+  hr = type_ref_token_metadata->GetTypeRefProps(
+      type_ref_token, &assembly_ref, type_ref_name_wchar.data(),
+      type_ref_name_wchar.size(), &type_ref_name_len);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get type name.";
+    return hr;
+  }
+
+  // Look through all available modules in all loaded assemblies and check
+  // for a type name that matches type_ref_name_wchar.
+  for (auto &enumerated_assembly : loaded_assemblies) {
+    CComPtr<ICorDebugModuleEnum> module_enum;
+    hr = enumerated_assembly->EnumerateModules(&module_enum);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get ICorDebugModuleEnum.";
+      return hr;
+    }
+
+    std::vector<CComPtr<ICorDebugModule>> enumerated_modules;
+    hr = EnumerateICorDebugSpecifiedType<ICorDebugModuleEnum, ICorDebugModule>(
+        module_enum, &enumerated_modules);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to enumerate modules.";
+      return hr;
+    }
+
+    for (auto &enumerated_module : enumerated_modules) {
+      CComPtr<IMetaDataImport> metadata_import;
+      hr = GetMetadataImportFromICorDebugModule(enumerated_module,
+                                                &metadata_import, err_stream);
+      if (FAILED(hr)) {
+        *err_stream << "Failed to get IMetaDataImport from ICorDebugModule.";
+        return hr;
+      }
+
+      hr = metadata_import->FindTypeDefByName(type_ref_name_wchar.data(), NULL,
+                                              result_type_def);
+      if (hr != S_OK) {
+        continue;
+      }
+
+      *result_type_def_metadata = metadata_import;
+      metadata_import->AddRef();
+      return S_OK;
+    }
+  }
+
+  return E_FAIL;
 }
 
 HRESULT CorDebugHelper::GetAppDomainFromICorDebugFrame(

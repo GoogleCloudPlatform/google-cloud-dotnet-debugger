@@ -46,6 +46,11 @@ struct MethodInfo {
   // True if the method has generic types.
   bool has_generic_types;
 
+  // TypeSignature of the returned value of the method.
+  // TODO(quoct): Validates for void method call. Maybe we shouldn't
+  // support void method call anyway.
+  TypeSignature returned_type;
+
   // Given a class represented by class_token and the
   // MetaDataImport of the module that this class is in, this function
   // will try to find in this class the method that has the name

@@ -86,6 +86,10 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
         *err_stream << "Failed to retrieve generic type parameters for class.";
         return hr;
       }
+
+      if (stack_frame->IsStaticMethod() && !method_info_.is_static) {
+        return E_FAIL;
+      }
     }
   }
 
@@ -130,10 +134,6 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
     return E_NOTIMPL;
   }
 
-  if (stack_frame->IsStaticMethod() && !method_info_.is_static) {
-    return E_FAIL;
-  }
-
   return S_OK;
 }
 
@@ -172,7 +172,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   }
 
   std::vector<ICorDebugValue *> arg_debug_values;
-  if (method_info_.is_static) {
+  if (!method_info_.is_static) {
     arg_debug_values.push_back(invoking_object);
   }
 
@@ -284,18 +284,16 @@ HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
 
   // Try to find method in the class with name possible_class_name_.
   // Also populates method_info fields.
-  hr = stack_frame->GetDebugFunctionFromClass(metadata_import, class_token,
+  hr = stack_frame->GetDebugFunctionFromClass(metadata_import, debug_module, class_token,
                                               method_info, result_method);
+  if (hr == S_FALSE) {
+    hr = E_FAIL;
+  }
+
   if (FAILED(hr)) {
     *err_stream << "Failed to retrieve ICorDebugFunction "
                 << method_info->method_name << " from class " << class_name;
     return hr;
-  }
-
-  if (!method_info->is_static) {
-    *err_stream
-        << "Method call from fully qualified class name has to be static.";
-    return E_FAIL;
   }
 
   return S_OK;

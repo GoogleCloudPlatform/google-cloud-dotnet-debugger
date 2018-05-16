@@ -49,7 +49,9 @@ class MethodCallEvaluator : public ExpressionEvaluator {
                   ICorDebugILFrame *debug_frame,
                   std::ostream *err_stream) override;
 
-  const TypeSignature &GetStaticType() const override { return return_type_; }
+  const TypeSignature &GetStaticType() const override {
+    return method_info_.returned_type;
+  }
 
   HRESULT Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                    IEvalCoordinator *eval_coordinator,

@@ -286,8 +286,9 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
 }
 
 HRESULT DbgStackFrame::GetDebugFunctionFromClass(
-    IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-    MethodInfo *method_info, ICorDebugFunction **debug_function) {
+    IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
+    const mdTypeDef &class_token, MethodInfo *method_info,
+    ICorDebugFunction **debug_function) {
   if (!method_info || !metadata_import || !debug_function) {
     return E_INVALIDARG;
   }
@@ -300,7 +301,8 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
     return hr;
   }
 
-  return debug_module_->GetFunctionFromToken(method_def, debug_function);
+  return debug_module->GetFunctionFromToken(method_info->method_token,
+                                            debug_function);
 }
 
 HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
@@ -311,8 +313,8 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
     return hr;
   }
 
-  return GetDebugFunctionFromClass(metadata_import, class_token_, method_info,
-                                   debug_function);
+  return GetDebugFunctionFromClass(metadata_import, debug_module_, class_token_,
+                                   method_info, debug_function);
 }
 
 HRESULT DbgStackFrame::GetClassGenericTypeParameters(
@@ -435,6 +437,7 @@ HRESULT DbgStackFrame::PopulateTypeDict() {
   metadata_import->CloseEnum(cor_enum);
   cor_enum = nullptr;
 
+  hr = S_OK;
   vector<mdTypeRef> type_refs(100, 0);
   while (hr == S_OK) {
     ULONG type_refs_returned = 0;
@@ -464,6 +467,35 @@ HRESULT DbgStackFrame::PopulateTypeDict() {
   return S_OK;
 }
 
+HRESULT DbgStackFrame::PopulateDebugAssemblies() {
+  if (debug_assemblies_populated_) {
+    return S_OK;
+  }
+
+  if (!app_domain_) {
+    cerr << "Cannot get debug assemblies because of null ICorDebugAppDomain.";
+    return E_INVALIDARG;
+  }
+
+  CComPtr<ICorDebugAssemblyEnum> assembly_enum;
+  HRESULT hr = app_domain_->EnumerateAssemblies(&assembly_enum);
+  if (FAILED(hr)) {
+    cerr << "Cannot get ICorDebugAssemblyEnum.";
+    return hr;
+  }
+
+  hr = debug_helper_->EnumerateICorDebugSpecifiedType<ICorDebugAssemblyEnum,
+                                                      ICorDebugAssembly>(
+      assembly_enum, &debug_assemblies_);
+  if (FAILED(hr)) {
+    cerr << "Failed to enumerate assemblies.";
+    return hr;
+  }
+
+  debug_assemblies_populated_ = true;
+  return S_OK;
+}
+
 HRESULT DbgStackFrame::GetClassTokenAndModule(
     const std::string &class_name, mdTypeDef *class_token,
     ICorDebugModule **debug_module, IMetaDataImport **metadata_import) {
@@ -489,12 +521,17 @@ HRESULT DbgStackFrame::GetClassTokenAndModule(
     return S_OK;
   }
 
+  hr = PopulateDebugAssemblies();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
   // If we didn't find the class, we search the dictionary of mdTypeRef.
   auto type_ref_info = type_ref_dict_.find(class_name);
   if (type_ref_info != type_ref_dict_.end()) {
     hr = debug_helper_->GetMdTypeDefAndMetaDataFromTypeRef(
-        type_ref_info->second, frame_metadata_import, class_token,
-        metadata_import);
+        type_ref_info->second, debug_assemblies_, frame_metadata_import,
+        class_token, metadata_import, &cerr);
     if (FAILED(hr)) {
       return hr;
     }
@@ -536,9 +573,14 @@ HRESULT DbgStackFrame::IsBaseType(const TypeSignature &source_type,
     return hr;
   }
 
-  return TypeCompilerHelper::IsBaseClass(source_token, source_metadata_import,
-                                         target_type.type_name,
-                                         debug_helper_.get(), err_stream);
+  hr = PopulateDebugAssemblies();
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  return TypeCompilerHelper::IsBaseClass(
+      source_token, source_metadata_import, debug_assemblies_,
+      target_type.type_name, debug_helper_.get(), err_stream);
 }
 
 HRESULT DbgStackFrame::GetFieldAndAutoPropertyInfo(

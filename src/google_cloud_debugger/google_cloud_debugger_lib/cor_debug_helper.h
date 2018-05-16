@@ -109,8 +109,7 @@ class CorDebugHelper : public ICorDebugHelper {
   // the field's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParseFieldSig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) override;
@@ -119,8 +118,7 @@ class CorDebugHelper : public ICorDebugHelper {
   // the property's type.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParsePropertySig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) override;
@@ -129,8 +127,7 @@ class CorDebugHelper : public ICorDebugHelper {
   // and stores the result in type_name. Also update the sig_len.
   // Will modify the signature pointer PCCOR_SIGNATURE.
   virtual HRESULT ParseTypeFromSig(
-      PCCOR_SIGNATURE *signature,
-      ULONG *sig_len,
+      PCCOR_SIGNATURE *signature, ULONG *sig_len,
       IMetaDataImport *metadata_import,
       const std::vector<TypeSignature> &generic_class_types,
       TypeSignature *type_signature) override;
@@ -175,9 +172,11 @@ class CorDebugHelper : public ICorDebugHelper {
   // converts it into a TypeDef token. The function will also return
   // the corresponding MetaDataImport for that token.
   virtual HRESULT GetMdTypeDefAndMetaDataFromTypeRef(
-      mdTypeRef type_ref_token, IMetaDataImport *type_ref_token_metadata,
-      mdTypeDef *result_type_def,
-      IMetaDataImport **result_type_def_metadata) override;
+      mdTypeRef type_ref_token,
+      const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
+      IMetaDataImport *type_ref_token_metadata, mdTypeDef *result_type_def,
+      IMetaDataImport **result_type_def_metadata,
+      std::ostream *err_stream) override;
 
   // Retrieves ICorDebugAppDomain from ICorDebugFrame.
   virtual HRESULT GetAppDomainFromICorDebugFrame(
