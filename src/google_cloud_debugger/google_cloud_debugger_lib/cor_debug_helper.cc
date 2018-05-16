@@ -583,9 +583,9 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
         return hr;
       }
 
-      *type_signature = {
+      type_signature->cor_type =
           TypeCompilerHelper::ConvertStringToCorElementType(type_name),
-          type_name};
+      type_signature->type_name = type_name;
       return S_OK;
     }
     case CorElementType::ELEMENT_TYPE_VAR: {
