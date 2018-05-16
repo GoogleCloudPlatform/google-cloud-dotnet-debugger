@@ -324,6 +324,10 @@ HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
       {CorElementType::ELEMENT_TYPE_U4, kUInt32ClassName},
       {CorElementType::ELEMENT_TYPE_I8, kInt64ClassName},
       {CorElementType::ELEMENT_TYPE_U8, kUInt64ClassName},
+      {CorElementType::ELEMENT_TYPE_R4, kSingleClassName},
+      {CorElementType::ELEMENT_TYPE_R8, kDoubleClassName},
+      {CorElementType::ELEMENT_TYPE_I, kIntPtrClassName},
+      {CorElementType::ELEMENT_TYPE_U, kUIntPtrClassName},
       {CorElementType::ELEMENT_TYPE_STRING, kStringClassName},
       {CorElementType::ELEMENT_TYPE_OBJECT, kObjectClassName}};
 

@@ -747,23 +747,10 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
       // get us the static field value. This is because it only represents
       // an uninstantiated class. So we have to construct an ICorDebugType
       // for the instantiated type using class_generic_types_.
-      CComPtr<ICorDebugClass2> debug_class_2;
-      hr = debug_class->QueryInterface(
-          __uuidof(ICorDebugClass2), reinterpret_cast<void **>(&debug_class_2));
-      if (FAILED(hr)) {
-        *err_stream << "Cannot convert ICorDebugClass to ICorDebugClass2.";
-        return hr;
-      }
-
-      std::vector<ICorDebugType *> class_generic_type_pointers;
-      class_generic_type_pointers.assign(class_generic_types_.begin(),
-                                         class_generic_types_.end());
-
       CComPtr<ICorDebugType> class_type;
-      hr = debug_class_2->GetParameterizedType(
-          CorElementType::ELEMENT_TYPE_CLASS,
-          class_generic_type_pointers.size(),
-          class_generic_type_pointers.data(), &class_type);
+      hr = debug_helper_->GetInstantiatedClassType(
+          debug_class, &class_generic_types_,
+          &class_type, err_stream);
       if (FAILED(hr)) {
         *err_stream << "Failed to get instantiated type from ICorDebugClass.";
         return hr;
@@ -848,7 +835,7 @@ HRESULT DbgStackFrame::GetFieldFromClass(
   HRESULT hr = GetFieldAndAutoPropertyInfo(
       metadata_import, class_token, field_name, field_def, is_static,
       &signature, &signature_len, err_stream);
-  if (FAILED(hr) || hr == E_FAIL) {
+  if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
 

@@ -188,6 +188,18 @@ class CorDebugHelper : public ICorDebugHelper {
                                      const mdToken &token,
                                      uint32_t *result) override;
 
+  // Given a generic class represented by debug_class and
+  // a vector of type parameters, returns
+  // an ICorDebugType that represents the instantiated class.
+  // For example, debug_class can be ArrayList<T>
+  // and parameter_types can be System.String and the result_type
+  // returned would be ArrayList<System.String>.
+  virtual HRESULT GetInstantiatedClassType(
+      ICorDebugClass *debug_class,
+      std::vector<CComPtr<ICorDebugType>> *parameter_types,
+      ICorDebugType **result_type,
+      std::ostream *err_stream) override;
+
   // Given a class object, populates generic_class_types_
   // with the generic types from the class object.
   virtual HRESULT PopulateGenericClassTypesFromClassObject(
