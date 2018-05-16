@@ -959,7 +959,6 @@ HRESULT CorDebugHelper::GetInstantiatedClassType(
     return hr;
   }
 
-  // TODO(quoct): Refactor this logic into ICorDebugHelper.
   std::vector<ICorDebugType *> class_generic_type_pointers;
   class_generic_type_pointers.assign(parameter_types->begin(),
                                      parameter_types->end());

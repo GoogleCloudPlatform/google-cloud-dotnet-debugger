@@ -264,7 +264,6 @@ HRESULT FieldEvaluator::EvaluateNonStaticMember(
   return S_OK;
 }
 
-// TODO(quoct): Split this function into 2.
 HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                                  IEvalCoordinator *eval_coordinator,
                                  IDbgObjectFactory *obj_factory,
