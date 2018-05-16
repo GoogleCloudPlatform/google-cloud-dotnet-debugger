@@ -743,13 +743,15 @@ CompiledExpression CSharpExpressionMemberSelector::CreateEvaluator() {
     identifier_name = member_;
   }
 
+  std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
   return {
     std::unique_ptr<ExpressionEvaluator>(
         new FieldEvaluator(
             std::move(source_evaluator.evaluator),
             std::move(identifier_name),
             std::move(possible_class_name),
-            std::move(member_))),
+            std::move(member_),
+            std::move(debug_helper))),
   };
 }
 

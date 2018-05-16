@@ -481,6 +481,7 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       if (FAILED(hr)) {
         return hr;
       }
+      type_signature->type_name = kArrayClassName;
       type_signature->is_array = true;
       type_signature->generic_types.push_back(std::move(array_type));
       return hr;
@@ -516,6 +517,7 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
         return hr;
       }
 
+      type_signature->type_name = kArrayClassName;
       type_signature->is_array = true;
       type_signature->array_rank = array_rank;
       type_signature->generic_types.push_back(std::move(array_type));
@@ -938,6 +940,34 @@ HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
 
   metadata_import_2->CloseEnum(cor_enum);
   return S_OK;
+}
+
+HRESULT CorDebugHelper::GetInstantiatedClassType(
+    ICorDebugClass *debug_class,
+    std::vector<CComPtr<ICorDebugType>> *parameter_types,
+    ICorDebugType **result_type,
+    std::ostream *err_stream) {
+  if (!debug_class || !parameter_types) {
+    return E_INVALIDARG;
+  }
+
+  CComPtr<ICorDebugClass2> debug_class_2;
+  HRESULT hr = debug_class->QueryInterface(
+      __uuidof(ICorDebugClass2), reinterpret_cast<void **>(&debug_class_2));
+  if (FAILED(hr)) {
+    *err_stream << "Cannot convert ICorDebugClass to ICorDebugClass2.";
+    return hr;
+  }
+
+  // TODO(quoct): Refactor this logic into ICorDebugHelper.
+  std::vector<ICorDebugType *> class_generic_type_pointers;
+  class_generic_type_pointers.assign(parameter_types->begin(),
+                                     parameter_types->end());
+
+  return debug_class_2->GetParameterizedType(
+      CorElementType::ELEMENT_TYPE_CLASS,
+      class_generic_type_pointers.size(),
+      class_generic_type_pointers.data(), result_type);
 }
 
 HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(

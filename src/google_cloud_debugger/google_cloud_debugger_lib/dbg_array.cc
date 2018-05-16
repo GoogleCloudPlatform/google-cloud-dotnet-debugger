@@ -16,6 +16,7 @@
 
 #include <iostream>
 
+#include "class_names.h"
 #include "i_dbg_object_factory.h"
 #include "i_cor_debug_helper.h"
 #include "type_signature.h"
@@ -281,6 +282,7 @@ HRESULT DbgArray::GetTypeSignature(TypeSignature *type_signature) {
     return E_INVALIDARG;
   }
 
+  type_signature->type_name = kArrayClassName;
   type_signature->array_rank = dimensions_.size();
   type_signature->is_array = true;
   type_signature->cor_type = cor_element_type_;
