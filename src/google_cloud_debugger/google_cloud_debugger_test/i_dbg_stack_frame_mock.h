@@ -17,6 +17,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "i_dbg_stack_frame.h"
 
@@ -56,29 +57,35 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
       HRESULT(const std::string &property_name,
               google_cloud_debugger::DbgClassProperty **property_object,
               std::ostream *err_stream));
-  MOCK_METHOD7(GetFieldFromClass,
+  MOCK_METHOD8(GetFieldFromClass,
                HRESULT(const mdTypeDef &class_token,
                        const std::string &field_name, mdFieldDef *field_def,
                        bool *is_static,
                        google_cloud_debugger::TypeSignature *type_signature,
+                       const std::vector<google_cloud_debugger::TypeSignature>
+                           &generic_signatures,
                        IMetaDataImport *metadata_import,
                        std::ostream *err_stream));
-  MOCK_METHOD5(GetPropertyFromClass,
+  MOCK_METHOD6(GetPropertyFromClass,
                HRESULT(const mdTypeDef &class_token,
                        const std::string &property_name,
                        std::unique_ptr<google_cloud_debugger::DbgClassProperty>
                            *class_property,
+                       const std::vector<google_cloud_debugger::TypeSignature>
+                           &generic_signatures,
                        IMetaDataImport *metadata_import,
                        std::ostream *err_stream));
   MOCK_METHOD4(GetClassTokenAndModule,
                HRESULT(const std::string &class_name, mdTypeDef *class_token,
                        ICorDebugModule **debug_module,
                        IMetaDataImport **metadata_import));
-  MOCK_METHOD3(IsBaseType, HRESULT(const std::string &source_type,
-                                   const std::string &target_type,
-                                   std::ostream *err_stream));
-  MOCK_METHOD4(GetDebugFunctionFromClass,
+  MOCK_METHOD3(IsBaseType,
+               HRESULT(const google_cloud_debugger::TypeSignature &source_type,
+                       const google_cloud_debugger::TypeSignature &target_type,
+                       std::ostream *err_stream));
+  MOCK_METHOD5(GetDebugFunctionFromClass,
                HRESULT(IMetaDataImport *metadata_import,
+                       ICorDebugModule *debug_module,
                        const mdTypeDef &class_token,
                        google_cloud_debugger::MethodInfo *method_info,
                        ICorDebugFunction **debug_function));
