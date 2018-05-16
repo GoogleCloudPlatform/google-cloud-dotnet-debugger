@@ -33,9 +33,8 @@ class IDbgObjectFactory;
 class IDbgClassMember : public StringStreamWrapper {
  public:
   IDbgClassMember(std::shared_ptr<ICorDebugHelper> debug_helper,
-                  std::shared_ptr<IDbgObjectFactory> obj_factory) {
-    debug_helper_ = debug_helper;
-    obj_factory_ = obj_factory;
+                  std::shared_ptr<IDbgObjectFactory> obj_factory)
+                  : debug_helper_(debug_helper), obj_factory_(obj_factory) {
   }
 
   virtual ~IDbgClassMember() = default;

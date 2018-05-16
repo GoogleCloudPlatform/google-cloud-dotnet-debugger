@@ -26,8 +26,8 @@ namespace google_cloud_debugger {
 
 UnaryExpressionEvaluator::UnaryExpressionEvaluator(
     UnaryCSharpExpression::Type type, std::unique_ptr<ExpressionEvaluator> arg)
-    : type_(type), arg_(std::move(arg)), computer_(nullptr) {
-  result_type_ = TypeSignature::Object;
+    : type_(type), arg_(std::move(arg)),
+      computer_(nullptr), result_type_(TypeSignature::Object) {
 }
 
 HRESULT UnaryExpressionEvaluator::Compile(IDbgStackFrame *stack_frame,
@@ -71,7 +71,7 @@ HRESULT UnaryExpressionEvaluator::CompilePlusMinusOperators(
     cor_type = CorElementType::ELEMENT_TYPE_I8;
   }
 
-  result_type_ = {cor_type};
+  result_type_.cor_type = cor_type;
   HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
       cor_type, &result_type_.type_name);
   if (FAILED(hr)) {
@@ -130,7 +130,7 @@ HRESULT UnaryExpressionEvaluator::CompileBitwiseComplement(
     cor_type = CorElementType::ELEMENT_TYPE_I4;
   }
 
-  result_type_ = { cor_type };
+  result_type_.cor_type = cor_type;
   HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
       cor_type, &result_type_.type_name);
   if (FAILED(hr)) {

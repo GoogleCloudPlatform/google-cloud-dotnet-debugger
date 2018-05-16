@@ -28,8 +28,8 @@ class DbgReferenceObject : public DbgObject {
   DbgReferenceObject(ICorDebugType *debug_type, int depth,
                      std::shared_ptr<ICorDebugHelper> debug_helper,
                      std::shared_ptr<IDbgObjectFactory> obj_factory)
-      : DbgObject(debug_type, depth, debug_helper) {
-    object_factory_ = obj_factory;
+      : DbgObject(debug_type, depth, debug_helper),
+        object_factory_(obj_factory) {
   }
 
   // Searches the object for non-static field field_name and returns

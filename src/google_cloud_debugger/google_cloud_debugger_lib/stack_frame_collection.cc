@@ -39,9 +39,9 @@ using std::vector;
 namespace google_cloud_debugger {
 StackFrameCollection::StackFrameCollection(
     std::shared_ptr<ICorDebugHelper> debug_helper,
-    std::shared_ptr<IDbgObjectFactory> obj_factory) {
-  debug_helper_ = debug_helper;
-  obj_factory_ = obj_factory;
+    std::shared_ptr<IDbgObjectFactory> obj_factory)
+    : debug_helper_(debug_helper),
+      obj_factory_(obj_factory) {
 }
 
 HRESULT StackFrameCollection::ProcessBreakpoint(

@@ -26,8 +26,8 @@ namespace google_cloud_debugger {
 
 TypeCastOperatorEvaluator::TypeCastOperatorEvaluator(
     std::unique_ptr<ExpressionEvaluator> source, const std::string &target_type)
-    : source_(std::move(source)), computer_(nullptr) {
-  result_type_ = TypeSignature::Object;
+    : source_(std::move(source)), computer_(nullptr),
+      result_type_(TypeSignature::Object) {
   CorElementType target_cor_type =
       TypeCompilerHelper::ConvertStringToCorElementType(target_type);
   target_type_ = TypeSignature{target_cor_type, target_type};

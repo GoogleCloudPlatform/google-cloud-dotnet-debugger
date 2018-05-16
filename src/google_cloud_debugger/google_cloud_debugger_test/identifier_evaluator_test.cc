@@ -102,7 +102,10 @@ class IdentifierEvaluatorTest : public ::testing::Test {
   std::shared_ptr<DbgObject> field_;
 
   // Signature of class property to be returned when queried.
-  TypeSignature class_property_type_sig_{CorElementType::ELEMENT_TYPE_I4};
+  TypeSignature class_property_type_sig_{
+      CorElementType::ELEMENT_TYPE_I4,
+      google_cloud_debugger::kInt32ClassName
+  };
 
   // Error stream.
   std::ostringstream err_stream_;

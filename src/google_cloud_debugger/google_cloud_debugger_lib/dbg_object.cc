@@ -54,10 +54,8 @@ HRESULT DbgObject::GetTypeSignature(TypeSignature *type_signature) {
     return hr;
   }
 
-  *type_signature = {
-    GetCorElementType(),
-    type_string
-  };
+  type_signature->cor_type = GetCorElementType();
+  type_signature->type_name = type_string;
   return S_OK;
 }
 
