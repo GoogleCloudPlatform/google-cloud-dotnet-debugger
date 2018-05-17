@@ -136,14 +136,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
         /// <summary>
         /// Creates a matcher that will match a <see cref="StackdriverBreakpoint"/>
-        /// that has a status set that conditions and expressions are not supported.
-        /// </summary>
-        private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id) => 
-            GetErrorMatcher(id, Messages.CondExpNotSupported);
-
-
-        /// <summary>
-        /// Creates a matcher that will match a <see cref="StackdriverBreakpoint"/>
         /// that has an error status.
         /// </summary>
         private Predicate<StackdriverBreakpoint> GetErrorMatcher(string id, string errorMessage)
