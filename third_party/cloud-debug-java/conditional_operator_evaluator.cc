@@ -29,8 +29,8 @@ ConditionalOperatorEvaluator::ConditionalOperatorEvaluator(
     std::unique_ptr<ExpressionEvaluator> if_false)
     : condition_(std::move(condition)),
       if_true_(std::move(if_true)),
-      if_false_(std::move(if_false)) {
-  result_type_ = TypeSignature::Object;
+      if_false_(std::move(if_false)),
+      result_type_(TypeSignature::Object) {
 }
 
 

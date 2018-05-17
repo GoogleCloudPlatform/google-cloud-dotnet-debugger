@@ -27,6 +27,13 @@ namespace google_cloud_debugger {
 // This struct represents a .NET type. This is used to compare
 // whether 2 objects have the same type.
 struct TypeSignature {
+  TypeSignature() { }
+
+  TypeSignature(const CorElementType &cor_elem_type,
+                const std::string &full_type_name)
+                : cor_type(cor_elem_type),
+                  type_name(full_type_name) { }
+
   // CorElementType of the type signature.
   CorElementType cor_type;
 

@@ -101,7 +101,8 @@ class NumericalEvaluatorTestFixture : public ::testing::Test {
 
   // Signature for string object.
   google_cloud_debugger::TypeSignature string_sig_{
-      CorElementType::ELEMENT_TYPE_STRING};
+      CorElementType::ELEMENT_TYPE_STRING,
+      google_cloud_debugger::kStringClassName};
 
   std::ostringstream err_stream_;
 };

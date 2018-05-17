@@ -60,11 +60,13 @@ class ConditionalOperatorEvaluatorTest : public ::testing::Test {
 
   // Signature for boolean object.
   google_cloud_debugger::TypeSignature bool_sig_{
-      CorElementType::ELEMENT_TYPE_BOOLEAN};
+      CorElementType::ELEMENT_TYPE_BOOLEAN,
+      google_cloud_debugger::kBooleanClassName};
 
   // Signature for string object.
   google_cloud_debugger::TypeSignature string_sig_{
-      CorElementType::ELEMENT_TYPE_STRING};
+      CorElementType::ELEMENT_TYPE_STRING,
+      google_cloud_debugger::kStringClassName};
 
   // True.
   std::shared_ptr<google_cloud_debugger::DbgObject> true_;

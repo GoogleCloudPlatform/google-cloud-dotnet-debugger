@@ -116,8 +116,8 @@ BinaryExpressionEvaluator::BinaryExpressionEvaluator(
     : type_(type),
       arg1_(std::move(arg1)),
       arg2_(std::move(arg2)),
-      computer_(nullptr) {
-  result_type_ = TypeSignature::Object;
+      computer_(nullptr),
+      result_type_(TypeSignature::Object) {
 }
 
 HRESULT BinaryExpressionEvaluator::Compile(IDbgStackFrame *readers_factory,
@@ -180,7 +180,7 @@ HRESULT BinaryExpressionEvaluator::CompileArithmetical(
     return E_FAIL;
   }
 
-  result_type_ = { result };
+  result_type_.cor_type = result;
   HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
       result, &result_type_.type_name);
   if (FAILED(hr)) {
@@ -222,7 +222,8 @@ HRESULT BinaryExpressionEvaluator::CompileArithmetical(
 HRESULT BinaryExpressionEvaluator::CompileRelational(std::ostream *err_stream) {
   const TypeSignature &signature1 = arg1_->GetStaticType();
   const TypeSignature &signature2 = arg2_->GetStaticType();
-  result_type_ = {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName};
+  result_type_.cor_type = CorElementType::ELEMENT_TYPE_BOOLEAN;
+  result_type_.type_name = kBooleanClassName;
 
   // If both items are numerical type, perform numeric promotion.
   if (TypeCompilerHelper::IsNumericalType(signature1.cor_type) &&
@@ -331,7 +332,7 @@ HRESULT BinaryExpressionEvaluator::CompileLogical(std::ostream *err_stream) {
       return E_FAIL;
     }
 
-    result_type_ = { result };
+    result_type_.cor_type = result;
     HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
         result, &result_type_.type_name);
     if (FAILED(hr)) {
@@ -386,7 +387,7 @@ HRESULT BinaryExpressionEvaluator::CompileShift(std::ostream *err_stream) {
     arg1_type = CorElementType::ELEMENT_TYPE_I4;
   }
 
-  result_type_ = {arg1_type};
+  result_type_.cor_type = arg1_type;
   HRESULT hr = TypeCompilerHelper::ConvertCorElementTypeToString(
       arg1_type, &result_type_.type_name);
   if (FAILED(hr)) {
