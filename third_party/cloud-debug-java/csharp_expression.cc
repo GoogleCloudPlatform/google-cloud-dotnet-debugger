@@ -711,11 +711,13 @@ CompiledExpression CSharpExpressionIndexSelector::CreateEvaluator() {
     return index_evaluator;
   }
 
+  std::shared_ptr<ICorDebugHelper> debug_helper(new CorDebugHelper());
   return {
     std::unique_ptr<IndexerAccessExpressionEvaluator>(
         new IndexerAccessExpressionEvaluator(
             std::move(source_evaluator.evaluator),
-            std::move(index_evaluator.evaluator)))
+            std::move(index_evaluator.evaluator),
+            std::move(debug_helper)))
   };
 }
 

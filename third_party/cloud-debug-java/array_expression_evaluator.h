@@ -18,8 +18,11 @@
 #define ARRAY_EXPRESSION_EVALUATOR_H_
 
 #include "expression_evaluator.h"
+#include "ccomptr.h"
 
 namespace google_cloud_debugger {
+
+class ICorDebugHelper;
 
 // Evaluates indexer access expressions.
 // For example: a[b] where a is a Dictionary, Array or List.
@@ -28,7 +31,8 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
   // Stores the subexpression for the collection and the index.
   IndexerAccessExpressionEvaluator(
       std::unique_ptr<ExpressionEvaluator> source_collection,
-      std::unique_ptr<ExpressionEvaluator> source_index);
+      std::unique_ptr<ExpressionEvaluator> source_index,
+      std::shared_ptr<ICorDebugHelper> debug_helper);
 
   // Compiles the expression to determine its return type.
   // TODO(quoct): We are only compiling the expression if
@@ -46,7 +50,6 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
   const TypeSignature& GetStaticType() const override { return return_type_; }
 
   // Evaluates the expression and returns the result in dbg_object.
-  // TODO(quoct): Add logic for accessing item in Dictionary, List, etc.
   HRESULT Evaluate(
       std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator,
@@ -54,6 +57,25 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
       std::ostream *err_stream) const override;
 
  private:
+  // Evaluates the expression when the source is an array.
+  HRESULT EvaluateArrayIndex(
+      std::shared_ptr<DbgObject> source_obj,
+      std::shared_ptr<DbgObject> index_obj,
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const;
+
+  // Evaluates the expression when the source is a class with
+  // get_Item method.
+  HRESULT EvaluateGetItemIndex(
+      std::shared_ptr<DbgObject> source_obj,
+      std::shared_ptr<DbgObject> index_obj,
+      std::shared_ptr<DbgObject> *dbg_object,
+      IEvalCoordinator *eval_coordinator,
+      IDbgObjectFactory *obj_factory,
+      std::ostream *err_stream) const;
+
   // Subexpression that computes the actual collection.
   std::unique_ptr<ExpressionEvaluator> source_collection_;
 
@@ -63,6 +85,12 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
 
   // Type of the objects in the collection.
   TypeSignature return_type_;
+
+  // ICorDebugFunction for get_Item method.
+  CComPtr<ICorDebugFunction> get_item_method_;
+
+  // Helper for dealing with ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
 
   DISALLOW_COPY_AND_ASSIGN(IndexerAccessExpressionEvaluator);
 };
