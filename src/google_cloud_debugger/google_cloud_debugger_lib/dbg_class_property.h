@@ -20,6 +20,7 @@
 
 #include "dbg_object.h"
 #include "i_dbg_class_member.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
@@ -28,14 +29,19 @@ namespace google_cloud_debugger {
 // function is called.
 class DbgClassProperty : public IDbgClassMember {
  public:
+  DbgClassProperty(std::shared_ptr<ICorDebugHelper> debug_helper,
+                   std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : IDbgClassMember(debug_helper, obj_factory){};
+
   // Initialize the property name, metadata signature, attributes
   // as well the tokens for the getter and setter function of this property.
   // property_def is the metadata token for the property.
   // metadata_import is used to extract metadata from the property.
   // Creation_depth sets the depth used when creating a DbgObject
   // representing this property.
+  // Stores debug module in ICorDebugModule.
   void Initialize(mdProperty property_def, IMetaDataImport *metadata_import,
-                  int creation_depth);
+                  ICorDebugModule *debug_module, int creation_depth);
 
   // Evaluates the property and stores the value in member_value_.
   // reference_value is a reference to the class object that this property
@@ -44,19 +50,32 @@ class DbgClassProperty : public IDbgClassMember {
   // generic_types is an array of the generic types that the class has.
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
-  HRESULT Evaluate(
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
+  HRESULT Evaluate(ICorDebugValue *debug_value,
+                   IEvalCoordinator *eval_coordinator,
+                   std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
-  // Returns true if the property is static.
-  // If the property is static, the metadata won't have a bit mask
-  // at 0x20.
-  bool IsStatic() const override {
-    return (*signature_metadata_ & kNonStaticPropertyMask) == 0;
+  // Sets the TypeSignature of the property.
+  HRESULT SetTypeSignature(
+      IMetaDataImport *metadata_import,
+      const std::vector<TypeSignature> &generic_class_types);
+
+  // Sets the TypeSignature of the property to type_signature
+  void SetTypeSignature(TypeSignature type_signature) {
+    type_signature_ = type_signature;
+    type_signature_set_ = true;
   }
 
-  static const int8_t kNonStaticPropertyMask = 0x20;
+  // Retrieves the TypeSignature of the property.
+  // Will fail if this is not set.
+  HRESULT GetTypeSignature(TypeSignature *type_signature);
+
+  // Returns true if the property is static.
+  // If the property is static, the signature metadata won't have the bit
+  // corresponding to IMAGE_CEE_CS_CALLCONV_HASTHIS at the start.
+  bool IsStatic() const override {
+    return (*signature_metadata_ &
+            CorCallingConvention::IMAGE_CEE_CS_CALLCONV_HASTHIS) == 0;
+  }
 
  private:
   // Helper function to set the value of variable to this property's value.
@@ -77,6 +96,15 @@ class DbgClassProperty : public IDbgClassMember {
 
   // Vector of tokens that represent other methods associated with the property.
   std::vector<mdMethodDef> other_methods_;
+
+  // True if type_signature_ is set.
+  bool type_signature_set_ = false;
+
+  // TypeSignature of the class property.
+  TypeSignature type_signature_;
+
+  // The ICorDebugModule this property is in.
+  CComPtr<ICorDebugModule> debug_module_;
 };
 
 }  //  namespace google_cloud_debugger

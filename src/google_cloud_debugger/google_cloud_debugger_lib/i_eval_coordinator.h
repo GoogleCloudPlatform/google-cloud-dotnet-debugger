@@ -29,6 +29,7 @@ namespace google_cloud_debugger {
 
 class IBreakpointCollection;
 class DbgBreakpoint;
+class IDbgObjectFactory;
 
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
 // and print out variables. It does so by creating a StackFrame on a new
@@ -61,6 +62,9 @@ class IEvalCoordinator {
   // from the active thread.
   virtual HRESULT CreateEval(ICorDebugEval **eval) = 0;
 
+  // Creates an ICorDebugStackWalk object from the active thread.
+  virtual HRESULT CreateStackWalk(ICorDebugStackWalk **debug_stack_walk) = 0;
+
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   virtual HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
@@ -74,13 +78,15 @@ class IEvalCoordinator {
   // occurred.
   virtual void HandleException() = 0;
 
-  // Prints out the stack frames at DbgBreakpoint breakpoint based on
-  // debug_stack_walk.
-  virtual HRESULT PrintBreakpoint(
-      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+  // Processes a vector of breakpoints set at the SAME location (they
+  // can have different conditions and expressions).
+  // Each breakpoint's condition will first be tested. If this is true,
+  // stack frame information and expressions will be evaluated and reported.
+  virtual HRESULT ProcessBreakpoints(
+      ICorDebugThread *debug_thread, IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;
 
   // StackFrame calls this to signal that it already processed all the
@@ -94,6 +100,9 @@ class IEvalCoordinator {
 
   // Returns the active debug thread.
   virtual HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) = 0;
+
+  // Returns the active debug frame.
+  virtual HRESULT GetActiveDebugFrame(ICorDebugILFrame **debug_frame) = 0;
 
   // Returns true if we are waiting for an evaluation result.
   virtual BOOL WaitingForEval() = 0;

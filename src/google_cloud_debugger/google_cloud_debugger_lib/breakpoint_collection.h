@@ -15,6 +15,7 @@
 #ifndef BREAKPOINT_COLLECTION_H_
 #define BREAKPOINT_COLLECTION_H_
 
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -23,6 +24,7 @@
 #include "ccomptr.h"
 #include "dbg_breakpoint.h"
 #include "i_breakpoint_collection.h"
+#include "breakpoint_location_collection.h"
 
 namespace google_cloud_debugger {
 
@@ -52,7 +54,7 @@ class BreakpointCollection : public IBreakpointCollection {
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
   // This means duplicate breakpoints will be silently rejected.
-  HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) override;
+  HRESULT UpdateBreakpoint(const DbgBreakpoint &breakpoint) override;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.
@@ -79,9 +81,8 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT EvaluateAndPrintBreakpoint(
       mdMethodDef function_token, ULONG32 il_offset,
       IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
-      ICorDebugStackWalk *debug_stack_walk,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) override;
 
  private:
@@ -90,7 +91,11 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT ReadAndParseBreakpoint(DbgBreakpoint *breakpoint);
 
   // The underlying list of breakpoints that this collection manages.
-  std::vector<std::unique_ptr<DbgBreakpoint>> breakpoints_;
+  // std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
+
+  // A map of location to a collection of breakpoint at that location.
+  std::map<std::string, std::unique_ptr<BreakpointLocationCollection>>
+    location_to_breakpoints_;
 
   // Activate a breakpoint in a portable pdb file.
   // This function should only be used if breakpoint is already set, i.e.
@@ -98,10 +103,6 @@ class BreakpointCollection : public IBreakpointCollection {
   HRESULT ActivateBreakpointHelper(
       DbgBreakpoint *breakpoint,
       google_cloud_debugger_portable_pdb::IPortablePdbFile *portable_pdb);
-
-  // Helper function to activate or deactivate an existing breakpoint.
-  HRESULT ActivateOrDeactivateExistingBreakpoint(
-      const DbgBreakpoint &breakpoint, BOOL activate);
 
   // Helper function to get type definition token, signature, virtual address
   // and name of a method (identified using method_def).

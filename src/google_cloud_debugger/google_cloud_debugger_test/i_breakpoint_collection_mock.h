@@ -37,7 +37,7 @@ class IBreakpointCollectionMock
   MOCK_METHOD1(
       SetDebuggerCallback,
       HRESULT(google_cloud_debugger::DebuggerCallback *debugger_callback));
-  MOCK_METHOD1(ActivateOrDeactivate,
+  MOCK_METHOD1(UpdateBreakpoint,
                HRESULT(const google_cloud_debugger::DbgBreakpoint &breakpoint));
   MOCK_METHOD0(SyncBreakpoints, HRESULT());
   MOCK_METHOD0(CancelSyncBreakpoints, HRESULT());
@@ -47,13 +47,12 @@ class IBreakpointCollectionMock
   MOCK_METHOD1(
       ReadBreakpoint,
       HRESULT(google::cloud::diagnostics::debug::Breakpoint *breakpoint));
-  MOCK_METHOD6(
+  MOCK_METHOD5(
       EvaluateAndPrintBreakpoint,
       HRESULT(mdMethodDef function_token, ULONG32 il_offset,
               google_cloud_debugger::IEvalCoordinator *eval_coordinator,
               ICorDebugThread *debug_thread,
-              ICorDebugStackWalk *debug_stack_walk,
-              const std::vector<std::unique_ptr<
+              const std::vector<std::shared_ptr<
                   google_cloud_debugger_portable_pdb::IPortablePdbFile>>
                   &pdb_files));
 };

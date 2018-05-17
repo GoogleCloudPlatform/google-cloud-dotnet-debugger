@@ -40,6 +40,8 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0,
                     Path = breakpoint.Location?.Path,
                 },
+                Condition = breakpoint.Condition,
+                Expressions = { breakpoint.Expressions }
             };
         }
 
@@ -62,36 +64,13 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
-                StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() }
+                StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() },
+
+                EvaluatedExpressions =
+                {
+                    breakpoint.EvaluatedExpressions?.Select(variable => variable.Convert()).ToList()
+                }
             };
-        }
-
-        /// <summary>
-        /// Creates a location identifier based on the file name and the line number of the breakpoint.
-        /// </summary>
-        public static string GetLocationIdentifier(this StackdriverBreakpoint breakpoint)
-        {
-            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
-            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
-            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            // Normalize the path in the key to account for Linux vs Windows difference.
-            string path = breakpoint.Location?.Path?.Replace('\\', '/');
-            int? line = breakpoint.Location?.Line;
-            return $"{path}:{line}".ToLower();
-        }
-
-        /// <summary>
-        /// Creates a location identifier based on the file name and the line number of the breakpoint.
-        /// </summary>
-        public static string GetLocationIdentifier(this Breakpoint breakpoint)
-        {
-            GaxPreconditions.CheckNotNull(breakpoint, nameof(breakpoint));
-            GaxPreconditions.CheckNotNull(breakpoint.Location, nameof(breakpoint.Location));
-            GaxPreconditions.CheckNotNullOrEmpty(breakpoint.Location.Path, nameof(breakpoint.Location.Path));
-            // Normalize the path in the key to account for Linux vs Windows difference.
-            string path = breakpoint.Location?.Path?.Replace('\\', '/');
-            int? line = breakpoint.Location?.Line;
-            return $"{path}:{line}".ToLower();
         }
     }
 }

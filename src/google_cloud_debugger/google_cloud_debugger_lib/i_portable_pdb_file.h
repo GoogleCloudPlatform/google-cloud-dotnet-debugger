@@ -26,6 +26,10 @@
 #include "document_index.h"
 #include "metadata_tables.h"
 
+namespace google_cloud_debugger {
+  class ICorDebugHelper;
+}
+
 namespace google_cloud_debugger_portable_pdb {
 
 struct StreamHeader;
@@ -48,7 +52,8 @@ class IPortablePdbFile {
   virtual ~IPortablePdbFile() = default;
 
   // Initializes the PDB, populates the name, metadata import and debug module.
-  virtual HRESULT Initialize(ICorDebugModule *debug_module) = 0;
+  virtual HRESULT Initialize(ICorDebugModule *debug_module,
+                             google_cloud_debugger::ICorDebugHelper *debug_helper) = 0;
 
   // Parses the pdb file. The name of the file will come from the
   // ICorDebugModule object that is used to initialize this object.

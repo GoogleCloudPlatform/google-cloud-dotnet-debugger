@@ -15,7 +15,6 @@
 #include "dbg_enum.h"
 
 #include "class_names.h"
-#include "i_cor_debug_helper.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;

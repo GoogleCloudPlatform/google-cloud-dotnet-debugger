@@ -20,16 +20,23 @@
 #include <vector>
 
 #include "constants.h"
+#include "i_cor_debug_helper.h"
 #include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class DbgObject;
+class IDbgObjectFactory;
 
 // This class represents a member (property or field) in a .NET class.
 class IDbgClassMember : public StringStreamWrapper {
  public:
+  IDbgClassMember(std::shared_ptr<ICorDebugHelper> debug_helper,
+                  std::shared_ptr<IDbgObjectFactory> obj_factory)
+                  : debug_helper_(debug_helper), obj_factory_(obj_factory) {
+  }
+
   virtual ~IDbgClassMember() = default;
 
   // Evaluates the member and stores the value in member_value_.
@@ -40,8 +47,7 @@ class IDbgClassMember : public StringStreamWrapper {
   // An example is if the class is Dictionary<string, int> then the generic
   // type array is (string, int).
   virtual HRESULT Evaluate(
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
+      ICorDebugValue *debug_value, IEvalCoordinator *eval_coordinator,
       std::vector<CComPtr<ICorDebugType>> *generic_types) = 0;
 
   // Returns true if the member is static.
@@ -53,6 +59,11 @@ class IDbgClassMember : public StringStreamWrapper {
   // Returns the signature of the member.
   PCCOR_SIGNATURE GetSignature() const { return signature_metadata_; }
 
+  // Sets the metadata signature of the class member.
+  void SetMetaDataSig(PCCOR_SIGNATURE signature) {
+    signature_metadata_ = signature;
+  }
+
   // Returns the default value of the member.
   UVCP_CONSTANT GetDefaultValue() const { return default_value_; }
 
@@ -62,10 +73,21 @@ class IDbgClassMember : public StringStreamWrapper {
   // Gets the underlying DbgObject of this field's value.
   std::shared_ptr<DbgObject> GetMemberValue() { return member_value_; }
 
+  // Sets the underlying DbgObject of this field's value.
+  void SetMemberValue(std::shared_ptr<DbgObject> member_value) {
+    member_value_ = member_value;
+  }
+
  protected:
+  // Factory to create DbgObject.
+  std::shared_ptr<IDbgObjectFactory> obj_factory_;
+
+  // Helper methods for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
   // Token to the type that implements the member.
   mdTypeDef parent_token_ = 0;
-  
+
   // Attribute flags applied to the member.
   DWORD member_attributes_ = 0;
 

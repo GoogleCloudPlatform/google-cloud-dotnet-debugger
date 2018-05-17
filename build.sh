@@ -9,6 +9,7 @@ ROOT_DIR=$(dirname "$SCRIPT")
 
 AGENT_DIR=$ROOT_DIR/src/Google.Cloud.Diagnostics.Debug
 DEBUGGER_DIR=$ROOT_DIR/src/google_cloud_debugger
+ANTLR_DIR=$ROOT_DIR/third_party/antlr/lib/cpp
 
 CONFIG=Debug
 MAKE_CONFIG_RELEASE=false
@@ -41,6 +42,7 @@ then
   fi
   msbuild $DEBUGGER_DIR/google_cloud_debugger.sln //p:Configuration=$CONFIG //p:Platform=x64
 else
+  make $REBUILD -C $ANTLR_DIR RELEASE=$MAKE_CONFIG_RELEASE
   make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger_lib RELEASE=$MAKE_CONFIG_RELEASE 
   make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger RELEASE=$MAKE_CONFIG_RELEASE
   make $REBUILD -C $DEBUGGER_DIR/google_cloud_debugger_test RELEASE=$MAKE_CONFIG_RELEASE

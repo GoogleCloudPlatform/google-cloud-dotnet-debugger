@@ -35,6 +35,7 @@ using std::chrono::minutes;
 using std::chrono::seconds;
 using std::string;
 using std::unique_ptr;
+using std::shared_ptr;
 using std::vector;
 
 namespace google_cloud_debugger_test {
@@ -53,11 +54,11 @@ class EvalCoordinatorTest : public ::testing::Test {
   // Breakpoint collection passed to PrintBreakpoint function.
   IBreakpointCollectionMock breakpoint_collection_;
 
-  // DbgBreakpoint passed to PrintBreakpoint function.
-  google_cloud_debugger::DbgBreakpoint breakpoint_;
+  // DbgBreakpoints passed to PrintBreakpoint function.
+  std::vector<shared_ptr<google_cloud_debugger::DbgBreakpoint>> breakpoints_;
 
   // Empty list of PDB files passed to PrintBreakpoint function.
-  vector<unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+  vector<shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
       pdb_files_;
 
   // The ICorDebugEval being evaluated.
@@ -111,15 +112,15 @@ TEST_F(EvalCoordinatorTest, TestWaitForEvalTimeOut) {
   EXPECT_EQ(hr, CORDBG_E_FUNC_EVAL_NOT_COMPLETE);
 }
 
-// Tests that PrintBreakpoint will return.
-TEST_F(EvalCoordinatorTest, TestPrintBreakpoint) {
+// Tests that ProcessBreakpoint will return.
+TEST_F(EvalCoordinatorTest, TestProcessBreakpoint) {
   EXPECT_CALL(debug_stack_walk_, GetFrame(_)).WillRepeatedly(Return(S_FALSE));
-  // WriteBreakpoint method should get called.
+  // WriteBreakpoint method should not be called if breakpoints_ is empty called.
+  // TODO(quoct): Add a test when breakpoints_ have members.
   EXPECT_CALL(breakpoint_collection_, WriteBreakpoint(_))
-      .Times(1)
-      .WillRepeatedly(Return(S_OK));
-  HRESULT hr = eval_coordinator_.PrintBreakpoint(
-      &debug_stack_walk_, &debug_thread_, &breakpoint_collection_, &breakpoint_,
+      .Times(0);
+  HRESULT hr = eval_coordinator_.ProcessBreakpoints(
+      &debug_thread_, &breakpoint_collection_, breakpoints_,
       pdb_files_);
 
   // PrintBreakpoint going to call a task that will call WriteBreakpoint

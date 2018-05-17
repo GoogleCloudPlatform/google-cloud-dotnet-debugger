@@ -22,6 +22,7 @@
 #include "cordebug.h"
 #include "dbgshim.h"
 #include "debugger_callback.h"
+#include "i_cor_debug_helper.h"
 
 #ifdef PLATFORM_UNIX
 // PAL is Platform Adaptation Layer which provides an abstraction
@@ -229,8 +230,8 @@ void Debugger::DeactivateBreakpoints() {
   }
 
   vector<CComPtr<ICorDebugAppDomain>> appdomains;
-  hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<ICorDebugAppDomainEnum,
-                                                         ICorDebugAppDomain>(
+  hr = ICorDebugHelper::EnumerateICorDebugSpecifiedType<ICorDebugAppDomainEnum,
+                                                        ICorDebugAppDomain>(
       appdomain_enum, &appdomains);
 
   if (FAILED(hr)) {
@@ -250,7 +251,7 @@ void Debugger::DeactivateBreakpoints() {
     }
 
     vector<CComPtr<ICorDebugBreakpoint>> breakpoints;
-    hr = DebuggerCallback::EnumerateICorDebugSpecifiedType<
+    hr = ICorDebugHelper::EnumerateICorDebugSpecifiedType<
         ICorDebugBreakpointEnum, ICorDebugBreakpoint>(breakpoint_enum,
                                                       &breakpoints);
 

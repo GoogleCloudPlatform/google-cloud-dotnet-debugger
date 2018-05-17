@@ -51,7 +51,7 @@ class IBreakpointCollection {
   // and call the private ActivateBreakpointHelper function to activate it.
   // If it is not and we do not need to activate it, simply don't do anything.
   // This means duplicate breakpoints will be silently rejected.
-  virtual HRESULT ActivateOrDeactivate(const DbgBreakpoint &breakpoint) = 0;
+  virtual HRESULT UpdateBreakpoint(const DbgBreakpoint &breakpoint) = 0;
 
   // Using the breakpoint_client_read_ name pipe, try to read and parse
   // any incoming breakpoints that are written to the named pipe.
@@ -78,9 +78,8 @@ class IBreakpointCollection {
   virtual HRESULT EvaluateAndPrintBreakpoint(
       mdMethodDef function_token, ULONG32 il_offset,
       IEvalCoordinator *eval_coordinator, ICorDebugThread *debug_thread,
-      ICorDebugStackWalk *debug_stack_walk,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files) = 0;
 };
 

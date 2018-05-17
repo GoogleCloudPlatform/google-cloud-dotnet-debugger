@@ -17,38 +17,52 @@
 #include <cstdint>
 #include <string>
 
-#include "constants.h"
 #include "ccomptr.h"
 #include "common_action_mocks.h"
+#include "constants.h"
+#include "cor_debug_helper.h"
 #include "dbg_class_property.h"
+#include "dbg_object_factory.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
 
+using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::CorDebugHelper;
+using google_cloud_debugger::DbgClassProperty;
+using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::ICorDebugHelper;
+using google_cloud_debugger::IDbgObjectFactory;
+using std::string;
+using std::vector;
+using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using ::testing::_;
-using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::ConvertStringToWCharPtr;
-using google_cloud_debugger::CComPtr;
-using google_cloud_debugger::DbgClassProperty;
-using std::string;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
 // Test Fixture for DbgClassField.
 class DbgClassPropertyTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {}
+  virtual void SetUp() {
+    debug_helper_ = std::shared_ptr<ICorDebugHelper>(new CorDebugHelper());
+    dbg_object_factory_ =
+        std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory());
+    class_property_ = std::unique_ptr<DbgClassProperty>(
+        new DbgClassProperty(debug_helper_, dbg_object_factory_));
+  }
 
-  virtual void SetUpProperty(bool static_property=false) {
+  virtual void SetUpProperty(bool static_property = false) {
     uint32_t class_property_name_len = wchar_string_.size();
 
-    property_signature_ = static_property ? (COR_SIGNATURE)0x01
-        : (COR_SIGNATURE)DbgClassProperty::kNonStaticPropertyMask;
+    property_signature_ =
+        static_property
+            ? (COR_SIGNATURE)0x01
+            : (COR_SIGNATURE)IMAGE_CEE_CS_CALLCONV_HASTHIS;
 
     // GetPropertyProps should be called twice.
     EXPECT_CALL(metadataimport_mock_,
@@ -69,38 +83,18 @@ class DbgClassPropertyTest : public ::testing::Test {
         .Times(2)
         .WillRepeatedly(DoAll(SetArgPointee<7>(1), Return(S_OK)));
 
-    class_property_.Initialize(property_def_, &metadataimport_mock_,
-        google_cloud_debugger::kDefaultObjectEvalDepth);
+    class_property_->Initialize(property_def_, &metadataimport_mock_, &debug_module_,
+                                google_cloud_debugger::kDefaultObjectEvalDepth);
 
-    HRESULT hr = class_property_.GetInitializeHr();
+    HRESULT hr = class_property_->GetInitializeHr();
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   }
 
   virtual void SetUpPropertyValue() {
-    // Sets various expectation for Evaluate call.
-    EXPECT_CALL(reference_value_, Dereference(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
-
-    // ICorDebugReferenceValue should dereference to object value.
-    EXPECT_CALL(object_value_, QueryInterface(_, _))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
-
-    // From object_value, ICorDebugClass should be extracted.
-    EXPECT_CALL(object_value_, GetClass(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
-
-    // ICorDebugModule extracted from ICorDebugClass.
-    EXPECT_CALL(debug_class_, GetModule(_))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
-
-    // ICorDebugFunction extracted from Module.
     EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
         .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
+        .WillRepeatedly(
+            DoAll(SetArgPointee<1>(&debug_function_), Return(S_OK)));
 
     // ICorDebugEval created from eval_coordinator_mock.
     EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
@@ -113,7 +107,8 @@ class DbgClassPropertyTest : public ::testing::Test {
         .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
 
     // IEvalCoordinator returns a generic value.
-    // When GetValue is called from generic value, returns property_value_ as the value.
+    // When GetValue is called from generic value, returns property_value_ as
+    // the value.
     SetUpMockGenericValue(&generic_value_, property_value_);
 
     EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, _, _))
@@ -164,11 +159,17 @@ class DbgClassPropertyTest : public ::testing::Test {
   // This is because if the other mock objects are destroyed first,
   // this class will try to destroy the mock objects it stored again,
   // causing error.
-  DbgClassProperty class_property_;
+  std::unique_ptr<DbgClassProperty> class_property_;
 
   string class_property_name_ = "PropertyName";
 
   vector<WCHAR> wchar_string_ = ConvertStringToWCharPtr(class_property_name_);
+
+  // ICorDebugHelper used for DbgClassField constructor.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // IDbgObjectFactory used for DbgClassField constructor.
+  std::shared_ptr<IDbgObjectFactory> dbg_object_factory_;
 
   // Value of the property.
   int32_t property_value_ = 20;
@@ -177,27 +178,28 @@ class DbgClassPropertyTest : public ::testing::Test {
 // Tests the Initialize function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestInitialize) {
   SetUpProperty();
-  EXPECT_EQ(class_property_.GetMemberName(), class_property_name_);
+  EXPECT_EQ(class_property_->GetMemberName(), class_property_name_);
 }
 
 // Tests error cases for the Initialize function of DbgClassProperty.
 TEST_F(DbgClassPropertyTest, TestInitializeError) {
-  class_property_.Initialize(property_def_, nullptr,
-      google_cloud_debugger::kDefaultObjectEvalDepth);
-  EXPECT_EQ(class_property_.GetInitializeHr(), E_INVALIDARG);
+  class_property_->Initialize(property_def_, nullptr, &debug_module_,
+                              google_cloud_debugger::kDefaultObjectEvalDepth);
+  EXPECT_EQ(class_property_->GetInitializeHr(), E_INVALIDARG);
 
   EXPECT_CALL(metadataimport_mock_,
               GetPropertyPropsFirst(property_def_, _, _, _, _, _, _, _, _))
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
-  EXPECT_CALL(metadataimport_mock_, GetPropertyPropsSecond(property_def_, _, _, _, _, _, _, _))
+  EXPECT_CALL(metadataimport_mock_,
+              GetPropertyPropsSecond(property_def_, _, _, _, _, _, _, _))
       .Times(1)
       .WillRepeatedly(Return(E_ACCESSDENIED));
 
-  class_property_.Initialize(property_def_, &metadataimport_mock_,
-      google_cloud_debugger::kDefaultObjectEvalDepth);
-  EXPECT_EQ(class_property_.GetInitializeHr(), E_ACCESSDENIED);
+  class_property_->Initialize(property_def_, &metadataimport_mock_, &debug_module_,
+                              google_cloud_debugger::kDefaultObjectEvalDepth);
+  EXPECT_EQ(class_property_->GetInitializeHr(), E_ACCESSDENIED);
 }
 
 // Tests the PopulateVariableValue function of DbgClassProperty.
@@ -214,16 +216,13 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValue) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                     &eval_coordinator_mock_,
-                                     &generic_types),
+  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
+                                      &eval_coordinator_mock_, &generic_types),
             S_OK);
 
-  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
+  EXPECT_TRUE(class_property_->GetMemberValue() != nullptr);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -245,16 +244,13 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueGeneric) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.Evaluate(
-                &reference_value_, &eval_coordinator_mock_,
-                &generic_types),
+  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
+                                      &eval_coordinator_mock_, &generic_types),
             S_OK);
 
-  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
+  EXPECT_TRUE(class_property_->GetMemberValue() != nullptr);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -275,16 +271,13 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueStatic) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.Evaluate(
-                &reference_value_, &eval_coordinator_mock_,
-                &generic_types),
+  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
+                                      &eval_coordinator_mock_, &generic_types),
             S_OK);
 
-  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
+  EXPECT_TRUE(class_property_->GetMemberValue() != nullptr);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -306,16 +299,13 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueStaticGeneric) {
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
-  EXPECT_EQ(class_property_.Evaluate(
-                &reference_value_, &eval_coordinator_mock_,
-                &generic_types),
+  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
+                                      &eval_coordinator_mock_, &generic_types),
             S_OK);
 
-  EXPECT_TRUE(class_property_.GetMemberValue() != nullptr);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateValue(&variable), S_OK);
-  EXPECT_EQ(
-      class_property_.GetMemberValue()->PopulateType(&variable), S_OK);
+  EXPECT_TRUE(class_property_->GetMemberValue() != nullptr);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateValue(&variable), S_OK);
+  EXPECT_EQ(class_property_->GetMemberValue()->PopulateType(&variable), S_OK);
 
   EXPECT_EQ(variable.type(), "System.Int32");
   EXPECT_EQ(variable.value(), std::to_string(property_value_));
@@ -328,92 +318,14 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
   Variable variable;
   vector<CComPtr<ICorDebugType>> generic_types;
 
-  // Checks null argument error.
-  EXPECT_EQ(class_property_.Evaluate(nullptr,
-                                     &eval_coordinator_mock_,
-                                     &generic_types),
-            E_INVALIDARG);
-  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                     nullptr,
-                                     &generic_types),
-            E_INVALIDARG);
-  EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                     &eval_coordinator_mock_,
-                                     nullptr),
-            E_INVALIDARG);
-
-  {
-    // Errors out if dereference fails.
-    EXPECT_CALL(reference_value_, Dereference(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
-
-    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                       &eval_coordinator_mock_,
-                                       &generic_types),
-              CORDBG_E_BAD_REFERENCE_VALUE);
-  }
-
-  // reference_value should be dereferenced to object_value.
-  EXPECT_CALL(reference_value_, Dereference(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&object_value_), Return(S_OK)));
-
-  {
-    // Errors out if we cannot extract ICorDebugObjectValue.
-    EXPECT_CALL(object_value_, QueryInterface(_, _))
-        .Times(1)
-        .WillRepeatedly(Return(E_NOINTERFACE));
-
-    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                       &eval_coordinator_mock_,
-                                       &generic_types),
-              E_NOINTERFACE);
-  }
-
-  EXPECT_CALL(object_value_, QueryInterface(_, _))
-      .WillRepeatedly(DoAll(SetArgPointee<1>(&object_value_), Return(S_OK)));
-
-  {
-    // Errors out if ICorDebugClass extraction fails.
-    EXPECT_CALL(object_value_, GetClass(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_PROCESS_TERMINATED));
-
-    EXPECT_EQ(class_property_.Evaluate(&reference_value_,
-                                       &eval_coordinator_mock_,
-                                       &generic_types),
-              CORDBG_E_PROCESS_TERMINATED);
-  }
-
-  // From object_value, ICorDebugClass should be extracted.
-  EXPECT_CALL(object_value_, GetClass(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_class_), Return(S_OK)));
-
-  {
-    // Errors out if ICorDebugModule extraction fails.
-    EXPECT_CALL(debug_class_, GetModule(_))
-        .Times(1)
-        .WillRepeatedly(Return(CORDBG_E_MODULE_NOT_LOADED));
-
-    EXPECT_EQ(class_property_.Evaluate(&reference_value_, 
-                                       &eval_coordinator_mock_, 
-                                       &generic_types),
-              CORDBG_E_MODULE_NOT_LOADED);
-  }
-
-  // ICorDebugModule extracted from ICorDebugClass.
-  EXPECT_CALL(debug_class_, GetModule(_))
-      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_module_), Return(S_OK)));
-
   {
     // Errors out if ICorDebugFunction extraction fails.
     EXPECT_CALL(debug_module_, GetFunctionFromToken(_, _))
         .Times(1)
         .WillRepeatedly(Return(CORPROF_E_FUNCTION_NOT_COMPILED));
 
-    EXPECT_EQ(class_property_.Evaluate(&reference_value_, 
-                                       &eval_coordinator_mock_,
-                                       &generic_types),
+    EXPECT_EQ(class_property_->Evaluate(
+                  &reference_value_, &eval_coordinator_mock_, &generic_types),
               CORPROF_E_FUNCTION_NOT_COMPILED);
   }
 
@@ -427,7 +339,7 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_BAD_START_POINT));
 
-    EXPECT_EQ(class_property_.Evaluate(
+    EXPECT_EQ(class_property_->Evaluate(
                   &reference_value_, &eval_coordinator_mock_, &generic_types),
               CORDBG_E_FUNC_EVAL_BAD_START_POINT);
   }
@@ -442,7 +354,7 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(E_NOINTERFACE));
 
-    EXPECT_EQ(class_property_.Evaluate(
+    EXPECT_EQ(class_property_->Evaluate(
                   &reference_value_, &eval_coordinator_mock_, &generic_types),
               E_NOINTERFACE);
   }
@@ -457,7 +369,7 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
         .Times(1)
         .WillRepeatedly(Return(E_ABORT));
 
-    EXPECT_EQ(class_property_.Evaluate(
+    EXPECT_EQ(class_property_->Evaluate(
                   &reference_value_, &eval_coordinator_mock_, &generic_types),
               E_ABORT);
   }
@@ -470,8 +382,8 @@ TEST_F(DbgClassPropertyTest, TestPopulateVariableValueError) {
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FUNC_EVAL_NOT_COMPLETE));
 
-  EXPECT_EQ(class_property_.Evaluate(
-                  &reference_value_, &eval_coordinator_mock_, &generic_types),
+  EXPECT_EQ(class_property_->Evaluate(&reference_value_,
+                                      &eval_coordinator_mock_, &generic_types),
             CORDBG_E_FUNC_EVAL_NOT_COMPLETE);
 }
 
