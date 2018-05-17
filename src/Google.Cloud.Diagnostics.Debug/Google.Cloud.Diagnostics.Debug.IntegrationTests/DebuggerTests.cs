@@ -145,7 +145,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
         }
 
-        [Fact(Skip ="Broken in head but fixed in quoct/*, waiting for merge")]
+        [Fact]
         public async Task BreakpointSet_TwoSameLocation()
         {
             using (var app = StartTestApp(debugEnabled: true))
