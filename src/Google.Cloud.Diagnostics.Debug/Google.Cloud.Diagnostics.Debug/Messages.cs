@@ -16,11 +16,6 @@ namespace Google.Cloud.Diagnostics.Debug
     internal class Messages
     {
         /// <summary>
-        /// A message stating that conditions and expression evaluation is not supported.
-        /// </summary>
-        public const string CondExpNotSupported = "Conditions and expressions are not currently supported.";
-
-        /// <summary>
         /// A message stating that log points are not supported.
         /// </summary>
         public const string LogPointNotSupported = "Log points are currently not supported.";
