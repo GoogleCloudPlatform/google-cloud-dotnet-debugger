@@ -50,7 +50,7 @@ Once the repository and dependencies are built you can run the debugger with:
   ```
   dotnet ./Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp1.1/Google.Cloud.Diagnostics.Debug.dll \
     --debugger=./google_cloud_debugger/google_cloud_debugger \
-    --application-path=<Path to a .NET Core application> \
+    --application-id=<Process ID of a running .NET Core application to debug> \
     --project-id=<Google Cloud Console project id> \
     --module=<Module of your application> \
     --version=<Version of your application>
@@ -60,7 +60,7 @@ Once the repository and dependencies are built you can run the debugger with:
   ```
   dotnet .\Google.Cloud.Diagnostics.Debug\bin\Debug\netcoreapp1.1\Google.Cloud.Diagnostics.Debug.dll ^
     --debugger=.\x64\Debug\google_cloud_debugger.exe ^
-    --application-path=<Path to a .NET Core application> ^
+    --application-id=<Process ID of a running .NET Core application to debug> ^
     --project-id=<Google Cloud Console project id> ^
     --module=<Module of your application> ^
     --version=<Version of your application>
