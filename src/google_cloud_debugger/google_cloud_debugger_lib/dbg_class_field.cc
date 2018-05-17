@@ -19,6 +19,7 @@
 #include "breakpoint.pb.h"
 #include "constants.h"
 #include "i_cor_debug_helper.h"
+#include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
 
 using google::cloud::diagnostics::debug::Variable;
@@ -31,10 +32,6 @@ void DbgClassField::Initialize(mdFieldDef field_def,
                                ICorDebugObjectValue *debug_obj_value,
                                ICorDebugClass *debug_class,
                                ICorDebugType *class_type, int creation_depth) {
-  // If a field is a backing field of a property, its name will
-  // end with this.
-  static const string kBackingField = ">k__BackingField";
-
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
@@ -93,7 +90,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
       string::size_type position;
       // Checks that field_name_ ends with k_BackingField.
       position = member_name_.find(kBackingField,
-                                  member_name_.size() - kBackingField.size());
+                                   member_name_.size() - kBackingField.size());
       // Extracts out the field name.
       if (position != string::npos) {
         is_backing_field_ = true;
@@ -131,8 +128,8 @@ void DbgClassField::Initialize(mdFieldDef field_def,
   }
 
   unique_ptr<DbgObject> member_value;
-  initialized_hr_ = DbgObject::CreateDbgObject(field_value, creation_depth_,
-                                               &member_value, GetErrorStream());
+  initialized_hr_ = obj_factory_->CreateDbgObject(
+      field_value, creation_depth_, &member_value, GetErrorStream());
 
   if (FAILED(initialized_hr_)) {
     WriteError("Failed to create DbgObject for field.");
@@ -145,7 +142,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::Evaluate(
-    ICorDebugReferenceValue *reference_value,
+    ICorDebugValue *debug_value,
     IEvalCoordinator *eval_coordinator,
     std::vector<CComPtr<ICorDebugType>> *generic_types) {
   if (FAILED(initialized_hr_)) {
@@ -173,7 +170,8 @@ HRESULT DbgClassField::Evaluate(
   return S_OK;
 }
 
-HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinator) {
+HRESULT DbgClassField::ExtractStaticFieldValue(
+    IEvalCoordinator *eval_coordinator) {
   CComPtr<ICorDebugThread> active_thread;
   HRESULT hr = eval_coordinator->GetActiveDebugThread(&active_thread);
   if (FAILED(hr)) {
@@ -209,8 +207,8 @@ HRESULT DbgClassField::ExtractStaticFieldValue(IEvalCoordinator *eval_coordinato
 
   // TODO(quoct): String that starts with @ cannot be retrieved.
   // For static field, use default evaluation depth.
-  hr = DbgObject::CreateDbgObject(debug_value, creation_depth_,
-                                  &member_value, GetErrorStream());
+  hr = obj_factory_->CreateDbgObject(debug_value, creation_depth_,
+                                     &member_value, GetErrorStream());
   if (FAILED(hr)) {
     if (member_value) {
       WriteError(member_value->GetErrorString());

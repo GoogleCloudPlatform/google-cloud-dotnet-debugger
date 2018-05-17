@@ -385,19 +385,20 @@ bool PortablePdbFile::ParseCompressedMetadataTableStream() {
   return true;
 }
 
-HRESULT PortablePdbFile::Initialize(ICorDebugModule *debug_module) {
+HRESULT PortablePdbFile::Initialize(ICorDebugModule *debug_module,
+    google_cloud_debugger::ICorDebugHelper *debug_helper) {
   if (!debug_module) {
     return E_INVALIDARG;
   }
 
-  HRESULT hr = google_cloud_debugger::GetMetadataImportFromICorDebugModule(
+  HRESULT hr = debug_helper->GetMetadataImportFromICorDebugModule(
       debug_module, &metadata_import_, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
 
   vector<WCHAR> module_name;
-  hr = google_cloud_debugger::GetModuleNameFromICorDebugModule(debug_module,
+  hr = debug_helper->GetModuleNameFromICorDebugModule(debug_module,
                                                                &module_name,
                                                                &std::cerr);
   if (FAILED(hr)) {

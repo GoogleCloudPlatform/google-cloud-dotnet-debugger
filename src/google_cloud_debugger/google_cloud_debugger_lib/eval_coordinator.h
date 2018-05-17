@@ -22,6 +22,8 @@
 
 namespace google_cloud_debugger {
 
+class IStackFrameCollection;
+
 // An EvalCoordinator object is used by DebuggerCallback object to evaluate
 // and print out variables. It does so by creating a StackFrame on a new
 // thread and coordinates between the StackFrame and DebuggerCallback.
@@ -48,57 +50,79 @@ class EvalCoordinator : public IEvalCoordinator {
  public:
   // This method is used to create an ICorDebugEval object
   // from the active thread.
-  HRESULT CreateEval(ICorDebugEval **eval);
+  HRESULT CreateEval(ICorDebugEval **eval) override;
+
+  // Creates an ICorDebugStackWalk object from the active thread.
+  HRESULT CreateStackWalk(ICorDebugStackWalk **debug_stack_walk) override;
 
   // StackFrame calls this to get evaluation result.
   // This method will block until an evaluation is complete.
   HRESULT WaitForEval(BOOL *exception_thrown, ICorDebugEval *eval,
-                      ICorDebugValue **eval_result);
+                      ICorDebugValue **eval_result) override;
 
   // DebuggerCallback calls this function to signal that an evaluation is
   // finished.
-  void SignalFinishedEval(ICorDebugThread *debug_thread);
+  void SignalFinishedEval(ICorDebugThread *debug_thread) override;
 
   // DebuggerCallback calls this function to signal that an exception has
   // occurred.
-  void HandleException();
+  void HandleException() override;
 
-  // Prints out the stack frames at DbgBreakpoint breakpoint based on
-  // debug_stack_walk.
-  HRESULT PrintBreakpoint(
-      ICorDebugStackWalk *debug_stack_walk, ICorDebugThread *debug_thread,
-      IBreakpointCollection *breakpoint_collection, DbgBreakpoint *breakpoint,
+  // Processes a vector of breakpoints set at the SAME location (they
+  // can have different conditions and expressions).
+  // Each breakpoint's condition will first be tested. If this is true,
+  // stack frame information and expressions will be evaluated and reported.
+  HRESULT ProcessBreakpoints(
+      ICorDebugThread *debug_thread,
+      IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
       const std::vector<
-          std::unique_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-          &pdb_files);
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files) override;
 
   // StackFrame calls this to signal that it already processed all the
   // variables and it is just waiting to perform evaluation (if necessary) and
   // print them out.
-  void WaitForReadySignal();
+  void WaitForReadySignal() override;
 
   // StackFrame calls this to signal to the DebuggerCallback that it
   // finished all the evaluation.
-  void SignalFinishedPrintingVariable();
+  void SignalFinishedPrintingVariable() override;
 
   // Returns the active debug thread.
-  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread);
+  HRESULT GetActiveDebugThread(ICorDebugThread **debug_thread) override;
+
+  // Returns the active debug thread.
+  HRESULT GetActiveDebugFrame(ICorDebugILFrame **debug_frame) override;
 
   // Returns true if we are waiting for an evaluation result.
-  BOOL WaitingForEval();
+  BOOL WaitingForEval() override;
 
   // Sets this to stop property evaluation.
-  void SetPropertyEvaluation(BOOL eval) { property_evaluation_ = eval; }
+  void SetPropertyEvaluation(BOOL eval) override {
+    property_evaluation_ = eval;
+  }
 
   // Returns whether property evaluation should be performed.
-  BOOL PropertyEvaluation() { return property_evaluation_; }
+  BOOL PropertyEvaluation() override { return property_evaluation_; }
 
  private:
+  // Helper function to process a vector of multiple breakpoints at the same location
+  // using the stack frame collection. The stack frame collection
+  // will first be used to evaluate the breakpoint condition. If this succeeds,
+  // the function will proceed to get stack frame information at the breakpoint.
+  HRESULT ProcessBreakpointsTask(
+      IBreakpointCollection *breakpoint_collection,
+      std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &pdb_files);
+
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
 
   // The tasks that help us enumerate and print out variables.
-  std::vector<std::future<void>> print_breakpoint_tasks_;
+  std::vector<std::future<HRESULT>> print_breakpoint_tasks_;
 
   // The ICorDebugThread that the active StackFrame is on.
   CComPtr<ICorDebugThread> active_debug_thread_;

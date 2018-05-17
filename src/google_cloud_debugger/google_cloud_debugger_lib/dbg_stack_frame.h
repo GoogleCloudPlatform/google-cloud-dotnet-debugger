@@ -21,28 +21,25 @@
 #include <string>
 #include <tuple>
 
-#include "breakpoint.pb.h"
-#include "constants.h"
-#include "cor.h"
-#include "cordebug.h"
-#include "dbg_object.h"
 #include "document_index.h"
+#include "i_dbg_stack_frame.h"
+#include "type_signature.h"
 
 namespace google_cloud_debugger {
 
-typedef std::tuple<std::string, std::shared_ptr<DbgObject>,
-                   std::unique_ptr<std::ostringstream>>
-    VariableTuple;
-
-class DebuggerCallback;
-class IEvalCoordinator;
+// TODO(quoct): Add error stream into the tuple.
+typedef std::tuple<std::string, std::shared_ptr<DbgObject>> VariableTuple;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
 // at a stack frame. It also stores useful debugging information like
 // method name, class name, file name and line number.
-class DbgStackFrame {
+class DbgStackFrame : public IDbgStackFrame {
  public:
+  DbgStackFrame(std::shared_ptr<ICorDebugHelper> debug_helper,
+                std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : debug_helper_(debug_helper), obj_factory_(obj_factory) {}
+
   // Populate method_name_, file_name_, line_number_ and breakpoint_id_.
   // Also populate local variables and method arguments into variables_
   // vectors.
@@ -59,8 +56,68 @@ class DbgStackFrame {
   // information than stack_frame_size.
   HRESULT PopulateStackFrame(
       google::cloud::diagnostics::debug::StackFrame *stack_frame,
-      int stack_frame_size,
-      IEvalCoordinator *eval_coordinator) const;
+      int stack_frame_size, IEvalCoordinator *eval_coordinator) const;
+
+  // Gets a local variable or method arguments with name
+  // variable_name.
+  HRESULT GetLocalVariable(const std::string &variable_name,
+                           std::shared_ptr<DbgObject> *dbg_object,
+                           std::ostream *err_stream);
+
+  // Gets out any field or auto-implemented property with the name
+  // member_name of the class this frame is in.
+  HRESULT GetFieldAndAutoPropFromFrame(const std::string &member_name,
+                                       std::shared_ptr<DbgObject> *dbg_object,
+                                       ICorDebugILFrame *debug_frame,
+                                       std::ostream *err_stream);
+
+  // Gets out property with the name property_name of the class
+  // this frame is in. This will also returns the TypeSignature
+  // of the property.
+  HRESULT GetPropertyFromFrame(
+      const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *property_object,
+      std::ostream *err_stream);
+
+  // This function will try to find the field/auto-implemented property
+  // field_name in the class with metadata token class_token.
+  // If found, this function will set type_signature to the
+  // TypeSignature of this member, the metadata token of the field
+  // to field_def and is_static to whether the field is static or not.
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetFieldFromClass(
+      const mdTypeDef &class_token, const std::string &field_name,
+      mdFieldDef *field_def, bool *is_static, TypeSignature *type_signature,
+      const std::vector<TypeSignature> &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream);
+
+  // This function will try to find the property
+  // property_name in the class with metadata token class_token.
+  // The function will return a DbgClassProperty that
+  // represents that property (this will be useful when we need
+  // to perform function evaluation to get the member).
+  // metadata_import is the IMetaDataImport of the module the class is in.
+  HRESULT GetPropertyFromClass(
+      const mdTypeDef &class_token, const std::string &property_name,
+      std::unique_ptr<DbgClassProperty> *class_property,
+      const std::vector<TypeSignature> &generic_signatures,
+      IMetaDataImport *metadata_import, std::ostream *err_stream);
+
+  // Given a fully qualified class name, this function find the
+  // metadata token mdTypeDef of the class. It will also
+  // return the ICorDebugModule and IMetaDataImport of the module
+  // the class is in.
+  // Returns S_FALSE if the class cannot be found.
+  HRESULT GetClassTokenAndModule(const std::string &class_name,
+                                 mdTypeDef *class_token,
+                                 ICorDebugModule **debug_module,
+                                 IMetaDataImport **metadata_import);
+
+  // Returns S_OK if source_type is a child class of target_type.
+  HRESULT IsBaseType(const TypeSignature &source_type,
+                     const TypeSignature &target_type,
+                     std::ostream *err_stream);
 
   // Sets how deep an object will be inspected.
   void SetObjectInspectionDepth(int depth);
@@ -120,7 +177,57 @@ class DbgStackFrame {
   // Returns true if this is a parsed IL frame.
   bool IsProcessedIlFrame() { return is_processed_il_frame_; }
 
+  // Returns true if the method this frame is in is a static method.
+  bool IsStaticMethod() { return is_static_method_; }
+
+  // Gets the ICorDebugFunction that corresponds with method represented by
+  // method_info in the class class_token. This function will
+  // also check the methods against the arguments vector to
+  // select the appropriate method. Besides returning the debug_function,
+  // the function will also populate properties like is_static or
+  // has_generic_types of method_info if succeeded.
+  HRESULT GetDebugFunctionFromClass(
+      IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
+      const mdTypeDef &class_token, MethodInfo *method_info,
+      ICorDebugFunction **debug_function);
+
+  // Similar to GetDebugFunctionFromClass except the class_token is the class
+  // that the frame is in.
+  HRESULT GetDebugFunctionFromCurrentClass(MethodInfo *method_info,
+                                           ICorDebugFunction **debug_function);
+
+  // Extract out generic type parameters for the class the frame is in.
+  HRESULT GetClassGenericTypeParameters(
+      std::vector<CComPtr<ICorDebugType>> *debug_types);
+
+  // Returns generic type signatures parameter for the class the frame is in.
+  const std::vector<TypeSignature> &GetClassGenericTypeSignatureParameters() {
+    return generic_type_signatures_;
+  }
+
  private:
+  // Helper for ICorDebug method.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
+  // Factory to create DbgObject.
+  std::shared_ptr<IDbgObjectFactory> obj_factory_;
+
+  // Generic types of the class the frame is in.
+  std::vector<CComPtr<ICorDebugType>> class_generic_types_;
+
+  // Type Signature of the generic types of the class the frame is in.
+  std::vector<TypeSignature> generic_type_signatures_;
+
+  // Gets the metadata import of the module this frame is in.
+  // We cannot store the IMetaDataImport directly because
+  // they may be invalidated.
+  HRESULT GetMetaDataImport(IMetaDataImport **metadata_import);
+
+  // Gets the ICorDebugType of the generic types of the class the frame
+  // is in and stores in class_generic_types_.
+  HRESULT InitializeClassGenericTypeParameters(IMetaDataImport *metadata_import,
+                                               ICorDebugILFrame *debug_frame);
+
   // Extract local variables from local_enum.
   // DbgBreakpoint object is used to get the variables' names.
   HRESULT ProcessLocalVariables(
@@ -134,6 +241,31 @@ class DbgStackFrame {
   HRESULT ProcessMethodArguments(ICorDebugValueEnum *method_arg_enum,
                                  mdMethodDef method_token,
                                  IMetaDataImport *metadata_import);
+
+  // Populates the type_def_dict_ and type_ref_dict_ with all
+  // the types loaded in this frame.
+  HRESULT PopulateTypeDict();
+
+  // Populate debug_assemblies_ with all loaded assemblies
+  // in app_domain_.
+  HRESULT PopulateDebugAssemblies();
+
+  // Helper function to search for field or backing field of an
+  // auto-implemented property with the name member_name in class
+  // with metadata token class_token.
+  // metadata_import is the MetaDataImport of the module the class is in.
+  // field_def is set to the field metadata if it is found.
+  // field_static is set to true if the found field is static.
+  // signature is the PCCOR_SIGNATURE of the field.
+  // signature_len is the length of the signature.
+  // Any errors will be outputted to the error stream err_stream.
+  HRESULT GetFieldAndAutoPropertyInfo(IMetaDataImport *metadata_import,
+                                      mdTypeDef class_token,
+                                      const std::string &member_name,
+                                      mdFieldDef *field_def, bool *field_static,
+                                      PCCOR_SIGNATURE *signature,
+                                      ULONG *signature_len,
+                                      std::ostream *err_stream);
 
   // Tuple that contains variable's name, variable's value and the error stream.
   std::vector<VariableTuple> variables_;
@@ -165,9 +297,46 @@ class DbgStackFrame {
   // True if this is an empty frame with no information.
   bool empty_ = false;
 
+  // True if this frame is a static frame.
+  bool is_static_method_ = false;
+
   // Returns true if this is an IL frame that has been processed.
   // This is set after a successful call to Initialize.
   bool is_processed_il_frame_ = false;
+
+  // MetaData token of the method.
+  mdMethodDef method_token_;
+
+  // MetaData token of the class the frame is in.
+  mdTypeDef class_token_;
+
+  // The app domain this frame is in.
+  CComPtr<ICorDebugAppDomain> app_domain_;
+
+  // The module this stack frame is in.
+  CComPtr<ICorDebugModule> debug_module_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeDef of that class.
+  std::map<std::string, mdTypeDef> type_def_dict_;
+
+  // Dictionary whose key is class name and whose value
+  // is the metadata token mdTypeRef of that class.
+  // The difference between mdTypeDef and mdTypeRef
+  // is that mdTypeDef type is found in the current module
+  // whereas mdTypeRef is found in other modules.
+  // Hence, mdTypeRef may needs to be resolved to mdTypeDef
+  // when needed.
+  std::map<std::string, mdTypeRef> type_ref_dict_;
+
+  // True if type_def_dict_ and type_ref_dict_ have been populated.
+  bool type_dict_populated_ = false;
+
+  // Cache of loaded debug assemblies.
+  std::vector<CComPtr<ICorDebugAssembly>> debug_assemblies_;
+
+  // True if debug_assemblies_ has been populated.
+  bool debug_assemblies_populated_ = false;
 };
 
 }  //  namespace google_cloud_debugger

@@ -22,26 +22,28 @@
 #include "common_action_mocks.h"
 #include "dbg_class.h"
 #include "dbg_object.h"
+#include "dbg_object_factory.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
 #include "variable_wrapper.h"
 
+using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger::CComPtr;
+using google_cloud_debugger::ConvertStringToWCharPtr;
+using google_cloud_debugger::DbgClass;
+using google_cloud_debugger::DbgObject;
+using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::VariableWrapper;
+using std::string;
+using std::unique_ptr;
+using std::vector;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Mock;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::SetArrayArgument;
-using google::cloud::diagnostics::debug::Variable;
-using google_cloud_debugger::CComPtr;
-using google_cloud_debugger::ConvertStringToWCharPtr;
-using google_cloud_debugger::DbgClass;
-using google_cloud_debugger::DbgObject;
-using google_cloud_debugger::VariableWrapper;
-using std::string;
-using std::unique_ptr;
-using std::vector;
 
 namespace google_cloud_debugger_test {
 
@@ -302,6 +304,9 @@ class DbgClassTest : public ::testing::Test {
         .WillRepeatedly(DoAll(SetArg0ToByteValue(enum_value_), Return(S_OK)));
   }
 
+  // Object factory.
+  DbgObjectFactory object_factory_;
+
   // The ICorDebugClass represents this class.
   ICorDebugClassMock debug_class_;
 
@@ -371,7 +376,7 @@ class DbgClassTest : public ::testing::Test {
   PCCOR_SIGNATURE first_field_sig_;
 
   // Attribute of the first field.
-  ULONG first_field_attr_;
+  ULONG first_field_attr_ = 0;
 
   // Name of this class's second field.
   string class_second_field_ = "Field2";
@@ -389,7 +394,7 @@ class DbgClassTest : public ::testing::Test {
   PCCOR_SIGNATURE second_field_sig_;
 
   // Attribute of the first field.
-  ULONG second_field_attr_;
+  ULONG second_field_attr_ = 0;
 
   // Name of this class's property.
   string class_property_ = "Property";
@@ -435,7 +440,7 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNull) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(
+  HRESULT hr = object_factory_.CreateDbgClassObject(
       &debug_type_,
       0,  // Sets depth to 0 so no fields or properties are created.
       &object_value_,
@@ -458,7 +463,7 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNonNull) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(
+  HRESULT hr = object_factory_.CreateDbgClassObject(
       &debug_type_,
       -1,  // Sets depth to -1 so no fields or properties are created.
       &object_value_,
@@ -481,12 +486,11 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectNoBaseClass) {
   // ICorDebugType returns base type if GetBase is called.
   // Makes it returns null pointer.
   ON_CALL(debug_type_, GetBase(_))
-      .WillByDefault(
-          DoAll(SetArgPointee<0>(nullptr), Return(S_OK)));
+      .WillByDefault(DoAll(SetArgPointee<0>(nullptr), Return(S_OK)));
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(
+  HRESULT hr = object_factory_.CreateDbgClassObject(
       &debug_type_,
       -1,  // Sets depth to -1 so no fields or properties are created.
       &object_value_,
@@ -508,8 +512,8 @@ TEST_F(DbgClassTest, TestCreateDbgClassWithFieldAndProperty) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -527,8 +531,8 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectError) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_EQ(hr, CORDBG_E_TYPE_NOT_FOUND);
 }
@@ -545,8 +549,8 @@ TEST_F(DbgClassTest, TestCreateDbgClassObjectMetaDataError) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_EQ(hr, CORDBG_E_MISSING_METADATA);
 }
@@ -559,8 +563,8 @@ TEST_F(DbgClassTest, TestPopulateType) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -585,8 +589,8 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-    FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -596,29 +600,29 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   // Now we set up appropriate mock calls to evaluate the property.
   // Debug module should returns the correct property getter function.
   EXPECT_CALL(debug_module_, GetFunctionFromToken(property_getter_def_, _))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<1>(&property_getter_), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&property_getter_), Return(S_OK)));
 
   // ICorDebugEval created from eval_coordinator_mock.
   EXPECT_CALL(eval_coordinator_, CreateEval(_))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<0>(&debug_eval_), Return(S_OK)));
 
   // ICorDebugEval2 extracted from ICorDebugEval.
   EXPECT_CALL(debug_eval_, QueryInterface(_, _))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<1>(&debug_eval2_), Return(S_OK)));
 
   // IEvalCoordinator returns a generic value.
   // When GetValue is called from generic value, returns 20 as the value.
   SetUpMockGenericValue(&property_, property_value_);
 
   EXPECT_CALL(eval_coordinator_, WaitForEval(_, _, _))
-    .Times(1)
-    .WillRepeatedly(DoAll(SetArgPointee<2>(&property_), Return(S_OK)));
+      .Times(1)
+      .WillRepeatedly(DoAll(SetArgPointee<2>(&property_), Return(S_OK)));
 
   hr = dbgclass->PopulateMembers(&variable, &variable_wrappers,
-    &eval_coordinator_);
+                                 &eval_coordinator_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   EXPECT_EQ(variable_wrappers.size(), 3);
@@ -639,7 +643,6 @@ TEST_F(DbgClassTest, TestPopulateMembers) {
   EXPECT_EQ(variable.members(2).value(), std::to_string(property_value_));
 }
 
-
 // Tests PopulateMembers function when there is a property with backing field.
 TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
   // Makes the second field the backing field of the class property.
@@ -654,8 +657,8 @@ TEST_F(DbgClassTest, TestPopulateMembersBackingField) {
   vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -694,8 +697,8 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   vector<VariableWrapper> variable_wrappers;
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -776,8 +779,8 @@ TEST_F(DbgClassTest, TestEnum) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);
@@ -802,8 +805,8 @@ TEST_F(DbgClassTest, TestEnumError) {
 
   unique_ptr<DbgObject> dbgclass;
   std::ostringstream err_stream;
-  HRESULT hr = DbgClass::CreateDbgClassObject(&debug_type_, 1, &object_value_,
-                                              FALSE, &dbgclass, &err_stream);
+  HRESULT hr = object_factory_.CreateDbgClassObject(
+      &debug_type_, 1, &object_value_, FALSE, &dbgclass, &err_stream);
 
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
   dbgclass->Initialize(&object_value_, FALSE);

@@ -12,6 +12,9 @@ message Breakpoint {
   google.protobuf.Timestamp create_time = 5;
   google.protobuf.Timestamp final_time = 6;
   bool kill_server = 7;
+  repeated string expressions = 8;
+  string condition = 9;
+  repeated Variable evaluated_expressions = 10;
 }
 
 message StackFrame {

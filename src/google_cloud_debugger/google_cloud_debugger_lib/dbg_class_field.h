@@ -26,6 +26,10 @@ namespace google_cloud_debugger {
 // Class that represents a field in a .NET class.
 class DbgClassField : public IDbgClassMember {
  public:
+  DbgClassField(std::shared_ptr<ICorDebugHelper> debug_helper,
+                std::shared_ptr<IDbgObjectFactory> obj_factory)
+      : IDbgClassMember(debug_helper, obj_factory){};
+
   // Initialize the field names, metadata signature, flags and values.
   // HRESULT will be stored in initialized_hr_.
   // fieldDef is the metadata token for the field.
@@ -43,10 +47,9 @@ class DbgClassField : public IDbgClassMember {
   // Evaluates and sets member_value_ to the value of the field
   // that is represented by this class.
   // Reference_value and generic_types are ignored.
-  HRESULT Evaluate(
-      ICorDebugReferenceValue *reference_value,
-      IEvalCoordinator *eval_coordinator,
-      std::vector<CComPtr<ICorDebugType>> *generic_types) override;
+  HRESULT Evaluate(ICorDebugValue *debug_value,
+                   IEvalCoordinator *eval_coordinator,
+                   std::vector<CComPtr<ICorDebugType>> *generic_types) override;
 
   // Returns true if this is a backing field for a property.
   const bool IsBackingField() const { return is_backing_field_; }

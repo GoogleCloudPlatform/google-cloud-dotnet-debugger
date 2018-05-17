@@ -152,6 +152,40 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   const ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::StackFrame >&
       stack_frames() const;
 
+  // repeated string expressions = 8;
+  int expressions_size() const;
+  void clear_expressions();
+  static const int kExpressionsFieldNumber = 8;
+  const ::std::string& expressions(int index) const;
+  ::std::string* mutable_expressions(int index);
+  void set_expressions(int index, const ::std::string& value);
+  #if LANG_CXX11
+  void set_expressions(int index, ::std::string&& value);
+  #endif
+  void set_expressions(int index, const char* value);
+  void set_expressions(int index, const char* value, size_t size);
+  ::std::string* add_expressions();
+  void add_expressions(const ::std::string& value);
+  #if LANG_CXX11
+  void add_expressions(::std::string&& value);
+  #endif
+  void add_expressions(const char* value);
+  void add_expressions(const char* value, size_t size);
+  const ::google::protobuf::RepeatedPtrField< ::std::string>& expressions() const;
+  ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_expressions();
+
+  // repeated .google.cloud.diagnostics.debug.Variable evaluated_expressions = 10;
+  int evaluated_expressions_size() const;
+  void clear_evaluated_expressions();
+  static const int kEvaluatedExpressionsFieldNumber = 10;
+  const ::google::cloud::diagnostics::debug::Variable& evaluated_expressions(int index) const;
+  ::google::cloud::diagnostics::debug::Variable* mutable_evaluated_expressions(int index);
+  ::google::cloud::diagnostics::debug::Variable* add_evaluated_expressions();
+  ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable >*
+      mutable_evaluated_expressions();
+  const ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable >&
+      evaluated_expressions() const;
+
   // string id = 1;
   void clear_id();
   static const int kIdFieldNumber = 1;
@@ -165,6 +199,20 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::std::string* mutable_id();
   ::std::string* release_id();
   void set_allocated_id(::std::string* id);
+
+  // string condition = 9;
+  void clear_condition();
+  static const int kConditionFieldNumber = 9;
+  const ::std::string& condition() const;
+  void set_condition(const ::std::string& value);
+  #if LANG_CXX11
+  void set_condition(::std::string&& value);
+  #endif
+  void set_condition(const char* value);
+  void set_condition(const char* value, size_t size);
+  ::std::string* mutable_condition();
+  ::std::string* release_condition();
+  void set_allocated_condition(::std::string* condition);
 
   // .google.cloud.diagnostics.debug.SourceLocation location = 2;
   bool has_location() const;
@@ -210,7 +258,10 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::StackFrame > stack_frames_;
+  ::google::protobuf::RepeatedPtrField< ::std::string> expressions_;
+  ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable > evaluated_expressions_;
   ::google::protobuf::internal::ArenaStringPtr id_;
+  ::google::protobuf::internal::ArenaStringPtr condition_;
   ::google::cloud::diagnostics::debug::SourceLocation* location_;
   ::google::protobuf::Timestamp* create_time_;
   ::google::protobuf::Timestamp* final_time_;
@@ -918,6 +969,158 @@ inline void Breakpoint::set_kill_server(bool value) {
   
   kill_server_ = value;
   // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.kill_server)
+}
+
+// repeated string expressions = 8;
+inline int Breakpoint::expressions_size() const {
+  return expressions_.size();
+}
+inline void Breakpoint::clear_expressions() {
+  expressions_.Clear();
+}
+inline const ::std::string& Breakpoint::expressions(int index) const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  return expressions_.Get(index);
+}
+inline ::std::string* Breakpoint::mutable_expressions(int index) {
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  return expressions_.Mutable(index);
+}
+inline void Breakpoint::set_expressions(int index, const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  expressions_.Mutable(index)->assign(value);
+}
+#if LANG_CXX11
+inline void Breakpoint::set_expressions(int index, ::std::string&& value) {
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  expressions_.Mutable(index)->assign(std::move(value));
+}
+#endif
+inline void Breakpoint::set_expressions(int index, const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  expressions_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+inline void Breakpoint::set_expressions(int index, const char* value, size_t size) {
+  expressions_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+inline ::std::string* Breakpoint::add_expressions() {
+  // @@protoc_insertion_point(field_add_mutable:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  return expressions_.Add();
+}
+inline void Breakpoint::add_expressions(const ::std::string& value) {
+  expressions_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+#if LANG_CXX11
+inline void Breakpoint::add_expressions(::std::string&& value) {
+  expressions_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+#endif
+inline void Breakpoint::add_expressions(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  expressions_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+inline void Breakpoint::add_expressions(const char* value, size_t size) {
+  expressions_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:google.cloud.diagnostics.debug.Breakpoint.expressions)
+}
+inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+Breakpoint::expressions() const {
+  // @@protoc_insertion_point(field_list:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  return expressions_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::std::string>*
+Breakpoint::mutable_expressions() {
+  // @@protoc_insertion_point(field_mutable_list:google.cloud.diagnostics.debug.Breakpoint.expressions)
+  return &expressions_;
+}
+
+// string condition = 9;
+inline void Breakpoint::clear_condition() {
+  condition_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Breakpoint::condition() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.condition)
+  return condition_.GetNoArena();
+}
+inline void Breakpoint::set_condition(const ::std::string& value) {
+  
+  condition_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.condition)
+}
+#if LANG_CXX11
+inline void Breakpoint::set_condition(::std::string&& value) {
+  
+  condition_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:google.cloud.diagnostics.debug.Breakpoint.condition)
+}
+#endif
+inline void Breakpoint::set_condition(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  condition_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:google.cloud.diagnostics.debug.Breakpoint.condition)
+}
+inline void Breakpoint::set_condition(const char* value, size_t size) {
+  
+  condition_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:google.cloud.diagnostics.debug.Breakpoint.condition)
+}
+inline ::std::string* Breakpoint::mutable_condition() {
+  
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.condition)
+  return condition_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Breakpoint::release_condition() {
+  // @@protoc_insertion_point(field_release:google.cloud.diagnostics.debug.Breakpoint.condition)
+  
+  return condition_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Breakpoint::set_allocated_condition(::std::string* condition) {
+  if (condition != NULL) {
+    
+  } else {
+    
+  }
+  condition_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), condition);
+  // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.condition)
+}
+
+// repeated .google.cloud.diagnostics.debug.Variable evaluated_expressions = 10;
+inline int Breakpoint::evaluated_expressions_size() const {
+  return evaluated_expressions_.size();
+}
+inline void Breakpoint::clear_evaluated_expressions() {
+  evaluated_expressions_.Clear();
+}
+inline const ::google::cloud::diagnostics::debug::Variable& Breakpoint::evaluated_expressions(int index) const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
+  return evaluated_expressions_.Get(index);
+}
+inline ::google::cloud::diagnostics::debug::Variable* Breakpoint::mutable_evaluated_expressions(int index) {
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
+  return evaluated_expressions_.Mutable(index);
+}
+inline ::google::cloud::diagnostics::debug::Variable* Breakpoint::add_evaluated_expressions() {
+  // @@protoc_insertion_point(field_add:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
+  return evaluated_expressions_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable >*
+Breakpoint::mutable_evaluated_expressions() {
+  // @@protoc_insertion_point(field_mutable_list:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
+  return &evaluated_expressions_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable >&
+Breakpoint::evaluated_expressions() const {
+  // @@protoc_insertion_point(field_list:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
+  return evaluated_expressions_;
 }
 
 // -------------------------------------------------------------------
