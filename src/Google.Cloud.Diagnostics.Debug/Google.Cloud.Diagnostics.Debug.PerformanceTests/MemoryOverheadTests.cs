@@ -14,7 +14,6 @@
 
 using Google.Cloud.Diagnostics.Debug.IntegrationTests;
 using System;
-using System.Diagnostics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +46,17 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet() =>
-            await RunMemoryTestAsync(setBreakpoint: true);
+            await RunMemoryTestAsync(breapointLine: TestApplication.HelloLine);
+
+        /// <summary>
+        /// This test ensures the debugger does not add more than 10MB of
+        /// memory when the debugger is attached and a breakpoint is set
+        /// (but not hit) with a condition that never evaluates to true
+        /// in a tight loop.
+        /// </summary>
+        [Fact]
+        public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunMemoryTestAsync(
+          breapointLine: TestApplication.LoopMiddle, hitUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10MB of
@@ -55,7 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsHit() =>
-             await RunMemoryTestAsync(setBreakpoint: true, hitBreakpoint: true);
+             await RunMemoryTestAsync(breapointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
 
         /// <summary>
         /// Run a test to check memory usage while the debugger is enabled.
@@ -64,15 +73,20 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// requests to the same application with a debugger attached (with the options
         /// breakpoints being set and hit during the requests).
         /// </summary>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
-        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
-        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
-        private async Task RunMemoryTestAsync(bool setBreakpoint = false, bool hitBreakpoint = false)
+        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        ///     breakpoint will be set.</param>
+        /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
+        /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
+        ///     no condition will be set.</param>
+        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
+        private async Task RunMemoryTestAsync(
+            int? breapointLine = null, bool hitBreakpoint = false,
+             string condition = null, Func<TestApplication, int, string> hitUrl = null)
         {
             double noDebugAvgMemoryMB = await GetAverageMemoryUsageMBAsync(debugEnabled: false);
             double debugAvgMemoryMB = await GetAverageMemoryUsageMBAsync(debugEnabled: true,
-                setBreakpoint: setBreakpoint, hitBreakpoint: hitBreakpoint);
+                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, hitUrl: hitUrl, condition: condition);
 
             Console.WriteLine($"Average memory (in bytes) used w/o a debugger attached: {noDebugAvgMemoryMB}");
             Console.WriteLine($"Average memory (in bytes) used w/ a debugger attached: {debugAvgMemoryMB}");
@@ -90,13 +104,17 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <see cref="NumberOfRequest"/> requests.
         /// </summary>
         /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
-        ///     Defaults to false.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
-        ///     Defaults to false.</param>
+        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        ///     breakpoint will be set.</param>
+        /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
+        /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
+        ///     no condition will be set.</param>
+        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         /// <returns>The average memory usage during requests.</returns>
         public async Task<double> GetAverageMemoryUsageMBAsync(
-            bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
+            bool debugEnabled, int? breakpointLine = null, bool hitBreakpoint = false,
+            string condition = null, Func<TestApplication, int, string> hitUrl = null)
         {
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
@@ -109,7 +127,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                 int counter = 0;
                 long memory = 0;
                 var cts = new CancellationTokenSource();
-                Task.Run(() =>
+                var task = Task.Run(() =>
                 {
                     while (!cts.IsCancellationRequested)
                     {
@@ -129,23 +147,24 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                    for (int i = 0; i < NumberOfRequest; i++)
                     {
                         Debugger.V2.Breakpoint breakpoint = null;
-                        if (setBreakpoint)
+                        if (breakpointLine != null)
                         {
-                            var line = hitBreakpoint ? TestApplication.EchoTopLine : TestApplication.HelloLine;
                             // Set a breakpoint and wait to ensure the debuggee picks it up.
-                            breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, line);
+                            breakpoint = SetBreakpointAndSleep(
+                                debuggee.Id, TestApplication.MainClass, breakpointLine.Value, condition);
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
                        await client.GetAsync($"{app.AppUrlEcho}/{i}");
 
-                        if (setBreakpoint)
+                        if (breakpointLine != null)
                         {
                             var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id, isFinal: hitBreakpoint);
                             Assert.Equal(hitBreakpoint, newBp.IsFinalState);
                         }
                     }
                     cts.Cancel();
+                    task.Wait();
                     return (memory /counter / NumberOfRequest) / Math.Pow(2, 20);
                 }
             }

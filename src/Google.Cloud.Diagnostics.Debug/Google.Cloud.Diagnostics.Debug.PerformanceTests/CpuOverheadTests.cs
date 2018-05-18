@@ -51,8 +51,19 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// breakpoint is set (but not hit).
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointsSet() =>
-            await RunCpuTestAsync(AddedCpuWhenEvaluatingPercent, setBreakpoint: true);
+        public async Task DebuggerAttached_BreakpointsSet() => await RunCpuTestAsync(
+            AddedCpuWhenDebuggingPercent, breapointLine: TestApplication.HelloLine);
+
+        /// <summary>
+        /// This test ensures the debugger does not add more than 0.1% of
+        /// CPU time to a when the debugger is attached and
+        /// breakpoint is set (but not hit) with a condition that never
+        /// evaluates to true in a tight loop.
+        /// </summary>
+        [Fact]
+        public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunCpuTestAsync(
+           AddedCpuWhenDebuggingPercent, breapointLine: TestApplication.LoopMiddle,
+           hitUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
         /// This test ensures the debugger does not add more than 1% of
@@ -60,9 +71,8 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// breakpoint is hit.
         /// </summary>
         [Fact]
-        public async Task DebuggerAttached_BreakpointHit() => 
-            await RunCpuTestAsync(
-                AddedCpuWhenDebuggingPercent, setBreakpoint: true, hitBreakpoint: true);
+        public async Task DebuggerAttached_BreakpointHit() =>  await RunCpuTestAsync(
+                AddedCpuWhenEvaluatingPercent, breapointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
 
         /// <summary>
         /// Run a test to check CPU usage while the debugger is enabled.
@@ -71,15 +81,20 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// requests to the same application with a debugger attached (with the options
         /// breakpoints being set and hit during the requests).
         /// </summary>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
-        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
-        ///     This is only during the debug enabled portion of the test. Defaults to false.</param>
-        private async Task RunCpuTestAsync(double acceptableCpuIncrease, bool setBreakpoint = false, bool hitBreakpoint = false)
+        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        ///     breakpoint will be set.</param>
+        /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
+        /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
+        ///     no condition will be set.</param>
+        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
+        private async Task RunCpuTestAsync(
+            double acceptableCpuIncrease, int? breapointLine = null, bool hitBreakpoint = false,
+             string condition = null, Func<TestApplication, int, string> hitUrl = null)
         {
             double noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: false);
             double debugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: true,
-                setBreakpoint: setBreakpoint, hitBreakpoint: hitBreakpoint);
+                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, hitUrl: hitUrl, condition: condition);
 
             Console.WriteLine($"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}");
             Console.WriteLine($"Percent CPU time w/ a debugger attached: {debugAvgPercentCpu}");
@@ -97,14 +112,20 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <see cref="NumberOfRequest"/> requests.
         /// </summary>
         /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be set for the requests.
-        ///     Defaults to false.</param>
-        /// <param name="setBreakpoint">Optional, true if a breakpoint should be hit each request.
-        ///     Defaults to false.</param>
+        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        ///     breakpoint will be set.</param>
+        /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
+        /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
+        ///     no condition will be set.</param>
+        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         /// <returns>The average CPU percentage during requests.</returns>
         private async Task<double> GetAverageCpuPercentAsync(
-            bool debugEnabled, bool setBreakpoint = false, bool hitBreakpoint = false)
+            bool debugEnabled, int? breakpointLine = null, bool hitBreakpoint = false,
+            string condition = null, Func<TestApplication, int, string> hitUrl = null)
         {
+            hitUrl = hitUrl ?? TestApplication.GetEchoUrl;
+
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
                 var appProcess = await app.GetApplicationProcess();
@@ -128,17 +149,17 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                     for (int i = 0; i < NumberOfRequest; i++)
                     {
                         Debugger.V2.Breakpoint breakpoint = null;
-                        if (setBreakpoint)
+                        if (breakpointLine != null)
                         {
-                            var line = hitBreakpoint ? TestApplication.EchoTopLine : TestApplication.HelloLine;
                             // Set a breakpoint and wait to ensure the debuggee picks it up.
-                            breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, line);
+                            breakpoint = SetBreakpointAndSleep(
+                                debuggee.Id, TestApplication.MainClass, breakpointLine.Value, condition);
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
-                        await client.GetAsync($"{app.AppUrlEcho}/{i}");
+                        await client.GetAsync(hitUrl(app, i));
 
-                        if (setBreakpoint)
+                        if (breakpointLine != null)
                         {
                             var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id, isFinal: hitBreakpoint);
                             Assert.Equal(hitBreakpoint, newBp.IsFinalState);
