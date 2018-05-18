@@ -288,6 +288,7 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
 HRESULT DbgStackFrame::GetDebugFunctionFromClass(
     IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
     const mdTypeDef &class_token, MethodInfo *method_info,
+    const std::vector<TypeSignature> &generic_types,
     ICorDebugFunction **debug_function) {
   if (!method_info || !metadata_import || !debug_function) {
     return E_INVALIDARG;
@@ -296,7 +297,8 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
   // First, finds the metadata token of the method.
   mdMethodDef method_def = 0;
   HRESULT hr = method_info->PopulateMethodDefFromNameAndArguments(
-      metadata_import, class_token, this, debug_helper_.get());
+      metadata_import, class_token, this,
+      generic_types, debug_helper_.get());
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
@@ -313,11 +315,13 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
     return hr;
   }
 
-  return GetDebugFunctionFromClass(metadata_import, debug_module_, class_token_,
-                                   method_info, debug_function);
+  return GetDebugFunctionFromClass(metadata_import, debug_module_,
+                                   class_token_, method_info,
+                                   GetClassGenericTypeSignatureParameters(),
+                                   debug_function);
 }
 
-HRESULT DbgStackFrame::GetClassGenericTypeParameters(
+HRESULT DbgStackFrame::GetCurrentClassTypeParameters(
     std::vector<CComPtr<ICorDebugType>> *debug_types) {
   if (!debug_types) {
     return E_INVALIDARG;

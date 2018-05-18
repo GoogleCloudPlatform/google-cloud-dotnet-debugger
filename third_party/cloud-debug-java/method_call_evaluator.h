@@ -68,10 +68,10 @@ class MethodCallEvaluator : public ExpressionEvaluator {
       IDbgObjectFactory *obj_factory,
       std::ostream *err_stream) const;
 
-  // Gets method method_info from class with name class_name.
+  // Gets method method_info from class with TypeSignature class_signature.
   // This will set ICorDebugFunction result_method if such a method
   // is found.
-  HRESULT GetDebugFunctionFromClassNameHelper(const std::string &class_name,
+  HRESULT GetDebugFunctionFromClassNameHelper(const TypeSignature &class_signature,
                                               IDbgStackFrame *stack_frame,
                                               MethodInfo *method_info,
                                               ICorDebugFunction **result_method,
@@ -108,7 +108,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
 
   // Generic type parameters for the class that the method is in.
   // TODO(quoct): Add support for generic method.
-  std::vector<CComPtr<ICorDebugType>> generic_class_types_;
+  std::vector<CComPtr<ICorDebugType>> current_class_generic_types_;
 
   // The MethodInfo that represents the method being invoked.
   MethodInfo method_info_;

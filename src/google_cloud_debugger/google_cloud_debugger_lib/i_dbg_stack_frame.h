@@ -112,9 +112,12 @@ class IDbgStackFrame {
   // the function will also populate properties like is_static or
   // has_generic_types of method_info if succeeded.
   // Debug_module is the module the function lives in.
+  // generic_types vector contains the instantiated type (for generic class)
+  // and is needed to get the correct type-instantiated function.
   virtual HRESULT GetDebugFunctionFromClass(
       IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
       const mdTypeDef &class_token, MethodInfo *method_info,
+      const std::vector<TypeSignature> &generic_types,
       ICorDebugFunction **debug_function) = 0;
 
   // Similar to GetDebugFunctionFromClass except the class_token is the class
@@ -123,7 +126,7 @@ class IDbgStackFrame {
       MethodInfo *method_info, ICorDebugFunction **debug_function) = 0;
 
   // Extract out generic type parameters for the class the frame is in.
-  virtual HRESULT GetClassGenericTypeParameters(
+  virtual HRESULT GetCurrentClassTypeParameters(
       std::vector<CComPtr<ICorDebugType>> *debug_types) = 0;
 
   // Returns true if the method this frame is in is a static method.

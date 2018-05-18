@@ -57,9 +57,15 @@ struct MethodInfo {
   // method_name and arguments whose types fit argument_types.
   // Once the method is found, the function will also populate
   // is_static and has_generic_types field.
+  // class_generic_types is needed to parse generic types
+  // in the class. For example, if the class is Dictionary<string, int>
+  // then class_generic_types should contain { string, int }.
   HRESULT PopulateMethodDefFromNameAndArguments(
-      IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-      DbgStackFrame *stack_frame, ICorDebugHelper *debug_helper);
+      IMetaDataImport *metadata_import,
+      const mdTypeDef &class_token,
+      DbgStackFrame *stack_frame,
+      const std::vector<TypeSignature> &class_generic_types,
+      ICorDebugHelper *debug_helper);
 
  private:
   // Helper function to find all methods that matches the name
@@ -74,10 +80,12 @@ struct MethodInfo {
   // argument types with argument_types.
   // It will also populate is_static, has_generic_types
   // and method_token if the method matched.
-  HRESULT MatchMethodArgument(IMetaDataImport *metadata_import,
-                              mdMethodDef method_def,
-                              DbgStackFrame *stack_frame,
-                              ICorDebugHelper *debug_helper);
+  HRESULT MatchMethodArgument(
+    IMetaDataImport *metadata_import,
+    mdMethodDef method_def,
+    DbgStackFrame *stack_frame,
+    const std::vector<TypeSignature> &class_generic_types,
+    ICorDebugHelper *debug_helper);
 };
 
 }  //  namespace google_cloud_debugger

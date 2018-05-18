@@ -83,9 +83,11 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(IDbgStackFrame *stack_frame,
 
   MethodInfo method_info;
   method_info.argument_types.push_back(index_type);
+  method_info.method_name = "get_Item";
   // Retrieves get_Item method.
   hr = stack_frame->GetDebugFunctionFromClass(metadata_import, debug_module,
                                               class_token, &method_info,
+                                              source_type.generic_types,
                                               &get_item_method_);
   if (hr == S_FALSE) {
     hr = E_FAIL;

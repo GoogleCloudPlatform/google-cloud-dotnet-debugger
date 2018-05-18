@@ -25,8 +25,11 @@
 namespace google_cloud_debugger {
 
 HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
-    IMetaDataImport *metadata_import, const mdTypeDef &class_token,
-    DbgStackFrame *stack_frame, ICorDebugHelper *debug_helper) {
+    IMetaDataImport *metadata_import,
+    const mdTypeDef &class_token,
+    DbgStackFrame *stack_frame,
+    const std::vector<TypeSignature> &class_generic_types,
+    ICorDebugHelper *debug_helper) {
   if (metadata_import == nullptr) {
     return E_INVALIDARG;
   }
@@ -44,7 +47,8 @@ HRESULT MethodInfo::PopulateMethodDefFromNameAndArguments(
 
   for (const mdMethodDef &method_def : method_defs) {
     hr = MatchMethodArgument(metadata_import, method_def,
-                             stack_frame, debug_helper);
+                             stack_frame, class_generic_types,
+                             debug_helper);
     if (FAILED(hr)) {
       continue;
     }
@@ -88,10 +92,12 @@ HRESULT MethodInfo::GetMethodDefsFromName(
   return S_OK;
 }
 
-HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
-                                        mdMethodDef method_def,
-                                        DbgStackFrame *stack_frame,
-                                        ICorDebugHelper *debug_helper) {
+HRESULT MethodInfo::MatchMethodArgument(
+    IMetaDataImport *metadata_import,
+    mdMethodDef method_def,
+    DbgStackFrame *stack_frame,
+    const std::vector<TypeSignature> &class_generic_types,
+    ICorDebugHelper *debug_helper) {
   HRESULT hr;
   mdTypeDef class_type;
   ULONG method_name_len;
@@ -147,9 +153,6 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     return E_FAIL;
   }
 
-  const std::vector<TypeSignature> &class_generic_types =
-      stack_frame->GetClassGenericTypeSignatureParameters();
-
   // Now we can extract the return type.
   hr = debug_helper->ParseTypeFromSig(&method_sig, &method_sig_len, metadata_import,
                                       class_generic_types, &returned_type);
@@ -185,7 +188,7 @@ HRESULT MethodInfo::MatchMethodArgument(IMetaDataImport *metadata_import,
     // Matching here means the parameter type is the same as the
     // type of the actual or if the argument type is a child class
     // of the parameter type.
-    if (argument_types[i].compare(parameter_type) != 0 ||
+    if (argument_types[i].compare(parameter_type) != 0 &&
         !stack_frame->IsBaseType(argument_types[i], parameter_type, &std::cerr)) {
       matched_method = false;
       break;

@@ -253,7 +253,7 @@ class ICorDebugHelper {
     return S_OK;
   }
 
-  // Given a class object, populates generic_class_types_
+  // Given a class object, populates generic_types
   // with the generic types from the class object.
   virtual HRESULT PopulateGenericClassTypesFromClassObject(
       ICorDebugValue *class_object,
