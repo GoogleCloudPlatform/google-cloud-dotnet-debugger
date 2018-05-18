@@ -81,7 +81,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
       // TOOD(quoct): Need to find a way to do this for
       // fully qualified class name. Probably have to update ANTLR
       // grammar file to support that.
-      hr = stack_frame->GetClassGenericTypeParameters(&generic_class_types_);
+      hr = stack_frame->GetCurrentClassTypeParameters(&current_class_generic_types_);
       if (FAILED(hr)) {
         *err_stream << "Failed to retrieve generic type parameters for class.";
         return hr;
@@ -101,8 +101,8 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
       return hr;
     }
 
-    std::string source_class_name = instance_source_->GetStaticType().type_name;
-    hr = GetDebugFunctionFromClassNameHelper(source_class_name, stack_frame,
+    const TypeSignature &source_class_sig = instance_source_->GetStaticType();
+    hr = GetDebugFunctionFromClassNameHelper(source_class_sig, stack_frame,
                                              &method_info_, &matched_method_,
                                              err_stream);
     if (FAILED(hr)) {
@@ -117,7 +117,9 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
   }
 
   if (!matched_method_ && !possible_class_name_.empty()) {
-    hr = GetDebugFunctionFromClassNameHelper(possible_class_name_, stack_frame,
+    TypeSignature class_sig;
+    class_sig.type_name = possible_class_name_;
+    hr = GetDebugFunctionFromClassNameHelper(class_sig, stack_frame,
                                              &method_info_, &matched_method_,
                                              err_stream);
     if (FAILED(hr)) {
@@ -206,9 +208,9 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
       eval_generic_types.push_back(item);
     }
   } else {
-    eval_generic_types.reserve(generic_class_types_.size());
+    eval_generic_types.reserve(current_class_generic_types_.size());
 
-    for (const auto &item : generic_class_types_) {
+    for (const auto &item : current_class_generic_types_) {
       eval_generic_types.push_back(item);
     }
   }
@@ -267,7 +269,7 @@ HRESULT MethodCallEvaluator::EvaluateArgumentsHelper(
 }
 
 HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
-    const std::string &class_name, IDbgStackFrame *stack_frame,
+    const TypeSignature &class_signature, IDbgStackFrame *stack_frame,
     MethodInfo *method_info, ICorDebugFunction **result_method,
     std::ostream *err_stream) {
   HRESULT hr;
@@ -275,24 +277,28 @@ HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
   CComPtr<IMetaDataImport> metadata_import;
   mdTypeDef class_token;
 
-  hr = stack_frame->GetClassTokenAndModule(class_name, &class_token,
-                                           &debug_module, &metadata_import);
+  hr = stack_frame->GetClassTokenAndModule(
+    class_signature.type_name, &class_token,
+    &debug_module, &metadata_import);
   if (FAILED(hr)) {
-    *err_stream << "Failed to retrieve class token from class " << class_name;
+    *err_stream << "Failed to retrieve class token from class "
+                << class_signature.type_name;
     return hr;
   }
 
   // Try to find method in the class with name possible_class_name_.
   // Also populates method_info fields.
   hr = stack_frame->GetDebugFunctionFromClass(metadata_import, debug_module, class_token,
-                                              method_info, result_method);
+                                              method_info, class_signature.generic_types,
+                                              result_method);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
 
   if (FAILED(hr)) {
     *err_stream << "Failed to retrieve ICorDebugFunction "
-                << method_info->method_name << " from class " << class_name;
+                << method_info->method_name << " from class "
+                << class_signature.type_name;
     return hr;
   }
 

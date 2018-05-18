@@ -349,7 +349,7 @@ HRESULT TypeCompilerHelper::IsBaseClass(
     const std::string &target_class, ICorDebugHelper *debug_helper,
     std::ostream *err_stream) {
   HRESULT hr;
-  mdTypeDef current_class_token = 0;
+  mdTypeDef current_class_token = source_class;
   CComPtr<IMetaDataImport> current_metadata_import;
   std::string current_class_name;
   mdToken current_base_class_token = source_class;
