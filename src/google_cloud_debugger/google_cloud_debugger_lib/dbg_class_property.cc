@@ -122,14 +122,6 @@ HRESULT DbgClassProperty::Evaluate(
     return hr;
   }
 
-  hr = debug_eval->QueryInterface(__uuidof(ICorDebugEval2),
-                                  reinterpret_cast<void **>(&debug_eval_2));
-
-  if (FAILED(hr)) {
-    WriteError("Failed to cast ICorDebugEval to ICorDebugEval2.");
-    return hr;
-  }
-
   vector<ICorDebugValue *> arg_values;
   // If the property is non-static, then when we call getter
   // method, we have to supply "this" (reference to the current object)
@@ -144,44 +136,21 @@ HRESULT DbgClassProperty::Evaluate(
   }
 
   vector<ICorDebugType *> local_generic_types;
-  local_generic_types.reserve(generic_types->size());
+  local_generic_types.assign(generic_types->begin(), generic_types->end());
 
-  for (const auto &item : *generic_types) {
-    local_generic_types.push_back(item);
-  }
-
-  hr = debug_eval_2->CallParameterizedFunction(
-      debug_function, local_generic_types.size(), local_generic_types.data(),
-      arg_values.size(), arg_values.data());
-
-  if (FAILED(hr)) {
-    WriteError("Failed to call parameterized function.");
-    return hr;
-  }
-
-  CComPtr<ICorDebugValue> eval_result;
-  hr = eval_coordinator->WaitForEval(&exception_occurred_, debug_eval,
-                                     &eval_result);
+  std::unique_ptr<DbgObject> member_value;
+  hr = obj_factory_->EvaluateAndCreateDbgObject(
+    std::move(local_generic_types), std::move(arg_values),
+    debug_function, debug_eval, eval_coordinator,
+    &member_value, GetErrorStream());
 
   if (FAILED(hr)) {
     WriteError("Failed to evaluate the property.");
     return hr;
   }
 
-  std::unique_ptr<DbgObject> member_value;
-  hr = obj_factory_->CreateDbgObject(eval_result, creation_depth_,
-                                     &member_value, GetErrorStream());
-  if (FAILED(hr)) {
-    if (member_value) {
-      WriteError(member_value->GetErrorString());
-    }
-    WriteError("Failed to create class property object.");
-    return hr;
-  }
-
   member_value_ = std::move(member_value);
-
-  return PopulateVariableValueHelper(eval_coordinator);
+  return S_OK;
 }
 
 HRESULT DbgClassProperty::SetTypeSignature(

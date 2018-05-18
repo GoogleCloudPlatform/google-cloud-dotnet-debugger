@@ -373,6 +373,58 @@ HRESULT DbgObjectFactory::CreateDbgClassObject(
   }
 }
 
+HRESULT DbgObjectFactory::EvaluateAndCreateDbgObject(
+    std::vector<ICorDebugType*> generic_types,
+    std::vector<ICorDebugValue*> argument_values,
+    ICorDebugFunction *debug_function,
+    ICorDebugEval *debug_eval,
+    IEvalCoordinator *eval_coordinator,
+    std::unique_ptr<DbgObject> *evaluate_result,
+    std::ostream *err_stream) {
+  CComPtr<ICorDebugEval2> debug_eval_2;
+  HRESULT hr = debug_eval->QueryInterface(__uuidof(ICorDebugEval2),
+                                  reinterpret_cast<void **>(&debug_eval_2));
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugEval2 from ICorDebugEval.";
+    return hr;
+  }
+
+  hr = debug_eval_2->CallParameterizedFunction(
+      debug_function, generic_types.size(), generic_types.data(),
+      argument_values.size(), argument_values.data());
+  if (FAILED(hr)) {
+    *err_stream << "Failed to invoke function call.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugValue> eval_result;
+  BOOL exception_occurred = FALSE;
+  hr = eval_coordinator->WaitForEval(&exception_occurred, debug_eval,
+                                     &eval_result);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
+                       evaluate_result, &std::cerr);
+  if (FAILED(hr)) {
+    if (evaluate_result) {
+      *err_stream << (*evaluate_result)->GetErrorString();
+    }
+    *err_stream << "Failed to create DbgObject from eval result.";
+    return hr;
+  }
+
+  if (exception_occurred) {
+    std::string err_type;
+    (*evaluate_result)->GetTypeString(&err_type);
+    *err_stream << "Function evaluation throws exception " << err_type;
+    return E_FAIL;
+  }
+
+  return S_OK;
+}
+
 HRESULT DbgObjectFactory::ProcessClassName(mdTypeDef class_token,
                                            IMetaDataImport *metadata_import,
                                            std::string *class_name,
