@@ -58,5 +58,15 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         {
             return Process.GetCurrentProcess().Id;
         }
+
+        public int Loop(string message)
+        {
+            int t = 0;
+            for (int i = 0; i < 1_000; i++)
+            {
+                t = i;
+            }
+            return t;
+        }
     }
 }

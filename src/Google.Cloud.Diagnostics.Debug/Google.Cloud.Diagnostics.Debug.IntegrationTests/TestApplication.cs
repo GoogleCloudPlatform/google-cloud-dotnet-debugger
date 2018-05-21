@@ -31,6 +31,13 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         public static readonly int EchoTopLine = 38;
         public static readonly int EchoBottomLine = 49;
         public static readonly int PidLine = 59;
+        public static readonly int LoopMiddle = 67;
+
+        /// <summary>Get the echo url with 'i' appended.</summary>
+        public static string GetEchoUrl(TestApplication app, int i) => $"{app.AppUrlEcho}/{i}";
+
+        /// <summary>Get the loop url with 'i' appended.</summary>
+        public static string GetLoopUrl(TestApplication app, int i) => $"{app.AppUrlLoop}/{i}";
 
         /// <summary>The base url for the test application.</summary>
         public string AppUrlBase => $"http://localhost:{_port}";
@@ -43,6 +50,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
         /// <summary>The url to get the process id from the test application.</summary>
         public string AppUrlProcessId => $"{AppUrlBase}/Main/ProcessId";
+
+        /// <summary>The url to the middle of the loop from the test application.</summary>
+        public string AppUrlLoop => $"{AppUrlBase}/Main/Loop";
 
         /// <summary>The module of the a debuggee.</summary>
         public readonly string Module = nameof(DebuggerTestBase);
