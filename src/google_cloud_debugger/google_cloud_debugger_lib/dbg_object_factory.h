@@ -49,6 +49,19 @@ class DbgObjectFactory : public IDbgObjectFactory {
                                std::unique_ptr<DbgObject> *result_object,
                                std::ostream *err_stream);
 
+  // Run evaluation on function debug_function and returns
+  // the result in evaluate_result.
+  // generic_types contains the instantiated type parameters for the function.
+  // argument_values containsthe arguments of the functions.
+  HRESULT EvaluateAndCreateDbgObject(
+      std::vector<ICorDebugType*> generic_types,
+      std::vector<ICorDebugValue*> argument_values,
+      ICorDebugFunction *debug_function,
+      ICorDebugEval *debug_eval,
+      IEvalCoordinator *eval_coordinator,
+      std::unique_ptr<DbgObject> *evaluate_result,
+      std::ostream *err_stream) override;
+
  private:
   // This will be injected into the DbgObject created by this factory.
   std::shared_ptr<ICorDebugHelper> debug_helper_;

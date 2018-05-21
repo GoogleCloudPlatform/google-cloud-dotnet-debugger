@@ -143,21 +143,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                                       IEvalCoordinator *eval_coordinator,
                                       IDbgObjectFactory *obj_factory,
                                       std::ostream *err_stream) const {
-  // Create ICorDebugEval with the ICorDebugFunction.
-  CComPtr<ICorDebugEval> debug_eval;
-  HRESULT hr = eval_coordinator->CreateEval(&debug_eval);
-  if (FAILED(hr)) {
-    *err_stream << "Failed to create ICorDebugEval.";
-    return hr;
-  }
-
-  CComPtr<ICorDebugEval2> debug_eval_2;
-  hr = debug_eval->QueryInterface(__uuidof(ICorDebugEval2),
-                                  reinterpret_cast<void **>(&debug_eval_2));
-  if (FAILED(hr)) {
-    return hr;
-  }
-
+  HRESULT hr;
   CComPtr<ICorDebugValue> invoking_object;
   // We need the invoking object in case this is a non-static call.
   // In addition, if this expression is A.B where A is the instance_source_
@@ -176,6 +162,14 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   std::vector<ICorDebugValue *> arg_debug_values;
   if (!method_info_.is_static) {
     arg_debug_values.push_back(invoking_object);
+  }
+
+  // Create ICorDebugEval for evaluation.
+  CComPtr<ICorDebugEval> debug_eval;
+  hr = eval_coordinator->CreateEval(&debug_eval);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to create ICorDebugEval.";
+    return hr;
   }
 
   hr = EvaluateArgumentsHelper(&arg_debug_values, debug_eval, eval_coordinator,
@@ -215,24 +209,11 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
     }
   }
 
-  hr = debug_eval_2->CallParameterizedFunction(
-      matched_method_, eval_generic_types.size(), eval_generic_types.data(),
-      arg_debug_values.size(), arg_debug_values.data());
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  CComPtr<ICorDebugValue> eval_result;
-  BOOL exception_occurred = FALSE;
-  hr = eval_coordinator->WaitForEval(&exception_occurred, debug_eval,
-                                     &eval_result);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
   std::unique_ptr<DbgObject> eval_obj_result;
-  hr = obj_factory->CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
-                                    &eval_obj_result, &std::cerr);
+  hr = obj_factory->EvaluateAndCreateDbgObject(
+    std::move(eval_generic_types), std::move(arg_debug_values),
+    matched_method_, debug_eval, eval_coordinator,
+    &eval_obj_result, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

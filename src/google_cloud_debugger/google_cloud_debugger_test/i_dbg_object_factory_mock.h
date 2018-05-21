@@ -40,6 +40,16 @@ class IDbgObjectFactoryMock : public google_cloud_debugger::IDbgObjectFactory {
       HRESULT(ICorDebugType* debug_type,
               std::unique_ptr<google_cloud_debugger::DbgObject>* result_object,
               std::ostream* err_stream));
+
+  MOCK_METHOD7(
+      EvaluateAndCreateDbgObject,
+      HRESULT(std::vector<ICorDebugType*> generic_types,
+              std::vector<ICorDebugValue*> argument_values,
+              ICorDebugFunction *debug_function,
+              ICorDebugEval *debug_eval,
+              google_cloud_debugger::IEvalCoordinator *eval_coordinator,
+              std::unique_ptr<google_cloud_debugger::DbgObject> *evaluate_result,
+              std::ostream *err_stream));
 };
 
 }  // namespace google_cloud_debugger_test

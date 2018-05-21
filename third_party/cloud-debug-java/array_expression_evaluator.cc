@@ -182,13 +182,6 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
     return hr;
   }
 
-  CComPtr<ICorDebugEval2> debug_eval_2;
-  hr = debug_eval->QueryInterface(__uuidof(ICorDebugEval2),
-                                  reinterpret_cast<void **>(&debug_eval_2));
-  if (FAILED(hr)) {
-    return hr;
-  }
-
   // Gets ICorDebugValue representing the source and the index.
   CComPtr<ICorDebugValue> source_debug_value;
   hr = source_obj->GetICorDebugValue(&source_debug_value, debug_eval);
@@ -215,30 +208,14 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
   }
 
   std::vector<ICorDebugType *> eval_generic_types;
-  eval_generic_types.reserve(generic_class_types.size());
-
-  for (const auto &item : generic_class_types) {
-    eval_generic_types.push_back(item);
-  }
-
-  hr = debug_eval_2->CallParameterizedFunction(
-      get_item_method_, eval_generic_types.size(), eval_generic_types.data(),
-      arg_debug_values.size(), arg_debug_values.data());
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  CComPtr<ICorDebugValue> eval_result;
-  BOOL exception_occurred = FALSE;
-  hr = eval_coordinator->WaitForEval(&exception_occurred, debug_eval,
-                                     &eval_result);
-  if (FAILED(hr)) {
-    return hr;
-  }
+  eval_generic_types.assign(generic_class_types.begin(),
+                            generic_class_types.end());
 
   std::unique_ptr<DbgObject> eval_obj_result;
-  hr = obj_factory->CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
-                                    &eval_obj_result, &std::cerr);
+  hr = obj_factory->EvaluateAndCreateDbgObject(
+    std::move(eval_generic_types), std::move(arg_debug_values),
+    get_item_method_, debug_eval, eval_coordinator,
+    &eval_obj_result, err_stream);
   if (FAILED(hr)) {
     return hr;
   }

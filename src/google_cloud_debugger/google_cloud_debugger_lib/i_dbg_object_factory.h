@@ -47,6 +47,18 @@ class IDbgObjectFactory {
   virtual HRESULT CreateDbgObject(ICorDebugType *debug_type,
                                   std::unique_ptr<DbgObject> *result_object,
                                   std::ostream *err_stream) = 0;
+
+  // Run evaluation on function debug_function and returns
+  // the result in evaluate_result.
+  // generic_types contains the instantiated type parameters for the function.
+  // argument_values containsthe arguments of the functions.
+  virtual HRESULT EvaluateAndCreateDbgObject(
+      std::vector<ICorDebugType *> generic_types,
+      std::vector<ICorDebugValue *> argument_values,
+      ICorDebugFunction *debug_function, ICorDebugEval *debug_eval,
+      IEvalCoordinator *eval_coordinator,
+      std::unique_ptr<DbgObject> *evaluate_result,
+      std::ostream *err_stream) = 0;
 };
 
 }  //  namespace google_cloud_debugger
