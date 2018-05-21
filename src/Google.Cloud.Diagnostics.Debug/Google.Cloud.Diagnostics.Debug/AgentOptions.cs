@@ -17,6 +17,7 @@ using CommandLine.Text;
 using Google.Api.Gax;
 using Google.Cloud.DevTools.Source.V1;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -47,13 +48,13 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>An environment variable that can set the source context file location.</summary>
         public static readonly string SourceContextEnvironmentVariable = $"{EnvironmentVariablePrefix}_SOURCE_CONTEXT";
 
-        [Option("module", Required = true, HelpText = "The name of the application to debug.")]
+        [Option("module", HelpText = "The name of the application to debug.")]
         public string Module { get; set; }
 
-        [Option("version", Required = true, HelpText = "The version of the application to debug.")]
+        [Option("version", HelpText = "The version of the application to debug.")]
         public string Version { get; set; }
 
-        [Option("debugger", Required = true, HelpText = "A path to the debugger to use.")]
+        [Option("debugger", HelpText = "A path to the debugger to use.")]
         public string Debugger { get; set; }
 
         [Option("application-start-command",
@@ -79,9 +80,9 @@ namespace Google.Cloud.Diagnostics.Debug
             "https://cloud.google.com/debugger/docs/source-context")]
         public string SourceContextFile { get; set; }
 
-        [HelpOption]
+        /*[HelpWriter]
         public string Usage() => HelpText.AutoBuild(
-            this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));
+            this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));*/
 
         /// <summary>The parsed source context from the <see cref="SourceContextFile"/>.</summary>
         public SourceContext SourceContext { get; set; }
@@ -91,33 +92,55 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public static AgentOptions Parse(string[] args)
         {
+
             var options = new AgentOptions();
-            if (Parser.Default.ParseArgumentsStrict(args, options))
+            ParserResult<AgentOptions> result = Parser.Default.ParseArguments<AgentOptions>(args);
+            result.WithParsed((o) =>
             {
-                options.Module = GaxPreconditions.CheckNotNullOrEmpty(options.Module ?? GetModule(), nameof(options.Module));
-                options.Version = GaxPreconditions.CheckNotNullOrEmpty(options.Version ?? GetVersion(), nameof(options.Version));
-                options.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(options.ProjectId ?? GetProject(), nameof(options.ProjectId));
-                options.Debugger = GaxPreconditions.CheckNotNullOrEmpty(options.Debugger ?? GetDebugger(), nameof(options.Debugger));
-
-                if (!File.Exists(options.Debugger))
+                try
                 {
-                    throw new FileNotFoundException($"Debugger file not found: '{options.Debugger}'");
-                }
+                    options = o;
+                    options.Module = GaxPreconditions.CheckNotNullOrEmpty(options.Module ?? GetModule(), nameof(options.Module));
+                    options.Version = GaxPreconditions.CheckNotNullOrEmpty(options.Version ?? GetVersion(), nameof(options.Version));
+                    options.ProjectId = GaxPreconditions.CheckNotNullOrEmpty(options.ProjectId ?? GetProject(), nameof(options.ProjectId));
+                    options.Debugger = GaxPreconditions.CheckNotNullOrEmpty(options.Debugger ?? GetDebugger(), nameof(options.Debugger));
 
-                if ((string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && !options.ApplicationId.HasValue)
-                    || (!string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && options.ApplicationId.HasValue))
-                {
-                    throw new ArgumentException("Please supply either a command to start a .NET CORE application"
-                        + " or the process ID of a running application, NOT both.");
-                }
+                    if (!File.Exists(options.Debugger))
+                    {
+                        throw new FileNotFoundException($"Debugger file not found: '{options.Debugger}'");
+                    }
 
-                options.SourceContextFile = GetSourceContextFile(options.SourceContextFile);
-                if (File.Exists(options.SourceContextFile))
-                {
-                    var contents = File.ReadAllText(options.SourceContextFile);
-                    options.SourceContext = SourceContext.Parser.ParseJson(contents);
+                    if ((string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && !options.ApplicationId.HasValue)
+                        || (!string.IsNullOrWhiteSpace(options.ApplicationStartCommand) && options.ApplicationId.HasValue))
+                    {
+                        throw new ArgumentException("Please supply either a command to start a .NET CORE application"
+                            + " or the process ID of a running application, NOT both.");
+                    }
+
+                    options.SourceContextFile = GetSourceContextFile(options.SourceContextFile);
+                    if (File.Exists(options.SourceContextFile))
+                    {
+                        var contents = File.ReadAllText(options.SourceContextFile);
+                        options.SourceContext = SourceContext.Parser.ParseJson(contents);
+                    }
                 }
-            }
+                catch (Exception ex) when (ex is FileNotFoundException || ex is ArgumentException || ex is ArgumentNullException)
+                {
+                    var r = Parser.Default.ParseArguments<AgentOptions>(new List<string>());
+                    var t = HelpText.RenderUsageText(result);
+                    var p = HelpText.AutoBuild(r);
+                    Console.WriteLine(HelpText.RenderUsageText(result));
+                    throw;
+                }
+            });
+            result.WithNotParsed((o) => 
+            {
+                Console.WriteLine(HelpText.AutoBuild(result));
+                throw new InvalidOperationException("Invalid command line arguments");
+            });
+
+
+
             return options;
         }
 
