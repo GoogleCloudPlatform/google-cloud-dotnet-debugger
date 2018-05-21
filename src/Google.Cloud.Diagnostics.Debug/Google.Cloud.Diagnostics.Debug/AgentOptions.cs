@@ -92,7 +92,6 @@ namespace Google.Cloud.Diagnostics.Debug
         /// </summary>
         public static AgentOptions Parse(string[] args)
         {
-
             var options = new AgentOptions();
             ParserResult<AgentOptions> result = Parser.Default.ParseArguments<AgentOptions>(args);
             result.WithParsed((o) =>
@@ -126,17 +125,14 @@ namespace Google.Cloud.Diagnostics.Debug
                 }
                 catch (Exception ex) when (ex is FileNotFoundException || ex is ArgumentException || ex is ArgumentNullException)
                 {
-                    var r = Parser.Default.ParseArguments<AgentOptions>(new List<string>());
-                    var t = HelpText.RenderUsageText(result);
-                    var p = HelpText.AutoBuild(r);
-                    Console.WriteLine(HelpText.RenderUsageText(result));
-                    throw;
+                    var helpText = HelpText.AutoBuild(result, (h) => h, (e) => e);
+                    Console.WriteLine($"Invalid Parameters: \n{ex.Message}\n");
+                    Console.WriteLine(helpText);
+                    options = null;
                 }
-            });
-            result.WithNotParsed((o) => 
+            }).WithNotParsed((o) => 
             {
-                Console.WriteLine(HelpText.AutoBuild(result));
-                throw new InvalidOperationException("Invalid command line arguments");
+                options = null;
             });
 
 
