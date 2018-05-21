@@ -165,6 +165,7 @@
     <ClCompile Include="debugger_callback_test.cc" />
     <ClCompile Include="eval_coordinator_test.cc" />
     <ClCompile Include="cor_debug_helper_test.cc" />
+    <ClCompile Include="field_evaluator_test.cc" />
     <ClCompile Include="identifier_evaluator_test.cc" />
     <ClCompile Include="i_cor_debug_mocks.h" />
     <ClCompile Include="custom_binary_stream_test.cc" />
@@ -185,7 +186,9 @@
     <ClInclude Include="common_fixtures.h" />
     <ClInclude Include="expression_evaluator_mock.h" />
     <ClInclude Include="i_breakpoint_collection_mock.h" />
+    <ClInclude Include="i_cor_debug_helper_mock.h" />
     <ClInclude Include="i_dbg_object_factory_mock.h" />
+    <ClInclude Include="dbg_reference_object_mock.h" />
     <ClInclude Include="i_dbg_stack_frame_mock.h" />
     <ClInclude Include="i_eval_coordinator_mock.h" />
     <ClInclude Include="i_metadata_import_mock.h" />

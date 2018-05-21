@@ -92,6 +92,9 @@
     <ClCompile Include="identifier_evaluator_test.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="field_evaluator_test.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common_action_mocks.h">
@@ -125,6 +128,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="i_dbg_stack_frame_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="i_cor_debug_helper_mock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dbg_reference_object_mock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
