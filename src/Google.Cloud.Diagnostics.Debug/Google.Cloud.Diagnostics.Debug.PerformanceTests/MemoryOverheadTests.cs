@@ -56,7 +56,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunMemoryTestAsync(
-          breapointLine: TestApplication.LoopMiddle, hitUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
+          breapointLine: TestApplication.LoopMiddle, getUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10MB of
@@ -78,15 +78,15 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
         ///     no condition will be set.</param>
-        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         private async Task RunMemoryTestAsync(
             int? breapointLine = null, bool hitBreakpoint = false,
-             string condition = null, Func<TestApplication, int, string> hitUrl = null)
+             string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
             double noDebugAvgMemoryMB = await GetAverageMemoryUsageMBAsync(debugEnabled: false);
             double debugAvgMemoryMB = await GetAverageMemoryUsageMBAsync(debugEnabled: true,
-                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, hitUrl: hitUrl, condition: condition);
+                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
 
             Console.WriteLine($"Average memory (in bytes) used w/o a debugger attached: {noDebugAvgMemoryMB}");
             Console.WriteLine($"Average memory (in bytes) used w/ a debugger attached: {debugAvgMemoryMB}");
@@ -109,12 +109,12 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
         ///     no condition will be set.</param>
-        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         /// <returns>The average memory usage during requests.</returns>
         public async Task<double> GetAverageMemoryUsageMBAsync(
             bool debugEnabled, int? breakpointLine = null, bool hitBreakpoint = false,
-            string condition = null, Func<TestApplication, int, string> hitUrl = null)
+            string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {

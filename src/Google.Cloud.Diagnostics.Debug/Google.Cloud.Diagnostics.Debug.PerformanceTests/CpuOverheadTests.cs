@@ -63,7 +63,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunCpuTestAsync(
            AddedCpuWhenDebuggingPercent, breapointLine: TestApplication.LoopMiddle,
-           hitUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
+           getUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
         /// This test ensures the debugger does not add more than 1% of
@@ -86,15 +86,15 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
         ///     no condition will be set.</param>
-        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         private async Task RunCpuTestAsync(
             double acceptableCpuIncrease, int? breapointLine = null, bool hitBreakpoint = false,
-             string condition = null, Func<TestApplication, int, string> hitUrl = null)
+             string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
             double noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: false);
             double debugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: true,
-                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, hitUrl: hitUrl, condition: condition);
+                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
 
             Console.WriteLine($"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}");
             Console.WriteLine($"Percent CPU time w/ a debugger attached: {debugAvgPercentCpu}");
@@ -117,14 +117,14 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
         ///     no condition will be set.</param>
-        /// <param name="hitUrl">Optional, a function to get the url to hit. Defaults to 
+        /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         /// <returns>The average CPU percentage during requests.</returns>
         private async Task<double> GetAverageCpuPercentAsync(
             bool debugEnabled, int? breakpointLine = null, bool hitBreakpoint = false,
-            string condition = null, Func<TestApplication, int, string> hitUrl = null)
+            string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
-            hitUrl = hitUrl ?? TestApplication.GetEchoUrl;
+            getUrl = getUrl ?? TestApplication.GetEchoUrl;
 
             using (var app = StartTestApp(debugEnabled: debugEnabled))
             {
@@ -157,7 +157,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
                             Thread.Sleep(TimeSpan.FromSeconds(.5));
                         }
 
-                        await client.GetAsync(hitUrl(app, i));
+                        await client.GetAsync(getUrl(app, i));
 
                         if (breakpointLine != null)
                         {
