@@ -80,10 +80,6 @@ namespace Google.Cloud.Diagnostics.Debug
             "https://cloud.google.com/debugger/docs/source-context")]
         public string SourceContextFile { get; set; }
 
-        /*[HelpWriter]
-        public string Usage() => HelpText.AutoBuild(
-            this, (HelpText helpText) => HelpText.DefaultParsingErrorsHandler(this, helpText));*/
-
         /// <summary>The parsed source context from the <see cref="SourceContextFile"/>.</summary>
         public SourceContext SourceContext { get; set; }
 
