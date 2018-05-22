@@ -44,13 +44,13 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
 
   HRESULT GetPropertyFromClass(
       const mdTypeDef &class_token,
-                       const std::string &property_name,
-                       std::unique_ptr<google_cloud_debugger::DbgClassProperty>
-                           *result_obj,
-                       const std::vector<google_cloud_debugger::TypeSignature>
-                           &generic_signatures,
-                       IMetaDataImport *metadata_import,
-                       std::ostream *err_stream) override {
+      const std::string &property_name,
+      std::unique_ptr<google_cloud_debugger::DbgClassProperty>
+          *result_obj,
+      const std::vector<google_cloud_debugger::TypeSignature>
+          &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream) override {
     google_cloud_debugger::DbgClassProperty *class_property;
     HRESULT hr =
         GetPropertyFromClassHelper(class_token, property_name, &class_property,

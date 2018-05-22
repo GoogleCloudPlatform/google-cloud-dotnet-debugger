@@ -56,7 +56,7 @@ class FieldEvaluatorTest : public ::testing::Test {
   virtual void SetUp() {
     expression_mock_ =
         std::unique_ptr<ExpressionEvaluatorMock>(new ExpressionEvaluatorMock());
-    debug_helper_ =
+    debug_helper_mock_ =
         std::shared_ptr<ICorDebugHelperMock>(new ICorDebugHelperMock());
     field_obj_ = std::shared_ptr<DbgString>(new DbgString("Field"));
     source_obj_ =
@@ -65,7 +65,7 @@ class FieldEvaluatorTest : public ::testing::Test {
   }
 
   // Sets up mock calls for field/auto-implemented property.
-  virtual void SetUpField(bool is_static) {
+  virtual void SetUpField(bool is_static, HRESULT get_field_hr = S_OK) {
     // Sets up mock calls for compiling source expression.
     EXPECT_CALL(*expression_mock_, Compile(_, _, _))
         .Times(1)
@@ -83,29 +83,12 @@ class FieldEvaluatorTest : public ::testing::Test {
                                                _, _, _, _, _, _))
         .Times(1)
         .WillOnce(DoAll(SetArgPointee<3>(is_static),
-                        SetArgPointee<4>(field_type_sig_), Return(S_OK)));
+                        SetArgPointee<4>(field_type_sig_), Return(get_field_hr)));
   }
 
   // Sets up mock calls for field/auto-implemented property.
   virtual void SetUpProperty(bool is_static) {
-    // Sets up mock calls for compiling source expression.
-    EXPECT_CALL(*expression_mock_, Compile(_, _, _))
-        .Times(1)
-        .WillOnce(Return(S_OK));
-    ON_CALL(*expression_mock_, GetStaticType())
-        .WillByDefault(ReturnRef(source_type_sig_));
-
-    // Sets up mock call for retrieving class token and fields.
-    EXPECT_CALL(stack_mock_,
-                GetClassTokenAndModule(source_type_sig_.type_name, _, _, _))
-        .Times(1)
-        .WillOnce(DoAll(SetArgPointee<1>(source_class_token_),
-                        SetArgPointee<2>(&debug_module_), Return(S_OK)));
-    EXPECT_CALL(stack_mock_, GetFieldFromClass(source_class_token_, field_name_,
-                                               _, _, _, _, _, _))
-        .Times(1)
-        .WillOnce(DoAll(SetArgPointee<3>(is_static),
-                        SetArgPointee<4>(field_type_sig_), Return(S_FALSE)));
+    SetUpField(is_static, S_FALSE);
 
     // Sets up mock call for retrieving the property.
     // Don't need to worry about disposing property pointer
@@ -138,7 +121,7 @@ class FieldEvaluatorTest : public ::testing::Test {
   // Mock eval returned by IEvalCoordinatorMock.
   ICorDebugEvalMock debug_eval_mock_;
 
-  // Debug String returned by IEvalCoordinatorMock.
+  // Mock Debug String returned by IEvalCoordinatorMock.
   ICorDebugStringValueMock debug_string_mock_;
 
   // The name of the identifier.
@@ -201,7 +184,7 @@ class FieldEvaluatorTest : public ::testing::Test {
   std::unique_ptr<ExpressionEvaluatorMock> expression_mock_;
 
   // Mock of ICorDebugHelper.
-  std::shared_ptr<ICorDebugHelperMock> debug_helper_;
+  std::shared_ptr<ICorDebugHelperMock> debug_helper_mock_;
 
   // Mock of the module the field is in.
   ICorDebugModuleMock debug_module_;
@@ -217,7 +200,7 @@ TEST_F(FieldEvaluatorTest, ArrayLength) {
   ExpressionEvaluatorMock *exp_mock_ptr = expression_mock_.get();
   field_name_ = "Length";
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
   TypeSignature source_array_type{CorElementType::ELEMENT_TYPE_ARRAY,
                                   google_cloud_debugger::kArrayClassName};
   source_array_type.is_array = true;
@@ -261,7 +244,7 @@ TEST_F(FieldEvaluatorTest, NonStaticField) {
   // std::move, expression_mock_ will be invalid.
   ExpressionEvaluatorMock *exp_mock_ptr = expression_mock_.get();
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, field_type_sig_.cor_type);
@@ -285,7 +268,7 @@ TEST_F(FieldEvaluatorTest, StaticField) {
   SetUpField(true);
 
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, field_type_sig_.cor_type);
@@ -295,7 +278,7 @@ TEST_F(FieldEvaluatorTest, StaticField) {
   EXPECT_CALL(debug_module_, GetClassFromToken(source_class_token_, _))
       .Times(1)
       .WillOnce(Return(S_OK));
-  EXPECT_CALL(*debug_helper_, GetInstantiatedClassType(_, _, _, _))
+  EXPECT_CALL(*debug_helper_mock_, GetInstantiatedClassType(_, _, _, _))
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<2>(&source_type_mock_), Return(S_OK)));
   EXPECT_CALL(source_type_mock_, GetStaticFieldValue(_, _, _))
@@ -320,7 +303,7 @@ TEST_F(FieldEvaluatorTest, FieldError) {
 
   ExpressionEvaluatorMock *exp_mock_ptr = expression_mock_.get();
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, field_type_sig_.cor_type);
@@ -342,15 +325,17 @@ TEST_F(FieldEvaluatorTest, FieldError) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<0>(source_obj_), Return(S_OK)));
 
-  // Fails to get the field.
-  EXPECT_CALL(*source_obj_, GetNonStaticField(field_name_, _))
-      .Times(1)
-      .WillOnce(DoAll(SetArgPointee<1>(field_obj_),
-                      Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
+  {
+    // Fails to get the field.
+    EXPECT_CALL(*source_obj_, GetNonStaticField(field_name_, _))
+        .Times(1)
+        .WillOnce(DoAll(SetArgPointee<1>(field_obj_),
+                        Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
 
-  EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_,
-                               &object_factory_mock_, nullptr),
-            CORDBG_E_FIELD_NOT_AVAILABLE);
+    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_,
+                                 &object_factory_mock_, nullptr),
+              CORDBG_E_FIELD_NOT_AVAILABLE);
+  }
 }
 
 // Tests the case for non-static property.
@@ -361,7 +346,7 @@ TEST_F(FieldEvaluatorTest, NonStaticProperty) {
   // std::move, expression_mock_ will be invalid.
   ExpressionEvaluatorMock *exp_mock_ptr = expression_mock_.get();
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, property_type_sig_.cor_type);
@@ -385,7 +370,7 @@ TEST_F(FieldEvaluatorTest, StaticProperty) {
   SetUpProperty(true);
 
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, property_type_sig_.cor_type);
@@ -405,7 +390,7 @@ TEST_F(FieldEvaluatorTest, PropertyError) {
   // std::move, expression_mock_ will be invalid.
   ExpressionEvaluatorMock *exp_mock_ptr = expression_mock_.get();
   FieldEvaluator evaluator(std::move(expression_mock_), identifier_,
-                           possible_class_name_, field_name_, debug_helper_);
+                           possible_class_name_, field_name_, debug_helper_mock_);
 
   EXPECT_EQ(evaluator.Compile(&stack_mock_, &debug_frame_, &err_stream_), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type, property_type_sig_.cor_type);
@@ -425,14 +410,16 @@ TEST_F(FieldEvaluatorTest, PropertyError) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<0>(source_obj_), Return(S_OK)));
 
-  // Fails to get the property.
-  EXPECT_CALL(*source_obj_, GetICorDebugValue(_, _))
-      .Times(1)
-      .WillOnce(DoAll(SetArgPointee<0>(&source_handle_mock_),
-                      Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
+  {
+    // Fails to get the property.
+    EXPECT_CALL(*source_obj_, GetICorDebugValue(_, _))
+        .Times(1)
+        .WillOnce(DoAll(SetArgPointee<0>(&source_handle_mock_),
+                        Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
 
-  EXPECT_EQ(evaluator.Evaluate(&evaluate_result, nullptr, nullptr, nullptr),
-            CORDBG_E_FIELD_NOT_AVAILABLE);
+    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, nullptr, nullptr, nullptr),
+              CORDBG_E_FIELD_NOT_AVAILABLE);
+  }
 }
 
 }  // namespace google_cloud_debugger_test

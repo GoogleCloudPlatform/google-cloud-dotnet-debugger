@@ -23,7 +23,7 @@
 
 namespace google_cloud_debugger_test {
 
-// Mock for IPortablePdbFile
+// Mock for DbgReferenceObject.
 class DbgReferenceObjectMock
     : public google_cloud_debugger::DbgReferenceObject {
  public:
