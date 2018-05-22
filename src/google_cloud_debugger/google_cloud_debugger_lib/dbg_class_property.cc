@@ -80,6 +80,11 @@ void DbgClassProperty::Initialize(mdProperty property_def,
 HRESULT DbgClassProperty::Evaluate(
     ICorDebugValue *debug_value, IEvalCoordinator *eval_coordinator,
     vector<CComPtr<ICorDebugType>> *generic_types) {
+  // If this property is already evaluated, don't do it again.
+  if (member_value_) {
+    return S_OK;
+  }
+
   if (!generic_types) {
     WriteError("Generic types array cannot be null.");
     return E_INVALIDARG;
@@ -92,11 +97,6 @@ HRESULT DbgClassProperty::Evaluate(
 
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
-  }
-
-  // If this property is already evaluated, don't do it again.
-  if (member_value_) {
-    return PopulateVariableValueHelper(eval_coordinator);
   }
 
   CComPtr<ICorDebugFunction> debug_function;
@@ -182,24 +182,6 @@ HRESULT DbgClassProperty::GetTypeSignature(TypeSignature *type_signature) {
   }
 
   *type_signature = type_signature_;
-  return S_OK;
-}
-
-HRESULT DbgClassProperty::PopulateVariableValueHelper(
-    IEvalCoordinator *eval_coordinator) {
-  if (!member_value_) {
-    return E_INVALIDARG;
-  }
-
-  if (exception_occurred_) {
-    // If there is an exception, the member_value_ will be the exception.
-    std::ostringstream stream_type;
-    Variable variable;
-    member_value_->PopulateType(&variable);
-    WriteError("throws exception " + variable.type());
-    return E_FAIL;
-  }
-
   return S_OK;
 }
 

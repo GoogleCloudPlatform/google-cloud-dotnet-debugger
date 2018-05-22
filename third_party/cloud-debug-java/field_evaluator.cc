@@ -164,6 +164,10 @@ HRESULT FieldEvaluator::EvaluateStaticMember(
   // Class_property_ is null if this is a field or auto-impl property.
   // Hence, we can get them directly without function evaluation.
   if (class_property_ == nullptr) {
+    if (eval_coordinator == nullptr || obj_factory == nullptr) {
+      return E_INVALIDARG;
+    }
+
     CComPtr<ICorDebugClass> debug_class;
     hr = debug_module_->GetClassFromToken(class_token_, &debug_class);
     if (FAILED(hr)) {
