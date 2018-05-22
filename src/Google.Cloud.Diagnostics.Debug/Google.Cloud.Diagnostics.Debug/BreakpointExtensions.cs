@@ -64,6 +64,10 @@ namespace Google.Cloud.Diagnostics.Debug
                     Line = breakpoint.Location?.Line ?? 0
                 },
 
+                Status = (breakpoint.Status?.Message != null) ?
+                    Common.CreateStatusMessage(breakpoint.Status.Message,
+                                               breakpoint.Status.Iserror) : null,
+
                 StackFrames = { breakpoint.StackFrames?.Select(frame => frame.Convert()).ToList() },
 
                 EvaluatedExpressions =

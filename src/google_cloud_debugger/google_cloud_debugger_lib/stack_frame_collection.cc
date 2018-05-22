@@ -50,12 +50,12 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
         &pdb_files,
     DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
   if (!eval_coordinator) {
-    cerr << "Eval coordinator is null.";
+    breakpoint->WriteError("Eval coordinator is null.");
     return E_INVALIDARG;
   }
 
   if (!breakpoint) {
-    cerr << "DbgBreakpoint is null.";
+    breakpoint->WriteError("DbgBreakpoint is null.");
     return E_INVALIDARG;
   }
 
@@ -67,8 +67,8 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
   if (!breakpoint_condition.empty()) {
     hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator, pdb_files);
     if (FAILED(hr)) {
-      cerr << "Failed to evaluate breakpoint condition "
-           << breakpoint_condition;
+      breakpoint->WriteError("Failed to evaluate breakpoint condition "
+          + breakpoint_condition);
       return hr;
     }
 
@@ -83,7 +83,7 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
 HRESULT StackFrameCollection::PopulateStackFrames(
     Breakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
   if (!breakpoint || !eval_coordinator) {
-    cerr << "Null breakpoint or eval coordinator.";
+    SetErrorStatusMessage(breakpoint, "Null breakpoint or eval coordinator.");
     return E_INVALIDARG;
   }
 
@@ -113,7 +113,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
                            dbg_stack_frame->GetMethod());
     SourceLocation *frame_location = frame->mutable_location();
     if (!frame_location) {
-      cerr << "Mutable location returns null.";
+      SetErrorStatusMessage(breakpoint, "Mutable location returns null.");
       continue;
     }
 
@@ -399,14 +399,14 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
   CComPtr<ICorDebugThread> debug_thread;
   HRESULT hr = eval_coordinator->GetActiveDebugThread(&debug_thread);
   if (FAILED(hr)) {
-    cerr << "Failed to get active thread.";
+    breakpoint->WriteError("Failed to get active thread.");
     return hr;
   }
 
   CComPtr<ICorDebugFrame> debug_frame;
   hr = debug_thread->GetActiveFrame(&debug_frame);
   if (FAILED(hr)) {
-    cerr << "Failed to get active frame.";
+    breakpoint->WriteError("Failed to get active frame.");
     return hr;
   }
 
@@ -416,14 +416,14 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
                                      first_stack_.get(), true);
     if (FAILED(hr)) {
-      cerr << "Failed to process stack frame.";
+      breakpoint->WriteError("Failed to process stack frame.");
       return hr;
     }
   }
 
   if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
-    cerr << "Conditional breakpoint and expressions are not supported on "
-            "non-IL frame.";
+    breakpoint->WriteError("Conditional breakpoint and expressions are not "
+            "supported on non-IL frame.");
     return E_NOTIMPL;
   }
 

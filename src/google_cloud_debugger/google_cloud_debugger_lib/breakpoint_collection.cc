@@ -135,7 +135,6 @@ HRESULT BreakpointCollection::EvaluateAndPrintBreakpoint(
   }
 
   if (matched_breakpoints.empty()) {
-    std::cout << "No matching breakpoints found.";
     return S_FALSE;
   }
 

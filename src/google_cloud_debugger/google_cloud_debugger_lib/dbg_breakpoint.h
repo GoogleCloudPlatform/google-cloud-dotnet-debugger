@@ -23,6 +23,7 @@
 #include "ccomptr.h"
 #include "cor.h"
 #include "cordebug.h"
+#include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger_portable_pdb {
   class IPortablePdbFile;
@@ -40,7 +41,7 @@ class IDbgObjectFactory;
 // To use the class, call the Initialize method to populate the
 // file name, the id of the breakpoint, the line and column number.
 // To actually set the breakpoint, the TrySetBreakpoint method must be called.
-class DbgBreakpoint {
+class DbgBreakpoint : public StringStreamWrapper {
  public:
   // Populate this breakpoint with the other breakpoint's file name,
   // id, line and column.

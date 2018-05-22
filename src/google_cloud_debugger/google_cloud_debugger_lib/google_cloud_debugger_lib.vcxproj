@@ -297,7 +297,7 @@
     <ClCompile Include="variable_wrapper.cc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\proto\breakpoint.proto" />
+    <None Include="..\..\proto\breakpoint.proto" />
     <None Include="makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

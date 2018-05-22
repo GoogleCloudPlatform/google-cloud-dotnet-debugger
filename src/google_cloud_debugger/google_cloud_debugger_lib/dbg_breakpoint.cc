@@ -32,7 +32,6 @@ using google_cloud_debugger_portable_pdb::DocumentIndex;
 using google_cloud_debugger_portable_pdb::LocalConstantRow;
 using google_cloud_debugger_portable_pdb::LocalScopeRow;
 using google_cloud_debugger_portable_pdb::LocalVariableRow;
-using std::cerr;
 using std::string;
 using std::vector;
 using std::unique_ptr;
@@ -153,7 +152,7 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
 
   CompiledExpression compiled_expression = CompileExpression(condition_);
   if (compiled_expression.evaluator == nullptr) {
-    // Errors are already printed out by CompileExpression.
+    // TODO(quoct): Get the error from CompileExpression.
     return E_FAIL;
   }
 
@@ -163,20 +162,21 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
     return hr;
   }
 
-  hr = compiled_expression.evaluator->Compile(stack_frame, active_frame, &std::cerr);
+  hr = compiled_expression.evaluator->Compile(stack_frame, active_frame,
+                                              GetErrorStream());
   if (FAILED(hr)) {
     return hr;
   }
 
   const TypeSignature &type_sig = compiled_expression.evaluator->GetStaticType();
   if (type_sig.cor_type != CorElementType::ELEMENT_TYPE_BOOLEAN) {
-    std::cerr << "Condition of the breakpoint must be of type boolean.";
+    WriteError("Condition of the breakpoint must be of type boolean.");
     return E_FAIL;
   }
 
   std::shared_ptr<DbgObject> condition_result;
   hr = compiled_expression.evaluator->Evaluate(&condition_result,
-      eval_coordinator, obj_factory, &std::cerr);
+      eval_coordinator, obj_factory, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
   }
@@ -188,26 +188,25 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
                                           IStackFrameCollection *stack_frames,
                                           IEvalCoordinator *eval_coordinator) {
+  breakpoint->set_id(id_);
   if (!stack_frames) {
-    cerr << "Stack frame collection is null.";
+    SetErrorStatusMessage(breakpoint, "Stack frame collection is null.");
     return E_INVALIDARG;
   }
 
   if (!breakpoint) {
-    cerr << "Breakpoint proto is null.";
+    SetErrorStatusMessage(breakpoint, "Breakpoint proto is null.");
     return E_INVALIDARG;
   }
 
   if (!eval_coordinator) {
-    cerr << "EvailCoordinator is null.";
+    SetErrorStatusMessage(breakpoint, "Eval coordinator is null.");
     return E_INVALIDARG;
   }
 
-  breakpoint->set_id(id_);
-
   SourceLocation *location = breakpoint->mutable_location();
   if (!location) {
-    cerr << "Mutable location returns null.";
+    SetErrorStatusMessage(breakpoint, "Mutable location returns null.");
     return E_FAIL;
   }
 

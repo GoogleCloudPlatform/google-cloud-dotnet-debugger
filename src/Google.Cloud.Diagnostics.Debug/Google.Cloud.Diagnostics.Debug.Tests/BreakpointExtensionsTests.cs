@@ -127,5 +127,35 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Single(
                 sdBreakpoint.EvaluatedExpressions.Where(ee => ee.Name.Equals("second-expression")));
         }
+
+        [Fact]
+        public void Convert_StackdriverBreakpointWithError()
+        {
+            var breakpoint = new Breakpoint
+            {
+                Id = _id,
+                Location = new SourceLocation
+                {
+                    Path = _path,
+                    Line = _line
+                },
+                CreateTime = Timestamp.FromDateTime(DateTime.UtcNow),
+                FinalTime = Timestamp.FromDateTime(DateTime.UtcNow.AddSeconds(10)),
+                Status = new Status
+                {
+                    Message = "This is an error",
+                    Iserror = true
+                }
+            };
+
+            StackdriverBreakpoint sdBreakpoint = breakpoint.Convert();
+            Assert.Equal(_id, sdBreakpoint.Id);
+            Assert.Equal(_path.Replace('\\', '/'), sdBreakpoint.Location.Path);
+            Assert.Equal(_line, sdBreakpoint.Location.Line);
+            Assert.Equal(breakpoint.CreateTime, sdBreakpoint.CreateTime);
+            Assert.Equal(breakpoint.FinalTime, sdBreakpoint.FinalTime);
+            Assert.Equal(breakpoint.Status.Message, sdBreakpoint.Status.Description.Format);
+            Assert.Equal(breakpoint.Status.Iserror, sdBreakpoint.Status.IsError);
+        }
     }
 }

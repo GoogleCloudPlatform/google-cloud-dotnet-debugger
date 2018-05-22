@@ -269,6 +269,15 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     if (FAILED(hr)) {
       std::cerr << "Failed to process breakpoint \"" << breakpoint->GetId()
                 << "\" with HRESULT: " << std::hex << hr;
+      Breakpoint error_breakpoint;
+      error_breakpoint.set_id(breakpoint->GetId());
+      SetErrorStatusMessage(&error_breakpoint, breakpoint->GetErrorString());
+
+      hr = breakpoint_collection->WriteBreakpoint(error_breakpoint);
+      if (FAILED(hr)) {
+        cerr << "Failed to write error breakpoint: " << std::hex << hr;
+        break;
+      }
       continue;
     }
 
@@ -283,8 +292,8 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
     hr = breakpoint->PopulateBreakpoint(&proto_breakpoint, stack_frames.get(),
                                         this);
     if (FAILED(hr)) {
+      // We should still write the breakpoint to report the error to the user.
       cerr << "Failed to print out variables: " << std::hex << hr;
-      break;
     }
 
     hr = breakpoint_collection->WriteBreakpoint(proto_breakpoint);
