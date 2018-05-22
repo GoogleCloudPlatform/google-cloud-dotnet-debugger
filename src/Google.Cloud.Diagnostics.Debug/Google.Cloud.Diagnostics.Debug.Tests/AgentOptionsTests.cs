@@ -25,10 +25,10 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 {
     public class AgentOptionsTests : IDisposable
     {
+        private readonly StringWriter _writer = new StringWriter();
         private const string _projectId = "pid";
         private const string _module = "module";
         private const string _version = "version";
-        private readonly StringWriter _writer = new StringWriter();
         private static readonly string _debugger = Path.GetTempFileName();
         private static readonly string _application = Path.GetTempFileName();
         private static readonly string _sourceContext = Path.GetTempFileName();
@@ -41,6 +41,9 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             $"--debugger={_debugger}",
             $"--application-start-command={_application}",
         };
+
+        private static readonly string _helpText = HelpText.AutoBuild(
+            Parser.Default.ParseArguments<AgentOptions>(_args), (h) => h, (e) => e);
 
         private static readonly GaePlatformDetails _gaeDetails = new GaePlatformDetails(
             _projectId, "instance", _module, _version);
@@ -80,11 +83,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             args[3] = "--debugger=invalid";
             Assert.Null(AgentOptions.Parse(args.ToArray()));
 
-            var result = Parser.Default.ParseArguments<AgentOptions>(_args);
-            var helpText = HelpText.AutoBuild(result, (h) => h, (e) => e);
-
             Assert.Contains("Debugger file not found", _writer.ToString());
-            Assert.Contains(helpText.ToString(), _writer.ToString());
+            Assert.Contains(_helpText, _writer.ToString());
         }
 
         [Fact]
@@ -92,6 +92,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         {
             var args = new List<string>(_args);
             args[3] = "--not-an-arg=invalid";
+            Assert.Null(AgentOptions.Parse(args.ToArray()));
         }
 
         [Fact]
@@ -102,14 +103,13 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Null(AgentOptions.Parse(args.ToArray()));
         }
 
-
-
         [Fact]
         public void Parse_Multiple_Applications()
         {
             var args = new List<string>(_args);
             args.Add("--application-id=12345");
             Assert.Null(AgentOptions.Parse(args.ToArray()));
+            Assert.Contains("Please supply either", _writer.ToString());
         }
 
         [Fact]

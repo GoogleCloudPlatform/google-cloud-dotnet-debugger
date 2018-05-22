@@ -90,6 +90,8 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Parse a <see cref="AgentOptions"/> from command line arguments.
         /// </summary>
+        /// <returns>The parsed <see cref="AgentOptions"/> or null if an error occurred. 
+        ///     Errors will be written to the console.</returns>
         public static AgentOptions Parse(string[] args)
         {
             var options = new AgentOptions();
@@ -134,8 +136,6 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 options = null;
             });
-
-
 
             return options;
         }
