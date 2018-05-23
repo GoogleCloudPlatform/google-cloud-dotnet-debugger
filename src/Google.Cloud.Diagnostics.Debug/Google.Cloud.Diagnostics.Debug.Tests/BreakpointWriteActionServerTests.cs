@@ -37,6 +37,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _mockBreakpointServer = new Mock<IBreakpointServer>();
             _mockDebuggerClient = new Mock<IDebuggerClient>();
             _breakpointManager = new BreakpointManager();
+            _cts = new CancellationTokenSource();
             _server = new BreakpointWriteActionServer(_mockBreakpointServer.Object,
                 _cts, _mockDebuggerClient.Object, _breakpointManager);
 
