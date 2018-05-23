@@ -55,7 +55,7 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
   }
 
   if (!eval_coordinator) {
-    breakpoint->WriteError("DbgBreakpoint is null.");
+    breakpoint->WriteError("Eval coordinator is null.");
     return E_INVALIDARG;
   }
 
