@@ -290,7 +290,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     // Ensure both the agent and debugger have shutdown.
                     Assert.True(debugProcess.HasExited);
                     Assert.True(agentProcess.HasExited);
-
                 }
             }
         }
