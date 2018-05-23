@@ -279,7 +279,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     app.ShutdownApp();
 
                     // The loops allows for about 60 seconds total.  This is a generous limit,
-                    // generally it takes less than 10 seconds.  However, it has been observed taking
+                    // generally it is taking less than 10 seconds.  However, it has been observed taking
                     // a lot longer.
                     int counter = 0;
                     while ((!debugProcess.HasExited || !agentProcess.HasExited) && counter++ < 60)
