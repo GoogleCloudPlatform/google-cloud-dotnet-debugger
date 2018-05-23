@@ -49,12 +49,12 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &pdb_files,
     DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
-  if (!eval_coordinator) {
-    breakpoint->WriteError("Eval coordinator is null.");
+  if (!breakpoint) {
+    std::cerr << "DbgBreakpoint is null.";
     return E_INVALIDARG;
   }
 
-  if (!breakpoint) {
+  if (!eval_coordinator) {
     breakpoint->WriteError("DbgBreakpoint is null.");
     return E_INVALIDARG;
   }
@@ -82,8 +82,13 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
 
 HRESULT StackFrameCollection::PopulateStackFrames(
     Breakpoint *breakpoint, IEvalCoordinator *eval_coordinator) {
-  if (!breakpoint || !eval_coordinator) {
-    SetErrorStatusMessage(breakpoint, "Null breakpoint or eval coordinator.");
+  if (!breakpoint) {
+    std::cerr << "Null breakpoint.";
+    return E_INVALIDARG;
+  }
+
+  if (!eval_coordinator) {
+    SetErrorStatusMessage(breakpoint, "Null eval coordinator.");
     return E_INVALIDARG;
   }
 

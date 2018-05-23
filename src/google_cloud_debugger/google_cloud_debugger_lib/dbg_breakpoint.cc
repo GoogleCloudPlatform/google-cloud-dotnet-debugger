@@ -188,14 +188,14 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
                                           IStackFrameCollection *stack_frames,
                                           IEvalCoordinator *eval_coordinator) {
-  breakpoint->set_id(id_);
-  if (!stack_frames) {
-    SetErrorStatusMessage(breakpoint, "Stack frame collection is null.");
+  if (!breakpoint) {
+    std::cerr << "Breakpoint proto is null";
     return E_INVALIDARG;
   }
 
-  if (!breakpoint) {
-    SetErrorStatusMessage(breakpoint, "Breakpoint proto is null.");
+  breakpoint->set_id(id_);
+  if (!stack_frames) {
+    SetErrorStatusMessage(breakpoint, "Stack frame collection is null.");
     return E_INVALIDARG;
   }
 

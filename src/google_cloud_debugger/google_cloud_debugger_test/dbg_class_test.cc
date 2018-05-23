@@ -743,7 +743,7 @@ TEST_F(DbgClassTest, TestPopulateMembersError) {
   EXPECT_EQ(variable.members(2).type(), "");
   EXPECT_EQ(variable.members(2).status().iserror(), true);
   EXPECT_EQ(variable.members(2).status().message(),
-            "Failed to create ICorDebugEval.");
+            "Failed to create ICorDebugEval.\n");
 
   EXPECT_EQ(variable.members(0).value(), std::to_string(first_field_value_));
   EXPECT_EQ(variable.members(1).value(), std::to_string(second_field_value_));
