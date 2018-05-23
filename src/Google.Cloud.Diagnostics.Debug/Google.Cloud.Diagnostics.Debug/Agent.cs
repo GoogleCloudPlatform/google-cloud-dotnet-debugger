@@ -93,7 +93,7 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
-                using (var server = new BreakpointWriteActionServer(breakpointServer, _client, _breakpointManager))
+                using (var server = new BreakpointWriteActionServer(breakpointServer, _cts, _client, _breakpointManager))
                 {
                     TryAction(() =>
                     {
@@ -122,7 +122,7 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
-                using (var server = new BreakpointReadActionServer(breakpointServer, _client, _breakpointManager))
+                using (var server = new BreakpointReadActionServer(breakpointServer, _cts, _client, _breakpointManager))
                 {
                     TryAction(() => 
                     { 

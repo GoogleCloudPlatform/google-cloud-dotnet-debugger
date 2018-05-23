@@ -180,15 +180,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
-        /// Shuts down a running instance of the test app.
-        /// This is done via a build in url that will kill the app when hit.
-        /// When starting an app with the 'dotnet' command it will spawn a new process. This
-        /// was more simple than trying to grab the child process id.
+        /// Shuts down the running application.
         /// </summary>
-        public void Dispose()
+        public void ShutdownApp()
         {
-            _app?.Kill();
-            _agent?.Kill();
             using (HttpClient client = new HttpClient())
             {
                 try
@@ -197,6 +192,29 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 }
                 catch (AggregateException) { }
             }
+        }
+
+        /// <summary>
+        /// Shuts down a running instance of the test app.
+        /// This is done via a build in url that will kill the app when hit.
+        /// When starting an app with the 'dotnet' command it will spawn a new process. This
+        /// was more simple than trying to grab the child process id.
+        /// </summary>
+        public void Dispose()
+        {
+            // Some tests need to kill the debugger or agent to test
+            // resilience of the app we are debugging.  We cannot 
+            // kill an already killed process.
+            if (_app != null && !_app.HasExited)
+            {
+                _app.Kill();
+            }
+            if (_agent != null && !_agent.HasExited)
+            {
+                _agent.Kill();
+            }
+
+            ShutdownApp();
 
             // Try to clean up the extra debugger file.  We may need to
             // wait a bit for the file handle to be released.

@@ -275,6 +275,16 @@ HRESULT BreakpointCollection::SyncBreakpoints() {
 HRESULT BreakpointCollection::CancelSyncBreakpoints() {
   HRESULT hr = S_OK;
 
+  // We are shutting down the debugger, signal the agent
+  // to shutdown as well.
+  Breakpoint kill_breakpoint;
+  kill_breakpoint.set_kill_server(true);
+  hr = breakpoint_client_write_->WriteBreakpoint(kill_breakpoint);
+
+  if (FAILED(hr)) {
+	  return hr;
+  }
+
   if (breakpoint_client_read_) {
 	hr = breakpoint_client_read_->ShutDown();
   }

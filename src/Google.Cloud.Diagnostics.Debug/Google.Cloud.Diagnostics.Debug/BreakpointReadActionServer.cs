@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using Google.Api.Gax;
+using System.Threading;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 
 namespace Google.Cloud.Diagnostics.Debug
@@ -30,10 +31,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Create a new <see cref="BreakpointReadActionServer"/>.
         /// </summary>
         /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="cts"> A cancellation token source to cancel if the server receives a shutdown command.</param>
         /// <param name="client">The debugger client to send updated breakpoints to.</param>
         /// <param name="breakpointManager">A shared breakpoint manager.</param>
-        public BreakpointReadActionServer(IBreakpointServer server, IDebuggerClient client,
-            BreakpointManager breakpointManager) : base(server)
+        public BreakpointReadActionServer(IBreakpointServer server, CancellationTokenSource cts,
+            IDebuggerClient client, BreakpointManager breakpointManager) : base(server, cts)
         {
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
             _breakpointManager = GaxPreconditions.CheckNotNull(breakpointManager, nameof(breakpointManager));
@@ -46,6 +48,11 @@ namespace Google.Cloud.Diagnostics.Debug
         internal override void MainAction()
         {
             Breakpoint readBreakpoint = _server.ReadBreakpointAsync().Result;
+            if (readBreakpoint.KillServer)
+            {
+                _cts.Cancel();
+                return;
+            }
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
             breakpoint.IsFinalState = true;
             _client.UpdateBreakpoint(breakpoint);

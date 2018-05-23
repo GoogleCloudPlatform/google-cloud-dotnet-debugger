@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using Google.Api.Gax;
-using System.Linq;
+using System.Threading;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -31,10 +31,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Create a new <see cref="BreakpointWriteActionServer"/>.
         /// </summary>
         /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="cts"> A cancellation token source to cancel if the server receives a shutdown command.</param>
         /// <param name="client">The debugger client to send updated breakpoints to.</param>
         /// <param name="breakpointManager">A shared breakpoint manager.</param>
-        public BreakpointWriteActionServer(IBreakpointServer server, IDebuggerClient client, 
-            BreakpointManager breakpointManager) : base (server)
+        public BreakpointWriteActionServer(IBreakpointServer server, CancellationTokenSource cts,
+            IDebuggerClient client, BreakpointManager breakpointManager) : base (server, cts)
         {
             _client = GaxPreconditions.CheckNotNull(client, nameof(client));
             _breakpointManager = GaxPreconditions.CheckNotNull(breakpointManager, nameof(breakpointManager));
