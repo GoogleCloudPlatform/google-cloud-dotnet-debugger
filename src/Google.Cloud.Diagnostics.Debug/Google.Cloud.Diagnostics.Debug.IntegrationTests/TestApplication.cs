@@ -192,11 +192,11 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             // kill an already killed process.
             if (_app != null && !_app.HasExited)
             {
-                _app?.Kill();
+                _app.Kill();
             }
             if (_agent != null && !_agent.HasExited)
             {
-                _agent?.Kill();
+                _agent.Kill();
             }
 
             using (HttpClient client = new HttpClient())
