@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using CommandLine;
+using CommandLine.Text;
 using Google.Api.Gax;
 using Google.Cloud.DevTools.Source.V1;
 using System;
@@ -21,8 +23,9 @@ using Xunit;
 
 namespace Google.Cloud.Diagnostics.Debug.Tests
 {
-    public class AgentOptionsTests
+    public class AgentOptionsTests : IDisposable
     {
+        private readonly StringWriter _writer = new StringWriter();
         private const string _projectId = "pid";
         private const string _module = "module";
         private const string _version = "version";
@@ -39,10 +42,23 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             $"--application-start-command={_application}",
         };
 
+        private static readonly string _helpText = HelpText.AutoBuild(
+            Parser.Default.ParseArguments<AgentOptions>(_args), (h) => h, (e) => e);
+
         private static readonly GaePlatformDetails _gaeDetails = new GaePlatformDetails(
             _projectId, "instance", _module, _version);
         private static readonly Platform _gaePlatform = new Platform(_gaeDetails);
         private static readonly Platform _unknownPlatform = new Platform();
+
+        public AgentOptionsTests()
+        {
+            Console.SetOut(_writer); 
+        }
+
+        public void Dispose()
+        {
+            Console.SetOut(Console.Out);
+        }
 
         [Fact]
         public void Parse()
@@ -60,19 +76,39 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void Parse_DisplayHelp_ErrorParsing()
+        {
+            var args = new List<string>(_args);
+            args[3] = "--debugger=invalid";
+            Assert.Null(AgentOptions.Parse(args.ToArray()));
+
+            Assert.Contains("Debugger file not found", _writer.ToString());
+            Assert.Contains(_helpText, _writer.ToString());
+        }
+
+        [Fact]
+        public void Parse_InvalidArg()
+        {
+            var args = new List<string>(_args);
+            args[3] = "--not-an-arg=invalid";
+            Assert.Null(AgentOptions.Parse(args.ToArray()));
+        }
+
+        [Fact]
         public void Parse_Missing_Debugger_File()
         {
             var args = new List<string>(_args);
             args[3] = "--debugger=invalid";
-            Assert.Throws<FileNotFoundException>(() => AgentOptions.Parse(args.ToArray()));
+            Assert.Null(AgentOptions.Parse(args.ToArray()));
         }
-            
+
         [Fact]
         public void Parse_Multiple_Applications()
         {
             var args = new List<string>(_args);
             args.Add("--application-id=12345");
-            Assert.Throws<ArgumentException>(() => AgentOptions.Parse(args.ToArray()));
+            Assert.Null(AgentOptions.Parse(args.ToArray()));
+            Assert.Contains("Please supply either", _writer.ToString());
         }
 
         [Fact]

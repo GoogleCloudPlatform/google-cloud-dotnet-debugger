@@ -163,6 +163,11 @@ namespace Google.Cloud.Diagnostics.Debug
         public static void Main(string[] args)
         {
             var options = AgentOptions.Parse(args);
+            if (options == null)
+            {
+                return;
+            }
+
             using (var agent = new Agent(options))
             {
                 agent.StartAndBlock();                
