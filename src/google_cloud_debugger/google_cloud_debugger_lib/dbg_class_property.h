@@ -78,10 +78,6 @@ class DbgClassProperty : public IDbgClassMember {
   }
 
  private:
-  // Helper function to set the value of variable to this property's value.
-  // This function assumes that member_value_ is not null.
-  HRESULT PopulateVariableValueHelper(IEvalCoordinator *eval_coordinator);
-
   // The token that represents the property getter.
   mdMethodDef property_getter_function = 0;
 
@@ -90,9 +86,6 @@ class DbgClassProperty : public IDbgClassMember {
 
   // Token that represents the property.
   mdProperty property_def_ = 0;
-
-  // True if an exception is thrown when trying to evaluate the property.
-  BOOL exception_occurred_ = FALSE;
 
   // Vector of tokens that represent other methods associated with the property.
   std::vector<mdMethodDef> other_methods_;

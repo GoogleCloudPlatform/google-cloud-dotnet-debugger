@@ -28,6 +28,14 @@ class EvalCoordinator;
 // This includes multi-dimensional as well as jagged arrays.
 class DbgArray : public DbgReferenceObject {
  public:
+  // This constructor is used for testing.
+  DbgArray(std::vector<ULONG32> dimensions)
+      : DbgReferenceObject(nullptr, 0, std::shared_ptr<ICorDebugHelper>(),
+                           std::shared_ptr<IDbgObjectFactory>()) {
+    dimensions_ = dimensions;
+    cor_element_type_ = CorElementType::ELEMENT_TYPE_ARRAY;
+  }
+   
   DbgArray(ICorDebugType *debug_type, int depth,
            std::shared_ptr<ICorDebugHelper> debug_helper,
            std::shared_ptr<IDbgObjectFactory> object_factory)

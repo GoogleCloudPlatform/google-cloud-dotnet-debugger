@@ -40,7 +40,29 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
     *result_obj = std::unique_ptr<google_cloud_debugger::DbgClassProperty>(
         class_property);
     return hr;
-  }
+  };
+
+  HRESULT GetPropertyFromClass(
+      const mdTypeDef &class_token,
+      const std::string &property_name,
+      std::unique_ptr<google_cloud_debugger::DbgClassProperty>
+          *result_obj,
+      const std::vector<google_cloud_debugger::TypeSignature>
+          &generic_signatures,
+      IMetaDataImport *metadata_import,
+      std::ostream *err_stream) override {
+    google_cloud_debugger::DbgClassProperty *class_property;
+    HRESULT hr =
+        GetPropertyFromClassHelper(class_token, property_name, &class_property,
+          generic_signatures, metadata_import, err_stream);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    *result_obj = std::unique_ptr<google_cloud_debugger::DbgClassProperty>(
+        class_property);
+    return hr;
+  };
 
   MOCK_METHOD3(
       GetLocalVariable,
@@ -66,11 +88,10 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
                            &generic_signatures,
                        IMetaDataImport *metadata_import,
                        std::ostream *err_stream));
-  MOCK_METHOD6(GetPropertyFromClass,
+  MOCK_METHOD6(GetPropertyFromClassHelper,
                HRESULT(const mdTypeDef &class_token,
                        const std::string &property_name,
-                       std::unique_ptr<google_cloud_debugger::DbgClassProperty>
-                           *class_property,
+                       google_cloud_debugger::DbgClassProperty **class_property,
                        const std::vector<google_cloud_debugger::TypeSignature>
                            &generic_signatures,
                        IMetaDataImport *metadata_import,

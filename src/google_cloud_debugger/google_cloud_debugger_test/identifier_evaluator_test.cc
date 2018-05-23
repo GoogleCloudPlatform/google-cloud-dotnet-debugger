@@ -51,32 +51,6 @@ class IdentifierEvaluatorTest : public ::testing::Test {
     field_ = std::shared_ptr<DbgString>(new DbgString("Field"));
   }
 
-  // Sets up IEvalCoordinator for mock call.
-  virtual void SetUpEvalCoordinator() {
-    EXPECT_CALL(eval_coordinator_mock_, CreateEval(_))
-        .Times(1)
-        .WillRepeatedly(
-            DoAll(SetArgPointee<0>(&debug_eval_mock_), Return(S_OK)));
-
-    EXPECT_CALL(eval_coordinator_mock_, WaitForEval(_, &debug_eval_mock_, _))
-        .Times(1)
-        .WillRepeatedly(
-            DoAll(SetArgPointee<2>(&debug_string_mock_), Return(S_OK)));
-
-    EXPECT_CALL(debug_eval_mock_, NewString(_))
-        .Times(1)
-        .WillRepeatedly(Return(S_OK));
-  }
-
-  // Sets up object factory for object creation.
-  // This will take ownership of created_obj.
-  virtual void SetUpObjFactory(DbgObject *created_obj) {
-    EXPECT_CALL(object_factory_mock_,
-                CreateDbgObjectMockHelper(&debug_string_mock_, _, _, _))
-        .Times(1)
-        .WillRepeatedly(DoAll(SetArgPointee<2>(created_obj), Return(S_OK)));
-  }
-
   // Mock of IEvalCoordinator used for evaluate.
   IEvalCoordinatorMock eval_coordinator_mock_;
 
