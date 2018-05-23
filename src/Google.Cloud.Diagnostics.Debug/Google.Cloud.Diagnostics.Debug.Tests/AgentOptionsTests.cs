@@ -58,7 +58,6 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         public void Dispose()
         {
             Console.SetOut(Console.Out);
-            _writer.Dispose();
         }
 
         [Fact]
