@@ -187,8 +187,18 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         public void Dispose()
         {
-            _app?.Kill();
-            _agent?.Kill();
+            // Some tests need to kill the debugger or agent to test
+            // resilience of the app we are debugging.  We cannot 
+            // kill an already killed process.
+            if (_app != null && !_app.HasExited)
+            {
+                _app.Kill();
+            }
+            if (_agent != null && !_agent.HasExited)
+            {
+                _agent.Kill();
+            }
+
             using (HttpClient client = new HttpClient())
             {
                 try

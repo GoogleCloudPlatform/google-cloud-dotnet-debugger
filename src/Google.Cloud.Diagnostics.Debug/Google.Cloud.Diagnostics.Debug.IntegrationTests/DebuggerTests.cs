@@ -250,5 +250,48 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 }
             }
         }
+
+        /// <summary>
+        /// Test that if the agent and debugger fail and are not running
+        /// the users application will still be up and running.
+        /// </summary>
+        [Fact]
+        public async Task DebuggerDies_AppLives()
+        {
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Hit the app and ensure the breakpoint has been hit.
+                    await client.GetAsync(app.AppUrlBase);
+                    var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+                    Assert.True(newBp.IsFinalState);
+
+                    // Kill the debugger process and agent process.
+                    var debugProcess = app.GetDebuggerProcess();
+                    var agentProcess = app.GetAgentProcess();
+
+                    debugProcess.Kill();
+                    if (!agentProcess.HasExited)
+                    {
+                        // Killing the agent will kill the debugger and visa versa.
+                        // This is just a sanity check that all processes are no
+                        // longer running.
+                        agentProcess.Kill();
+                    }
+                    
+                    // Ensure both the agent and debugger have shutdown.
+                    Assert.True(debugProcess.HasExited);
+                    Assert.True(agentProcess.HasExited);
+
+                    // Ensure the app is still alive.
+                    var result = await client.GetAsync(app.AppUrlBase);
+                    Assert.Equal("Hello, World!", result.Content.ReadAsStringAsync().Result);
+                }
+            }
+        }
     }
 }
