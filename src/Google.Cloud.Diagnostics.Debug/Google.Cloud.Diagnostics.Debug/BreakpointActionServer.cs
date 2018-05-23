@@ -16,6 +16,7 @@ using Google.Api.Gax;
 using Grpc.Core;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -52,14 +53,21 @@ namespace Google.Cloud.Diagnostics.Debug
         protected readonly IBreakpointServer _server;
 
         /// <summary>
+        /// A cancellation token source to cancel if the server receives a shutdown command.
+        /// </summary>
+        protected readonly CancellationTokenSource _cts;
+
+        /// <summary>
         /// Create a new <see cref="BreakpointActionServer"/>.
         /// </summary>
         /// <param name="server">The breakpoint server to communicate with.</param>
+        /// <param name="cts"> A cancellation token source to cancel if the server receives a shutdown command.</param>
         /// <param name="minBackOffWaitTime">The minimum amount of time we will sleep when backing off failed RPC calls.</param>
         /// <param name="maxBackOffWaitTime">The maximum amount of time we will sleep when backing off failed RPC calls</param>
-        public BreakpointActionServer(IBreakpointServer server,
+        public BreakpointActionServer(IBreakpointServer server, CancellationTokenSource cts,
             TimeSpan? minBackOffWaitTime = null, TimeSpan? maxBackOffWaitTime = null)
         {
+            _cts = GaxPreconditions.CheckNotNull(cts, nameof(cts));
             _server = GaxPreconditions.CheckNotNull(server, nameof(server));
             _minBackOffWaitTime = minBackOffWaitTime ?? _defaultMinBackOffWaitTime;
             _maxBackOffWaitTime = maxBackOffWaitTime ?? _defaultMaxBackOffWaitTime;

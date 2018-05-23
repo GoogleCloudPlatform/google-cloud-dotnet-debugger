@@ -180,6 +180,21 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         /// <summary>
+        /// Shuts down the running application.
+        /// </summary>
+        public void ShutdownApp()
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    client.GetAsync(AppUrlShutdown).Wait();
+                }
+                catch (AggregateException) { }
+            }
+        }
+
+        /// <summary>
         /// Shuts down a running instance of the test app.
         /// This is done via a build in url that will kill the app when hit.
         /// When starting an app with the 'dotnet' command it will spawn a new process. This
@@ -199,14 +214,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 _agent.Kill();
             }
 
-            using (HttpClient client = new HttpClient())
-            {
-                try
-                {
-                    client.GetAsync(AppUrlShutdown).Wait();
-                }
-                catch (AggregateException) { }
-            }
+            ShutdownApp();
 
             // Try to clean up the extra debugger file.  We may need to
             // wait a bit for the file handle to be released.

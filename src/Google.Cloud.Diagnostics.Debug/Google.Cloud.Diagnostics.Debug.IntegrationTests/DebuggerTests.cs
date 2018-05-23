@@ -18,6 +18,8 @@ using System.Threading.Tasks;
 using Xunit;
 using DebuggerVariable = Google.Cloud.Debugger.V2.Variable;
 using DebuggerBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
+using System.Threading;
+using System;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -282,7 +284,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                         // longer running.
                         agentProcess.Kill();
                     }
-                    
+
                     // Ensure both the agent and debugger have shutdown.
                     Assert.True(debugProcess.HasExited);
                     Assert.True(agentProcess.HasExited);
@@ -290,6 +292,47 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     // Ensure the app is still alive.
                     var result = await client.GetAsync(app.AppUrlBase);
                     Assert.Equal("Hello, World!", result.Content.ReadAsStringAsync().Result);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test that if the running application dies then the 
+        /// agent and debugger will also shut down.
+        /// </summary>
+        [Fact]
+        public async Task AppDies_DebuggerDies()
+        {
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    // Hit the app and ensure the breakpoint has been hit.
+                    await client.GetAsync(app.AppUrlBase);
+                    var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+                    Assert.True(newBp.IsFinalState);
+
+                    var debugProcess = app.GetDebuggerProcess();
+                    var agentProcess = app.GetAgentProcess();
+
+                    // Shut down the running application.
+                    app.ShutdownApp();
+
+                    // The loops allows for about 60 seconds total.  This is a generous limit,
+                    // generally it takes less than 10 seconds.  However, it has been observed taking
+                    // a lot longer.
+                    int counter = 0;
+                    while ((!debugProcess.HasExited || !agentProcess.HasExited) && counter++ < 60)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(1));
+                    }
+
+                    // Ensure both the agent and debugger have shutdown.
+                    Assert.True(debugProcess.HasExited);
+                    Assert.True(agentProcess.HasExited);
                 }
             }
         }

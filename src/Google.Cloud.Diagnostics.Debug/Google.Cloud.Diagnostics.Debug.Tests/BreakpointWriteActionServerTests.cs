@@ -28,6 +28,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     {
         private readonly Mock<IBreakpointServer> _mockBreakpointServer;
         private readonly Mock<IDebuggerClient> _mockDebuggerClient;
+        private readonly CancellationTokenSource _cts;
         private readonly BreakpointWriteActionServer _server;
         private readonly BreakpointManager _breakpointManager;
 
@@ -36,8 +37,9 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _mockBreakpointServer = new Mock<IBreakpointServer>();
             _mockDebuggerClient = new Mock<IDebuggerClient>();
             _breakpointManager = new BreakpointManager();
-            _server = new BreakpointWriteActionServer(
-                _mockBreakpointServer.Object, _mockDebuggerClient.Object, _breakpointManager);
+            _cts = new CancellationTokenSource();
+            _server = new BreakpointWriteActionServer(_mockBreakpointServer.Object,
+                _cts, _mockDebuggerClient.Object, _breakpointManager);
 
             _mockBreakpointServer.Setup(s => s.WriteBreakpointAsync(
                 It.IsAny<Breakpoint>(), It.IsAny<CancellationToken>()))
