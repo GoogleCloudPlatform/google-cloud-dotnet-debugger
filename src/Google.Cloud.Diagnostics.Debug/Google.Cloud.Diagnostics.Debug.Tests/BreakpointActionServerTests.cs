@@ -124,7 +124,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             public int ThrowTimes = 0;
 
             public FakeBreakpointActionServer(IBreakpointServer server) : 
-                base(server, _minBackOffWaitTime, _maxBackOffWaitTime) { }
+                base(server, new CancellationTokenSource(),
+                    _minBackOffWaitTime, _maxBackOffWaitTime) { }
 
             internal override void MainAction()
             {
