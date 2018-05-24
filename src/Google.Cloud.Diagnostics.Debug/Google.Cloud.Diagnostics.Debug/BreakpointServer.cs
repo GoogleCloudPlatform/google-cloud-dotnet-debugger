@@ -66,7 +66,7 @@ namespace Google.Cloud.Diagnostics.Debug
                                                Constants.EndBreakpointMessage);
                 }
 
-                endIndex += bytesWrittenSoFar;
+                endIndex = previousBuffer.Count - Constants.EndBreakpointMessage.Length;
 
                 // Ensure we have a start to the breakpoint message.
                 int startIndex = IndexOfSequence(previousBuffer.Take(Constants.StartBreakpointMessage.Length).ToArray(),
