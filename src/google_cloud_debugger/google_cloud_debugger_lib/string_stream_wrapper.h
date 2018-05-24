@@ -39,7 +39,9 @@ class StringStreamWrapper {
   }
 
   // Writes the string error to the error_stream_.
-  void WriteError(const std::string &error) { *error_stream_ << error; }
+  void WriteError(const std::string &error) {
+    *error_stream_ << error << std::endl;
+  }
 
   // Gets the underlying error stream.
   std::ostringstream *GetErrorStream() { return error_stream_.get(); }
@@ -68,6 +70,11 @@ void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
 // object. This will reset the error stream of string_stream afterwards.
 void SetErrorStatusMessage(google::cloud::diagnostics::debug::Variable *var,
                            StringStreamWrapper *string_stream);
+
+// Sets the Status field of breakpoint using error string err_string.
+void SetErrorStatusMessage(
+    google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+    const std::string &err_string);
 
 // Helper function to convert a string to null-terminated WCHAR vector.
 // If target_string is empty or if there are failures,

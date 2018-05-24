@@ -42,6 +42,17 @@ void SetErrorStatusMessage(Variable *variable,
   string_stream->ResetErrorStream();
 }
 
+void SetErrorStatusMessage(
+    google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+    const std::string &err_string) {
+  assert(breakpoint != nullptr);
+
+  std::unique_ptr<Status> status(new (std::nothrow) Status());
+  status->set_message(err_string);
+  status->set_iserror(true);
+  breakpoint->set_allocated_status(status.release());
+}
+
 vector<WCHAR> ConvertStringToWCharPtr(const std::string &target_string) {
   if (target_string.size() == 0) {
     return vector<WCHAR>();

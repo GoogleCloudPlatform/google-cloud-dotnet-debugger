@@ -367,9 +367,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\proto\breakpoint.proto">
+    <None Include="makefile" />
+    <None Include="..\..\proto\breakpoint.proto">
       <Filter>Protos</Filter>
     </None>
-    <None Include="makefile" />
   </ItemGroup>
 </Project>

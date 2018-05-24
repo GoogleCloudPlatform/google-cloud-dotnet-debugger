@@ -75,6 +75,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, expressions_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, condition_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, evaluated_expressions_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, status_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StackFrame, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -112,10 +113,10 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
 
 static const ::google::protobuf::internal::MigrationSchema schemas[] = {
   { 0, -1, sizeof(Breakpoint)},
-  { 15, -1, sizeof(StackFrame)},
-  { 24, -1, sizeof(SourceLocation)},
-  { 31, -1, sizeof(Variable)},
-  { 41, -1, sizeof(Status)},
+  { 16, -1, sizeof(StackFrame)},
+  { 25, -1, sizeof(SourceLocation)},
+  { 32, -1, sizeof(Variable)},
+  { 42, -1, sizeof(Status)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -178,6 +179,8 @@ void TableStruct::InitDefaultsImpl() {
       ::google::protobuf::Timestamp::internal_default_instance());
   _Breakpoint_default_instance_.get_mutable()->final_time_ = const_cast< ::google::protobuf::Timestamp*>(
       ::google::protobuf::Timestamp::internal_default_instance());
+  _Breakpoint_default_instance_.get_mutable()->status_ = const_cast< ::google::cloud::diagnostics::debug::Status*>(
+      ::google::cloud::diagnostics::debug::Status::internal_default_instance());
   _StackFrame_default_instance_.get_mutable()->location_ = const_cast< ::google::cloud::diagnostics::debug::SourceLocation*>(
       ::google::cloud::diagnostics::debug::SourceLocation::internal_default_instance());
   _Variable_default_instance_.get_mutable()->status_ = const_cast< ::google::cloud::diagnostics::debug::Status*>(
@@ -194,7 +197,7 @@ void AddDescriptorsImpl() {
   static const char descriptor[] = {
       "\n\020breakpoint.proto\022\036google.cloud.diagnos"
       "tics.debug\032\037google/protobuf/timestamp.pr"
-      "oto\"\226\003\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
+      "oto\"\316\003\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
       "on\030\002 \001(\0132..google.cloud.diagnostics.debu"
       "g.SourceLocation\022@\n\014stack_frames\030\003 \003(\0132*"
       ".google.cloud.diagnostics.debug.StackFra"
@@ -204,22 +207,23 @@ void AddDescriptorsImpl() {
       "\n\013kill_server\030\007 \001(\010\022\023\n\013expressions\030\010 \003(\t"
       "\022\021\n\tcondition\030\t \001(\t\022G\n\025evaluated_express"
       "ions\030\n \003(\0132(.google.cloud.diagnostics.de"
-      "bug.Variable\"\332\001\n\nStackFrame\022\023\n\013method_na"
-      "me\030\001 \001(\t\022@\n\010location\030\002 \001(\0132..google.clou"
-      "d.diagnostics.debug.SourceLocation\022;\n\tar"
-      "guments\030\003 \003(\0132(.google.cloud.diagnostics"
-      ".debug.Variable\0228\n\006locals\030\004 \003(\0132(.google"
-      ".cloud.diagnostics.debug.Variable\",\n\016Sou"
-      "rceLocation\022\014\n\004path\030\001 \001(\t\022\014\n\004line\030\002 \001(\005\""
-      "\250\001\n\010Variable\022\014\n\004name\030\001 \001(\t\022\014\n\004type\030\002 \001(\t"
-      "\022\r\n\005value\030\003 \001(\t\0229\n\007members\030\004 \003(\0132(.googl"
-      "e.cloud.diagnostics.debug.Variable\0226\n\006st"
-      "atus\030\005 \001(\0132&.google.cloud.diagnostics.de"
-      "bug.Status\"*\n\006Status\022\017\n\007iserror\030\001 \001(\010\022\017\n"
-      "\007message\030\002 \001(\tb\006proto3"
+      "bug.Variable\0226\n\006status\030\013 \001(\0132&.google.cl"
+      "oud.diagnostics.debug.Status\"\332\001\n\nStackFr"
+      "ame\022\023\n\013method_name\030\001 \001(\t\022@\n\010location\030\002 \001"
+      "(\0132..google.cloud.diagnostics.debug.Sour"
+      "ceLocation\022;\n\targuments\030\003 \003(\0132(.google.c"
+      "loud.diagnostics.debug.Variable\0228\n\006local"
+      "s\030\004 \003(\0132(.google.cloud.diagnostics.debug"
+      ".Variable\",\n\016SourceLocation\022\014\n\004path\030\001 \001("
+      "\t\022\014\n\004line\030\002 \001(\005\"\250\001\n\010Variable\022\014\n\004name\030\001 \001"
+      "(\t\022\014\n\004type\030\002 \001(\t\022\r\n\005value\030\003 \001(\t\0229\n\007membe"
+      "rs\030\004 \003(\0132(.google.cloud.diagnostics.debu"
+      "g.Variable\0226\n\006status\030\005 \001(\0132&.google.clou"
+      "d.diagnostics.debug.Status\"*\n\006Status\022\017\n\007"
+      "iserror\030\001 \001(\010\022\017\n\007message\030\002 \001(\tb\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 982);
+      descriptor, 1038);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "breakpoint.proto", &protobuf_RegisterTypes);
   ::google::protobuf::protobuf_google_2fprotobuf_2ftimestamp_2eproto::AddDescriptors();
@@ -254,6 +258,7 @@ const int Breakpoint::kKillServerFieldNumber;
 const int Breakpoint::kExpressionsFieldNumber;
 const int Breakpoint::kConditionFieldNumber;
 const int Breakpoint::kEvaluatedExpressionsFieldNumber;
+const int Breakpoint::kStatusFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 Breakpoint::Breakpoint()
@@ -295,6 +300,11 @@ Breakpoint::Breakpoint(const Breakpoint& from)
   } else {
     final_time_ = NULL;
   }
+  if (from.has_status()) {
+    status_ = new ::google::cloud::diagnostics::debug::Status(*from.status_);
+  } else {
+    status_ = NULL;
+  }
   ::memcpy(&activated_, &from.activated_,
     static_cast<size_t>(reinterpret_cast<char*>(&kill_server_) -
     reinterpret_cast<char*>(&activated_)) + sizeof(kill_server_));
@@ -326,6 +336,9 @@ void Breakpoint::SharedDtor() {
   }
   if (this != internal_default_instance()) {
     delete final_time_;
+  }
+  if (this != internal_default_instance()) {
+    delete status_;
   }
 }
 
@@ -371,6 +384,10 @@ void Breakpoint::Clear() {
     delete final_time_;
   }
   final_time_ = NULL;
+  if (GetArenaNoVirtual() == NULL && status_ != NULL) {
+    delete status_;
+  }
+  status_ = NULL;
   ::memset(&activated_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&kill_server_) -
       reinterpret_cast<char*>(&activated_)) + sizeof(kill_server_));
@@ -523,6 +540,18 @@ bool Breakpoint::MergePartialFromCodedStream(
         break;
       }
 
+      // .google.cloud.diagnostics.debug.Status status = 11;
+      case 11: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(90u)) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_status()));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
       default: {
       handle_unusual:
         if (tag == 0 ||
@@ -622,6 +651,12 @@ void Breakpoint::SerializeWithCachedSizes(
       10, this->evaluated_expressions(static_cast<int>(i)), output);
   }
 
+  // .google.cloud.diagnostics.debug.Status status = 11;
+  if (this->has_status()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      11, *this->status_, output);
+  }
+
   // @@protoc_insertion_point(serialize_end:google.cloud.diagnostics.debug.Breakpoint)
 }
 
@@ -711,6 +746,13 @@ void Breakpoint::SerializeWithCachedSizes(
         10, this->evaluated_expressions(static_cast<int>(i)), deterministic, target);
   }
 
+  // .google.cloud.diagnostics.debug.Status status = 11;
+  if (this->has_status()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      InternalWriteMessageNoVirtualToArray(
+        11, *this->status_, deterministic, target);
+  }
+
   // @@protoc_insertion_point(serialize_to_array_end:google.cloud.diagnostics.debug.Breakpoint)
   return target;
 }
@@ -784,6 +826,13 @@ size_t Breakpoint::ByteSizeLong() const {
         *this->final_time_);
   }
 
+  // .google.cloud.diagnostics.debug.Status status = 11;
+  if (this->has_status()) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        *this->status_);
+  }
+
   // bool activated = 4;
   if (this->activated() != 0) {
     total_size += 1 + 1;
@@ -843,6 +892,9 @@ void Breakpoint::MergeFrom(const Breakpoint& from) {
   if (from.has_final_time()) {
     mutable_final_time()->::google::protobuf::Timestamp::MergeFrom(from.final_time());
   }
+  if (from.has_status()) {
+    mutable_status()->::google::cloud::diagnostics::debug::Status::MergeFrom(from.status());
+  }
   if (from.activated() != 0) {
     set_activated(from.activated());
   }
@@ -882,6 +934,7 @@ void Breakpoint::InternalSwap(Breakpoint* other) {
   std::swap(location_, other->location_);
   std::swap(create_time_, other->create_time_);
   std::swap(final_time_, other->final_time_);
+  std::swap(status_, other->status_);
   std::swap(activated_, other->activated_);
   std::swap(kill_server_, other->kill_server_);
   std::swap(_cached_size_, other->_cached_size_);
@@ -1283,6 +1336,45 @@ const ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug:
 Breakpoint::evaluated_expressions() const {
   // @@protoc_insertion_point(field_list:google.cloud.diagnostics.debug.Breakpoint.evaluated_expressions)
   return evaluated_expressions_;
+}
+
+// .google.cloud.diagnostics.debug.Status status = 11;
+bool Breakpoint::has_status() const {
+  return this != internal_default_instance() && status_ != NULL;
+}
+void Breakpoint::clear_status() {
+  if (GetArenaNoVirtual() == NULL && status_ != NULL) delete status_;
+  status_ = NULL;
+}
+const ::google::cloud::diagnostics::debug::Status& Breakpoint::status() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.status)
+  return status_ != NULL ? *status_
+                         : *::google::cloud::diagnostics::debug::Status::internal_default_instance();
+}
+::google::cloud::diagnostics::debug::Status* Breakpoint::mutable_status() {
+  
+  if (status_ == NULL) {
+    status_ = new ::google::cloud::diagnostics::debug::Status;
+  }
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.status)
+  return status_;
+}
+::google::cloud::diagnostics::debug::Status* Breakpoint::release_status() {
+  // @@protoc_insertion_point(field_release:google.cloud.diagnostics.debug.Breakpoint.status)
+  
+  ::google::cloud::diagnostics::debug::Status* temp = status_;
+  status_ = NULL;
+  return temp;
+}
+void Breakpoint::set_allocated_status(::google::cloud::diagnostics::debug::Status* status) {
+  delete status_;
+  status_ = status;
+  if (status) {
+    
+  } else {
+    
+  }
+  // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.status)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
