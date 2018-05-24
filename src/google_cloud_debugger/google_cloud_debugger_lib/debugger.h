@@ -61,6 +61,11 @@ class Debugger final {
     debugger_callback_->SetPropertyEvaluation(eval);
   }
 
+  // Sets whether method call should be performed when evaluating condition.
+  void SetConditionEvaluation(BOOL eval) {
+    debugger_callback_->SetConditionEvaluation(eval);
+  }
+
  private:
   // The name of the pipe the debugger will use to communicate with the agent.
   std::string pipe_name_;

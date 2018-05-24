@@ -98,13 +98,21 @@ class EvalCoordinator : public IEvalCoordinator {
   // Returns true if we are waiting for an evaluation result.
   BOOL WaitingForEval() override;
 
-  // Sets this to stop property evaluation.
+  // Sets whether property evaluation should be performed.
   void SetPropertyEvaluation(BOOL eval) override {
     property_evaluation_ = eval;
   }
 
+  // Sets whether method call should be performed when evaluating condition.
+  void SetConditionEvaluation(BOOL eval) {
+    condition_evaluation_ = eval;
+  }
+
   // Returns whether property evaluation should be performed.
   BOOL PropertyEvaluation() override { return property_evaluation_; }
+
+  // Returns whether method call should be performed when evaluating condition.
+  BOOL ConditionEvaluation() override { return condition_evaluation_; }
 
  private:
   // Helper function to process a vector of multiple breakpoints at the same location
@@ -120,6 +128,10 @@ class EvalCoordinator : public IEvalCoordinator {
 
   // If sets to true, object evaluation will not be performed.
   BOOL property_evaluation_ = FALSE;
+
+  // If sets to true, method call evaluation should not be performed
+  // when evaluating condition.
+  BOOL condition_evaluation_ = FALSE;
 
   // The tasks that help us enumerate and print out variables.
   std::vector<std::future<HRESULT>> print_breakpoint_tasks_;

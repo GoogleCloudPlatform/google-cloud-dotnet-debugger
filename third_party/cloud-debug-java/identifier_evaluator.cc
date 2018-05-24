@@ -19,6 +19,7 @@
 #include "i_eval_coordinator.h"
 #include "dbg_object.h"
 #include "dbg_class_property.h"
+#include "error_messages.h"
 
 namespace google_cloud_debugger {
 
@@ -111,6 +112,11 @@ HRESULT IdentifierEvaluator::Evaluate(
       *err_stream << "Failed to evaluate 'this' object.";
       return hr;
     }
+  }
+
+  if (eval_coordinator->ConditionEvaluation()) {
+    *err_stream << kConditionEvalNeeded;
+    return E_FAIL;
   }
 
   hr = class_property_->Evaluate(invoking_object, eval_coordinator,
