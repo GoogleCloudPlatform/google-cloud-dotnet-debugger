@@ -52,7 +52,7 @@ HRESULT StringEvaluator::Evaluate(
   CComPtr<ICorDebugEval> debug_eval;
   HRESULT hr = eval_coordinator->CreateEval(&debug_eval);
   if (FAILED(hr)) {
-    *err_stream << kFailedEvalCreation;
+    std::cerr << kFailedEvalCreation;
     return hr;
   }
 
@@ -75,9 +75,9 @@ HRESULT StringEvaluator::Evaluate(
 
   std::unique_ptr<DbgObject> result_string_obj;
   hr = obj_factory->CreateDbgObject(debug_string, kDefaultObjectEvalDepth,
-                                    &result_string_obj, err_stream);
+                                    &result_string_obj, &std::cerr);
   if (FAILED(hr)) {
-    *err_stream << kFailedToCreateDbgObject;
+    *err_stream << kFailedToCreateString;
     return hr;
   }
 

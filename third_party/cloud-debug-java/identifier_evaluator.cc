@@ -38,7 +38,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // Case 1: this is a local variable.
   HRESULT hr = stack_frame->GetLocalVariable(identifier_name_,
-    &identifier_object_, err_stream);
+    &identifier_object_, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -50,7 +50,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // Case 2: static and non-static fields and auto-implemented properties.
   hr = stack_frame->GetFieldAndAutoPropFromFrame(identifier_name_,
-    &identifier_object_, debug_frame, err_stream);
+    &identifier_object_, debug_frame, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -62,7 +62,7 @@ HRESULT IdentifierEvaluator::Compile(
 
   // Case 3: static and non-static properties with getter.
   hr = stack_frame->GetPropertyFromFrame(identifier_name_,
-    &class_property_, err_stream);
+    &class_property_, &std::cerr);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
@@ -101,14 +101,14 @@ HRESULT IdentifierEvaluator::Evaluate(
     CComPtr<ICorDebugILFrame> debug_frame;
     hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
     if (FAILED(hr)) {
-      *err_stream << "Failed to get the active debug frame.";
+      std::cerr << "Failed to get the active debug frame.";
       return hr;
     }
 
     // Returns 'this' object.
     hr = debug_frame->GetArgument(0, &invoking_object);
     if (FAILED(hr)) {
-      *err_stream << "Failed to get the invoking object.";
+      *err_stream << "Failed to evaluate 'this' object.";
       return hr;
     }
   }
@@ -116,7 +116,8 @@ HRESULT IdentifierEvaluator::Evaluate(
   hr = class_property_->Evaluate(invoking_object, eval_coordinator,
     const_cast<std::vector<CComPtr<ICorDebugType>> *>(&generic_class_types_));
   if (FAILED(hr)) {
-    *err_stream << "Failed to evaluate property.";
+    *err_stream << "Failed to evaluate property "
+                << class_property_->GetMemberName();
     return hr;
   }
 

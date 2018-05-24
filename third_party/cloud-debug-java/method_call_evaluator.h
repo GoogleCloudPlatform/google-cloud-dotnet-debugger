@@ -74,8 +74,7 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   HRESULT GetDebugFunctionFromClassNameHelper(const TypeSignature &class_signature,
                                               IDbgStackFrame *stack_frame,
                                               MethodInfo *method_info,
-                                              ICorDebugFunction **result_method,
-                                              std::ostream *err_stream);
+                                              ICorDebugFunction **result_method);
 
   // Gets the ICorDebugValue that represents the invoking object of
   // this method call.
