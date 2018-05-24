@@ -251,7 +251,7 @@ HRESULT FieldEvaluator::EvaluateNonStaticMember(
     return reference_object->GetNonStaticField(field_name_, result_object);
   }
 
-  if (eval_coordinator->ConditionEvaluation()) {
+  if (!eval_coordinator->ConditionEvaluation()) {
     *err_stream << kConditionEvalNeeded;
     return E_FAIL;
   }

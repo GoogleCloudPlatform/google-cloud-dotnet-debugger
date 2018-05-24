@@ -132,7 +132,7 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
                               eval_coordinator, obj_factory);
   }
 
-  if (eval_coordinator->ConditionEvaluation()) {
+  if (!eval_coordinator->ConditionEvaluation()) {
     *err_stream << kConditionEvalNeeded;
     return E_FAIL;
   }
