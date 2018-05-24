@@ -103,8 +103,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
 
     const TypeSignature &source_class_sig = instance_source_->GetStaticType();
     hr = GetDebugFunctionFromClassNameHelper(source_class_sig, stack_frame,
-                                             &method_info_, &matched_method_,
-                                             err_stream);
+                                             &method_info_, &matched_method_);
     if (FAILED(hr)) {
       std::cerr << "Failed to retrieve ICorDebugFunction "
                   << method_info_.method_name << " from the current class.";
@@ -120,8 +119,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
     TypeSignature class_sig;
     class_sig.type_name = possible_class_name_;
     hr = GetDebugFunctionFromClassNameHelper(class_sig, stack_frame,
-                                             &method_info_, &matched_method_,
-                                             err_stream);
+                                             &method_info_, &matched_method_);
     if (FAILED(hr)) {
       return hr;
     }
@@ -251,8 +249,7 @@ HRESULT MethodCallEvaluator::EvaluateArgumentsHelper(
 
 HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
     const TypeSignature &class_signature, IDbgStackFrame *stack_frame,
-    MethodInfo *method_info, ICorDebugFunction **result_method,
-    std::ostream *err_stream) {
+    MethodInfo *method_info, ICorDebugFunction **result_method) {
   HRESULT hr;
   CComPtr<ICorDebugModule> debug_module;
   CComPtr<IMetaDataImport> metadata_import;

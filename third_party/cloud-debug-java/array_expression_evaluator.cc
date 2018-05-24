@@ -129,11 +129,11 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
   // and use that index to access the item in the array.
   if (TypeCompilerHelper::IsArrayType(source_obj->GetCorElementType())) {
     return EvaluateArrayIndex(source_obj, index_obj, dbg_object,
-                              eval_coordinator, obj_factory, err_stream);
+                              eval_coordinator, obj_factory);
   }
 
   hr = EvaluateGetItemIndex(source_obj, index_obj, dbg_object,
-                            eval_coordinator, obj_factory, err_stream);
+                            eval_coordinator, obj_factory);
   if (FAILED(hr)) {
     *err_stream << "Failed to evaluate indexer access.";
   }
@@ -143,7 +143,7 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
 HRESULT IndexerAccessExpressionEvaluator::EvaluateArrayIndex(
     std::shared_ptr<DbgObject> source_obj, std::shared_ptr<DbgObject> index_obj,
     std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
-    IDbgObjectFactory *obj_factory, std::ostream *err_stream) const {
+    IDbgObjectFactory *obj_factory) const {
   int64_t index;
   HRESULT hr = NumericCompilerHelper::ExtractPrimitiveValue<int64_t>(
       index_obj.get(), &index);
@@ -176,7 +176,7 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateArrayIndex(
 HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
     std::shared_ptr<DbgObject> source_obj, std::shared_ptr<DbgObject> index_obj,
     std::shared_ptr<DbgObject> *dbg_object, IEvalCoordinator *eval_coordinator,
-    IDbgObjectFactory *obj_factory, std::ostream *err_stream) const {
+    IDbgObjectFactory *obj_factory) const {
   // TODO(quoct): Look into refactoring the code below in this class,
   // method_call_evaluator, field_evaluator, identifier_evaluator
   // and dbg_class_property.

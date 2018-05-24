@@ -152,7 +152,6 @@ TEST_F(StringEvaluatorTest, EvaluateErrorEvalCoordinator) {
   EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
                                 &object_factory_mock_, &err_stream_),
             E_ACCESSDENIED);
-  EXPECT_EQ(err_stream_.str(), google_cloud_debugger::kFailedEvalCreation.c_str());
 }
 
 // Tests that Evaluate fails if the IDbgObjectFactory cannot create
@@ -170,7 +169,6 @@ TEST_F(StringEvaluatorTest, EvaluateErrorObjCreation) {
   EXPECT_EQ(evaluator.Evaluate(&result, &eval_coordinator_mock_,
                                 &object_factory_mock_, &err_stream_),
             CORDBG_E_PROCESS_TERMINATED);
-  EXPECT_EQ(err_stream_.str(), google_cloud_debugger::kFailedToCreateDbgObject.c_str());
 }
 
 }  // namespace google_cloud_debugger_test

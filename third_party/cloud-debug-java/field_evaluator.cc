@@ -196,7 +196,7 @@ HRESULT FieldEvaluator::EvaluateStaticMember(
 
     hr =
         obj_factory->CreateDbgObject(debug_field_value, kDefaultObjectEvalDepth,
-                                     &field_value_obj, err_stream);
+                                     &field_value_obj, &std::cerr);
     if (FAILED(hr)) {
       return hr;
     }

@@ -63,8 +63,7 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
       std::shared_ptr<DbgObject> index_obj,
       std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator,
-      IDbgObjectFactory *obj_factory,
-      std::ostream *err_stream) const;
+      IDbgObjectFactory *obj_factory) const;
 
   // Evaluates the expression when the source is a class with
   // get_Item method.
@@ -73,8 +72,7 @@ class IndexerAccessExpressionEvaluator : public ExpressionEvaluator {
       std::shared_ptr<DbgObject> index_obj,
       std::shared_ptr<DbgObject> *dbg_object,
       IEvalCoordinator *eval_coordinator,
-      IDbgObjectFactory *obj_factory,
-      std::ostream *err_stream) const;
+      IDbgObjectFactory *obj_factory) const;
 
   // Subexpression that computes the actual collection.
   std::unique_ptr<ExpressionEvaluator> source_collection_;
