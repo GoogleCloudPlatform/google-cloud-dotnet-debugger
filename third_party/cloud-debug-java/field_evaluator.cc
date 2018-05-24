@@ -72,7 +72,7 @@ HRESULT FieldEvaluator::CompileUsingInstanceSource(
       instance_source_->GetStaticType();
 
   if (instance_source_signature.type_name.empty()) {
-    *err_stream << kTypeNameNotAvailable;
+    std::cerr << kTypeNameNotAvailable;
     return false;
   }
 
@@ -132,14 +132,14 @@ HRESULT FieldEvaluator::CompileClassMemberHelper(
 
   hr = stack_frame->GetFieldFromClass(
       class_token_, member_name, &field_def_, &is_static_, &result_type_,
-      class_signature.generic_types, metadata_import_, err_stream);
+      class_signature.generic_types, metadata_import_, &std::cerr);
   if (SUCCEEDED(hr) && hr != S_FALSE) {
     return hr;
   }
 
   hr = stack_frame->GetPropertyFromClass(
       class_token_, member_name, &class_property_,
-      class_signature.generic_types, metadata_import_, err_stream);
+      class_signature.generic_types, metadata_import_, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -176,9 +176,9 @@ HRESULT FieldEvaluator::EvaluateStaticMember(
 
     CComPtr<ICorDebugType> class_type;
     hr = debug_helper_->GetInstantiatedClassType(
-        debug_class, generic_class_types, &class_type, err_stream);
+        debug_class, generic_class_types, &class_type, &std::cerr);
     if (FAILED(hr)) {
-      *err_stream << "Failed to get instantiated type from ICorDebugClass.";
+      std::cerr << "Failed to get instantiated type from ICorDebugClass.";
       return hr;
     }
 
@@ -208,7 +208,8 @@ HRESULT FieldEvaluator::EvaluateStaticMember(
   hr =
       class_property_->Evaluate(nullptr, eval_coordinator, generic_class_types);
   if (FAILED(hr)) {
-    *err_stream << "Failed to evaluate property.";
+    *err_stream << "Failed to evaluate property "
+                << class_property_->GetMemberName();
     return hr;
   }
 
@@ -260,7 +261,8 @@ HRESULT FieldEvaluator::EvaluateNonStaticMember(
       source_object_handle, eval_coordinator,
       const_cast<std::vector<CComPtr<ICorDebugType>> *>(generic_class_types));
   if (FAILED(hr)) {
-    *err_stream << "Failed to evaluate property.";
+    *err_stream << "Failed to evaluate property "
+                << class_property_->GetMemberName();
     return hr;
   }
 
@@ -297,7 +299,7 @@ HRESULT FieldEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
 
       hr = class_obj->GetGenericTypes(&generic_class_types);
       if (FAILED(hr)) {
-        *err_stream << "Failed to get generic types of class.";
+        std::cerr << "Failed to get generic types of class.";
       }
     }
   }

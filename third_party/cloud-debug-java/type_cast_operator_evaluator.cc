@@ -79,11 +79,11 @@ HRESULT TypeCastOperatorEvaluator::Compile(IDbgStackFrame *stack_frame,
       TypeCompilerHelper::IsObjectType(source_type.cor_type)) {
     hr = stack_frame->IsBaseType(source_type,
                                  target_type_,
-                                 err_stream);
+                                 &std::cerr);
     if (FAILED(hr)) {
       hr = stack_frame->IsBaseType(target_type_,
                                    source_type,
-                                   err_stream);
+                                   &std::cerr);
       if (FAILED(hr)) {
         return hr;
       }

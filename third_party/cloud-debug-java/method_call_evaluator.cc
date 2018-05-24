@@ -83,7 +83,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
       // grammar file to support that.
       hr = stack_frame->GetCurrentClassTypeParameters(&current_class_generic_types_);
       if (FAILED(hr)) {
-        *err_stream << "Failed to retrieve generic type parameters for class.";
+        std::cerr << "Failed to retrieve generic type parameters for class.";
         return hr;
       }
 
@@ -106,7 +106,7 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
                                              &method_info_, &matched_method_,
                                              err_stream);
     if (FAILED(hr)) {
-      *err_stream << "Failed to retrieve ICorDebugFunction "
+      std::cerr << "Failed to retrieve ICorDebugFunction "
                   << method_info_.method_name << " from the current class.";
       return hr;
     }
@@ -153,7 +153,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
     hr = GetInvokingObject(&invoking_object, eval_coordinator, obj_factory,
                            err_stream);
     if (FAILED(hr)) {
-      *err_stream << "Failed to get invoking object for method call "
+      *err_stream << "Failed to evaluate invoking object for method call "
                   << method_name_;
       return hr;
     }
@@ -168,14 +168,14 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   CComPtr<ICorDebugEval> debug_eval;
   hr = eval_coordinator->CreateEval(&debug_eval);
   if (FAILED(hr)) {
-    *err_stream << "Failed to create ICorDebugEval.";
+    std::cerr << "Failed to create ICorDebugEval.";
     return hr;
   }
 
   hr = EvaluateArgumentsHelper(&arg_debug_values, debug_eval, eval_coordinator,
                                obj_factory, err_stream);
   if (FAILED(hr)) {
-    *err_stream << "Failed to evaluate arguments.";
+    *err_stream << "Failed to evaluate method arguments.";
     return hr;
   }
 
@@ -187,7 +187,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   if (instance_source_is_invoking_obj_) {
     std::vector<CComPtr<ICorDebugType>> generic_class_types;
     hr = debug_helper_->PopulateGenericClassTypesFromClassObject(
-        invoking_object, &generic_class_types, err_stream);
+        invoking_object, &generic_class_types, &std::cerr);
     if (FAILED(hr)) {
       return hr;
     }
@@ -213,7 +213,7 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
   hr = obj_factory->EvaluateAndCreateDbgObject(
     std::move(eval_generic_types), std::move(arg_debug_values),
     matched_method_, debug_eval, eval_coordinator,
-    &eval_obj_result, err_stream);
+    &eval_obj_result, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -262,24 +262,24 @@ HRESULT MethodCallEvaluator::GetDebugFunctionFromClassNameHelper(
     class_signature.type_name, &class_token,
     &debug_module, &metadata_import);
   if (FAILED(hr)) {
-    *err_stream << "Failed to retrieve class token from class "
-                << class_signature.type_name;
+    std::cerr << "Failed to retrieve class token from class "
+              << class_signature.type_name;
     return hr;
   }
 
   // Try to find method in the class with name possible_class_name_.
   // Also populates method_info fields.
-  hr = stack_frame->GetDebugFunctionFromClass(metadata_import, debug_module, class_token,
-                                              method_info, class_signature.generic_types,
-                                              result_method);
+  hr = stack_frame->GetDebugFunctionFromClass(
+      metadata_import, debug_module, class_token, method_info,
+      class_signature.generic_types, result_method);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
 
   if (FAILED(hr)) {
-    *err_stream << "Failed to retrieve ICorDebugFunction "
-                << method_info->method_name << " from class "
-                << class_signature.type_name;
+    std::cerr << "Failed to retrieve ICorDebugFunction "
+              << method_info->method_name << " from class "
+              << class_signature.type_name;
     return hr;
   }
 
@@ -324,7 +324,7 @@ HRESULT MethodCallEvaluator::GetInvokingObject(
   CComPtr<ICorDebugILFrame> debug_frame;
   hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
   if (FAILED(hr)) {
-    *err_stream << "Failed to get the active debug frame.";
+    std::cerr << "Failed to get the active debug frame.";
     return hr;
   }
 

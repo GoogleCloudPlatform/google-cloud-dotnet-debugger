@@ -60,7 +60,7 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(IDbgStackFrame *stack_frame,
 
     // Type of each element in the array.
     if (source_type.generic_types.size() != 1) {
-      *err_stream << "Cannot find type of each array element.";
+      *err_stream << "Cannot find the type of each array element.";
       return E_FAIL;
     }
 
@@ -76,8 +76,8 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(IDbgStackFrame *stack_frame,
   hr = stack_frame->GetClassTokenAndModule(source_type.type_name, &class_token,
                                            &debug_module, &metadata_import);
   if (FAILED(hr)) {
-    *err_stream << "Failed to retrieve class token for class  "
-                << source_type.type_name;
+    std::cerr << "Failed to retrieve class token for class  "
+              << source_type.type_name;
     return hr;
   }
 
@@ -94,8 +94,8 @@ HRESULT IndexerAccessExpressionEvaluator::Compile(IDbgStackFrame *stack_frame,
   }
 
   if (FAILED(hr)) {
-    *err_stream << "Failed to retrieve ICorDebugFunction for get_Item "
-                << " from class " << source_type.type_name;
+    std::cerr << "Failed to retrieve ICorDebugFunction for get_Item "
+              << " from class " << source_type.type_name;
     return hr;
   }
 
@@ -121,6 +121,7 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
   hr = source_index_->Evaluate(&index_obj, eval_coordinator, obj_factory,
                                err_stream);
   if (FAILED(hr)) {
+    *err_stream << "Failed to evaluate source of the indexer access.";
     return hr;
   }
 
@@ -131,8 +132,12 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
                               eval_coordinator, obj_factory, err_stream);
   }
 
-  return EvaluateGetItemIndex(source_obj, index_obj, dbg_object,
-                              eval_coordinator, obj_factory, err_stream);
+  hr = EvaluateGetItemIndex(source_obj, index_obj, dbg_object,
+                            eval_coordinator, obj_factory, err_stream);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to evaluate indexer access.";
+  }
+  return hr;
 }
 
 HRESULT IndexerAccessExpressionEvaluator::EvaluateArrayIndex(
@@ -159,7 +164,7 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateArrayIndex(
 
   std::unique_ptr<DbgObject> target_object;
   hr = obj_factory->CreateDbgObject(array_item, kDefaultObjectEvalDepth,
-                                    &target_object, err_stream);
+                                    &target_object, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -178,7 +183,7 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
   CComPtr<ICorDebugEval> debug_eval;
   HRESULT hr = eval_coordinator->CreateEval(&debug_eval);
   if (FAILED(hr)) {
-    *err_stream << "Failed to create ICorDebugEval.";
+    std::cerr << "Failed to create ICorDebugEval.";
     return hr;
   }
 
@@ -202,7 +207,7 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
   // Gets the generic type associated the the class.
   std::vector<CComPtr<ICorDebugType>> generic_class_types;
   hr = debug_helper_->PopulateGenericClassTypesFromClassObject(
-      source_debug_value, &generic_class_types, err_stream);
+      source_debug_value, &generic_class_types, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
@@ -215,7 +220,7 @@ HRESULT IndexerAccessExpressionEvaluator::EvaluateGetItemIndex(
   hr = obj_factory->EvaluateAndCreateDbgObject(
     std::move(eval_generic_types), std::move(arg_debug_values),
     get_item_method_, debug_eval, eval_coordinator,
-    &eval_obj_result, err_stream);
+    &eval_obj_result, &std::cerr);
   if (FAILED(hr)) {
     return hr;
   }
