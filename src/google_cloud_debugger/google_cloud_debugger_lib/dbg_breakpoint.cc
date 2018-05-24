@@ -195,18 +195,18 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
   breakpoint->set_id(id_);
   if (!stack_frames) {
-    SetErrorStatusMessage(breakpoint, "Stack frame collection is null.");
+    std::cerr << "Stack frame collection is null.";
     return E_INVALIDARG;
   }
 
   if (!eval_coordinator) {
-    SetErrorStatusMessage(breakpoint, "Eval coordinator is null.");
+    std::cerr << "Eval coordinator is null.";
     return E_INVALIDARG;
   }
 
   SourceLocation *location = breakpoint->mutable_location();
   if (!location) {
-    SetErrorStatusMessage(breakpoint, "Mutable location returns null.");
+    std::cerr << "Mutable location returns null.";
     return E_FAIL;
   }
 

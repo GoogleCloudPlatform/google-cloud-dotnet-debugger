@@ -55,7 +55,7 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
   }
 
   if (!eval_coordinator) {
-    breakpoint->WriteError("Eval coordinator is null.");
+    std::cerr << "Eval coordinator is null.";
     return E_INVALIDARG;
   }
 
@@ -88,7 +88,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   }
 
   if (!eval_coordinator) {
-    SetErrorStatusMessage(breakpoint, "Null eval coordinator.");
+    std::cerr << "Null eval coordinator.";
     return E_INVALIDARG;
   }
 
@@ -118,7 +118,7 @@ HRESULT StackFrameCollection::PopulateStackFrames(
                            dbg_stack_frame->GetMethod());
     SourceLocation *frame_location = frame->mutable_location();
     if (!frame_location) {
-      SetErrorStatusMessage(breakpoint, "Mutable location returns null.");
+      std::cerr << "Mutable location returns null.";
       continue;
     }
 
@@ -404,14 +404,14 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
   CComPtr<ICorDebugThread> debug_thread;
   HRESULT hr = eval_coordinator->GetActiveDebugThread(&debug_thread);
   if (FAILED(hr)) {
-    breakpoint->WriteError("Failed to get active thread.");
+    std::cerr << "Failed to get active thread.";
     return hr;
   }
 
   CComPtr<ICorDebugFrame> debug_frame;
   hr = debug_thread->GetActiveFrame(&debug_frame);
   if (FAILED(hr)) {
-    breakpoint->WriteError("Failed to get active frame.");
+    std::cerr << "Failed to get active frame.";
     return hr;
   }
 
@@ -421,14 +421,14 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
                                      first_stack_.get(), true);
     if (FAILED(hr)) {
-      breakpoint->WriteError("Failed to process stack frame.");
+      std::cerr << "Failed to process stack frame.";
       return hr;
     }
   }
 
   if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
-    breakpoint->WriteError("Conditional breakpoint and expressions are not "
-            "supported on non-IL frame.");
+    std::cerr << "Conditional breakpoint and expressions are not "
+              << "supported on non-IL frame.";
     return E_NOTIMPL;
   }
 
