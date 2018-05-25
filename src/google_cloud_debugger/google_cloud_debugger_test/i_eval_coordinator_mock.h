@@ -59,9 +59,9 @@ class IEvalCoordinatorMock : public google_cloud_debugger::IEvalCoordinator {
 
   MOCK_METHOD0(PropertyEvaluation, BOOL());
 
-  MOCK_METHOD0(ConditionEvaluation, BOOL());
+  MOCK_METHOD0(MethodEvaluation, BOOL());
 
-  MOCK_METHOD1(SetConditionEvaluation, void(BOOL eval));
+  MOCK_METHOD1(SetMethodEvaluation, void(BOOL eval));
 
   MOCK_METHOD1(CreateStackWalk, HRESULT(ICorDebugStackWalk **debug_stack_walk));
 };

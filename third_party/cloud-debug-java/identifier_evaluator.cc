@@ -114,7 +114,7 @@ HRESULT IdentifierEvaluator::Evaluate(
     }
   }
 
-  if (!eval_coordinator->ConditionEvaluation()) {
+  if (!eval_coordinator->MethodEvaluation()) {
     *err_stream << kConditionEvalNeeded;
     return E_FAIL;
   }

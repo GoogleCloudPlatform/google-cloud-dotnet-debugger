@@ -24,8 +24,9 @@ using std::string;
 // If given this option, the debugger will not perform property evaluation.
 const string kEvaluationOption = "property-evaluation";
 
-// If given this option, the debugger will not perform evaluation for condition.
-const string kConditionEvaluation = "condition-evaluation";
+// If given this option, the debugger will perform method call when evaluating
+// condition.
+const string kMethodEvaluation = "method-evaluation";
 
 // If given this option, the debugger will start the application using this
 // command.
@@ -43,7 +44,7 @@ enum optionIndex {
   APPLICATIONSTARTCOMMAND,
   APPLICATIONID,
   PROPERTYEVALUATION,
-  CONDITIONEVALUATION,
+  METHODEVALUATION,
   PIPENAME
 };
 const option::Descriptor usage[] = {
@@ -65,10 +66,10 @@ const option::Descriptor usage[] = {
      "  --property-evaluation  \tIf used, the debugger will attempt to "
      "evaluate property of classes. This may modify the state of the "
      "application."},
-    {CONDITIONEVALUATION, 0, "", kConditionEvaluation.c_str(), option::Arg::None,
+    {METHODEVALUATION, 0, "", kMethodEvaluation.c_str(), option::Arg::None,
      "  --condition-evaluation  \tIf used, the debugger will attempt to "
-     "perform method call (including property getter) when evaluating "
-     "condition of a breakpoint. This may modify the state of the application."},
+     "perform method calls (including property getter) when evaluating "
+     "conditions of a breakpoint. This may modify the state of the application."},
      {PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
 	   "  --pipe-name  \tThe name of the pipe the debugger will use to"
 	   "communicate with the agent."},
@@ -102,7 +103,7 @@ int main(int argc, char *argv[]) {
   }
 
   bool property_evaluation = options[PROPERTYEVALUATION].count();
-  bool condition_evaluation = options[CONDITIONEVALUATION].count();
+  bool method_evaluation = options[METHODEVALUATION].count();
 
   // Has to supply either path or ID, not both.
   if ((options[APPLICATIONSTARTCOMMAND].count() && options[APPLICATIONID].count()) ||
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
 
   // Sets property and condition evaluation.
   debugger.SetPropertyEvaluation(property_evaluation);
-  debugger.SetConditionEvaluation(condition_evaluation);
+  debugger.SetMethodEvaluation(method_evaluation);
 
   // This will launch an infinite while loop to wait and read.
   // When the server connection of the named pipe breaks, the loop

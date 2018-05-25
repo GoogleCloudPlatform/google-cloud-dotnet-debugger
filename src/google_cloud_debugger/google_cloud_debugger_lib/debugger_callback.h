@@ -191,8 +191,8 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
   }
 
   // Sets whether method call should be performed when evaluating condition.
-  void SetConditionEvaluation(BOOL eval) {
-    eval_coordinator_->SetConditionEvaluation(eval);
+  void SetMethodEvaluation(BOOL eval) {
+    eval_coordinator_->SetMethodEvaluation(eval);
   }
 
   // Gets the name of the pipe the debugger will use to communicate with

@@ -75,10 +75,10 @@ namespace Google.Cloud.Diagnostics.Debug
             HelpText = "If set, the debugger will evaluate object's properties.")]
         public bool PropertyEvaluation { get; set; }
 
-        [Option("condition-evaluation",
-            HelpText = "If set, the debugger will perform method call when" +
+        [Option("method-evaluation",
+            HelpText = "If set, the debugger will perform method calls when" +
             " evaluating breakpoint's condition.")]
-        public bool ConditionEvaluation { get; set; }
+        public bool MethodEvaluation { get; set; }
 
         [Option("source-context",
             HelpText = "The location of the source context file. See: " +

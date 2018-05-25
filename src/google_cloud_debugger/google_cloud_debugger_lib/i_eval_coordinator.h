@@ -111,13 +111,13 @@ class IEvalCoordinator {
   virtual void SetPropertyEvaluation(BOOL eval) = 0;
 
   // Sets whether method call should be performed when evaluating condition.
-  virtual void SetConditionEvaluation(BOOL eval) = 0;
+  virtual void SetMethodEvaluation(BOOL eval) = 0;
 
   // Returns whether property evaluation should be performed.
   virtual BOOL PropertyEvaluation() = 0;
 
   // Returns whether method call should be performed when evaluating condition.
-  virtual BOOL ConditionEvaluation() = 0;
+  virtual BOOL MethodEvaluation() = 0;
 };
 
 }  //  namespace google_cloud_debugger

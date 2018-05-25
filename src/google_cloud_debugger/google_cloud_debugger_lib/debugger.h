@@ -62,8 +62,8 @@ class Debugger final {
   }
 
   // Sets whether method call should be performed when evaluating condition.
-  void SetConditionEvaluation(BOOL eval) {
-    debugger_callback_->SetConditionEvaluation(eval);
+  void SetMethodEvaluation(BOOL eval) {
+    debugger_callback_->SetMethodEvaluation(eval);
   }
 
  private:

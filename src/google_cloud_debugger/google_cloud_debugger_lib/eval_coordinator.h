@@ -104,7 +104,7 @@ class EvalCoordinator : public IEvalCoordinator {
   }
 
   // Sets whether method call should be performed when evaluating condition.
-  void SetConditionEvaluation(BOOL eval) {
+  void SetMethodEvaluation(BOOL eval) {
     condition_evaluation_ = eval;
   }
 
@@ -112,7 +112,7 @@ class EvalCoordinator : public IEvalCoordinator {
   BOOL PropertyEvaluation() override { return property_evaluation_; }
 
   // Returns whether method call should be performed when evaluating condition.
-  BOOL ConditionEvaluation() override { return condition_evaluation_; }
+  BOOL MethodEvaluation() override { return condition_evaluation_; }
 
  private:
   // Helper function to process a vector of multiple breakpoints at the same location
@@ -126,10 +126,10 @@ class EvalCoordinator : public IEvalCoordinator {
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files);
 
-  // If sets to true, object evaluation will not be performed.
+  // If sets to true, object evaluation will be performed when evaluating property.
   BOOL property_evaluation_ = FALSE;
 
-  // If sets to true, method call evaluation should not be performed
+  // If sets to true, method call evaluation should be performed
   // when evaluating condition.
   BOOL condition_evaluation_ = FALSE;
 

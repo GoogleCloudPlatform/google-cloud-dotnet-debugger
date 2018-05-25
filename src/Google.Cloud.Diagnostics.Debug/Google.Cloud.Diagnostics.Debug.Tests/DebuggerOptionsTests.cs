@@ -32,7 +32,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             var options = DebuggerOptions.FromAgentOptions(agentOptions);
 
             Assert.False(options.PropertyEvaluation);
-            Assert.False(options.ConditionEvaluation);
+            Assert.False(options.MethodEvaluation);
             Assert.Null(options.ApplicationStartCommand);
             Assert.Equal(_processId, options.ApplicationId);
             Assert.StartsWith(Constants.PipeName, options.PipeName);
@@ -48,7 +48,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             };
             var options = DebuggerOptions.FromAgentOptions(agentOptions);
 
-            Assert.False(options.ConditionEvaluation);
+            Assert.False(options.MethodEvaluation);
             Assert.True(options.PropertyEvaluation);
             Assert.Null(options.ApplicationId);
             Assert.Equal(_startCmd, options.ApplicationStartCommand);
@@ -61,12 +61,12 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             var agentOptions = new AgentOptions
             {
                 ApplicationStartCommand = _startCmd,
-                ConditionEvaluation = true
+                MethodEvaluation = true
             };
             var options = DebuggerOptions.FromAgentOptions(agentOptions);
 
             Assert.False(options.PropertyEvaluation);
-            Assert.True(options.ConditionEvaluation);
+            Assert.True(options.MethodEvaluation);
             Assert.Null(options.ApplicationId);
             Assert.Equal(_startCmd, options.ApplicationStartCommand);
             Assert.StartsWith(Constants.PipeName, options.PipeName);
@@ -94,7 +94,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             {
                 ApplicationId = _processId,
                 PropertyEvaluation = true,
-                ConditionEvaluation = true,
+                MethodEvaluation = true,
             };
             var options = DebuggerOptions.FromAgentOptions(agentOptions);
             var optionsString = options.ToString();
@@ -102,7 +102,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Contains($"{DebuggerOptions.PipeNameOption}={Constants.PipeName}", optionsString);
             Assert.Contains($"{DebuggerOptions.ApplicationIdOption}={_processId}", optionsString);
             Assert.Contains($"{DebuggerOptions.PropertyEvaluationOption}", optionsString);
-            Assert.Contains($"{DebuggerOptions.ConditionEvaluationOption}", optionsString);
+            Assert.Contains($"{DebuggerOptions.MethodEvaluationOption}", optionsString);
             Assert.DoesNotContain(DebuggerOptions.ApplicationStartCommandOption, optionsString);
         }
 
@@ -118,7 +118,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Contains($"{DebuggerOptions.PipeNameOption}={Constants.PipeName}", optionsString);
             Assert.Contains($"{DebuggerOptions.ApplicationStartCommandOption}=\"{_startCmd}\"", optionsString);
             Assert.DoesNotContain(DebuggerOptions.PropertyEvaluationOption, optionsString);
-            Assert.DoesNotContain(DebuggerOptions.ConditionEvaluationOption, optionsString);
+            Assert.DoesNotContain(DebuggerOptions.MethodEvaluationOption, optionsString);
             Assert.DoesNotContain(DebuggerOptions.ApplicationIdOption, optionsString);
         }
     }

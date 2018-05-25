@@ -155,6 +155,9 @@ TEST_F(IdentifierEvaluatorTest, PropertiesWithGetter) {
   EXPECT_EQ(evaluator.GetStaticType().cor_type,
             class_property_type_sig_.cor_type);
 
+  EXPECT_CALL(eval_coordinator_mock_, MethodEvaluation())
+    .Times(1).WillOnce(Return(TRUE));
+
   // Sets up call for retrieving the invoking object.
   EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
       .Times(1)
