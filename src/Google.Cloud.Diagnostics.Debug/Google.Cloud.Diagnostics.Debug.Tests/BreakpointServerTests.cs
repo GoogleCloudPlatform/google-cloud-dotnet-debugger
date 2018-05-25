@@ -74,7 +74,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
 
             // Breakpoint will be exactly 1030 bytes. Since the buffer is 1024 bytes,
             // the endpoint message will be in between the buffer.
-            var breakpointMessage = CreateBreakpointMessage(breakpoint);
+            byte[] breakpointMessage = CreateBreakpointMessage(breakpoint);
+            Assert.Equal(1030, breakpointMessage.Length);
             _pipeMock.Setup(p => p.ReadAsync(_cts.Token)).Returns(Task.FromResult(breakpointMessage));
 
             var resultBreakpoint = await _server.ReadBreakpointAsync(_cts.Token);
