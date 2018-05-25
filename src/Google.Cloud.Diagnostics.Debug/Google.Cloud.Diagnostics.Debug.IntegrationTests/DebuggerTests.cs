@@ -241,6 +241,38 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
+        public async Task BreakpointsSet_ConditionMultiple()
+        {
+            // In this tests, 2 of the breakpoints have their conditions satisfied
+            // while 1 does not.
+            int i = 10;
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint1 = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, $"testList[1] == \"List{i}1\"");
+                var breakpoint2 = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, $"testList[1] == \"List{i}2\"");
+                var breakpoint3 = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, $"testDictionary[Key{i}2] == 2");
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetEchoUrl(app, i));
+
+                    Assert.Throws<TimeoutException>(() =>
+                        Polling.GetBreakpoint(debuggee.Id, breakpoint2.Id));
+
+                    var newBp1 = Polling.GetBreakpoint(debuggee.Id, breakpoint1.Id);
+                    Assert.True(newBp1.IsFinalState);
+
+                    var newBp3 = Polling.GetBreakpoint(debuggee.Id, breakpoint3.Id);
+                    Assert.True(newBp3.IsFinalState);
+                }
+            }
+        }
+
+        [Fact]
         public async Task BreakpointSet_TwoSameLocation()
         {
             using (var app = StartTestApp(debugEnabled: true))
