@@ -47,7 +47,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointSet() =>
-            await RunLatencyTestAsync(breapointLine: TestApplication.HelloLine);
+            await RunLatencyTestAsync(breakpointLine: TestApplication.HelloLine);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10ms of
@@ -57,7 +57,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunLatencyTestAsync(
-            breapointLine: TestApplication.LoopMiddle, getUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
+            breakpointLine: TestApplication.LoopMiddle, getUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
         /// This test ensures the debugger does not add more than 10ms of
@@ -66,7 +66,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointHit() =>
-            await RunLatencyTestAsync(breapointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
+            await RunLatencyTestAsync(breakpointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
 
         /// <summary>
         /// Run a test to check latency while the debugger is enabled.
@@ -75,19 +75,19 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// requests to the same application with a debugger attached (with the options
         /// breakpoints being set and hit during the requests).
         /// </summary>
-        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        /// <param name="breakpointLine">Optional, the line number to set the breakpoint on.  If none is set no
         ///     breakpoint will be set.</param>
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
         ///     no condition will be set.</param>
         /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
-        private async Task RunLatencyTestAsync(int? breapointLine = null, bool hitBreakpoint = false,
+        private async Task RunLatencyTestAsync(int? breakpointLine = null, bool hitBreakpoint = false,
              string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
            double noDebugAvgLatency = await GetAverageLatencyAsync(debugEnabled: false);
            double debugAvgLatency = await GetAverageLatencyAsync(debugEnabled: true,
-               breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
+               breakpointLine: breakpointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
 
             Console.WriteLine($"Average latency (ms) used w/o a debugger attached: {noDebugAvgLatency}");
             Console.WriteLine($"Average latency (ms) used w/ a debugger attached: {debugAvgLatency}");
@@ -105,7 +105,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <see cref="NumberOfRequest"/> requests.
         /// </summary>
         /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
-        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        /// <param name="breakpointLine">Optional, the line number to set the breakpoint on.  If none is set no
         ///     breakpoint will be set.</param>
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 

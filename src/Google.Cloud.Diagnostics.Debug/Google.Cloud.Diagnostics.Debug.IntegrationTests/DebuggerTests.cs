@@ -20,6 +20,7 @@ using DebuggerVariable = Google.Cloud.Debugger.V2.Variable;
 using DebuggerBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
 using System.Threading;
 using System;
+using Google.Cloud.Debugger.V2;
 
 namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 {
@@ -126,24 +127,118 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
-        public async Task BreakpointHit_Reset()
+        public async Task BreakpointHit_Condition()
         {
+            int targetIValue = 10;
+            string condition = $"i == {targetIValue}";
             using (var app = StartTestApp(debugEnabled: true))
             {
-                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
-                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.LoopMiddle, condition);
+
+                // Checks that the breakpoint has a condition.
+                Assert.Equal(breakpoint.Condition, condition);
 
                 using (HttpClient client = new HttpClient())
                 {
-                    await client.GetAsync(app.AppUrlBase);
-                    var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
-                    Assert.True(newBp.IsFinalState);
-
-                    var breakpoint2 = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.HelloLine);
-                    await client.GetAsync(app.AppUrlBase);
-                    var newBp2 = Polling.GetBreakpoint(debuggee.Id, breakpoint2.Id);
-                    Assert.True(newBp2.IsFinalState);
+                    await client.GetAsync(TestApplication.GetLoopUrl(app, 10));
                 }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Check that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+
+                // Check that "i" is 10 when the breakpoint is hit.
+                Debugger.V2.StackFrame firstFrame = newBp.StackFrames[0];
+                DebuggerVariable iVariable = firstFrame.Locals.First(local => local.Name == "i");
+                Assert.Equal(iVariable.Value, targetIValue.ToString());
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_FunctionEvaluation()
+        {
+            HAVE TO ENABLE FUNCTION EVALUATION.
+            string condition = "Hello() == \"Hello, World!\"";
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.LoopMiddle, condition);
+
+                // Checks that the breakpoint has a condition.
+                Assert.Equal(breakpoint.Condition, condition);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetLoopUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Check that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+                // Check that "i" is 0 when the breakpoint is hit.
+                Debugger.V2.StackFrame firstFrame = newBp.StackFrames[0];
+                DebuggerVariable iVariable = firstFrame.Locals.First(local => local.Name == "i");
+                Assert.Equal("0", iVariable.Value);
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_IndexerAccessCondition()
+        {
+            HAVE TO ENABLE FUNCTION EVALUATION.
+            int i = 10;
+            string condition = $"testList[1] == \"List{i}1\"";
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, condition);
+
+                // Checks that the breakpoint has a condition.
+                Assert.Equal(breakpoint.Condition, condition);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetEchoUrl(app, i));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Check that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_IndexerAccessConditionFailed()
+        {
+            int i = 10;
+            string condition = $"testList[1] == \"List{i}2\"";
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, condition);
+
+                // Checks that the breakpoint has a condition.
+                Assert.Equal(breakpoint.Condition, condition);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetEchoUrl(app, i));
+                }
+
+                Assert.Throws<TimeoutException>(() =>
+                    Polling.GetBreakpoint(debuggee.Id, breakpoint.Id));
             }
         }
 

@@ -52,7 +52,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet() => await RunCpuTestAsync(
-            AddedCpuWhenDebuggingPercent, breapointLine: TestApplication.HelloLine);
+            AddedCpuWhenDebuggingPercent, breakpointLine: TestApplication.HelloLine);
 
         /// <summary>
         /// This test ensures the debugger does not add more than 0.1% of
@@ -62,7 +62,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointsSet_TightLoop() => await RunCpuTestAsync(
-           AddedCpuWhenDebuggingPercent, breapointLine: TestApplication.LoopMiddle,
+           AddedCpuWhenDebuggingPercent, breakpointLine: TestApplication.LoopMiddle,
            getUrl: TestApplication.GetLoopUrl, condition: "i == 2000");
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// </summary>
         [Fact]
         public async Task DebuggerAttached_BreakpointHit() =>  await RunCpuTestAsync(
-                AddedCpuWhenEvaluatingPercent, breapointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
+                AddedCpuWhenEvaluatingPercent, breakpointLine: TestApplication.EchoTopLine, hitBreakpoint: true);
 
         /// <summary>
         /// Run a test to check CPU usage while the debugger is enabled.
@@ -81,7 +81,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// requests to the same application with a debugger attached (with the options
         /// breakpoints being set and hit during the requests).
         /// </summary>
-        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        /// <param name="breakpointLine">Optional, the line number to set the breakpoint on.  If none is set no
         ///     breakpoint will be set.</param>
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
@@ -89,12 +89,12 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <param name="getUrl">Optional, a function to get the url to hit. Defaults to 
         ///     <see cref="TestApplication.GetEchoUrl(TestApplication, int)"/></param>
         private async Task RunCpuTestAsync(
-            double acceptableCpuIncrease, int? breapointLine = null, bool hitBreakpoint = false,
+            double acceptableCpuIncrease, int? breakpointLine = null, bool hitBreakpoint = false,
              string condition = null, Func<TestApplication, int, string> getUrl = null)
         {
             double noDebugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: false);
             double debugAvgPercentCpu = await GetAverageCpuPercentAsync(debugEnabled: true,
-                breakpointLine: breapointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
+                breakpointLine: breakpointLine, hitBreakpoint: hitBreakpoint, getUrl: getUrl, condition: condition);
 
             Console.WriteLine($"Percent CPU time w/o a debugger attached: {noDebugAvgPercentCpu}");
             Console.WriteLine($"Percent CPU time w/ a debugger attached: {debugAvgPercentCpu}");
@@ -112,7 +112,7 @@ namespace Google.Cloud.Diagnostics.Debug.PerformanceTests
         /// <see cref="NumberOfRequest"/> requests.
         /// </summary>
         /// <param name="debugEnabled">True if the debugger should be attached to the application.</param>
-        /// <param name="breapointLine">Optional, the line number to set the breakpoint on.  If none is set no
+        /// <param name="breakpointLine">Optional, the line number to set the breakpoint on.  If none is set no
         ///     breakpoint will be set.</param>
         /// <param name="hitBreakpoint">Optional, true if the breakpoint is expected to hit.  Defaults to false.</param>
         /// <param name="condition">Optional, a condition to set on the breakpoint.  If none is set 
