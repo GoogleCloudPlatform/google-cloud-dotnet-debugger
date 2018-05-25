@@ -54,6 +54,35 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public async Task ReadLongBreakpointAsync()
+        {
+            // Read a breakpoint that has the "END_DEBUG_MESSAGE"
+            // spread between 2 buffers.
+            var breakpoint = new Breakpoint
+            {
+                Id = "id",
+            };
+
+            for (int i = 0; i < 55; i += 1)
+            {
+                Variable variable = new Variable();
+                variable.Name = "TestVariable";
+                StackFrame stackFrame = new StackFrame();
+                stackFrame.Locals.Add(variable);
+                breakpoint.StackFrames.Add(stackFrame);
+            }
+
+            // Breakpoint will be exactly 1030 bytes. Since the buffer is 1024 bytes,
+            // the endpoint message will be in between the buffer.
+            var breakpointMessage = CreateBreakpointMessage(breakpoint);
+            _pipeMock.Setup(p => p.ReadAsync(_cts.Token)).Returns(Task.FromResult(breakpointMessage));
+
+            var resultBreakpoint = await _server.ReadBreakpointAsync(_cts.Token);
+            Assert.Equal(breakpoint, resultBreakpoint);
+            _pipeMock.Verify(p => p.ReadAsync(_cts.Token), Times.Once());
+        }
+
+        [Fact]
         public async Task ReadBreakpointAsync_MultipleReads()
         {
             var breakpoint = new Breakpoint

@@ -62,14 +62,12 @@ namespace Google.Cloud.Diagnostics.Debug
                     byte[] bytes = await _pipe.ReadAsync(cancellationToken);
                     bytesWrittenSoFar = previousBuffer.Count;
                     previousBuffer.AddRange(bytes);
-                    endIndex = IndexOfSequence(previousBuffer.TakeLast(Constants.EndBreakpointMessage.Length).ToArray(),
+                    endIndex = IndexOfSequence(previousBuffer.ToArray(),
                                                Constants.EndBreakpointMessage);
                 }
 
-                endIndex = previousBuffer.Count - Constants.EndBreakpointMessage.Length;
-
                 // Ensure we have a start to the breakpoint message.
-                int startIndex = IndexOfSequence(previousBuffer.Take(Constants.StartBreakpointMessage.Length).ToArray(),
+                int startIndex = IndexOfSequence(previousBuffer.ToArray(),
                                                  Constants.StartBreakpointMessage);
                 if (startIndex == -1)
                 {
