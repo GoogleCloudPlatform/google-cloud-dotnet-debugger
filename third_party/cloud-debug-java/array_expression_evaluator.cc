@@ -132,6 +132,11 @@ HRESULT IndexerAccessExpressionEvaluator::Evaluate(
                               eval_coordinator, obj_factory);
   }
 
+  if (!eval_coordinator->MethodEvaluation()) {
+    *err_stream << kConditionEvalNeeded;
+    return E_FAIL;
+  }
+
   hr = EvaluateGetItemIndex(source_obj, index_obj, dbg_object,
                             eval_coordinator, obj_factory);
   if (FAILED(hr)) {

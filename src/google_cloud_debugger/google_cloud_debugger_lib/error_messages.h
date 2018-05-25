@@ -58,6 +58,10 @@ static const std::string kObjectTypeOnlyExpr =
 
 static const std::string kTypeNameNotAvailable =
     "Type name is unavailable.";
+
+static const std::string kConditionEvalNeeded =
+    "Method call for condition evaluation is disabled. "
+    "Run the debugger with --method-evaluation to enable it.";
 }  // namespace google_cloud_debugger
 
 #endif  //  ERROR_MESSAGES_H_

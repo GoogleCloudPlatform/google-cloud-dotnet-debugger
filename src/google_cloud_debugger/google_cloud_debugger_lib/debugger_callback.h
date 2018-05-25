@@ -190,6 +190,11 @@ class DebuggerCallback final : public ICorDebugManagedCallback,
     eval_coordinator_->SetPropertyEvaluation(eval);
   }
 
+  // Sets whether method call should be performed when evaluating condition.
+  void SetMethodEvaluation(BOOL eval) {
+    eval_coordinator_->SetMethodEvaluation(eval);
+  }
+
   // Gets the name of the pipe the debugger will use to communicate with
   // the agent.
   std::string GetPipeName() { return pipe_name_; }

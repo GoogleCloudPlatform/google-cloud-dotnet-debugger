@@ -107,11 +107,17 @@ class IEvalCoordinator {
   // Returns true if we are waiting for an evaluation result.
   virtual BOOL WaitingForEval() = 0;
 
-  // Sets this to stop property evaluation.
+  // Sets whether property evaluation should be performed.
   virtual void SetPropertyEvaluation(BOOL eval) = 0;
+
+  // Sets whether method call should be performed when evaluating condition.
+  virtual void SetMethodEvaluation(BOOL eval) = 0;
 
   // Returns whether property evaluation should be performed.
   virtual BOOL PropertyEvaluation() = 0;
+
+  // Returns whether method call should be performed when evaluating condition.
+  virtual BOOL MethodEvaluation() = 0;
 };
 
 }  //  namespace google_cloud_debugger

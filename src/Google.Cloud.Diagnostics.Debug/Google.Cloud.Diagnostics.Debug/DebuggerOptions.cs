@@ -24,6 +24,9 @@ namespace Google.Cloud.Diagnostics.Debug
         // If given this option, the debugger will not perform property evaluation.
         public const string PropertyEvaluationOption = "--property-evaluation";
 
+        // If given this option, the debugger will perform method call when evaluating condition.
+        public const string MethodEvaluationOption = "--method-evaluation";
+
         // If given this option, the debugger will use this command to start the application to debug.
         public const string ApplicationStartCommandOption = "--application-start-command";
 
@@ -34,9 +37,14 @@ namespace Google.Cloud.Diagnostics.Debug
         public const string PipeNameOption = "--pipe-name";
 
         /// <summary>
-        /// If true the debugger will evaluate properties.
+        /// If true, the debugger will evaluate properties.
         /// </summary>
         public bool PropertyEvaluation { get; private set; }
+
+        /// <summary>
+        /// If true, the debugger will perform method calls when evaluating conditions.
+        /// </summary>
+        public bool MethodEvaluation { get; private set; }
 
         /// <summary>
         /// A command to start a .NET Core application the debugger will attach to.
@@ -69,6 +77,7 @@ namespace Google.Cloud.Diagnostics.Debug
             return new DebuggerOptions
             {
                 PropertyEvaluation = options.PropertyEvaluation,
+                MethodEvaluation = options.MethodEvaluation,
                 ApplicationStartCommand = options.ApplicationStartCommand,
                 ApplicationId = options.ApplicationId,
                 PipeName = CreatePipeName()
@@ -104,6 +113,11 @@ namespace Google.Cloud.Diagnostics.Debug
             if (PropertyEvaluation)
             {
                 options += $"{PropertyEvaluationOption} ";
+            }
+
+            if (MethodEvaluation)
+            {
+                options += $"{MethodEvaluationOption} ";
             }
             return options;
         }

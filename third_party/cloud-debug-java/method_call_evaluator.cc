@@ -22,6 +22,7 @@
 #include "cordebug.h"
 #include "dbg_object_factory.h"
 #include "dbg_reference_object.h"
+#include "error_messages.h"
 #include "i_dbg_stack_frame.h"
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
@@ -141,6 +142,11 @@ HRESULT MethodCallEvaluator::Evaluate(std::shared_ptr<DbgObject> *dbg_object,
                                       IEvalCoordinator *eval_coordinator,
                                       IDbgObjectFactory *obj_factory,
                                       std::ostream *err_stream) const {
+  if (!eval_coordinator->MethodEvaluation()) {
+    *err_stream << kConditionEvalNeeded;
+    return E_FAIL;
+  }
+
   HRESULT hr;
   CComPtr<ICorDebugValue> invoking_object;
   // We need the invoking object in case this is a non-static call.

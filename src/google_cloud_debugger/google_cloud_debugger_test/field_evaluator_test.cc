@@ -62,6 +62,9 @@ class FieldEvaluatorTest : public ::testing::Test {
     source_obj_ =
         std::shared_ptr<DbgReferenceObjectMock>(new DbgReferenceObjectMock());
     property_obj_ = std::shared_ptr<DbgObject>(new DbgPrimitive<int32_t>(35));
+
+    ON_CALL(eval_coordinator_mock_, MethodEvaluation())
+      .WillByDefault(Return(TRUE));
   }
 
   // Sets up mock calls for field/auto-implemented property.
@@ -360,7 +363,8 @@ TEST_F(FieldEvaluatorTest, NonStaticProperty) {
       .WillOnce(DoAll(SetArgPointee<0>(&source_handle_mock_), Return(S_OK)));
 
   std::shared_ptr<DbgObject> evaluate_result;
-  EXPECT_EQ(evaluator.Evaluate(&evaluate_result, nullptr, nullptr, nullptr),
+  EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_,
+                               nullptr, nullptr),
             S_OK);
   EXPECT_EQ(evaluate_result, property_obj_);
 }
@@ -402,7 +406,7 @@ TEST_F(FieldEvaluatorTest, PropertyError) {
     EXPECT_CALL(*exp_mock_ptr, Evaluate(_, _, _, _))
         .Times(1)
         .WillOnce(DoAll(SetArgPointee<0>(source_obj_), Return(E_ABORT)));
-    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, nullptr, nullptr, nullptr),
+    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_, nullptr, nullptr),
               E_ABORT);
   }
 
@@ -417,7 +421,7 @@ TEST_F(FieldEvaluatorTest, PropertyError) {
         .WillOnce(DoAll(SetArgPointee<0>(&source_handle_mock_),
                         Return(CORDBG_E_FIELD_NOT_AVAILABLE)));
 
-    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, nullptr, nullptr, nullptr),
+    EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_, nullptr, nullptr),
               CORDBG_E_FIELD_NOT_AVAILABLE);
   }
 }
