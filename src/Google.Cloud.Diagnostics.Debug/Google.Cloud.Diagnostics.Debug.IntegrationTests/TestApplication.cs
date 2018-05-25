@@ -127,7 +127,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                         $"--debugger={_debuggerPath} " +
                         $"--module={Module} " +
                         $"--version={Version} " +
-                        $"--project-id={ProjectId}",
+                        $"--project-id={ProjectId} " +
+                        "--method-evaluation",
                   null);
             return Process.Start(startInfo);
         }

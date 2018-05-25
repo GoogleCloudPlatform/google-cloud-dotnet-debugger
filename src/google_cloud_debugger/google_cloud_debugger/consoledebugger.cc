@@ -67,7 +67,7 @@ const option::Descriptor usage[] = {
      "evaluate property of classes. This may modify the state of the "
      "application."},
     {METHODEVALUATION, 0, "", kMethodEvaluation.c_str(), option::Arg::None,
-     "  --condition-evaluation  \tIf used, the debugger will attempt to "
+     "  --method-evaluation  \tIf used, the debugger will attempt to "
      "perform method calls (including property getter) when evaluating "
      "conditions of a breakpoint. This may modify the state of the application."},
      {PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,

@@ -161,7 +161,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         [Fact]
         public async Task BreakpointHit_FunctionEvaluation()
         {
-            HAVE TO ENABLE FUNCTION EVALUATION.
             string condition = "Hello() == \"Hello, World!\"";
             using (var app = StartTestApp(debugEnabled: true))
             {
@@ -192,7 +191,6 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         [Fact]
         public async Task BreakpointHit_IndexerAccessCondition()
         {
-            HAVE TO ENABLE FUNCTION EVALUATION.
             int i = 10;
             string condition = $"testList[1] == \"List{i}1\"";
             using (var app = StartTestApp(debugEnabled: true))
