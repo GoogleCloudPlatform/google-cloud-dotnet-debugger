@@ -98,6 +98,20 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 Match.Create(GetErrorMatcher("0", Messages.LogPointNotSupported))), Times.Once);
         }
 
+
+        [Fact]
+        public void MainAction_Expression()
+        {
+            var breakpoints = CreateBreakpoints(1);
+            breakpoints.Single().Expressions.Add("x");
+            _mockDebuggerClient.Setup(c => c.ListBreakpoints()).Returns(breakpoints);
+            _server.MainAction();
+
+            _mockDebuggerClient.Verify(c => c.ListBreakpoints(), Times.Once);
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(
+                Match.Create(GetErrorMatcher("0", Messages.ExpressionsNotSupported))), Times.Once);
+        }
+
         [Fact]
         public void MainAction_RemoveBreakpoint()
         {
