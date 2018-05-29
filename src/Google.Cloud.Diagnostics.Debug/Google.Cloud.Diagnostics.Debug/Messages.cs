@@ -19,5 +19,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// A message stating that log points are not supported.
         /// </summary>
         public const string LogPointNotSupported = "Log points are currently not supported.";
+
+        /// <summary>
+        /// A message stating that expressions are not supported.
+        /// </summary>
+        public const string ExpressionsNotSupported = "Expressions are currently not supported.";
     }
 }
