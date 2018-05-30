@@ -81,7 +81,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         ///     to the app</param>
         /// <param name="waitForStart">Optional. True if this method should block until the
         ///     application is started and can be queried.  Defaults to true.</param>
-        /// <param name="waitForStart">Optional. True if method evaluation should be performed
+        /// <param name="methodEvaluation">Optional. True if method evaluation should be performed
         ///     when evaluating condition.  Defaults to false.</param>
         /// <returns>A test application.</returns>
         public TestApplication StartTestApp(bool debugEnabled, bool waitForStart = true,
