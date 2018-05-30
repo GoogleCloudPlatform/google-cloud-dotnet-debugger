@@ -78,13 +78,18 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// <summary>True if the debugger should be used. </summary>
         private readonly bool _debugEnabled;
 
+        /// <summary>True if method evaluation should be performed for evaluating condition. </summary>
+        private readonly bool _methodEvaluation;
+
         /// <summary>
         /// Create a new <see cref="TestApplication"/>.
         /// </summary>
         /// <param name="debugEnabled">True if a debugging should be enabled.</param>
-        public TestApplication(bool debugEnabled)
+        /// <param name="methodEvaluation">True if method evaluation should be performed for evaluating condition.</param>
+        public TestApplication(bool debugEnabled, bool methodEvaluation = false)
         {
             _debugEnabled = debugEnabled;
+            _methodEvaluation = methodEvaluation;
 
             // Create a copy of the debugger executable with a unique name.
             // This is allows us to uniquely identify the running debugger to 
@@ -121,13 +126,16 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// </summary>
         private Process StartAppDebug()
         {
+            string methodEvaluationFlag = _methodEvaluation ?
+                DebuggerOptions.MethodEvaluationOption : String.Empty;
             var startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
                   "dotnet", $"{Utils.GetAgent()} " +
                         $"--application-start-command=\"{GetStartCommand()}\" " +
                         $"--debugger={_debuggerPath} " +
                         $"--module={Module} " +
                         $"--version={Version} " +
-                        $"--project-id={ProjectId}",
+                        $"--project-id={ProjectId} " +
+                        methodEvaluationFlag,
                   null);
             return Process.Start(startInfo);
         }
