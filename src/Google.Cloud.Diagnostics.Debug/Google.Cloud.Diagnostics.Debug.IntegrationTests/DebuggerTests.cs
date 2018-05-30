@@ -279,7 +279,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         {
             int i = 10;
             string condition = $"testList[1] == \"List{i}2\"";
-            using (var app = StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
             {
                 Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
                 DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
@@ -305,7 +305,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             // In this tests, 2 of the breakpoints have their conditions satisfied
             // while 1 does not.
             int i = 10;
-            using (var app = StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
             {
                 var debuggee = Polling.GetDebuggee(app.Module, app.Version);
                 var breakpoint1 = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass,
