@@ -21,7 +21,7 @@ starting the _.NET Core Debugger_ as well as maintaining communication with the 
 
 ## Docker Images
 
-Prebuilt [Ubuntu 16.04 (x64) Docker images](gcr.io/dotnet-debugger/aspnetcore) are available for use.
+Prebuilt [Ubuntu 16.04 (x64) Docker images](https://gcr.io/dotnet-debugger/aspnetcore) are available for use.
 For detailed instructions see the [Stackdriver Debugger documentation for .NET Core](https://cloud.google.com/debugger/docs/setup/dotnet).
 
 ## Compatibility
