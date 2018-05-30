@@ -162,7 +162,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         public async Task BreakpointHit_FunctionEvaluation()
         {
             string condition = "Hello() == \"Hello, World!\"";
-            using (var app = StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
             {
                 Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
                 DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
@@ -189,10 +189,40 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
+        public async Task BreakpointHit_FunctionEvaluationNotPerformed()
+        {
+            string condition = "Hello() == \"Hello, World!\"";
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.LoopMiddle, condition);
+
+                // Checks that the breakpoint has a condition.
+                Assert.Equal(breakpoint.Condition, condition);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetLoopUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Checks that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+                // However, it should have error status set to true.
+                Assert.True(newBp.Status.IsError);
+                Assert.Contains("Method call for condition evaluation is disabled.", newBp.Status.Description.Format);
+                Assert.Empty(newBp.StackFrames);
+            }
+        }
+
+        [Fact]
         public async Task BreakpointHit_FunctionEvaluationFailure()
         {
             string condition = "NonExistentFunc() == \"Hello, World!\"";
-            using (var app = StartTestApp(debugEnabled: true))
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
             {
                 Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
                 DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
