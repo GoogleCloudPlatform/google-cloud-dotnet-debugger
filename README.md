@@ -1,4 +1,4 @@
-# Google Cloud Debugger for .NET Core
+# Stackdriver Debugger for .NET Core
 [![Travis build Status](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger.svg?token=uPVZj7upLKBYvMVpisAp&branch=master)](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger)
 
 .NET Core Debugger for the [Stackdriver Debugger](https://cloud.google.com/debugger/).
@@ -18,6 +18,23 @@ users to view source code and set snapshots on _Debuggees_.
 interface used to debug the _Debugee_.
 * **Debugging Agent** - The _Debugging Agent_ will run alongside the _.NET Core Debugger_.  It is responsible for
 starting the _.NET Core Debugger_ as well as maintaining communication with the _Stackdriver Debugger_.
+
+## Docker Images
+
+Prebuilt [Ubuntu 16.04 (x64) Docker images](https://gcr.io/dotnet-debugger/aspnetcore) are available for use.
+For detailed instructions see the [Stackdriver Debugger documentation for .NET Core](https://cloud.google.com/debugger/docs/setup/dotnet).
+
+## Compatibility
+
+This debugger has been tested with the following .NET Core versions:
+* .NET Core 1.0.x
+* .NET Core 1.1.x
+* .NET Core 2.0.x
+ 
+This debugger has been tested on the following runtimes:
+* win-x64
+* debian.8-x64
+* ubuntu.16.04-x64
 
 ## Building
 
