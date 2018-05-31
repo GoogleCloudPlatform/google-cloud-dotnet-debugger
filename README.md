@@ -24,6 +24,25 @@ starting the _.NET Core Debugger_ as well as maintaining communication with the 
 Prebuilt [Ubuntu 16.04 (x64) Docker images](https://gcr.io/dotnet-debugger/aspnetcore) are available for use.
 For detailed instructions see the [Stackdriver Debugger documentation for .NET Core](https://cloud.google.com/debugger/docs/setup/dotnet).
 
+* [gcr.io/dotnet-debugger/aspnetcore:1.0](http://gcr.io/dotnet-debugger/aspnetcore:1.0)
+* [gcr.io/dotnet-debugger/aspnetcore:1.1](http://gcr.io/dotnet-debugger/aspnetcore:1.1)
+* [gcr.io/dotnet-debugger/aspnetcore:2.0](http://gcr.io/dotnet-debugger/aspnetcore:2.0)
+
+
+## Usage
+
+To be able to use the .NET Core Stackdriver Debugger you will need to deploy PDBs
+with your code.  See the example below:
+
+```
+...
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+...
+```
+
 ## Compatibility
 
 This debugger has been tested with the following .NET Core versions:
