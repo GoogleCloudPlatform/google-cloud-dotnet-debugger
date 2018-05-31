@@ -32,7 +32,7 @@ For detailed instructions see the [Stackdriver Debugger documentation for .NET C
 ## Usage
 
 To be able to use the .NET Core Stackdriver Debugger you will need to deploy PDBs
-with your code.
+with your code.  See the example below:
 
 ```
 ...
