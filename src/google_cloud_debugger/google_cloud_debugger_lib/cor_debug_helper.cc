@@ -120,6 +120,19 @@ HRESULT CorDebugHelper::GetModuleNameFromICorDebugModule(
   return hr;
 }
 
+HRESULT CorDebugHelper::GetAppDomainFromICorDebugModule(
+    ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
+    std::ostream *err_stream) {
+  CComPtr<ICorDebugAssembly> debug_assembly;
+  HRESULT hr = debug_module->GetAssembly(&debug_assembly);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAssembly from ICorDebugModule.";
+    return hr;
+  }
+
+  return debug_assembly->GetAppDomain(app_domain);
+}
+
 HRESULT CorDebugHelper::GetICorDebugType(ICorDebugValue *debug_value,
                                          ICorDebugType **debug_type,
                                          ostream *err_stream) {
@@ -750,9 +763,8 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
 
   ULONG type_name_len = 0;
   DWORD type_flags = 0;
-  mdToken extend_tokens;
   HRESULT hr = metadata_import->GetTypeDefProps(
-      type_token, nullptr, 0, &type_name_len, &type_flags, &extend_tokens);
+      type_token, nullptr, 0, &type_name_len, &type_flags, base_token);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
@@ -765,7 +777,7 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
   vector<WCHAR> wchar_type_name(type_name_len, 0);
   hr = metadata_import->GetTypeDefProps(type_token, wchar_type_name.data(),
                                         wchar_type_name.size(), &type_name_len,
-                                        &type_flags, &extend_tokens);
+                                        &type_flags, base_token);
   if (FAILED(hr)) {
     *err_stream << "Failed to get type name.";
     return hr;
@@ -945,8 +957,7 @@ HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
 HRESULT CorDebugHelper::GetInstantiatedClassType(
     ICorDebugClass *debug_class,
     std::vector<CComPtr<ICorDebugType>> *parameter_types,
-    ICorDebugType **result_type,
-    std::ostream *err_stream) {
+    ICorDebugType **result_type, std::ostream *err_stream) {
   if (!debug_class || !parameter_types) {
     return E_INVALIDARG;
   }
@@ -964,9 +975,72 @@ HRESULT CorDebugHelper::GetInstantiatedClassType(
                                      parameter_types->end());
 
   return debug_class_2->GetParameterizedType(
-      CorElementType::ELEMENT_TYPE_CLASS,
-      class_generic_type_pointers.size(),
+      CorElementType::ELEMENT_TYPE_CLASS, class_generic_type_pointers.size(),
       class_generic_type_pointers.data(), result_type);
+}
+
+HRESULT CorDebugHelper::GetEnumMdTypeDefAndName(
+    ULONG encoded_enum_token, ICorDebugModule *debug_module,
+    IMetaDataImport *metadata_import, std::string *enum_name,
+    mdTypeDef *enum_token, IMetaDataImport **resolved_metadata_import) {
+  mdToken token_type = g_tkCorEncodeToken[encoded_enum_token & 0x3];
+  mdToken decoded_token = TokenFromRid(encoded_enum_token >> 2, token_type);
+  mdToken base_token;
+
+  if (token_type != CorTokenType::mdtTypeDef &&
+      token_type != CorTokenType::mdtTypeRef) {
+    return E_FAIL;
+  }
+
+  if (token_type == CorTokenType::mdtTypeDef) {
+    *resolved_metadata_import = metadata_import;
+    metadata_import->AddRef();
+    *enum_token = decoded_token;
+    return GetTypeNameFromMdTypeDef(decoded_token, metadata_import, enum_name,
+                                    &base_token, &std::cerr);
+  }
+
+  if (!debug_module) {
+    return E_INVALIDARG;
+  }
+
+  // We have to get all the assemblies in order to get
+  // the IMetaDataImport and mdTypeDef that corresponds with the
+  // mdTypeRef.
+  CComPtr<ICorDebugAppDomain> app_domain;
+  HRESULT hr =
+      GetAppDomainFromICorDebugModule(debug_module, &app_domain, &std::cerr);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to get ICorDebugAppDomain from ICorDebugAssembly.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugAssemblyEnum> assembly_enum;
+  hr = app_domain->EnumerateAssemblies(&assembly_enum);
+  if (FAILED(hr)) {
+    std::cerr << "Cannot get ICorDebugAssemblyEnum.";
+    return hr;
+  }
+
+  std::vector<CComPtr<ICorDebugAssembly>> debug_assemblies;
+  hr =
+      EnumerateICorDebugSpecifiedType<ICorDebugAssemblyEnum, ICorDebugAssembly>(
+          assembly_enum, &debug_assemblies);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to enumerate assemblies.";
+    return hr;
+  }
+
+  hr = GetMdTypeDefAndMetaDataFromTypeRef(decoded_token, debug_assemblies,
+                                          metadata_import, enum_token,
+                                          resolved_metadata_import, &std::cerr);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to get mdTypeDef and MetaDataImport";
+    return hr;
+  }
+
+  return GetTypeNameFromMdTypeDef(*enum_token, *resolved_metadata_import,
+                                  enum_name, &base_token, &std::cerr);
 }
 
 HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
