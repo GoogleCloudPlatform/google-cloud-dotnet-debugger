@@ -52,6 +52,11 @@ class ICorDebugHelper {
       ICorDebugModule *debug_module, std::vector<WCHAR> *module_name,
       std::ostream *err_stream) = 0;
 
+  // Extracts ICorDebugAppDomain from ICorDebugModule.
+  virtual HRESULT GetAppDomainFromICorDebugModule(
+      ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
+      std::ostream *err_stream) = 0;
+
   // Extracts ICorDebugType from ICorDebug.
   virtual HRESULT GetICorDebugType(ICorDebugValue *debug_value,
                                    ICorDebugType **debug_type,
@@ -205,8 +210,14 @@ class ICorDebugHelper {
   virtual HRESULT GetInstantiatedClassType(
       ICorDebugClass *debug_class,
       std::vector<CComPtr<ICorDebugType>> *parameter_types,
-      ICorDebugType **result_type,
-      std::ostream *err_stream) = 0;
+      ICorDebugType **result_type, std::ostream *err_stream) = 0;
+
+  // Given an encoded token, decode it and returns
+  // the type name, metadata token and metadata import of the type.
+  virtual HRESULT GetTypeInfoFromEncodedToken(
+      ULONG encoded_token, ICorDebugModule *debug_module,
+      IMetaDataImport *metadata_import, std::string *type_name,
+      mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) = 0;
 
   // Template function to enumerate different ICorDebug enumerations.
   // All the enumerated items will be stored in vector result.
