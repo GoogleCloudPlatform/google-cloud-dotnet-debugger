@@ -69,6 +69,10 @@ class IPortablePdbFile {
   virtual bool GetHeapString(std::uint32_t index,
                              std::string *result) const = 0;
 
+  // Get string from the blob at index index.
+  virtual bool GetBlobBytes(std::uint32_t index,
+                            std::vector<uint8_t> *result) const = 0;
+
   // Retrieves the name of a document using the provided blob heap index.
   // The exact conversion from a blob to document name is in the Portable PDB
   // spec. Returns true if succeeds.
