@@ -22,9 +22,14 @@
 
 #include "metadata_headers.h"
 
+#include "cor_debug_helper.h"
+#include "type_signature.h"
+#include "string_stream_wrapper.h"
+
 using std::cerr;
 using std::ifstream;
 using std::ios;
+using std::min;
 using std::streampos;
 using std::string;
 using std::unique_ptr;
@@ -191,7 +196,7 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
   // Read 100 characters at a time or until the end of the stream,
   // whichever is smaller.
   uint32_t chars_left = relative_end_ - stream_->tellg();
-  uint32_t char_to_read = std::min(kStringBufferSize, chars_left);
+  uint32_t char_to_read = min(kStringBufferSize, chars_left);
   vector<char> buffer(char_to_read, 0);
 
   while (char_to_read != 0) {
@@ -216,7 +221,41 @@ bool CustomBinaryStream::GetString(std::string *result, std::uint32_t offset) {
 
     // If we didn't find the null character, continue reading.
     chars_left = relative_end_ - stream_->tellg();
-    char_to_read = std::min((uint32_t)buffer.size(), chars_left);
+    char_to_read = min((uint32_t)buffer.size(), chars_left);
+  }
+
+  stream_->seekg(previous_pos);
+  return true;
+}
+
+bool CustomBinaryStream::GetBlobBytes(
+    std::uint32_t offset, std::vector<uint8_t> *result) {
+  result->clear();
+  assert(stream_ != nullptr);
+
+  // Makes a copy of the current position so we can restores the stream.
+  streampos previous_pos = stream_->tellg();
+  stream_->seekg(offset, stream_->beg);
+  if (stream_->fail()) {
+    stream_->clear();
+    stream_->seekg(previous_pos);
+    cerr << "Failed to seek to the offset point.";
+    return false;
+  }
+
+  uint32_t const_size = 0;
+  if (!ReadCompressedUInt32(&const_size)) {
+      stream_->clear();
+      stream_->seekg(previous_pos);
+      cerr << "Failed to get length of blob.";
+      return false;
+  }
+
+  uint32_t bytes_read;
+  result->resize(const_size);
+  if (!ReadBytes(result->data(), const_size, &bytes_read)) {
+    stream_->seekg(previous_pos);
+    return false;
   }
 
   stream_->seekg(previous_pos);
@@ -235,12 +274,7 @@ bool CustomBinaryStream::ReadUInt16(uint16_t *result) {
     return false;
   }
 
-  if (big_endian()) {
-    *result = ((buffer[0] << 8) & 0xFF00) | buffer[1];
-  } else {
-    *result = ((buffer[1] << 8) & 0xFF00) | buffer[0];
-  }
-
+  memcpy(result, buffer.data(), 2);
   return true;
 }
 
@@ -251,14 +285,7 @@ bool CustomBinaryStream::ReadUInt32(uint32_t *result) {
     return false;
   }
 
-  if (big_endian()) {
-    *result =
-        ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-  } else {
-    *result =
-        ((buffer[3] << 24) | (buffer[2] << 16) | (buffer[1] << 8) | buffer[0]);
-  }
-
+  memcpy(result, buffer.data(), 4);
   return true;
 }
 

@@ -240,6 +240,11 @@ bool DocumentIndex::ParseScope(
       return false;
     }
 
+    if (!pdb.GetBlobBytes(local_constant_row.signature,
+                          &(new_const.signature_data))) {
+      return false;
+    }
+
     local_scope->local_constants.push_back(std::move(new_const));
   }
 

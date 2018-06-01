@@ -67,6 +67,12 @@ bool PortablePdbFile::GetHeapString(uint32_t index, string *heap_string) const {
                                            string_heap_header_.offset + index);
 }
 
+bool PortablePdbFile::GetBlobBytes(
+    uint32_t index, std::vector<uint8_t> *result) const {
+  return pdb_file_binary_stream_.GetBlobBytes(
+    blob_heap_header_.offset + index, result);
+}
+
 bool PortablePdbFile::ParsePdbFile() {
   if (parsed) {
     return true;

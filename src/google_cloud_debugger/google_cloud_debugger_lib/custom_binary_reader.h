@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "cor.h"
+
 #include "metadata_tables.h"
 
 // typedef std::vector<uint8_t>::const_iterator binary_stream_iter;
@@ -72,6 +74,11 @@ class CustomBinaryStream {
   // Gets a string starting from the offset to a null terminating character or the end of the stream.
   // This function does not change the stream pointer.
   bool GetString(std::string *result, std::uint32_t offset);
+
+  // Gets blob bytes starting from offset offset in the stream.
+  // The first byte will tell us the length of the blob.
+  // This function does not change the stream pointer.
+  bool GetBlobBytes(std::uint32_t offset, std::vector<uint8_t> *result);
 
   // Reads the next byte in the stream. Returns false if the byte
   // cannot be read.
