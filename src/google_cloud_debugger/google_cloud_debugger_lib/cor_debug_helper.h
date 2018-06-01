@@ -202,13 +202,14 @@ class CorDebugHelper : public ICorDebugHelper {
   virtual HRESULT GetInstantiatedClassType(
       ICorDebugClass *debug_class,
       std::vector<CComPtr<ICorDebugType>> *parameter_types,
-      ICorDebugType **result_type,
-      std::ostream *err_stream) override;
+      ICorDebugType **result_type, std::ostream *err_stream) override;
 
-  virtual HRESULT GetEnumMdTypeDefAndName(
-      ULONG encoded_enum_token, ICorDebugModule *debug_module,
-      IMetaDataImport *metadata_import, std::string *enum_name,
-      mdTypeDef *enum_token, IMetaDataImport **resolved_metadata_import) override;
+  // Given an encoded token, decode it and returns
+  // the type name, metadata token and metadata import of the type.
+  virtual HRESULT GetTypeInfoFromEncodedToken(
+      ULONG encoded_token, ICorDebugModule *debug_module,
+      IMetaDataImport *metadata_import, std::string *type_name,
+      mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) override;
 
   // Given a class object, populates generic_types
   // with the generic types from the class object.
