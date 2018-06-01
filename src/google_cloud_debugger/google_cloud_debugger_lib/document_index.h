@@ -63,6 +63,9 @@ struct LocalVariableInfo {
 // Struct that represents constant in a method.
 struct LocalConstantInfo {
   std::string name;
+
+  // Bytes containing signature data.
+  std::vector<uint8_t> signature_data;
 };
 
 // Struct that represents the local scope of a method.
