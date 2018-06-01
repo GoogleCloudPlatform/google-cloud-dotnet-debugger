@@ -18,44 +18,36 @@
 
 #include "breakpoint.pb.h"
 #include "constants.h"
+#include "dbg_enum.h"
+#include "dbg_primitive.h"
+#include "dbg_string.h"
 #include "i_cor_debug_helper.h"
 #include "i_dbg_object_factory.h"
 #include "i_eval_coordinator.h"
+#include "type_signature.h"
 
 using google::cloud::diagnostics::debug::Variable;
 using std::string;
 using std::unique_ptr;
 
 namespace google_cloud_debugger {
-void DbgClassField::Initialize(mdFieldDef field_def,
+void DbgClassField::Initialize(ICorDebugModule *debug_module,
                                IMetaDataImport *metadata_import,
                                ICorDebugObjectValue *debug_obj_value,
-                               ICorDebugClass *debug_class,
-                               ICorDebugType *class_type, int creation_depth) {
+                               ICorDebugClass *debug_class) {
   if (metadata_import == nullptr) {
     WriteError("MetaDataImport is null.");
     initialized_hr_ = E_INVALIDARG;
     return;
   }
 
-  if (debug_obj_value == nullptr) {
-    WriteError("ICorDebugObjectValue is null.");
-    initialized_hr_ = E_INVALIDARG;
-    return;
-  }
-
-  if (debug_class == nullptr) {
-    WriteError("ICorDebugClass is null.");
-    initialized_hr_ = E_INVALIDARG;
+  if (!obj_factory_) {
+    std::cerr << "Object factory is null.";
     return;
   }
 
   CComPtr<ICorDebugValue> field_value;
   ULONG len_field_name;
-
-  field_def_ = field_def;
-  creation_depth_ = creation_depth;
-  class_type_ = class_type;
 
   // First call to get length of array.
   initialized_hr_ = metadata_import->GetFieldProps(
@@ -99,8 +91,26 @@ void DbgClassField::Initialize(mdFieldDef field_def,
     }
   }
 
+  // This will point to the value of the field if the field is const.
+  if (default_value_ && IsFdLiteral(member_attributes_)) {
+    initialized_hr_ = ProcessConstField(debug_module, metadata_import);
+    return;
+  }
+
   if (IsStatic()) {
     initialized_hr_ = S_OK;
+    return;
+  }
+
+  if (debug_obj_value == nullptr) {
+    WriteError("ICorDebugObjectValue is null.");
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+
+  if (debug_class == nullptr) {
+    WriteError("ICorDebugClass is null.");
+    initialized_hr_ = E_INVALIDARG;
     return;
   }
 
@@ -142,8 +152,7 @@ void DbgClassField::Initialize(mdFieldDef field_def,
 }
 
 HRESULT DbgClassField::Evaluate(
-    ICorDebugValue *debug_value,
-    IEvalCoordinator *eval_coordinator,
+    ICorDebugValue *debug_value, IEvalCoordinator *eval_coordinator,
     std::vector<CComPtr<ICorDebugType>> *generic_types) {
   if (FAILED(initialized_hr_)) {
     return initialized_hr_;
@@ -165,6 +174,100 @@ HRESULT DbgClassField::Evaluate(
   if (!member_value_) {
     WriteError("Cannot get field value.");
     return E_FAIL;
+  }
+
+  return S_OK;
+}
+
+HRESULT DbgClassField::ProcessConstField(ICorDebugModule *debug_module,
+                                         IMetaDataImport *metadata_import) {
+  CorElementType field_type = (CorElementType)default_value_type_flags_;
+  ULONG64 enum_numerical_value = 0;
+  std::unique_ptr<DbgObject> dbg_object;
+  HRESULT hr = obj_factory_->CreateDbgObjectFromLiteralConst(
+      field_type, default_value_, default_value_len_, &enum_numerical_value,
+      &dbg_object);
+
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  // If this is an enum, the signature length will be greater than 2
+  // and the second byte will be CorElementType::ELEMENT_TYPE_VALUETYPE.
+  CorElementType second_byte_type =
+      (CorElementType) * (signature_metadata_ + 1);
+  if (second_byte_type != CorElementType::ELEMENT_TYPE_VALUETYPE) {
+    member_value_ = std::move(dbg_object);
+    return S_OK;
+  }
+
+  return ProcessConstEnumField(debug_module, metadata_import, field_type,
+                               enum_numerical_value);
+}
+
+HRESULT DbgClassField::ProcessConstEnumField(ICorDebugModule *debug_module,
+                                             IMetaDataImport *metadata_import,
+                                             const CorElementType &enum_type,
+                                             ULONG64 enum_numerical_value) {
+  // Gets the class that implements this field.
+  std::string class_name;
+  mdToken base_token;
+  HRESULT hr = debug_helper_->GetTypeNameFromMdTypeDef(
+      parent_token_, metadata_import, &class_name, &base_token,
+      GetErrorStream());
+
+  // Retrieves the parent class of the class that implements this field.
+  CorTokenType token_type = (CorTokenType)(TypeFromToken(base_token));
+  std::string base_class_name;
+  mdToken base_class_parent_token;
+  if (token_type == CorTokenType::mdtTypeDef) {
+    hr = debug_helper_->GetTypeNameFromMdTypeDef(
+        base_token, metadata_import, &base_class_name, &base_class_parent_token,
+        GetErrorStream());
+  } else if (token_type == CorTokenType::mdtTypeRef) {
+    hr = debug_helper_->GetTypeNameFromMdTypeRef(
+        base_token, metadata_import, &base_class_name, GetErrorStream());
+  }
+
+  // Do not proceed if the class implementing this field is
+  // an enum (which means the parent is System.Enum).
+  // This can lead to an infinite loop.
+  if (base_class_name.compare(kEnumClassName) != 0) {
+    // We need to get the enum name. The name of the enum can be retrieved
+    // from the third byte of the metadata signature.
+    if (sig_metadata_length_ < 3) {
+      return E_FAIL;
+    }
+    ULONG encoded_token = *(signature_metadata_ + 2);
+
+    // Now we retrieve the name, metadata token and metadata import
+    // for the enum.
+    std::string enum_name;
+    CComPtr<IMetaDataImport> resolved_metadata_import;
+    mdTypeDef enum_token;
+
+    hr = debug_helper_->GetTypeInfoFromEncodedToken(
+        encoded_token, debug_module, metadata_import, &enum_name, &enum_token,
+        &resolved_metadata_import);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    std::unique_ptr<DbgObject> dbg_object;
+    dbg_object = std::unique_ptr<DbgObject>(
+        new DbgEnum(1, enum_name, enum_token, enum_numerical_value, enum_type,
+                    debug_helper_, obj_factory_));
+    DbgEnum *dbg_enum = dynamic_cast<DbgEnum *>(dbg_object.get());
+    if (!dbg_enum) {
+      return E_FAIL;
+    }
+
+    hr = dbg_enum->ProcessEnumFields(resolved_metadata_import);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    member_value_ = std::move(dbg_object);
   }
 
   return S_OK;
@@ -205,8 +308,6 @@ HRESULT DbgClassField::ExtractStaticFieldValue(
 
   unique_ptr<DbgObject> member_value;
 
-  // TODO(quoct): String that starts with @ cannot be retrieved.
-  // For static field, use default evaluation depth.
   hr = obj_factory_->CreateDbgObject(debug_value, creation_depth_,
                                      &member_value, GetErrorStream());
   if (FAILED(hr)) {
