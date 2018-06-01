@@ -524,12 +524,13 @@ HRESULT DbgObjectFactory::CreateDbgObjectFromLiteralConst(
       WCHAR *string_ptr = (WCHAR *)literal_value;
       std::vector<WCHAR> wchar_string_result(string_ptr,
                                              string_ptr + literal_value_len);
-      wchar_string_result.push_back('\0');
+      wchar_string_result.push_back(L'\0');
       string string_result = ConvertWCharPtrToString(wchar_string_result);
       *dbg_object = std::unique_ptr<DbgObject>(new DbgString(string_result));
       return S_OK;
     }
     default:
+      std::cerr << "CorElementType is not supported: " << value_type;
       return E_NOTIMPL;
   }
 }

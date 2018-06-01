@@ -577,6 +577,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       // The first 2 least significant bits of the token tells us whether
       // the token is a type def or type ref.
       mdToken token_type = g_tkCorEncodeToken[encoded_token & 0x3];
+      // Remove the last 2 bits of the token and use the token type to
+      // decode it to either a mdTypeDef or mdTypeRef token.
       mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
 
       mdToken base_token;
@@ -589,7 +591,8 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
                                       &type_name, &std::cerr);
       } else {
         // Don't process this.
-        return E_FAIL;
+        std::cerr << "Token other than mdTypeDef and mdTypeRef are not supported";
+        return E_NOTIMPL;
       }
 
       if (FAILED(hr)) {
