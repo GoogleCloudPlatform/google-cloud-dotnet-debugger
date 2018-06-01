@@ -995,12 +995,12 @@ HRESULT CorDebugHelper::GetInstantiatedClassType(
       class_generic_type_pointers.data(), result_type);
 }
 
-HRESULT CorDebugHelper::GetEnumMdTypeDefAndName(
-    ULONG encoded_enum_token, ICorDebugModule *debug_module,
-    IMetaDataImport *metadata_import, std::string *enum_name,
-    mdTypeDef *enum_token, IMetaDataImport **resolved_metadata_import) {
-  mdToken token_type = g_tkCorEncodeToken[encoded_enum_token & 0x3];
-  mdToken decoded_token = TokenFromRid(encoded_enum_token >> 2, token_type);
+HRESULT CorDebugHelper::GetTypeInfoFromEncodedToken(
+    ULONG encoded_token, ICorDebugModule *debug_module,
+    IMetaDataImport *metadata_import, std::string *type_name,
+    mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) {
+  mdToken token_type = g_tkCorEncodeToken[encoded_token & 0x3];
+  mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
   mdToken base_token;
 
   if (token_type != CorTokenType::mdtTypeDef &&
@@ -1011,8 +1011,8 @@ HRESULT CorDebugHelper::GetEnumMdTypeDefAndName(
   if (token_type == CorTokenType::mdtTypeDef) {
     *resolved_metadata_import = metadata_import;
     metadata_import->AddRef();
-    *enum_token = decoded_token;
-    return GetTypeNameFromMdTypeDef(decoded_token, metadata_import, enum_name,
+    *type_def = decoded_token;
+    return GetTypeNameFromMdTypeDef(decoded_token, metadata_import, type_name,
                                     &base_token, &std::cerr);
   }
 
@@ -1048,15 +1048,15 @@ HRESULT CorDebugHelper::GetEnumMdTypeDefAndName(
   }
 
   hr = GetMdTypeDefAndMetaDataFromTypeRef(decoded_token, debug_assemblies,
-                                          metadata_import, enum_token,
+                                          metadata_import, type_def,
                                           resolved_metadata_import, &std::cerr);
   if (FAILED(hr)) {
     std::cerr << "Failed to get mdTypeDef and MetaDataImport";
     return hr;
   }
 
-  return GetTypeNameFromMdTypeDef(*enum_token, *resolved_metadata_import,
-                                  enum_name, &base_token, &std::cerr);
+  return GetTypeNameFromMdTypeDef(*type_def, *resolved_metadata_import,
+                                  type_name, &base_token, &std::cerr);
 }
 
 HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(

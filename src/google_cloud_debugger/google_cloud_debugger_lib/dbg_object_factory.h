@@ -15,8 +15,8 @@
 #ifndef DBG_OBJECT_FACTORY_H__
 #define DBG_OBJECT_FACTORY_H__
 
-#include "i_dbg_object_factory.h"
 #include "dbg_primitive.h"
+#include "i_dbg_object_factory.h"
 
 namespace google_cloud_debugger {
 
@@ -49,11 +49,13 @@ class DbgObjectFactory : public IDbgObjectFactory {
                                std::unique_ptr<DbgObject> *result_object,
                                std::ostream *err_stream);
 
+  // Creates a DbgObject from a constant literal pointed to by literal_value.
+  // literal_value_len is the length of the constant if it is a string.
+  // If the constant is a numerical constant, numerical_value will be
+  // set to the value of the constant.
   HRESULT CreateDbgObjectFromLiteralConst(
-      const CorElementType &value_type,
-      UVCP_CONSTANT literal_value,
-      ULONG literal_value_len,
-      ULONG64 *numerical_value,
+      const CorElementType &value_type, UVCP_CONSTANT literal_value,
+      ULONG literal_value_len, ULONG64 *numerical_value,
       std::unique_ptr<DbgObject> *dbg_object) override;
 
   // Run evaluation on function debug_function and returns
@@ -61,15 +63,14 @@ class DbgObjectFactory : public IDbgObjectFactory {
   // generic_types contains the instantiated type parameters for the function.
   // argument_values containsthe arguments of the functions.
   HRESULT EvaluateAndCreateDbgObject(
-      std::vector<ICorDebugType*> generic_types,
-      std::vector<ICorDebugValue*> argument_values,
-      ICorDebugFunction *debug_function,
-      ICorDebugEval *debug_eval,
+      std::vector<ICorDebugType *> generic_types,
+      std::vector<ICorDebugValue *> argument_values,
+      ICorDebugFunction *debug_function, ICorDebugEval *debug_eval,
       IEvalCoordinator *eval_coordinator,
       std::unique_ptr<DbgObject> *evaluate_result,
       std::ostream *err_stream) override;
 
- private:   
+ private:
   // This will be injected into the DbgObject created by this factory.
   std::shared_ptr<ICorDebugHelper> debug_helper_;
 
