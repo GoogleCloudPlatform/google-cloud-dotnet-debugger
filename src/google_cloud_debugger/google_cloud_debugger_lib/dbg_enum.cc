@@ -45,13 +45,16 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
     return S_OK;
   }
 
+  // enum_type_ is initialized to ELEMENT_TYPE_END so if
+  // it is still ELEMENT_TYPE_END, then we haven't been able to
+  // find the correct enum_type_ yet.
   if (enum_type_ == CorElementType::ELEMENT_TYPE_END) {
     WriteError("Cannot find the type of the enum.");
     return E_FAIL;
   }
 
   if (enum_values_dict.find(class_name_) == enum_values_dict.end()) {
-    WriteError("Enum values are not populated.");
+    WriteError("Cannot find enum " + class_name_);
     return E_FAIL;
   }
 

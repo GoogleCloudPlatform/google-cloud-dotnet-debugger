@@ -101,6 +101,7 @@ class DbgEnum : public DbgClass {
   static const std::string kEnumValue;
 
   // The integral type of the enum.
+  // Assigned to ELEMENT_TYPE_END as a default value.
   CorElementType enum_type_ = CorElementType::ELEMENT_TYPE_END;
 
   // Stores the enum value as a string.
