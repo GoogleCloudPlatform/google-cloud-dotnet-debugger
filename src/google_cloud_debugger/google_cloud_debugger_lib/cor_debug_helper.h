@@ -45,6 +45,11 @@ class CorDebugHelper : public ICorDebugHelper {
       ICorDebugModule *debug_module, std::vector<WCHAR> *module_name,
       std::ostream *err_stream) override;
 
+  // Extracts ICorDebugAppDomain from ICorDebugModule.
+  virtual HRESULT GetAppDomainFromICorDebugModule(
+      ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
+      std::ostream *err_stream) override;
+
   // Extracts ICorDebugType from ICorDebug.
   virtual HRESULT GetICorDebugType(ICorDebugValue *debug_value,
                                    ICorDebugType **debug_type,
@@ -204,6 +209,11 @@ class CorDebugHelper : public ICorDebugHelper {
       std::vector<CComPtr<ICorDebugType>> *parameter_types,
       ICorDebugType **result_type,
       std::ostream *err_stream) override;
+
+  virtual HRESULT GetEnumMdTypeDefAndName(
+      ULONG encoded_enum_token, ICorDebugModule *debug_module,
+      IMetaDataImport *metadata_import, std::string *enum_name,
+      mdTypeDef *enum_token, IMetaDataImport **resolved_metadata_import) override;
 
   // Given a class object, populates generic_types
   // with the generic types from the class object.

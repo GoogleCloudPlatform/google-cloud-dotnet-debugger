@@ -309,14 +309,12 @@ HRESULT DbgObjectFactory::CreateDbgClassObject(
     if (kEnumClassName.compare(base_class_name) == 0) {
       unique_ptr<DbgEnum> enum_obj =
           unique_ptr<DbgEnum>(new (std::nothrow) DbgEnum(
-              debug_type, depth, debug_helper_,
+              debug_type, depth, class_name, class_token, debug_helper_,
               std::shared_ptr<DbgObjectFactory>(new DbgObjectFactory())));
-      // We need the class token to process the enum.
-      enum_obj->SetClassToken(class_token);
       // Only process class type for enum (since it is ValueType and we don't
       // store reference to the class object). Delay processing fields and
       // properties of non-ValueType class until we need them.
-      hr = enum_obj->ProcessEnum(debug_value, debug_class, metadata_import);
+      hr = enum_obj->ProcessEnum(debug_value, metadata_import);
       if (FAILED(hr)) {
         *err_stream << "Failed to process class based on their types.";
         return hr;
@@ -374,16 +372,14 @@ HRESULT DbgObjectFactory::CreateDbgClassObject(
 }
 
 HRESULT DbgObjectFactory::EvaluateAndCreateDbgObject(
-    std::vector<ICorDebugType*> generic_types,
-    std::vector<ICorDebugValue*> argument_values,
-    ICorDebugFunction *debug_function,
-    ICorDebugEval *debug_eval,
+    std::vector<ICorDebugType *> generic_types,
+    std::vector<ICorDebugValue *> argument_values,
+    ICorDebugFunction *debug_function, ICorDebugEval *debug_eval,
     IEvalCoordinator *eval_coordinator,
-    std::unique_ptr<DbgObject> *evaluate_result,
-    std::ostream *err_stream) {
+    std::unique_ptr<DbgObject> *evaluate_result, std::ostream *err_stream) {
   CComPtr<ICorDebugEval2> debug_eval_2;
-  HRESULT hr = debug_eval->QueryInterface(__uuidof(ICorDebugEval2),
-                                  reinterpret_cast<void **>(&debug_eval_2));
+  HRESULT hr = debug_eval->QueryInterface(
+      __uuidof(ICorDebugEval2), reinterpret_cast<void **>(&debug_eval_2));
   if (FAILED(hr)) {
     *err_stream << "Failed to get ICorDebugEval2 from ICorDebugEval.";
     return hr;
@@ -405,8 +401,8 @@ HRESULT DbgObjectFactory::EvaluateAndCreateDbgObject(
     return hr;
   }
 
-  hr = CreateDbgObject(eval_result, kDefaultObjectEvalDepth,
-                       evaluate_result, &std::cerr);
+  hr = CreateDbgObject(eval_result, kDefaultObjectEvalDepth, evaluate_result,
+                       &std::cerr);
   if (FAILED(hr)) {
     if (evaluate_result) {
       *err_stream << (*evaluate_result)->GetErrorString();
@@ -423,6 +419,119 @@ HRESULT DbgObjectFactory::EvaluateAndCreateDbgObject(
   }
 
   return S_OK;
+}
+
+HRESULT DbgObjectFactory::CreateDbgObjectFromLiteralConst(
+    const CorElementType &value_type, UVCP_CONSTANT literal_value,
+    ULONG literal_value_len, ULONG64 *numerical_value,
+    std::unique_ptr<DbgObject> *dbg_object) {
+  switch (value_type) {
+    case CorElementType::ELEMENT_TYPE_BOOLEAN: {
+      bool *result = (bool *)literal_value;
+      *dbg_object = std::unique_ptr<DbgObject>(new DbgPrimitive<bool>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_CHAR: {
+      char *result = (char *)literal_value;
+      *dbg_object = std::unique_ptr<DbgObject>(new DbgPrimitive<char>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I: {
+      intptr_t *result = (intptr_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<intptr_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U: {
+      uintptr_t *result = (uintptr_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<uintptr_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I1: {
+      int8_t *result = (int8_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<int8_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U1: {
+      uint8_t *result = (uint8_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<uint8_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I2: {
+      int16_t *result = (int16_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<int16_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U2: {
+      uint16_t *result = (uint16_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<uint16_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I4: {
+      int32_t *result = (int32_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<int32_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U4: {
+      uint32_t *result = (uint32_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<uint32_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_I8: {
+      int64_t *result = (int64_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<int64_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_U8: {
+      uint64_t *result = (uint64_t *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<uint64_t>(*result));
+      *numerical_value = *result;
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R4: {
+      float *result = (float *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<float>(*result));
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_R8: {
+      double *result = (double *)literal_value;
+      *dbg_object =
+          std::unique_ptr<DbgObject>(new DbgPrimitive<double>(*result));
+      return S_OK;
+    }
+    case CorElementType::ELEMENT_TYPE_STRING: {
+      WCHAR *string_ptr = (WCHAR *)literal_value;
+      std::vector<WCHAR> wchar_string_result(string_ptr,
+                                             string_ptr + literal_value_len);
+      wchar_string_result.push_back('\0');
+      string string_result = ConvertWCharPtrToString(wchar_string_result);
+      *dbg_object = std::unique_ptr<DbgObject>(new DbgString(string_result));
+      return S_OK;
+    }
+    default:
+      return E_NOTIMPL;
+  }
 }
 
 HRESULT DbgObjectFactory::ProcessClassName(mdTypeDef class_token,

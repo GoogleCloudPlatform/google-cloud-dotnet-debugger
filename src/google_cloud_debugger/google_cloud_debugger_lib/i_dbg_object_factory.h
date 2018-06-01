@@ -48,6 +48,13 @@ class IDbgObjectFactory {
                                   std::unique_ptr<DbgObject> *result_object,
                                   std::ostream *err_stream) = 0;
 
+  virtual HRESULT CreateDbgObjectFromLiteralConst(
+      const CorElementType &value_type,
+      UVCP_CONSTANT literal_value,
+      ULONG literal_value_len,
+      ULONG64 *numerical_value,
+      std::unique_ptr<DbgObject> *dbg_object) = 0;
+
   // Run evaluation on function debug_function and returns
   // the result in evaluate_result.
   // generic_types contains the instantiated type parameters for the function.
