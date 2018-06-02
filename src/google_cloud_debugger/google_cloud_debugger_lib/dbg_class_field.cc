@@ -31,6 +31,21 @@ using std::string;
 using std::unique_ptr;
 
 namespace google_cloud_debugger {
+DbgClassField::DbgClassField(mdFieldDef field_def, int creation_depth,
+                             ICorDebugType *class_type,
+                             std::shared_ptr<ICorDebugHelper> debug_helper,
+                             std::shared_ptr<IDbgObjectFactory> obj_factory)
+    : IDbgClassMember(debug_helper, obj_factory) {
+  if (!obj_factory_) {
+    std::cerr << "Object factory is null.";
+    initialized_hr_ = E_INVALIDARG;
+    return;
+  }
+  field_def_ = field_def;
+  creation_depth_ = creation_depth;
+  class_type_ = class_type;
+}
+
 void DbgClassField::Initialize(ICorDebugModule *debug_module,
                                IMetaDataImport *metadata_import,
                                ICorDebugObjectValue *debug_obj_value,
@@ -43,6 +58,7 @@ void DbgClassField::Initialize(ICorDebugModule *debug_module,
 
   if (!obj_factory_) {
     std::cerr << "Object factory is null.";
+    initialized_hr_ = E_INVALIDARG;
     return;
   }
 
@@ -196,13 +212,13 @@ HRESULT DbgClassField::ProcessConstField(ICorDebugModule *debug_module,
   // and the second byte will be CorElementType::ELEMENT_TYPE_VALUETYPE.
   CorElementType second_byte_type =
       (CorElementType) * (signature_metadata_ + 1);
-  if (second_byte_type != CorElementType::ELEMENT_TYPE_VALUETYPE) {
-    member_value_ = std::move(dbg_object);
-    return S_OK;
+  if (second_byte_type == CorElementType::ELEMENT_TYPE_VALUETYPE) {
+    return ProcessConstEnumField(debug_module, metadata_import, field_type,
+                                 enum_numerical_value);
   }
 
-  return ProcessConstEnumField(debug_module, metadata_import, field_type,
-                               enum_numerical_value);
+  member_value_ = std::move(dbg_object);
+  return S_OK;
 }
 
 HRESULT DbgClassField::ProcessConstEnumField(ICorDebugModule *debug_module,
@@ -216,60 +232,49 @@ HRESULT DbgClassField::ProcessConstEnumField(ICorDebugModule *debug_module,
       parent_token_, metadata_import, &class_name, &base_token,
       GetErrorStream());
 
-  // Retrieves the parent class of the class that implements this field.
-  CorTokenType token_type = (CorTokenType)(TypeFromToken(base_token));
   std::string base_class_name;
-  mdToken base_class_parent_token;
-  if (token_type == CorTokenType::mdtTypeDef) {
-    hr = debug_helper_->GetTypeNameFromMdTypeDef(
-        base_token, metadata_import, &base_class_name, &base_class_parent_token,
-        GetErrorStream());
-  } else if (token_type == CorTokenType::mdtTypeRef) {
-    hr = debug_helper_->GetTypeNameFromMdTypeRef(
-        base_token, metadata_import, &base_class_name, GetErrorStream());
+  hr = debug_helper_->GetTypeNameFromMdToken(
+      base_token, metadata_import, &base_class_name, GetErrorStream());
+  if (FAILED(hr)) {
+    return hr;
   }
 
   // Do not proceed if the class implementing this field is
   // an enum (which means the parent is System.Enum).
   // This can lead to an infinite loop.
-  if (base_class_name.compare(kEnumClassName) != 0) {
-    // We need to get the enum name. The name of the enum can be retrieved
-    // from the third byte of the metadata signature.
-    if (sig_metadata_length_ < 3) {
-      return E_FAIL;
-    }
-    ULONG encoded_token = *(signature_metadata_ + 2);
-
-    // Now we retrieve the name, metadata token and metadata import
-    // for the enum.
-    std::string enum_name;
-    CComPtr<IMetaDataImport> resolved_metadata_import;
-    mdTypeDef enum_token;
-
-    hr = debug_helper_->GetTypeInfoFromEncodedToken(
-        encoded_token, debug_module, metadata_import, &enum_name, &enum_token,
-        &resolved_metadata_import);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    std::unique_ptr<DbgObject> dbg_object;
-    dbg_object = std::unique_ptr<DbgObject>(
-        new DbgEnum(1, enum_name, enum_token, enum_numerical_value, enum_type,
-                    debug_helper_, obj_factory_));
-    DbgEnum *dbg_enum = dynamic_cast<DbgEnum *>(dbg_object.get());
-    if (!dbg_enum) {
-      return E_FAIL;
-    }
-
-    hr = dbg_enum->ProcessEnumFields(resolved_metadata_import);
-    if (FAILED(hr)) {
-      return hr;
-    }
-
-    member_value_ = std::move(dbg_object);
+  if (base_class_name.compare(kEnumClassName) == 0) {
+    return S_OK;
   }
 
+  // Now we retrieve the name, metadata token and metadata import
+  // for the enum.
+  std::string enum_name;
+  CComPtr<IMetaDataImport> resolved_metadata_import;
+  mdTypeDef enum_token;
+
+  hr = debug_helper_->GetEnumInfoFromFieldMetaDataSignature(
+      signature_metadata_, sig_metadata_length_, debug_module,
+      metadata_import, &enum_name, &enum_token,
+      &resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  std::unique_ptr<DbgObject> dbg_object;
+  dbg_object = std::unique_ptr<DbgObject>(
+      new DbgEnum(1, enum_name, enum_token, enum_numerical_value, enum_type,
+                  debug_helper_, obj_factory_));
+  DbgEnum *dbg_enum = dynamic_cast<DbgEnum *>(dbg_object.get());
+  if (!dbg_enum) {
+    return E_FAIL;
+  }
+
+  hr = dbg_enum->ProcessEnumFields(resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  member_value_ = std::move(dbg_object);
   return S_OK;
 }
 

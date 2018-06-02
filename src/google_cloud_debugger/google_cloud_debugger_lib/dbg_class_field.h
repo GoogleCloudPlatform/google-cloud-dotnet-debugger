@@ -33,12 +33,7 @@ class DbgClassField : public IDbgClassMember {
   DbgClassField(mdFieldDef field_def, int creation_depth,
                 ICorDebugType *class_type,
                 std::shared_ptr<ICorDebugHelper> debug_helper,
-                std::shared_ptr<IDbgObjectFactory> obj_factory)
-      : IDbgClassMember(debug_helper, obj_factory) {
-    field_def_ = field_def;
-    creation_depth_ = creation_depth;
-    class_type_ = class_type;
-  }
+                std::shared_ptr<IDbgObjectFactory> obj_factory);
 
   // Initialize the field names, metadata signature, flags and values.
   // HRESULT will be stored in initialized_hr_.

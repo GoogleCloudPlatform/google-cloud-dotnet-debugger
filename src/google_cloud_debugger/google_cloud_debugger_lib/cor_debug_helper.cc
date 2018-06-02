@@ -597,20 +597,9 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       // decode it to either a mdTypeDef or mdTypeRef token.
       mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
 
-      mdToken base_token;
       std::string type_name;
-      if (token_type == CorTokenType::mdtTypeDef) {
-        hr = GetTypeNameFromMdTypeDef(decoded_token, metadata_import,
-                                      &type_name, &base_token, &std::cerr);
-      } else if (token_type == CorTokenType::mdtTypeRef) {
-        hr = GetTypeNameFromMdTypeRef(decoded_token, metadata_import,
-                                      &type_name, &std::cerr);
-      } else {
-        // Don't process this.
-        std::cerr << "Token other than mdTypeDef and mdTypeRef are not supported";
-        return E_NOTIMPL;
-      }
-
+      hr = GetTypeNameFromMdToken(decoded_token, metadata_import,
+                                  &type_name, &std::cerr);
       if (FAILED(hr)) {
         return hr;
       }
@@ -838,6 +827,26 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeRef(
   return hr;
 }
 
+HRESULT CorDebugHelper::GetTypeNameFromMdToken(
+    mdToken type_token, IMetaDataImport *metadata_import,
+    std::string *type_name, std::ostream *err_stream) {
+  // Retrieves the parent class of the class that implements this field.
+  CorTokenType token_type = (CorTokenType)(TypeFromToken(type_token));
+  mdToken base_token;
+  if (token_type == CorTokenType::mdtTypeDef) {
+    return GetTypeNameFromMdTypeDef(
+        base_token, metadata_import, type_name,
+        &base_token, err_stream);
+  } else if (token_type == CorTokenType::mdtTypeRef) {
+    return GetTypeNameFromMdTypeRef(
+        base_token, metadata_import, type_name, err_stream);
+  }
+
+  *err_stream << "Getting type name from other type of mdToken "
+              << "is not supported.";
+  return E_NOTIMPL;
+}
+
 HRESULT CorDebugHelper::GetMdTypeDefAndMetaDataFromTypeRef(
     mdTypeRef type_ref_token,
     const std::vector<CComPtr<ICorDebugAssembly>> &loaded_assemblies,
@@ -996,6 +1005,28 @@ HRESULT CorDebugHelper::GetInstantiatedClassType(
   return debug_class_2->GetParameterizedType(
       CorElementType::ELEMENT_TYPE_CLASS, class_generic_type_pointers.size(),
       class_generic_type_pointers.data(), result_type);
+}
+
+HRESULT CorDebugHelper::GetEnumInfoFromFieldMetaDataSignature(
+    PCCOR_SIGNATURE metadata_signature,
+    ULONG metadata_signature_len,
+    ICorDebugModule *debug_module,
+    IMetaDataImport *metadata_import,
+    std::string *enum_name,
+    mdTypeDef *enum_token,
+    IMetaDataImport **resolved_metadata_import) {
+  // We need to get the enum name. The name of the enum can be retrieved
+  // from the third byte of the metadata signature.
+  if (metadata_signature_len < 3) {
+    return E_FAIL;
+  }
+  ULONG encoded_token = *(metadata_signature + 2);
+
+  // Now we retrieve the name, metadata token and metadata import
+  // for the enum.
+  return GetTypeInfoFromEncodedToken(
+      encoded_token, debug_module, metadata_import,
+      enum_name, enum_token, resolved_metadata_import);
 }
 
 HRESULT CorDebugHelper::GetTypeInfoFromEncodedToken(
