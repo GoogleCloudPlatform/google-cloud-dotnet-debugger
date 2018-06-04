@@ -43,6 +43,8 @@ with your code.  See the example below:
 ...
 ```
 
+Note: When debugging a `Release` build variables may be misnamed or missing.
+
 ## Compatibility
 
 This debugger has been tested with the following .NET Core versions:
