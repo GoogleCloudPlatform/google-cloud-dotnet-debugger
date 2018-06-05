@@ -1,8 +1,7 @@
-# Stackdriver Debugger for .NET Core
+# Stackdriver Debugger for .NET Core - [Alpha](https://cloud.google.com/terms/launch-stages)
+[![release level](https://img.shields.io/badge/release%20level-alpha-orange.svg?style&#x3D;flat)](https://cloud.google.com/terms/launch-stages)
 [![Travis Build Status](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger.svg?token=uPVZj7upLKBYvMVpisAp&branch=master)](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger)
 [![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/GoogleCloudPlatform/google-cloud-dotnet-debugger?branch=master&svg=true)](https://ci.appveyor.com/project/GoogleCloudPlatform/google-cloud-dotnet-debugger)
-
-
 
 .NET Core Debugger for the [Stackdriver Debugger](https://cloud.google.com/debugger/).
 
@@ -34,6 +33,11 @@ For detailed instructions see the [Stackdriver Debugger documentation for .NET C
 
 ## Usage
 
+The .NET Core Stackdriver Debugger is currently in Alpha.
+This product might be changed in backward-incompatible ways and is not subject to any SLA or deprecation policy.
+It is not guaranteed to move forward to General Availability.
+This product is not intended for real-time usage in critical applications.
+
 To be able to use the .NET Core Stackdriver Debugger you will need to deploy PDBs
 with your code.  See the example below:
 
@@ -45,6 +49,8 @@ with your code.  See the example below:
   </PropertyGroup>
 ...
 ```
+
+Note: When debugging a `Release` build variables may be misnamed or missing.
 
 ## Compatibility
 
