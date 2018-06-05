@@ -116,8 +116,8 @@ HRESULT DbgClass::ProcessParameterizedType() {
     empty_generic_objects_.resize(num_types);
     for (int i = 0; i < num_types_fetched; ++i) {
       unique_ptr<DbgObject> empty_object;
-      hr = object_factory_->CreateDbgObject(
-        generic_types_[i], &empty_object, GetErrorStream());
+      hr = object_factory_->CreateDbgObject(generic_types_[i], &empty_object,
+                                            GetErrorStream());
       if (SUCCEEDED(hr)) {
         empty_generic_objects_[i] = std::move(empty_object);
       } else {
@@ -133,7 +133,8 @@ HRESULT DbgClass::ProcessParameterizedType() {
   return S_OK;
 }
 
-HRESULT DbgClass::GetGenericTypes(std::vector<CComPtr<ICorDebugType>> *debug_types) {
+HRESULT DbgClass::GetGenericTypes(
+    std::vector<CComPtr<ICorDebugType>> *debug_types) {
   if (!debug_types) {
     return E_INVALIDARG;
   }
@@ -168,17 +169,17 @@ HRESULT DbgClass::ProcessFields(IMetaDataImport *metadata_import,
       class_fields_.reserve(class_fields_.size() + field_defs_returned);
 
       for (int i = 0; i < field_defs_returned; ++i) {
-        unique_ptr<DbgClassField> class_field(new (std::nothrow)
-                                                  DbgClassField(debug_helper_,
-                                                    object_factory_));
+        unique_ptr<DbgClassField> class_field(new (std::nothrow) DbgClassField(
+            field_defs[i], GetCreationDepth() - 1, debug_type, debug_helper_,
+            object_factory_));
         if (!class_field) {
           WriteError("Run out of memory when trying to create field ");
           WriteError(std::to_string(field_defs[i]));
           return E_OUTOFMEMORY;
         }
 
-        class_field->Initialize(field_defs[i], metadata_import, debug_obj_value,
-                                debug_class, debug_type, GetCreationDepth() - 1);
+        class_field->Initialize(debug_module_, metadata_import, debug_obj_value,
+                                debug_class);
         if (class_field->IsBackingField()) {
           // Insert class names into set so we can use it to check later
           // for backing fields.
@@ -219,8 +220,8 @@ HRESULT DbgClass::ProcessProperties(IMetaDataImport *metadata_import) {
                                 property_defs_returned);
 
       for (int i = 0; i < property_defs_returned; ++i) {
-        unique_ptr<DbgClassProperty> class_property(
-            new (std::nothrow) DbgClassProperty(debug_helper_, object_factory_));
+        unique_ptr<DbgClassProperty> class_property(new (
+            std::nothrow) DbgClassProperty(debug_helper_, object_factory_));
         if (!class_property) {
           WriteError(
               "Ran out of memory while trying to initialize class property ");
@@ -312,8 +313,7 @@ HRESULT DbgClass::ProcessClassMembers() {
     return hr;
   }
 
-  hr = ProcessClassMembersHelper(debug_value, debug_class,
-                                 metadata_import);
+  hr = ProcessClassMembersHelper(debug_value, debug_class, metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to process class members.");
     return hr;
@@ -386,8 +386,8 @@ HRESULT DbgClass::ExtractField(ICorDebugObjectValue *debug_obj_value,
     return hr;
   }
 
-  hr = object_factory_->CreateDbgObject(debug_field_value,
-      GetCreationDepth() - 1, field_value, GetErrorStream());
+  hr = object_factory_->CreateDbgObject(
+      debug_field_value, GetCreationDepth() - 1, field_value, GetErrorStream());
   if (FAILED(hr)) {
     WriteError("Failed to evaluate the items of the list.");
   }
@@ -500,8 +500,7 @@ void DbgClass::PopulateClassMembers(
       class_member_var->set_name((*it)->GetMemberName());
 
       HRESULT hr =
-          (*it)->Evaluate(object_handle_, eval_coordinator,
-                          &generic_types_);
+          (*it)->Evaluate(object_handle_, eval_coordinator, &generic_types_);
       if (FAILED(hr)) {
         SetErrorStatusMessage(class_member_var, (*it).get());
         continue;
