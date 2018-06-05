@@ -48,6 +48,8 @@ class DbgStackFrame : public IDbgStackFrame {
       ICorDebugILFrame *il_frame,
       const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
           &variable_infos,
+      const std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
+          &constant_infos,
       mdMethodDef method_token, IMetaDataImport *metadata_import);
 
   // Populates the StackFrame object with local variables, method arguments,
@@ -93,8 +95,7 @@ class DbgStackFrame : public IDbgStackFrame {
       const mdTypeDef &class_token, const std::string &field_name,
       mdFieldDef *field_def, bool *is_static, TypeSignature *type_signature,
       const std::vector<TypeSignature> &generic_signatures,
-      IMetaDataImport *metadata_import,
-      std::ostream *err_stream);
+      IMetaDataImport *metadata_import, std::ostream *err_stream);
 
   // This function will try to find the property
   // property_name in the class with metadata token class_token.
@@ -267,6 +268,17 @@ class DbgStackFrame : public IDbgStackFrame {
       ICorDebugValueEnum *local_enum,
       const std::vector<google_cloud_debugger_portable_pdb::LocalVariableInfo>
           &variable_infos);
+
+  // Parses the local constant from constant_infos.
+  HRESULT ProcessLocalConstants(
+      const std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
+          &constant_infos);
+
+  // Parses local constant that is an enum.
+  HRESULT ProcessEnumConstant(const std::string &constant_name,
+                              const CorElementType &enum_type,
+                              ULONG64 enum_value,
+                              const std::vector<uint8_t> &enum_metadata_buffer);
 
   // Extract method arguments from method_arg_enum.
   // DbgBreakpoint and IMetaDataImport objects are used

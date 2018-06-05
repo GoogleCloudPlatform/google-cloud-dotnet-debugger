@@ -240,6 +240,13 @@ class CorDebugHelper : public ICorDebugHelper {
       std::vector<CComPtr<ICorDebugType>> *generic_types,
       std::ostream *err_stream) override;
 
+  virtual HRESULT ProcessConstantSigBlob(
+      const std::vector<uint8_t> &signature_blob,
+      CorElementType *cor_type,
+      UVCP_CONSTANT *constant_value,
+      ULONG *value_len,
+      std::vector<uint8_t> *remaining_bytes) override;
+
  private:
   // Given a PCCOR_SIGNATURE signature, parses the next byte A.
   // Then, parses and skips the next A bytes.
