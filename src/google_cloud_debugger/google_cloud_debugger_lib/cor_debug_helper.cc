@@ -144,6 +144,50 @@ HRESULT CorDebugHelper::GetICorDebugType(ICorDebugValue *debug_value,
   return hr;
 }
 
+HRESULT CorDebugHelper::GetClassTokenFromDebugType(
+    ICorDebugType *debug_type,
+    mdTypeDef *class_token,
+    std::ostream *err_stream) {
+  CComPtr<ICorDebugClass> debug_class;
+  HRESULT hr = debug_type->GetClass(&debug_class);
+  if (FAILED(hr)) {
+    *err_stream << "Cannot get ICorDebugClass.";
+    return hr;
+  }
+
+  return debug_class->GetToken(class_token);
+}
+
+HRESULT CorDebugHelper::CheckAsyncStateObj(
+    ICorDebugValue *async_state_obj,
+    IMetaDataImport *metadata_import) {
+  CComPtr<ICorDebugType> debug_type;
+  HRESULT hr = GetICorDebugType(async_state_obj, &debug_type, &cerr);
+  if (FAILED(hr)) {
+    cerr << "Failed to get ICorDebugType.";
+    return hr;
+  }
+
+  mdTypeDef class_token;
+  hr = GetClassTokenFromDebugType(debug_type, &class_token, &cerr);
+  if (FAILED(hr)) {
+    cerr << "Failed to get class token.";
+    return hr;
+  }
+
+  // If this is a state machine, it will have a field <>1__state.
+  const static std::string state_field_name = "<>1__state";
+  mdFieldDef field_def;
+  std::vector<WCHAR> wchar_state_field_name = ConvertStringToWCharPtr(state_field_name);
+  hr = metadata_import->FindField(class_token, wchar_state_field_name.data(),
+                                  nullptr, 0, &field_def);
+  if (FAILED(hr)) {
+    return S_FALSE;
+  }
+
+  return S_OK;
+}
+
 HRESULT CorDebugHelper::Dereference(ICorDebugValue *debug_value,
                                     ICorDebugValue **dereferenced_value,
                                     BOOL *is_null, ostream *err_stream) {

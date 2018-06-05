@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Google.Cloud.Diagnostics.Debug.TestApp
 {
@@ -67,6 +68,12 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
                 t = i;
             }
             return t;
+        }
+
+        public async Task Async(string message)
+        {
+            int testInt = 0;
+            string testString = message;
         }
     }
 }

@@ -57,6 +57,16 @@ class ICorDebugHelper {
                                    ICorDebugType **debug_type,
                                    std::ostream *err_stream) = 0;
 
+  // Gets class token from an ICorDebugType.
+  virtual HRESULT GetClassTokenFromDebugType(
+      ICorDebugType *debug_type, mdTypeDef *class_token,
+      std::ostream *err_stream) = 0;
+
+  // Returns S_OK if async_state_obj is an async state machine object.
+  // Returns S_FALSE otherwise.
+  virtual HRESULT CheckAsyncStateObj(ICorDebugValue *async_state_obj,
+                                     IMetaDataImport *metadata_import) = 0;
+
   // Given an ICorDebugValue, keep trying to dereference it until we cannot
   // anymore. This function will set is_null to true if this is a null
   // reference. If debug_value is not a reference, this function will simply set

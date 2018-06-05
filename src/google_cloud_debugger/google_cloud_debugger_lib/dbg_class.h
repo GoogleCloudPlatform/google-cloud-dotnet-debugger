@@ -62,6 +62,11 @@ class DbgClass : public DbgReferenceObject {
   // Populates type_string with type of this class.
   HRESULT GetTypeString(std::string *type_string) override;
 
+  // Returns the field of this class.
+  const std::vector<std::shared_ptr<IDbgClassMember>> &GetFields() {
+    return class_fields_;
+  }
+
   // Search class_fields_ vector for a field with name field_name and
   // stores the pointer to the value of that field in field_value.
   // If class_fields_ are not populated, then this will call the
@@ -72,6 +77,10 @@ class DbgClass : public DbgReferenceObject {
   // Returns an ICorDebugType vector that represents the generic
   // types of the class.
   HRESULT GetGenericTypes(std::vector<CComPtr<ICorDebugType>> *debug_types);
+
+  // Processes members of this class, creating DbgObject
+  // for each of them.
+  HRESULT ProcessClassMembers();
 
   // Helper method to process the members of this class.
   // If not overriden, this method will process this object as if
@@ -172,10 +181,6 @@ class DbgClass : public DbgReferenceObject {
 
   // Processes the class properties and stores the fields in class_fields_.
   HRESULT ProcessProperties(IMetaDataImport *metadata_import);
-
-  // Processes members of this class, creating DbgObject
-  // for each of them.
-  HRESULT ProcessClassMembers();
 
   // Given a field name, creates a DbgObject that represents the value
   // of the field in this object.
