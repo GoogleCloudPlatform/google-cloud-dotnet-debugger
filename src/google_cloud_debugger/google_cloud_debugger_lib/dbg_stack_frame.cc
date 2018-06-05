@@ -15,6 +15,7 @@
 #include "dbg_stack_frame.h"
 
 #include <iostream>
+#include <map>
 #include <queue>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "constants.h"
 #include "dbg_breakpoint.h"
 #include "dbg_class_property.h"
+#include "dbg_enum.h"
 #include "dbg_reference_object.h"
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
@@ -34,6 +36,7 @@
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
 using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
@@ -47,8 +50,10 @@ using std::vector;
 namespace google_cloud_debugger {
 
 HRESULT DbgStackFrame::Initialize(
-    ICorDebugILFrame *il_frame, const vector<LocalVariableInfo> &variable_infos,
-    mdMethodDef method_token, IMetaDataImport *metadata_import) {
+    ICorDebugILFrame *il_frame,
+    const std::vector<LocalVariableInfo> &variable_infos,
+    const vector<LocalConstantInfo> &constant_infos, mdMethodDef method_token,
+    IMetaDataImport *metadata_import) {
   if (!il_frame) {
     cerr << "Null IL Frame.";
     return E_INVALIDARG;
@@ -104,6 +109,11 @@ HRESULT DbgStackFrame::Initialize(
 
   // The populate methods will write errors.
   hr = ProcessLocalVariables(local_enum, variable_infos);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = ProcessLocalConstants(constant_infos);
   if (FAILED(hr)) {
     return hr;
   }
@@ -191,6 +201,119 @@ HRESULT DbgStackFrame::ProcessLocalVariables(
         std::make_tuple(std::move(variable_name), std::move(variable_value)));
   }
 
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::ProcessLocalConstants(
+    const std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
+        &constant_infos) {
+  HRESULT hr;
+  for (auto &constant_info : constant_infos) {
+    UVCP_CONSTANT const_value;
+    ULONG value_len = 0;
+    CorElementType const_type;
+    vector<uint8_t> remaining_buffer;
+
+    hr = debug_helper_->ProcessConstantSigBlob(
+        constant_info.signature_data, &const_type,
+        &const_value, &value_len, &remaining_buffer);
+    if (FAILED(hr)) {
+      cerr << "Cannot process constant " << constant_info.name;
+      continue;
+    }
+
+    ULONG64 const_numerical_value = 0;
+    std::unique_ptr<DbgObject> const_obj;
+    // If there are no bytes left or cor type is ELEMENT_TYPE_STRING,
+    // then this constant is not an enum.
+    if (remaining_buffer.size() == 0
+      || const_type == CorElementType::ELEMENT_TYPE_STRING) {
+      hr = obj_factory_->CreateDbgObjectFromLiteralConst(
+          const_type, const_value, value_len, &const_numerical_value, &const_obj);
+      if (FAILED(hr)) {
+        cerr << "Failed to create constant " << constant_info.name;
+        continue;
+      }
+
+      variables_.push_back(
+          std::make_tuple(constant_info.name, std::move(const_obj)));
+      continue;
+    }
+
+
+    hr = ProcessEnumConstant(constant_info.name, const_type,
+                             const_numerical_value, remaining_buffer);
+    if (FAILED(hr)) {
+      cerr << "Failed to process enum value for constant "
+            << constant_info.name;
+    }
+  }
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::ProcessEnumConstant(
+    const std::string &constant_name, const CorElementType &enum_type,
+    ULONG64 enum_value, const std::vector<uint8_t> &enum_metadata_buffer) {
+  ULONG encoded_token = 0;
+  bool invalid_token = false;
+  size_t buffer_size = enum_metadata_buffer.size();
+  switch (buffer_size) {
+    case 1:
+      encoded_token = *((uint8_t *)enum_metadata_buffer.data());
+      break;
+    case 2:
+      encoded_token = *((uint16_t *)enum_metadata_buffer.data());
+      break;
+    case 4:
+      encoded_token = *((uint32_t *)enum_metadata_buffer.data());
+      break;
+    case 8:
+      encoded_token = *((uint64_t *)enum_metadata_buffer.data());
+      break;
+    default:
+      invalid_token = true;
+  }
+
+  if (invalid_token) {
+    cerr << "Cannot read metadata token for constant enum " << constant_name;
+    return E_FAIL;
+  }
+
+  // Now we retrieve the name, metadata token and metadata import
+  // for the enum.
+  std::string enum_name;
+  CComPtr<IMetaDataImport> resolved_metadata_import;
+  mdTypeDef enum_token;
+
+  CComPtr<IMetaDataImport> metadata_import;
+  HRESULT hr = debug_helper_->GetMetadataImportFromICorDebugModule(
+      debug_module_, &metadata_import, &cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = debug_helper_->GetTypeInfoFromEncodedToken(
+      encoded_token, debug_module_, metadata_import, &enum_name, &enum_token,
+      &resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  std::unique_ptr<DbgObject> dbg_object;
+  dbg_object = std::unique_ptr<DbgObject>(
+      new DbgEnum(1, enum_name, enum_token, enum_value, enum_type,
+                  debug_helper_, obj_factory_));
+  DbgEnum *dbg_enum = dynamic_cast<DbgEnum *>(dbg_object.get());
+  if (!dbg_enum) {
+    return E_FAIL;
+  }
+
+  hr = dbg_enum->ProcessEnumFields(resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  variables_.push_back(std::make_tuple(constant_name, std::move(dbg_object)));
   return S_OK;
 }
 
@@ -297,8 +420,7 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
   // First, finds the metadata token of the method.
   mdMethodDef method_def = 0;
   HRESULT hr = method_info->PopulateMethodDefFromNameAndArguments(
-      metadata_import, class_token, this,
-      generic_types, debug_helper_.get());
+      metadata_import, class_token, this, generic_types, debug_helper_.get());
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
@@ -315,10 +437,9 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
     return hr;
   }
 
-  return GetDebugFunctionFromClass(metadata_import, debug_module_,
-                                   class_token_, method_info,
-                                   GetClassGenericTypeSignatureParameters(),
-                                   debug_function);
+  return GetDebugFunctionFromClass(
+      metadata_import, debug_module_, class_token_, method_info,
+      GetClassGenericTypeSignatureParameters(), debug_function);
 }
 
 HRESULT DbgStackFrame::GetCurrentClassTypeParameters(
@@ -753,8 +874,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
       // for the instantiated type using class_generic_types_.
       CComPtr<ICorDebugType> class_type;
       hr = debug_helper_->GetInstantiatedClassType(
-          debug_class, &class_generic_types_,
-          &class_type, err_stream);
+          debug_class, &class_generic_types_, &class_type, err_stream);
       if (FAILED(hr)) {
         *err_stream << "Failed to get instantiated type from ICorDebugClass.";
         return hr;

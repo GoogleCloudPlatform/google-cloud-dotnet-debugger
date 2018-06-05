@@ -224,6 +224,7 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
 
         dbg_stack_frame->SetLineNumber(sequence_point.start_line);
         vector<LocalVariableInfo> local_variables;
+        vector<LocalConstantInfo> local_constants;
         for (auto &&local_scope : method.local_scope) {
           if (local_scope.start_offset > sequence_point.il_offset ||
               local_scope.start_offset + local_scope.length <
@@ -234,10 +235,14 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
           local_variables.insert(local_variables.end(),
                                  local_scope.local_variables.begin(),
                                  local_scope.local_variables.end());
+          local_constants.insert(local_constants.end(),
+                                 local_scope.local_constants.begin(),
+                                 local_scope.local_constants.end());
         }
 
         hr = dbg_stack_frame->Initialize(
-            il_frame, local_variables, target_function_token, metadata_import);
+            il_frame, local_variables, local_constants,
+            target_function_token, metadata_import);
       }
 
       return S_OK;
@@ -521,8 +526,6 @@ HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
   }
 
   for (auto &&pdb_file : parsed_pdb_files) {
-    // Gets the PDB file that has the same name as the module.
-    CComPtr<ICorDebugModule> pdb_debug_module;
     // TODO(quoct): Possible performance improvement by caching the pdb_file
     // based on token.
     string pdb_module_name = pdb_file->GetModuleName();
