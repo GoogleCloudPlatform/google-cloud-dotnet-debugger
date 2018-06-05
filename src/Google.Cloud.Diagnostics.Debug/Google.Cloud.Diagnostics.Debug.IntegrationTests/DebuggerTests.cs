@@ -155,7 +155,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 var stackframe = newBp.StackFrames[0];
 
                 // Check the function is async.
-                //Assert.Contains($"{typeof(TestApp.MainController).ToString()}.Async", stackframe.Function);
+                // TODO(quoct): Currently, the function name is the name of the state machine
+                // so this condition will be false. We have to fix this in the debugger side.
+                // Assert.Contains($"{typeof(TestApp.MainController).ToString()}.Async", stackframe.Function);
 
                 // Check the location is accurate.
                 var location = stackframe.Location;
