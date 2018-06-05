@@ -21,7 +21,7 @@ configuration: Debug
 # Build dependencies and code
 build_script:
   - git submodule update --init --recursive
-  - build-deps.cmd $env:APPVEYOR_BUILD_FOLDER $env:CONFIGURATION $env:PLATFORM
+  - build-deps.cmd $env:APPVEYOR_BUILD_FOLDER\ $env:CONFIGURATION $env:PLATFORM
   - bash build.sh
 
 test_script:
