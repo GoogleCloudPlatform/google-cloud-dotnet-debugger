@@ -57,14 +57,9 @@ class ICorDebugHelper {
                                    ICorDebugType **debug_type,
                                    std::ostream *err_stream) = 0;
 
-  // Gets class token from an ICorDebugType.
-  virtual HRESULT GetClassTokenFromDebugType(
-      ICorDebugType *debug_type, mdTypeDef *class_token,
-      std::ostream *err_stream) = 0;
-
-  // Returns S_OK if async_state_obj is an async state machine object.
-  // Returns S_FALSE otherwise.
-  virtual HRESULT CheckAsyncStateObj(ICorDebugValue *async_state_obj,
+  // Returns S_OK if class represented by class_token is an async
+  // state machine class. Returns S_FALSE otherwise.
+  virtual HRESULT CheckAsyncStateObj(mdTypeDef class_token,
                                      IMetaDataImport *metadata_import) = 0;
 
   // Given an ICorDebugValue, keep trying to dereference it until we cannot

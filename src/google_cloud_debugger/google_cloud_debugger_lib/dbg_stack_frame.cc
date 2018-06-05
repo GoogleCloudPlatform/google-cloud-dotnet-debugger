@@ -299,7 +299,7 @@ HRESULT DbgStackFrame::ProcessAsyncMethod(ICorDebugValue *async_state_obj,
                                           IMetaDataImport *metadata_import) {
   CComPtr<ICorDebugType> debug_type;
   HRESULT hr =
-      debug_helper_->CheckAsyncStateObj(async_state_obj, metadata_import);
+      debug_helper_->CheckAsyncStateObj(class_token_, metadata_import);
   if (FAILED(hr)) {
     cerr << "Failed to check whether method is async or not.";
     return hr;
