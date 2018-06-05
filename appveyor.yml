@@ -9,7 +9,6 @@ image: Visual Studio 2017
 # Pull down all submodule code
 init:
   - git config --global core.autocrlf input
-  - git submodule update --init --recursive
 
 # Cache the third party code as it can take 20+ min to build
 cache:
@@ -21,6 +20,7 @@ configuration: Debug
 
 # Build dependencies and code
 build_script:
+  - git submodule update --init --recursive
   - build-deps.cmd $env:APPVEYOR_BUILD_FOLDER $env:CONFIGURATION $env:PLATFORM
   - bash build.sh
 
