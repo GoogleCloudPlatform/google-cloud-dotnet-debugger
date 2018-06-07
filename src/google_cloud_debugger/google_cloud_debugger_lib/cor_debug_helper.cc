@@ -1137,7 +1137,7 @@ HRESULT CorDebugHelper::ProcessConstantSigBlob(
   // First byte is the type of the signature.
   *cor_type = (CorElementType)signature_blob[0];
 
-  // Next few bytes is the constant value. We have to check that there are
+  // Next few bytes are the constant value. We have to check that there are
   // enough bytes.
   if (cor_type_to_bytes_size.find(*cor_type) ==
       cor_type_to_bytes_size.end()) {
@@ -1148,7 +1148,7 @@ HRESULT CorDebugHelper::ProcessConstantSigBlob(
   // Check that there are enough bytes in the signature to read
   // the constant value.
   uint32_t const_size = cor_type_to_bytes_size[*cor_type];
-  if (signature_blob.size() - 1 < const_size) {
+  if (signature_blob.size() <= const_size) {
     cerr << "Not enough bytes to retrieve constant value.";
     return E_FAIL;
   }
@@ -1163,6 +1163,8 @@ HRESULT CorDebugHelper::ProcessConstantSigBlob(
     *value_len = (signature_blob.size() - 1) / sizeof(WCHAR);
   }
 
+  // The first byte of the blob is the CorElementType and the next
+  // few bytes will be the constant_value.
   *constant_value = (UVCP_CONSTANT)(signature_blob.data() + 1);
 
   // If there are bytes left, and the constant is not a string,

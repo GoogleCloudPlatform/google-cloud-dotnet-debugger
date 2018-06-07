@@ -246,10 +246,9 @@ class DbgStackFrame : public IDbgStackFrame {
           &constant_infos);
 
   // Parses local constant that is an enum.
-  HRESULT ProcessEnumConstant(const std::string &constant_name,
-                              const CorElementType &enum_type,
-                              ULONG64 enum_value,
-                              const std::vector<uint8_t> &enum_metadata_buffer);
+  HRESULT ProcessLocalEnumConstant(
+      const std::string &constant_name, const CorElementType &enum_type,
+      ULONG64 enum_value, const std::vector<uint8_t> &enum_metadata_buffer);
 
   // Extract method arguments from method_arg_enum.
   // DbgBreakpoint and IMetaDataImport objects are used
