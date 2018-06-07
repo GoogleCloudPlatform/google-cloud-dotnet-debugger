@@ -241,8 +241,9 @@ HRESULT DbgStackFrame::ProcessLocalConstants(
     }
 
 
-    hr = ProcessEnumConstant(constant_info.name, const_type,
-                             const_numerical_value, remaining_buffer);
+    hr = ProcessLocalEnumConstant(
+        constant_info.name, const_type,
+        const_numerical_value, remaining_buffer);
     if (FAILED(hr)) {
       cerr << "Failed to process enum value for constant "
             << constant_info.name;
@@ -251,11 +252,10 @@ HRESULT DbgStackFrame::ProcessLocalConstants(
   return S_OK;
 }
 
-HRESULT DbgStackFrame::ProcessEnumConstant(
+HRESULT DbgStackFrame::ProcessLocalEnumConstant(
     const std::string &constant_name, const CorElementType &enum_type,
     ULONG64 enum_value, const std::vector<uint8_t> &enum_metadata_buffer) {
   ULONG encoded_token = 0;
-  bool invalid_token = false;
   size_t buffer_size = enum_metadata_buffer.size();
   switch (buffer_size) {
     case 1:
@@ -271,12 +271,8 @@ HRESULT DbgStackFrame::ProcessEnumConstant(
       encoded_token = *((uint64_t *)enum_metadata_buffer.data());
       break;
     default:
-      invalid_token = true;
-  }
-
-  if (invalid_token) {
-    cerr << "Cannot read metadata token for constant enum " << constant_name;
-    return E_FAIL;
+      cerr << "Cannot read metadata token for constant enum " << constant_name;
+      return E_FAIL;
   }
 
   // Now we retrieve the name, metadata token and metadata import
