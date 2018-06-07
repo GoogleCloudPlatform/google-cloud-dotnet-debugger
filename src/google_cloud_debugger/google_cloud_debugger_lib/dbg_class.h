@@ -116,6 +116,9 @@ class DbgClass : public DbgReferenceObject {
   // Sets the class token.
   void SetClassToken(const mdTypeDef &class_token) { class_token_ = class_token; };
 
+  // Gets the class token.
+  mdTypeDef GetClassToken() { return class_token_; }
+
   // Sets whether the class members has been processed or not.
   void SetProcessedClassMembers(bool processed) { processed_ = processed; }
 

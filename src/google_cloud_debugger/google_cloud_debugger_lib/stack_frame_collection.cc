@@ -146,6 +146,45 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   return S_OK;
 }
 
+HRESULT StackFrameCollection::PopulateAsyncStackFrameInfo(
+    DbgStackFrame *async_frame, ICorDebugStackWalk *stack_walk,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files) {
+  HRESULT hr;
+  // To get to the stack frame with the actual method information,
+  // we have to step through the stack twice.
+  for (int i = 0; i < 2; ++i) {
+    hr = stack_walk->Next();
+    if (FAILED(hr)) {
+      cerr << "Failed to get stack frame's information.";
+      return hr;
+    }
+  }
+
+  CComPtr<ICorDebugFrame> real_method_frame;
+  hr = stack_walk->GetFrame(&real_method_frame);
+  if (hr == S_FALSE) {
+    cerr << "Failed to get walk the stack after async method.";
+    return E_FAIL;
+  }
+
+  std::shared_ptr<DbgStackFrame> real_method_stack_frame(
+      new DbgStackFrame(debug_helper_, obj_factory_));
+  hr = PopulateDbgStackFrameHelper(parsed_pdb_files, real_method_frame,
+                                   real_method_stack_frame.get(), false);
+  if (FAILED(hr)) {
+    cerr << "Failed to get stack frame's information.";
+    return hr;
+  }
+
+  async_frame->SetClass(real_method_stack_frame->GetClass());
+  async_frame->SetModuleName(real_method_stack_frame->GetModule());
+  async_frame->SetMethod(real_method_stack_frame->GetMethod());
+  async_frame->SetClassToken(real_method_stack_frame->GetClassToken());
+  return S_OK;
+}
+
 HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
     mdMethodDef target_function_token, DbgStackFrame *dbg_stack_frame,
     ICorDebugILFrame *il_frame, IMetaDataImport *metadata_import,
@@ -312,6 +351,7 @@ HRESULT StackFrameCollection::PopulateModuleClassAndFunctionName(
   // method and class name of this frame.
   dbg_stack_frame->SetMethod(method_name);
   dbg_stack_frame->SetClass(class_name);
+  dbg_stack_frame->SetClassToken(type_def);
   dbg_stack_frame->SetFuncVirtualAddr(target_method_virtual_addr);
 
   return S_OK;
@@ -322,7 +362,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     const std::vector<
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &parsed_pdb_files) {
-  if (stack_walked) {
+  if (stack_walked_) {
     return S_OK;
   }
 
@@ -343,21 +383,25 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     if (first_stack_->IsProcessedIlFrame()) {
       ++il_frame_parsed_so_far;
     }
-    hr = debug_stack_walk->Next();
+
+    int stack_to_skip = first_stack_->IsAsyncMethod() ? 3 : 1;
+    for (int i = 0; i < 3; ++i) {
+      hr = debug_stack_walk->Next();
+    }
   }
 
   // Walks through the stack and populates stack_frames_ vector.
   while (SUCCEEDED(hr)) {
     // Don't parse too many stack frames.
     if (frame_parsed_so_far >= kMaximumStackFrames) {
-      stack_walked = true;
+      stack_walked_ = true;
       return S_OK;
     }
 
     hr = debug_stack_walk->GetFrame(&frame);
     // No more stacks.
     if (hr == S_FALSE) {
-      stack_walked = true;
+      stack_walked_ = true;
       return S_OK;
     }
 
@@ -384,6 +428,18 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
       ++il_frame_parsed_so_far;
     }
 
+    // If this is an async frame, the method name would be something like
+    // <RealMethodName>d__18.MoveNext. To get the real method name and
+    // class token, we need to move down the stack twice.
+    if (stack_frame->IsAsyncMethod()) {
+      hr = PopulateAsyncStackFrameInfo(
+          stack_frame.get(), debug_stack_walk, parsed_pdb_files);
+      if (FAILED(hr)) {
+        cerr << "Failed to get async stack frame's information.";
+        return hr;
+      }
+    }
+
     stack_frames_.push_back(std::move(stack_frame));
     hr = debug_stack_walk->Next();
   }
@@ -392,7 +448,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     cerr << "Failed to get stack frame's information.";
   }
 
-  stack_walked = true;
+  stack_walked_ = true;
   return hr;
 }
 
@@ -430,6 +486,25 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     std::cerr << "Conditional breakpoint and expressions are not "
               << "supported on non-IL frame.";
     return E_NOTIMPL;
+  }
+
+  // If this is an async frame, the method name would be something like
+  // <RealMethodName>d__18.MoveNext. To get the real method name and
+  // class token, we need to move down the stack twice.
+  if (first_stack_->IsAsyncMethod()) {
+    CComPtr<ICorDebugStackWalk> debug_stack_walk;
+    HRESULT hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
+    if (FAILED(hr)) {
+      cerr << "Failed to create stack walk.";
+      return hr;
+    }
+
+    hr = PopulateAsyncStackFrameInfo(
+        first_stack_.get(), debug_stack_walk, parsed_pdb_files);
+    if (FAILED(hr)) {
+      cerr << "Failed to get async stack frame's information.";
+      return hr;
+    }
   }
 
   return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,

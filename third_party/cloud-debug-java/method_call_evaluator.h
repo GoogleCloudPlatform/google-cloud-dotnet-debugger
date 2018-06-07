@@ -86,6 +86,9 @@ class MethodCallEvaluator : public ExpressionEvaluator {
   // Method name (whether it's an instance method or a static method).
   const std::string method_name_;
 
+  // "This" object.
+  std::shared_ptr<DbgObject> this_obj_;
+
   // Source object on which the instance method is invoked. Ignored if the
   // call turns out to be to a static method.
   std::unique_ptr<ExpressionEvaluator> instance_source_;

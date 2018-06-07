@@ -129,8 +129,14 @@ class IDbgStackFrame {
   virtual HRESULT GetCurrentClassTypeParameters(
       std::vector<CComPtr<ICorDebugType>> *debug_types) = 0;
 
+  // Returns the "this" object of this frame.
+  virtual std::shared_ptr<DbgObject> GetThisObject() = 0;
+
   // Returns true if the method this frame is in is a static method.
   virtual bool IsStaticMethod() = 0;
+
+  // Returns true if the method this frame is in is an async method.
+  virtual bool IsAsyncMethod() = 0;
 };
 
 }  //  namespace google_cloud_debugger

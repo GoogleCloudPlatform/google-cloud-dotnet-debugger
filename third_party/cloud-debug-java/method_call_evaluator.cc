@@ -88,8 +88,11 @@ HRESULT MethodCallEvaluator::Compile(IDbgStackFrame *stack_frame,
         return hr;
       }
 
-      if (stack_frame->IsStaticMethod() && !method_info_.is_static) {
-        return E_FAIL;
+      if (!method_info_.is_static) {
+        if (stack_frame->IsStaticMethod()) {
+          return E_FAIL;
+        }
+        this_obj_ = stack_frame->GetThisObject();
       }
     }
   }
@@ -324,15 +327,19 @@ HRESULT MethodCallEvaluator::GetInvokingObject(
     return S_OK;
   }
 
-  CComPtr<ICorDebugILFrame> debug_frame;
-  hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
+  CComPtr<ICorDebugEval> debug_eval;
+  hr = eval_coordinator->CreateEval(&debug_eval);
   if (FAILED(hr)) {
-    std::cerr << "Failed to get the active debug frame.";
+    std::cerr << "Failed to create ICorDebugEval.";
     return hr;
   }
 
-  // Returns this object.
-  return debug_frame->GetArgument(0, invoking_object);
+  if (!this_obj_) {
+    std::cerr << "Cannot get 'this' object.";
+    return E_FAIL;
+  }
+
+  return this_obj_->GetICorDebugValue(invoking_object, debug_eval);
 }
 
 }  // namespace google_cloud_debugger
