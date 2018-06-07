@@ -29,6 +29,15 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         // Class variable for testing.
         public String PublicString = "you can read me!";
 
+        // Constant int variable for testing.
+        public const int ConstantInt = 10;
+
+        // Constant string variable for testing.
+        public const string ConstantString = "ConstantStringField";
+
+        // Constant enum variable for testing.
+        public const DayOfWeek Tuesday = DayOfWeek.Tuesday;
+
         public string Hello()
         {
             return "Hello, World!";
@@ -74,6 +83,14 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
         {
             int testInt = 0;
             string testString = message;
+        }
+
+        public void TestConstant()
+        {
+            const int constInt = 5;
+            const double constDouble = 3.5;
+            const string constString = "ConstString";
+            const DayOfWeek constEnum = DayOfWeek.Monday;
         }
     }
 }

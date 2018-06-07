@@ -35,6 +35,7 @@ using google_cloud_debugger::DbgObjectFactory;
 using google_cloud_debugger::DbgStackFrame;
 using google_cloud_debugger::ICorDebugHelper;
 using google_cloud_debugger::IDbgObjectFactory;
+using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::string;
 using std::vector;
@@ -243,6 +244,8 @@ class DbgStackFrameTest : public ::testing::Test {
   // LocalVariableInfo vector that is used to extract local variables' names.
   std::vector<LocalVariableInfo> local_variables_info_;
 
+  std::vector<LocalConstantInfo> local_constants_info_;
+
   // ICorDebugHelper used for DbgStackFrame constructor.
   std::shared_ptr<ICorDebugHelper> debug_helper_;
 
@@ -286,8 +289,9 @@ TEST_F(DbgStackFrameTest, TestInitialize) {
   SetUpMethodArguments();
   SetUpMetaDataImport();
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 }
 
@@ -296,12 +300,14 @@ TEST_F(DbgStackFrameTest, TestInitialize) {
 TEST_F(DbgStackFrameTest, TestInitializeNullError) {
   DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
-  HRESULT hr = stack_frame.Initialize(nullptr, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      nullptr, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_EQ(hr, E_INVALIDARG);
 
-  hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                              method_token_, nullptr);
+  hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, nullptr);
   EXPECT_EQ(hr, E_INVALIDARG);
 }
 
@@ -315,8 +321,9 @@ TEST_F(DbgStackFrameTest, TestInitializeEnumerateLocalVariableError) {
   EXPECT_CALL(frame_mock_, EnumerateLocalVariables(_))
       .WillRepeatedly(Return(CORDBG_E_ENC_METHOD_NO_LOCAL_SIG));
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_EQ(hr, CORDBG_E_ENC_METHOD_NO_LOCAL_SIG);
 }
 
@@ -328,8 +335,9 @@ TEST_F(DbgStackFrameTest, TestInitializeEnumerateArgumentsError) {
   EXPECT_CALL(frame_mock_, EnumerateArguments(_))
       .WillRepeatedly(Return(CORDBG_E_BAD_THREAD_STATE));
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_EQ(hr, CORDBG_E_BAD_THREAD_STATE);
 }
 
@@ -342,8 +350,9 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrame) {
   SetUpMethodArguments();
   SetUpMetaDataImport();
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 2000,
@@ -379,8 +388,9 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameRestricted) {
   SetUpMethodArguments();
   SetUpMetaDataImport();
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 100,
@@ -419,8 +429,9 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameSparse) {
   // for the second varaible.
   local_variables_info_.pop_back();
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   hr = stack_frame.PopulateStackFrame(&proto_stack_frame, 2000,
@@ -457,8 +468,9 @@ TEST_F(DbgStackFrameTest, TestPopulateStackFrameError) {
   SetUpMethodArguments();
   SetUpMetaDataImport();
 
-  HRESULT hr = stack_frame.Initialize(&frame_mock_, local_variables_info_,
-                                      method_token_, &metadata_import_);
+  HRESULT hr = stack_frame.Initialize(
+      &frame_mock_, local_variables_info_, local_constants_info_,
+      method_token_, &metadata_import_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   EXPECT_EQ(stack_frame.PopulateStackFrame(nullptr, 2000, &eval_coordinator_),
