@@ -819,11 +819,11 @@ HRESULT CorDebugHelper::GetTypeNameFromMdToken(
   mdToken base_token;
   if (token_type == CorTokenType::mdtTypeDef) {
     return GetTypeNameFromMdTypeDef(
-        base_token, metadata_import, type_name,
+        type_token, metadata_import, type_name,
         &base_token, err_stream);
   } else if (token_type == CorTokenType::mdtTypeRef) {
     return GetTypeNameFromMdTypeRef(
-        base_token, metadata_import, type_name, err_stream);
+        type_token, metadata_import, type_name, err_stream);
   }
 
   *err_stream << "Getting type name from other type of mdToken "
@@ -1104,6 +1104,81 @@ HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
 
   return EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum, ICorDebugType>(
       type_enum, generic_types);
+}
+
+HRESULT CorDebugHelper::ProcessConstantSigBlob(
+    const std::vector<uint8_t> &signature_blob,
+    CorElementType *cor_type,
+    UVCP_CONSTANT *constant_value,
+    ULONG *value_len,
+    std::vector<uint8_t> *remaining_bytes) {
+  static std::map<CorElementType, uint32_t> cor_type_to_bytes_size{
+      {CorElementType::ELEMENT_TYPE_BOOLEAN, 1},
+      {CorElementType::ELEMENT_TYPE_I1, 1},
+      {CorElementType::ELEMENT_TYPE_CHAR, 1},
+      {CorElementType::ELEMENT_TYPE_U1, 1},
+      {CorElementType::ELEMENT_TYPE_I2, 2},
+      {CorElementType::ELEMENT_TYPE_U2, 2},
+      {CorElementType::ELEMENT_TYPE_I4, 4},
+      {CorElementType::ELEMENT_TYPE_U4, 4},
+      {CorElementType::ELEMENT_TYPE_I8, 8},
+      {CorElementType::ELEMENT_TYPE_U8, 8},
+      {CorElementType::ELEMENT_TYPE_R4, 4},
+      {CorElementType::ELEMENT_TYPE_R8, 8},
+      {CorElementType::ELEMENT_TYPE_I, 1},
+      {CorElementType::ELEMENT_TYPE_U, 1},
+      {CorElementType::ELEMENT_TYPE_STRING, 0}};
+
+  if (signature_blob.empty()) {
+    cerr << "Signature blob of constant is empty.";
+    return E_INVALIDARG;
+  }
+
+  // First byte is the type of the signature.
+  *cor_type = (CorElementType)signature_blob[0];
+
+  // Next few bytes are the constant value. We have to check that there are
+  // enough bytes.
+  if (cor_type_to_bytes_size.find(*cor_type) ==
+      cor_type_to_bytes_size.end()) {
+    cerr << "Cannot process type of constant.";
+    return E_FAIL;
+  }
+
+  // Check that there are enough bytes in the signature to read
+  // the constant value.
+  uint32_t const_size = cor_type_to_bytes_size[*cor_type];
+  if (signature_blob.size() <= const_size) {
+    cerr << "Not enough bytes to retrieve constant value.";
+    return E_FAIL;
+  }
+
+  // If this is a string, we need the data in the signature to be
+  // divisible by sizeof(WCHAR) and get the length of the string.
+  if (*cor_type == CorElementType::ELEMENT_TYPE_STRING) {
+    if ((signature_blob.size() - 1) % sizeof(WCHAR) != 0) {
+      cerr << "Not enough bytes to read string value for constant.";
+      return E_FAIL;
+    }
+    *value_len = (signature_blob.size() - 1) / sizeof(WCHAR);
+  }
+
+  // The first byte of the blob is the CorElementType and the next
+  // few bytes will be the constant_value.
+  *constant_value = (UVCP_CONSTANT)(signature_blob.data() + 1);
+
+  // If there are bytes left, and the constant is not a string,
+  // then this constant is an Enum and the remaining bytes are the metadata
+  // token for the Enum class.
+  uint32_t bytes_left = signature_blob.size() - 1 - const_size;
+  if (bytes_left == 0 ||
+      *cor_type == CorElementType::ELEMENT_TYPE_STRING) {
+    return S_OK;
+  }
+
+  remaining_bytes->assign(signature_blob.end() - bytes_left,
+                          signature_blob.end());
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger

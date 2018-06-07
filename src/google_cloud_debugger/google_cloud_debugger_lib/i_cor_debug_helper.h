@@ -226,6 +226,18 @@ class ICorDebugHelper {
       IMetaDataImport *metadata_import, std::string *type_name,
       mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) = 0;
 
+  // Given a signature blob for a constant, parses the blob
+  // and returns the constant type and value.
+  // If the constant is a string, value_len returns the length of the string.
+  // If the constant is an enum, remaining_bytes will contain the enum
+  // class metadata token.
+  virtual HRESULT ProcessConstantSigBlob(
+      const std::vector<uint8_t> &signature_blob,
+      CorElementType *cor_type,
+      UVCP_CONSTANT *constant_value,
+      ULONG *value_len,
+      std::vector<uint8_t> *remaining_bytes) = 0;
+
   // Given a metadata signature of an enum field, gets the name, metadata
   // token and metadata import of the enum class.
   virtual HRESULT GetEnumInfoFromFieldMetaDataSignature(

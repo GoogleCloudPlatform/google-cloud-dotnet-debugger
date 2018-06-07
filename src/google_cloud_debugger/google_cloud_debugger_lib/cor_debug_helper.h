@@ -235,6 +235,18 @@ class CorDebugHelper : public ICorDebugHelper {
       std::vector<CComPtr<ICorDebugType>> *generic_types,
       std::ostream *err_stream) override;
 
+  // Given a signature blob for a constant, parses the blob
+  // and returns the constant type and value.
+  // If the constant is a string, value_len returns the length of the string.
+  // If the constant is an enum, remaining_bytes will contain the enum
+  // class metadata token.
+  virtual HRESULT ProcessConstantSigBlob(
+      const std::vector<uint8_t> &signature_blob,
+      CorElementType *cor_type,
+      UVCP_CONSTANT *constant_value,
+      ULONG *value_len,
+      std::vector<uint8_t> *remaining_bytes) override;
+
  private:
   // Given a PCCOR_SIGNATURE signature, parses the next byte A.
   // Then, parses and skips the next A bytes.
