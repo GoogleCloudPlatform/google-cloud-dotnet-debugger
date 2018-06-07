@@ -119,7 +119,11 @@ HRESULT IdentifierEvaluator::Evaluate(
       return hr;
     }
 
-    this_object_->GetICorDebugValue(&invoking_object, debug_eval);
+    hr = this_object_->GetICorDebugValue(&invoking_object, debug_eval);
+    if (FAILED(hr)) {
+      *err_stream << "Failed to get 'this' object.";
+      return hr;
+    }
   }
 
   if (!eval_coordinator->MethodEvaluation()) {

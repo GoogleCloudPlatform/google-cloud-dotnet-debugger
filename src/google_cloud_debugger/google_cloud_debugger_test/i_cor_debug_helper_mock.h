@@ -137,6 +137,10 @@ class ICorDebugHelperMock : public google_cloud_debugger::ICorDebugHelper {
               std::vector<google_cloud_debugger::CComPtr<ICorDebugType>>
                   *generic_types,
               std::ostream *err_stream));
+  MOCK_METHOD2(
+      CheckAsyncStateObj,
+      HRESULT(mdTypeDef class_token,
+              IMetaDataImport *metadata_import));
 };
 
 }  // namespace google_cloud_debugger_test
