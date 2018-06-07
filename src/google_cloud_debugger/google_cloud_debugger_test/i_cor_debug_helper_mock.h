@@ -137,6 +137,38 @@ class ICorDebugHelperMock : public google_cloud_debugger::ICorDebugHelper {
               std::vector<google_cloud_debugger::CComPtr<ICorDebugType>>
                   *generic_types,
               std::ostream *err_stream));
+  MOCK_METHOD3(
+      GetAppDomainFromICorDebugModule,
+      HRESULT(ICorDebugModule *debug_module,
+              ICorDebugAppDomain **app_domain,
+              std::ostream *err_stream));
+  MOCK_METHOD4(
+      GetTypeNameFromMdToken,
+      HRESULT(mdToken type_token,
+              IMetaDataImport *metadata_import,
+              std::string *type_name,
+              std::ostream *err_stream));
+  MOCK_METHOD6(
+      GetTypeInfoFromEncodedToken,
+      HRESULT(ULONG encoded_token, ICorDebugModule *debug_module,
+              IMetaDataImport *metadata_import, std::string *type_name,
+              mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import));
+  MOCK_METHOD5(
+      ProcessConstantSigBlob,
+      HRESULT(const std::vector<uint8_t> &signature_blob,
+              CorElementType *cor_type,
+              UVCP_CONSTANT *constant_value,
+              ULONG *value_len,
+              std::vector<uint8_t> *remaining_bytes));
+  MOCK_METHOD7(
+      GetEnumInfoFromFieldMetaDataSignature,
+      HRESULT(PCCOR_SIGNATURE metadata_signature,
+              ULONG metadata_signature_len,
+              ICorDebugModule *debug_module,
+              IMetaDataImport *metadata_import,
+              std::string *enum_name,
+              mdTypeDef *enum_token,
+              IMetaDataImport **resolved_metadata_import));
 };
 
 }  // namespace google_cloud_debugger_test

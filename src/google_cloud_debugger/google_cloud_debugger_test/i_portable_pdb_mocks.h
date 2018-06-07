@@ -75,6 +75,8 @@ class IPortablePdbFileMock
   MOCK_CONST_METHOD1(GetDebugModule, HRESULT(ICorDebugModule **debug_module));
   MOCK_CONST_METHOD1(GetMetaDataImport,
                      HRESULT(IMetaDataImport **metadata_import));
+  MOCK_CONST_METHOD2(GetBlobBytes,
+                     bool(std::uint32_t index, std::vector<uint8_t> *result));
 };
 
 // Mock for IDocumentIndex

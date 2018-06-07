@@ -27,11 +27,12 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
     public class TestApplication : IDisposable
     {
         public static readonly string MainClass = "MainController.cs";
-        public static readonly int HelloLine = 33;
-        public static readonly int EchoTopLine = 38;
-        public static readonly int EchoBottomLine = 49;
-        public static readonly int PidLine = 59;
-        public static readonly int LoopMiddle = 67;
+        public static readonly int HelloLine = 42;
+        public static readonly int EchoTopLine = 47;
+        public static readonly int EchoBottomLine = 58;
+        public static readonly int PidLine = 68;
+        public static readonly int LoopMiddle = 76;
+        public static readonly int ConstantBottomLine = 87;
 
         /// <summary>Get the echo url with 'i' appended.</summary>
         public static string GetEchoUrl(TestApplication app, int i) => $"{app.AppUrlEcho}/{i}";
@@ -53,6 +54,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
         /// <summary>The url to the middle of the loop from the test application.</summary>
         public string AppUrlLoop => $"{AppUrlBase}/Main/Loop";
+
+        /// <summary>The url to the constant test function.</summary>
+        public string AppConstant => $"{AppUrlBase}/Main/TestConstant";
 
         /// <summary>The module of the a debuggee.</summary>
         public readonly string Module = nameof(DebuggerTestBase);

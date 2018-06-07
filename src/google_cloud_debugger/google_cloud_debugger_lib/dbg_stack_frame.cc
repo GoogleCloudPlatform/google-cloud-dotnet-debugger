@@ -224,17 +224,17 @@ HRESULT DbgStackFrame::ProcessLocalConstants(
 
     ULONG64 const_numerical_value = 0;
     std::unique_ptr<DbgObject> const_obj;
+    hr = obj_factory_->CreateDbgObjectFromLiteralConst(
+        const_type, const_value, value_len, &const_numerical_value, &const_obj);
+    if (FAILED(hr)) {
+      cerr << "Failed to create constant " << constant_info.name;
+      continue;
+    }
+
     // If there are no bytes left or cor type is ELEMENT_TYPE_STRING,
     // then this constant is not an enum.
     if (remaining_buffer.size() == 0
       || const_type == CorElementType::ELEMENT_TYPE_STRING) {
-      hr = obj_factory_->CreateDbgObjectFromLiteralConst(
-          const_type, const_value, value_len, &const_numerical_value, &const_obj);
-      if (FAILED(hr)) {
-        cerr << "Failed to create constant " << constant_info.name;
-        continue;
-      }
-
       variables_.push_back(
           std::make_tuple(constant_info.name, std::move(const_obj)));
       continue;

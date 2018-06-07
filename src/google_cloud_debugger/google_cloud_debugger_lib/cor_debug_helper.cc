@@ -123,6 +123,10 @@ HRESULT CorDebugHelper::GetModuleNameFromICorDebugModule(
 HRESULT CorDebugHelper::GetAppDomainFromICorDebugModule(
     ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
     std::ostream *err_stream) {
+  if (!debug_module) {
+    return E_INVALIDARG;
+  }
+
   CComPtr<ICorDebugAssembly> debug_assembly;
   HRESULT hr = debug_module->GetAssembly(&debug_assembly);
   if (FAILED(hr)) {
@@ -1032,10 +1036,6 @@ HRESULT CorDebugHelper::GetTypeInfoFromEncodedToken(
     *type_def = decoded_token;
     return GetTypeNameFromMdTypeDef(decoded_token, metadata_import, type_name,
                                     &base_token, &std::cerr);
-  }
-
-  if (!debug_module) {
-    return E_INVALIDARG;
   }
 
   // We have to get all the assemblies in order to get
