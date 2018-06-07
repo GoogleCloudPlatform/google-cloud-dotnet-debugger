@@ -29,6 +29,7 @@ namespace google_cloud_debugger {
 
 // TODO(quoct): Add error stream into the tuple.
 typedef std::tuple<std::string, std::shared_ptr<DbgObject>> VariableTuple;
+class IDbgClassMember;
 
 // This class is represents a stack frame at a breakpoint.
 // It is used to populate and print out variables and method arguments
@@ -246,6 +247,25 @@ class DbgStackFrame : public IDbgStackFrame {
                                  mdMethodDef method_token,
                                  IMetaDataImport *metadata_import);
 
+  // Checks whether the method this frame is in is an async method.
+  // If so, then processes the local variables and method arguments
+  // for this method. Otherwise, returns S_FALSE if this frame
+  // is not in an async method.
+  HRESULT ProcessAsyncMethod(ICorDebugValue *async_state_obj,
+                             IMetaDataImport *metadata_import);
+
+  // Given the fields of the async state machine this frame is in,
+  // populates local variables and method arguments of this stack frame.
+  // Some of the fields of the async state machine represents local
+  // variables and method arguments.
+  // If the field doesn't start with "<", then it is just a method argument.
+  // If the field is <>4__this, then the field represents "this" object.
+  // If the field is <name>5__1, <name>5__2, etc., then it represents
+  // a local variable.
+  // Note that fields do not contain constant local variable..
+  void ProcessAsyncVariablesAndMethodArgs(
+      const std::vector<std::shared_ptr<IDbgClassMember>> &async_fields);
+
   // Populates the type_def_dict_ and type_ref_dict_ with all
   // the types loaded in this frame.
   HRESULT PopulateTypeDict();
@@ -303,6 +323,9 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // True if this frame is a static frame.
   bool is_static_method_ = false;
+
+  // True if this frame is in an async method.
+  bool is_async_method_ = false;
 
   // Returns true if this is an IL frame that has been processed.
   // This is set after a successful call to Initialize.

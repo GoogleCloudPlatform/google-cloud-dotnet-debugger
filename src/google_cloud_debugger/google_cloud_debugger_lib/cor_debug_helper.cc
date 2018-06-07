@@ -144,6 +144,22 @@ HRESULT CorDebugHelper::GetICorDebugType(ICorDebugValue *debug_value,
   return hr;
 }
 
+HRESULT CorDebugHelper::CheckAsyncStateObj(
+    mdTypeDef class_token,
+    IMetaDataImport *metadata_import) {
+  // If this is a state machine, it will have a field <>1__state.
+  const static std::string state_field_name = "<>1__state";
+  mdFieldDef field_def;
+  std::vector<WCHAR> wchar_state_field_name = ConvertStringToWCharPtr(state_field_name);
+  HRESULT hr = metadata_import->FindField(class_token, wchar_state_field_name.data(),
+                                          nullptr, 0, &field_def);
+  if (FAILED(hr)) {
+    return S_FALSE;
+  }
+
+  return S_OK;
+}
+
 HRESULT CorDebugHelper::Dereference(ICorDebugValue *debug_value,
                                     ICorDebugValue **dereferenced_value,
                                     BOOL *is_null, ostream *err_stream) {

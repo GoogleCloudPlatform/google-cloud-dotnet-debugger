@@ -127,6 +127,81 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
+        public async Task BreakpointHit_Async()
+        {
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass, TestApplication.AsyncBottomLine);
+
+                string testMessage = "testmessage";
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync($"{app.AppUrlAsync}/{testMessage}");
+                }
+
+                var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Check basic breakpoint values.
+                Assert.True(newBp.IsFinalState);
+                Assert.Equal(DebuggerBreakpoint.Types.Action.Capture, newBp.Action);
+                Assert.Equal(breakpoint.CreateTime, newBp.CreateTime);
+                Assert.Empty(newBp.Expressions);
+                Assert.Empty(newBp.Condition);
+                Assert.True(newBp.FinalTime.ToDateTime() > newBp.CreateTime.ToDateTime());
+
+                // Only check the first one as it's the only one with information we care about. 
+                var stackframe = newBp.StackFrames[0];
+
+                // Check the function is async.
+                // TODO(quoct): Currently, the function name is the name of the state machine
+                // so this condition will be false. We have to fix this in the debugger side.
+                // Assert.Contains($"{typeof(TestApp.MainController).ToString()}.Async", stackframe.Function);
+
+                // Check the location is accurate.
+                var location = stackframe.Location;
+                Assert.Equal(TestApplication.AsyncBottomLine, location.Line);
+                Assert.Contains("src/Google.Cloud.Diagnostics.Debug/Google.Cloud.Diagnostics.Debug.TestApp/MainController.cs", location.Path);
+
+                // Two arguments, the param 'message' and 'this'.
+                var arguments = stackframe.Arguments;
+                Assert.Equal(2, arguments.Count);
+
+                // Check 'this' arg for the class values.
+                var thisArg = arguments.Where(l => l.Name == "this").Single();
+                Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
+                Assert.Equal(2, thisArg.Members.Count);
+
+                var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
+                Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);
+
+                var publicString = thisArg.Members.Where(m => m.Name == "PublicString").Single();
+                Assert.Equal(typeof(System.String).ToString(), publicString.Type);
+                Assert.Equal(new TestApp.MainController().PublicString, publicString.Value);
+
+                // Check 'message' arg.
+                var messageArg = arguments.Where(l => l.Name == "message").Single();
+                Assert.Equal(typeof(System.String).ToString(), messageArg.Type);
+                Assert.Equal(testMessage, messageArg.Value);
+
+                // There should be 2 local variables.
+                var locals = stackframe.Locals;
+                Assert.Equal(2, locals.Count);
+
+                // One of the variable should be testInt.
+                var testIntLocal = locals.Where(m => m.Name == "testInt").Single();
+                Assert.Equal(typeof(System.Int32).ToString(), testIntLocal.Type);
+                Assert.Equal("0", testIntLocal.Value.ToString());
+
+                // One of the local variables will be testString with the same value as testMessage.
+                var testStringLocal = locals.Where(m => m.Name == "testString").Single();
+                Assert.Equal(typeof(System.String).ToString(), testStringLocal.Type);
+                Assert.Equal(testMessage, testStringLocal.Value);
+            }
+        }
+
+        [Fact]
         public async Task BreakpointHit_Condition()
         {
             int targetIValue = 10;

@@ -21,6 +21,7 @@
 #include "compiler_helpers.h"
 #include "constants.h"
 #include "dbg_breakpoint.h"
+#include "dbg_class.h"
 #include "dbg_class_property.h"
 #include "dbg_reference_object.h"
 #include "debugger_callback.h"
@@ -93,21 +94,7 @@ HRESULT DbgStackFrame::Initialize(
 
   is_static_method_ = IsMdStatic(method_flag);
 
-  CComPtr<ICorDebugValueEnum> local_enum;
   CComPtr<ICorDebugValueEnum> method_arg_enum;
-
-  hr = il_frame->EnumerateLocalVariables(&local_enum);
-  if (FAILED(hr)) {
-    cerr << "Failed to get local variable.";
-    return hr;
-  }
-
-  // The populate methods will write errors.
-  hr = ProcessLocalVariables(local_enum, variable_infos);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
   // Even if we are not in a method (no arguments), this will return S_OK.
   hr = il_frame->EnumerateArguments(&method_arg_enum);
   if (FAILED(hr)) {
@@ -123,6 +110,21 @@ HRESULT DbgStackFrame::Initialize(
   hr = InitializeClassGenericTypeParameters(metadata_import, il_frame);
   if (FAILED(hr)) {
     return hr;
+  }
+
+  if (!is_async_method_) {
+    CComPtr<ICorDebugValueEnum> local_enum;
+    hr = il_frame->EnumerateLocalVariables(&local_enum);
+    if (FAILED(hr)) {
+      cerr << "Failed to get local variable.";
+      return hr;
+    }
+
+    // The populate methods will write errors.
+    hr = ProcessLocalVariables(local_enum, variable_infos);
+    if (FAILED(hr)) {
+      return hr;
+    }
   }
 
   is_processed_il_frame_ = true;
@@ -220,6 +222,14 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   // Add "this" if method is not static.
   if (!is_static_method_) {
     method_argument_names.push_back("this");
+
+    // If we are in an async method, ProcessAsyncMethod will populate
+    // local variables and method arguments for us. Otherwise, S_FALSE
+    // wlil be returned and we proceed to process method arguments as normal.
+    hr = ProcessAsyncMethod(method_arg_values[0], metadata_import);
+    if (hr != S_FALSE) {
+      return hr;
+    }
   }
 
   vector<mdParamDef> method_args(100, 0);
@@ -285,6 +295,83 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
   return S_OK;
 }
 
+HRESULT DbgStackFrame::ProcessAsyncMethod(ICorDebugValue *async_state_obj,
+                                          IMetaDataImport *metadata_import) {
+  CComPtr<ICorDebugType> debug_type;
+  HRESULT hr =
+      debug_helper_->CheckAsyncStateObj(class_token_, metadata_import);
+  if (FAILED(hr)) {
+    cerr << "Failed to check whether method is async or not.";
+    return hr;
+  }
+
+  if (hr == S_FALSE) {
+    return hr;
+  }
+
+  // We are inside an async method. We create a DbgObject that represents
+  // the state machine. Within this object, there are fields that represent
+  // local variable and method arguments. We will populate
+  // variables_ and method_arguments_ with these fields.
+  is_async_method_ = true;
+  std::unique_ptr<DbgObject> state_machine_obj;
+  hr = obj_factory_->CreateDbgObject(async_state_obj, object_depth_ + 1,
+                                     &state_machine_obj, &std::cerr);
+  if (FAILED(hr)) {
+    cerr << "Failed to create state machine object for async method.";
+    return hr;
+  }
+
+  DbgClass *class_obj = dynamic_cast<DbgClass *>(state_machine_obj.get());
+  if (!class_obj) {
+    cerr << "Failed to retrieve state machine object class.";
+    return hr;
+  }
+
+  hr = class_obj->ProcessClassMembers();
+  if (FAILED(hr)) {
+    cerr << "Failed to process async state machine members.";
+    return hr;
+  }
+
+  ProcessAsyncVariablesAndMethodArgs(class_obj->GetFields());
+  return S_OK;
+}
+
+void DbgStackFrame::ProcessAsyncVariablesAndMethodArgs(
+    const std::vector<std::shared_ptr<IDbgClassMember>> &async_fields) {
+  // This is the name of the field that represents "this" object.
+  static const std::string async_this = "<>4__this";
+
+  // Variable will be stored as field <name>5__1, <name>5__2, etc.
+  static const std::string async_variable_name = ">5__";
+
+  for (auto &class_field : async_fields) {
+    std::string field_name = class_field->GetMemberName();
+    if (field_name[0] != '<') {
+      method_arguments_.push_back(std::make_tuple(
+          class_field->GetMemberName(), class_field->GetMemberValue()));
+      continue;
+    }
+
+    if (field_name.compare(async_this) == 0) {
+      method_arguments_.push_back(
+          std::make_tuple("this", class_field->GetMemberValue()));
+      is_static_method_ = false;
+      continue;
+    }
+
+    size_t end_bracket_position = field_name.find(async_variable_name);
+    // Extracts out the field name.
+    if (end_bracket_position != string::npos) {
+      std::string variable_name =
+          field_name.substr(1, end_bracket_position - 1);
+      variables_.push_back(
+          std::make_tuple(variable_name, class_field->GetMemberValue()));
+    }
+  }
+}
+
 HRESULT DbgStackFrame::GetDebugFunctionFromClass(
     IMetaDataImport *metadata_import, ICorDebugModule *debug_module,
     const mdTypeDef &class_token, MethodInfo *method_info,
@@ -297,8 +384,7 @@ HRESULT DbgStackFrame::GetDebugFunctionFromClass(
   // First, finds the metadata token of the method.
   mdMethodDef method_def = 0;
   HRESULT hr = method_info->PopulateMethodDefFromNameAndArguments(
-      metadata_import, class_token, this,
-      generic_types, debug_helper_.get());
+      metadata_import, class_token, this, generic_types, debug_helper_.get());
   if (FAILED(hr) || hr == S_FALSE) {
     return hr;
   }
@@ -315,10 +401,9 @@ HRESULT DbgStackFrame::GetDebugFunctionFromCurrentClass(
     return hr;
   }
 
-  return GetDebugFunctionFromClass(metadata_import, debug_module_,
-                                   class_token_, method_info,
-                                   GetClassGenericTypeSignatureParameters(),
-                                   debug_function);
+  return GetDebugFunctionFromClass(
+      metadata_import, debug_module_, class_token_, method_info,
+      GetClassGenericTypeSignatureParameters(), debug_function);
 }
 
 HRESULT DbgStackFrame::GetCurrentClassTypeParameters(
@@ -753,8 +838,7 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
       // for the instantiated type using class_generic_types_.
       CComPtr<ICorDebugType> class_type;
       hr = debug_helper_->GetInstantiatedClassType(
-          debug_class, &class_generic_types_,
-          &class_type, err_stream);
+          debug_class, &class_generic_types_, &class_type, err_stream);
       if (FAILED(hr)) {
         *err_stream << "Failed to get instantiated type from ICorDebugClass.";
         return hr;
