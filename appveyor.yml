@@ -22,7 +22,7 @@ configuration: Debug
 build_script:
   - git submodule update --init --recursive
   - build-deps.cmd %APPVEYOR_BUILD_FOLDER%\ %CONFIGURATION% %PLATFORM%
-  - bash build.sh
+  - build.cmd %CONFIGURATION%
 
 test_script:
   - bash run_unit_tests.sh
