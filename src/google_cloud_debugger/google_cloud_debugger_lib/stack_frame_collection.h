@@ -54,7 +54,7 @@ class StackFrameCollection : public IStackFrameCollection {
   std::shared_ptr<IDbgObjectFactory> obj_factory_;
 
   // Populates the stack frame information for an async frame.
-  // We need to this because the async frame does not have information
+  // We need to do this because the async frame does not have information
   // like method name, class name and class token as it is a
   // compile generated method. So we have to walk the frame twice
   // and get to a frame that has this information.

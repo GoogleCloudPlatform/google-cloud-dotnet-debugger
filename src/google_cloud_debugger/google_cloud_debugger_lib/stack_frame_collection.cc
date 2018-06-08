@@ -165,7 +165,7 @@ HRESULT StackFrameCollection::PopulateAsyncStackFrameInfo(
   CComPtr<ICorDebugFrame> real_method_frame;
   hr = stack_walk->GetFrame(&real_method_frame);
   if (hr == S_FALSE) {
-    cerr << "Failed to get walk the stack after async method.";
+    cerr << "Failed to get the stack after async method.";
     return E_FAIL;
   }
 
@@ -385,7 +385,7 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     }
 
     int stack_to_skip = first_stack_->IsAsyncMethod() ? 3 : 1;
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < stack_to_skip; ++i) {
       hr = debug_stack_walk->Next();
     }
   }
@@ -429,8 +429,8 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     }
 
     // If this is an async frame, the method name would be something like
-    // <RealMethodName>d__18.MoveNext. To get the real method name and
-    // class token, we need to move down the stack twice.
+    // <RealMethodName>d__18.MoveNext. PopulateAsyncStackFrameInfo
+    // will populate stack_frame with the correct method name and class token.
     if (stack_frame->IsAsyncMethod()) {
       hr = PopulateAsyncStackFrameInfo(
           stack_frame.get(), debug_stack_walk, parsed_pdb_files);
@@ -489,8 +489,8 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
   }
 
   // If this is an async frame, the method name would be something like
-  // <RealMethodName>d__18.MoveNext. To get the real method name and
-  // class token, we need to move down the stack twice.
+  // <RealMethodName>d__18.MoveNext. PopulateAsyncStackFrameInfo
+  // will populate stack_frame with the correct method name and class token.
   if (first_stack_->IsAsyncMethod()) {
     CComPtr<ICorDebugStackWalk> debug_stack_walk;
     HRESULT hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
