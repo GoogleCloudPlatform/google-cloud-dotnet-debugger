@@ -1,0 +1,31 @@
+version: 1.0.{build}
+
+branches:
+  only:
+    - master
+
+image: Visual Studio 2017
+
+# Pull down all submodule code
+init:
+  - git config --global core.autocrlf input
+
+# Cache the third party code as it can take 20+ min to build
+cache:
+  - third_party
+
+platform: x64
+
+configuration: Debug
+
+# Build dependencies and code
+build_script:
+  - git submodule update --init --recursive
+  - build-deps.cmd %APPVEYOR_BUILD_FOLDER%\ %CONFIGURATION% %PLATFORM%
+  - build.cmd %CONFIGURATION%
+
+test_script:
+  - bash run_unit_tests.sh
+
+# Nothing to deplopy, we are just running tests
+deploy: off

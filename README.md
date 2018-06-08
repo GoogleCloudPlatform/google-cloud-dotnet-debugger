@@ -1,6 +1,7 @@
 # Stackdriver Debugger for .NET Core - [Alpha](https://cloud.google.com/terms/launch-stages)
 [![release level](https://img.shields.io/badge/release%20level-alpha-orange.svg?style&#x3D;flat)](https://cloud.google.com/terms/launch-stages)
-[![Travis build Status](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger.svg?token=uPVZj7upLKBYvMVpisAp&branch=master)](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger)
+[![Travis Build Status](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger.svg?token=uPVZj7upLKBYvMVpisAp&branch=master)](https://travis-ci.com/GoogleCloudPlatform/google-cloud-dotnet-debugger)
+[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/github/GoogleCloudPlatform/google-cloud-dotnet-debugger?branch=master&svg=true)](https://ci.appveyor.com/project/GoogleCloudPlatform/google-cloud-dotnet-debugger)
 
 .NET Core Debugger for the [Stackdriver Debugger](https://cloud.google.com/debugger/).
 
