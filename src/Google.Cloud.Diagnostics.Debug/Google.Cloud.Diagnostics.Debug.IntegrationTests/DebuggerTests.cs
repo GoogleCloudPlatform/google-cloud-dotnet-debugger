@@ -234,6 +234,50 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
+        public async Task BreakpointHit_AsyncCondition()
+        {
+            string testString = "TestMessage";
+            string firstCondition = $"PublicString == \"{new TestApp.MainController().PublicString}\"";
+            string secondCondition = "Hello() == \"Hello, World!\"";
+            string thirdCondition = $"testString == \"{testString}\"";
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint firstBreakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.AsyncBottomLine, firstCondition);
+                DebuggerBreakpoint secondBreakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.AsyncBottomLine, secondCondition);
+                DebuggerBreakpoint thirdBreakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.AsyncBottomLine, thirdCondition);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync($"{app.AppUrlAsync}/{testString}");
+                }
+
+                DebuggerBreakpoint retrievedFirstBp =
+                    Polling.GetBreakpoint(debuggee.Id, firstBreakpoint.Id);
+                DebuggerBreakpoint retrievedSecondBp =
+                    Polling.GetBreakpoint(debuggee.Id, secondBreakpoint.Id);
+                DebuggerBreakpoint retrievedThirdBp =
+                    Polling.GetBreakpoint(debuggee.Id, thirdBreakpoint.Id);
+
+                // Check that the breakpoints has been hit.
+                Assert.True(retrievedFirstBp.IsFinalState);
+                Assert.Null(retrievedFirstBp.Status);
+
+                Assert.True(retrievedSecondBp.IsFinalState);
+                Assert.Null(retrievedSecondBp.Status);
+
+                Assert.True(retrievedThirdBp.IsFinalState);
+                Assert.Null(retrievedThirdBp.Status);
+            }
+        }
+
+        [Fact]
         public async Task BreakpointHit_FunctionEvaluation()
         {
             string condition = "Hello() == \"Hello, World!\"";

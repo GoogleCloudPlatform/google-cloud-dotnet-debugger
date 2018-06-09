@@ -19,6 +19,7 @@
 #include "class_names.h"
 #include "common_action_mocks.h"
 #include "dbg_class_property.h"
+#include "dbg_reference_object_mock.h"
 #include "dbg_string.h"
 #include "error_messages.h"
 #include "i_dbg_object_factory_mock.h"
@@ -151,18 +152,20 @@ TEST_F(IdentifierEvaluatorTest, PropertiesWithGetter) {
       .Times(1)
       .WillOnce(DoAll(SetArgPointee<1>(class_property), Return(S_OK)));
 
+  // The evaluator will need to store a reference to "this" object
+  // for evaluation purpose later.
+  std::shared_ptr<DbgObject> this_obj =
+      std::shared_ptr<DbgObject>(new DbgReferenceObjectMock());
+  EXPECT_CALL(stack_mock_, GetThisObject())
+      .Times(1)
+      .WillOnce(Return(this_obj));
+
   EXPECT_EQ(evaluator.Compile(&stack_mock_, nullptr, nullptr), S_OK);
   EXPECT_EQ(evaluator.GetStaticType().cor_type,
             class_property_type_sig_.cor_type);
 
   EXPECT_CALL(eval_coordinator_mock_, MethodEvaluation())
     .Times(1).WillOnce(Return(TRUE));
-
-  // Sets up call for retrieving the invoking object.
-  EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
-      .Times(1)
-      .WillOnce(DoAll(SetArgPointee<0>(&debug_frame_), Return(S_OK)));
-  EXPECT_CALL(debug_frame_, GetArgument(0, _)).Times(1).WillOnce(Return(S_OK));
 
   std::shared_ptr<DbgObject> evaluate_result;
   EXPECT_EQ(evaluator.Evaluate(&evaluate_result, &eval_coordinator_mock_,

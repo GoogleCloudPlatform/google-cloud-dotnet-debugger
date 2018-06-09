@@ -77,7 +77,7 @@ HRESULT DbgString::GetString(DbgObject *object, string *returned_string) {
   }
 
   DbgString *dbg_string = dynamic_cast<DbgString *>(object);
-  if (object == nullptr) {
+  if (dbg_string == nullptr) {
     return E_INVALIDARG;
   }
 

@@ -310,6 +310,8 @@ TEST_F(DbgStackFrameTest, TestInitializeNullError) {
 TEST_F(DbgStackFrameTest, TestInitializeEnumerateLocalVariableError) {
   DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
+  SetUpMethodArguments();
+  SetUpMetaDataImport();
   EXPECT_CALL(frame_mock_, EnumerateLocalVariables(_))
       .WillRepeatedly(Return(CORDBG_E_ENC_METHOD_NO_LOCAL_SIG));
 
@@ -323,7 +325,6 @@ TEST_F(DbgStackFrameTest, TestInitializeEnumerateLocalVariableError) {
 TEST_F(DbgStackFrameTest, TestInitializeEnumerateArgumentsError) {
   DbgStackFrame stack_frame(debug_helper_, dbg_object_factory_);
 
-  SetUpLocalVariables();
   EXPECT_CALL(frame_mock_, EnumerateArguments(_))
       .WillRepeatedly(Return(CORDBG_E_BAD_THREAD_STATE));
 

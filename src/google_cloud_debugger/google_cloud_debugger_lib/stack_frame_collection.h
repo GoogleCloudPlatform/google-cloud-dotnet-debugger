@@ -53,6 +53,17 @@ class StackFrameCollection : public IStackFrameCollection {
   // Factory for creating DbgObject.
   std::shared_ptr<IDbgObjectFactory> obj_factory_;
 
+  // Populates the stack frame information for an async frame.
+  // We need to do this because the async frame does not have information
+  // like method name, class name and class token as it is a
+  // compile generated method. So we have to walk the frame twice
+  // and get to a frame that has this information.
+  HRESULT PopulateAsyncStackFrameInfo(
+      DbgStackFrame *async_frame, ICorDebugStackWalk *stack_walk,
+      const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files);
+
   // Given a PDB file, this function tries to find the metadata of the function
   // with token target_function_token in the PDB file. If found, this function
   // will populate dbg_stack_frame using the metadata found and the
@@ -113,7 +124,7 @@ class StackFrameCollection : public IStackFrameCollection {
 
   // True if the stack has been walked and processed.
   // This means stack_frames_ vector should have been populated.
-  bool stack_walked = false;
+  bool stack_walked_ = false;
 
   // Maximum number of stack frames to be parsed.
   static const std::uint32_t kMaximumStackFrames = 20;

@@ -51,6 +51,8 @@ class IdentifierEvaluator : public ExpressionEvaluator {
 
   std::shared_ptr<DbgObject> identifier_object_;
 
+  std::shared_ptr<DbgObject> this_object_;
+
   std::unique_ptr<DbgClassProperty> class_property_;
 
   // Generic type parameters for the class that the method is in.

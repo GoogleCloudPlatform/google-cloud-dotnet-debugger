@@ -77,6 +77,14 @@ HRESULT IdentifierEvaluator::Compile(
     return hr;
   }
 
+  if (!class_property_->IsStatic() && stack_frame->IsStaticMethod()) {
+    *err_stream << "Cannot get non-static property "
+                << identifier_name_ << " in a static frame.";
+    return E_FAIL;
+  }
+
+  this_object_ = stack_frame->GetThisObject();
+
   // Generic type parameters for the class that the method is in.
   return stack_frame->GetCurrentClassTypeParameters(&generic_class_types_);
 }
@@ -99,17 +107,21 @@ HRESULT IdentifierEvaluator::Evaluate(
   HRESULT hr;
   // If this is a non-static property, we have to get the invoking object.
   if (!class_property_->IsStatic()) {
-    CComPtr<ICorDebugILFrame> debug_frame;
-    hr = eval_coordinator->GetActiveDebugFrame(&debug_frame);
+    if (!this_object_) {
+      *err_stream << "Failed to get 'this' object.";
+      return E_FAIL;
+    }
+
+    CComPtr<ICorDebugEval> debug_eval;
+    hr = eval_coordinator->CreateEval(&debug_eval);
     if (FAILED(hr)) {
-      std::cerr << "Failed to get the active debug frame.";
+      std::cerr << "Failed to create ICorDebugEval.";
       return hr;
     }
 
-    // Returns 'this' object.
-    hr = debug_frame->GetArgument(0, &invoking_object);
+    hr = this_object_->GetICorDebugValue(&invoking_object, debug_eval);
     if (FAILED(hr)) {
-      *err_stream << "Failed to evaluate 'this' object.";
+      *err_stream << "Failed to get 'this' object.";
       return hr;
     }
   }

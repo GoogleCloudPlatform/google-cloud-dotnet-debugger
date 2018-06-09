@@ -75,10 +75,13 @@ class DbgStackFrame : public IDbgStackFrame {
   // Gets out property with the name property_name of the class
   // this frame is in. This will also returns the TypeSignature
   // of the property.
-  HRESULT GetPropertyFromFrame(
+  virtual HRESULT GetPropertyFromFrame(
       const std::string &property_name,
       std::unique_ptr<DbgClassProperty> *property_object,
-      std::ostream *err_stream);
+      std::ostream *err_stream) override;
+
+  // Returns the "this" object of this frame.
+  virtual std::shared_ptr<DbgObject> GetThisObject();
 
   // This function will try to find the field/auto-implemented property
   // field_name in the class with metadata token class_token.
@@ -131,14 +134,34 @@ class DbgStackFrame : public IDbgStackFrame {
     module_name_ = ConvertWCharPtrToString(module_name);
   }
 
+  // Sets the name of the module this stack frame is in.
+  void SetModuleName(const std::string &module_name) {
+    module_name_ = module_name;
+  }
+
   // Sets the name of the method this stack frame is in.
   void SetMethod(const std::vector<WCHAR> &method_name) {
     method_name_ = ConvertWCharPtrToString(method_name);
   }
 
+  // Sets the name of the method this stack frame is in.
+  void SetMethod(const std::string &method_name) {
+    method_name_ = method_name;
+  }
+
   // Sets the name of the class this stack frame is in.
   void SetClass(const std::vector<WCHAR> &class_name) {
     class_name_ = ConvertWCharPtrToString(class_name);
+  }
+
+  // Sets the name of the class this stack frame is in.
+  void SetClass(const std::string &class_name) {
+    class_name_ = class_name;
+  }
+
+  // Sets token of the class this stack frame is in.
+  void SetClassToken(const mdTypeDef &class_token) {
+    class_token_ = class_token;
   }
 
   // Sets the line number this stack frame is on.
@@ -166,6 +189,8 @@ class DbgStackFrame : public IDbgStackFrame {
   // Gets the line number this stack frame is on.
   std::uint32_t GetLineNumber() const { return line_number_; }
 
+  mdTypeDef GetClassToken() const { return class_token_; }
+
   // Gets the virtual address of the function this stack frame is in.
   ULONG32 GetFuncVirtualAddr() const { return func_virtual_addr_; }
 
@@ -180,6 +205,9 @@ class DbgStackFrame : public IDbgStackFrame {
 
   // Returns true if the method this frame is in is a static method.
   bool IsStaticMethod() { return is_static_method_; }
+
+  // Returns true if the method this frame is in is an async method.
+  bool IsAsyncMethod() { return is_async_method_; }
 
   // Gets the ICorDebugFunction that corresponds with method represented by
   // method_info in the class class_token. This function will
@@ -330,9 +358,6 @@ class DbgStackFrame : public IDbgStackFrame {
   // Returns true if this is an IL frame that has been processed.
   // This is set after a successful call to Initialize.
   bool is_processed_il_frame_ = false;
-
-  // MetaData token of the method.
-  mdMethodDef method_token_;
 
   // MetaData token of the class the frame is in.
   mdTypeDef class_token_;

@@ -60,8 +60,6 @@ HRESULT DbgStackFrame::Initialize(
     return E_INVALIDARG;
   }
 
-  method_token_ = method_token;
-
   HRESULT hr = debug_helper_->GetAppDomainFromICorDebugFrame(
       il_frame, &app_domain_, &std::cerr);
   if (FAILED(hr)) {
@@ -334,6 +332,7 @@ HRESULT DbgStackFrame::ProcessAsyncMethod(ICorDebugValue *async_state_obj,
     return hr;
   }
 
+  is_static_method_ = true;
   ProcessAsyncVariablesAndMethodArgs(class_obj->GetFields());
   return S_OK;
 }
@@ -870,18 +869,12 @@ HRESULT DbgStackFrame::GetFieldAndAutoPropFromFrame(
   }
 
   // Otherwise, we have to get "this" object.
-  auto this_obj =
-      std::find_if(method_arguments_.begin(), method_arguments_.end(),
-                   [](const VariableTuple &variable_tuple) {
-                     return std::get<0>(variable_tuple).compare("this") == 0;
-                   });
-
-  if (this_obj == method_arguments_.end()) {
+  std::shared_ptr<DbgObject> this_dbg_obj = GetThisObject();
+  if (!this_dbg_obj) {
     *err_stream << "Cannot get this object.";
     return E_FAIL;
   }
 
-  std::shared_ptr<DbgObject> this_dbg_obj = std::get<1>(*this_obj);
   DbgReferenceObject *reference_obj =
       dynamic_cast<DbgReferenceObject *>(this_dbg_obj.get());
   if (reference_obj == nullptr) {
@@ -910,6 +903,19 @@ HRESULT DbgStackFrame::GetPropertyFromFrame(
 
   return (*property_object)
       ->SetTypeSignature(metadata_import, generic_type_signatures_);
+}
+
+std::shared_ptr<DbgObject> DbgStackFrame::GetThisObject() {
+  auto this_obj =
+      std::find_if(method_arguments_.begin(), method_arguments_.end(),
+                   [](const VariableTuple &variable_tuple) {
+                     return std::get<0>(variable_tuple).compare("this") == 0;
+                   });
+
+  if (this_obj == method_arguments_.end()) {
+    return std::shared_ptr<DbgObject>();
+  }
+  return std::get<1>(*this_obj);
 }
 
 HRESULT DbgStackFrame::GetFieldFromClass(

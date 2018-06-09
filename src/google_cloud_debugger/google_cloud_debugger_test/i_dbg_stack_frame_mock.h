@@ -119,6 +119,9 @@ class IDbgStackFrameMock : public google_cloud_debugger::IDbgStackFrame {
       HRESULT(std::vector<google_cloud_debugger::CComPtr<ICorDebugType>>
                   *debug_types));
   MOCK_METHOD0(IsStaticMethod, bool());
+  MOCK_METHOD0(IsAsyncMethod, bool());
+  MOCK_METHOD0(GetThisObject,
+               std::shared_ptr<google_cloud_debugger::DbgObject>());
 };
 
 }  // namespace google_cloud_debugger_test
