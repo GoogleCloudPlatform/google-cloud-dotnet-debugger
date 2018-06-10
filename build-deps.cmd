@@ -3,25 +3,22 @@
 
 :: TODO(talarico): Allow building with multiple Visual Studio versions. 
 
-:: Check that the user passed in a valid parameter.
-if "%3" == "" (
-  echo "Parameters should be: repository root, configuration, platform"
-  exit /B
-)
+:: The only optional parameter is the configuration which defaults to Debug.
 
-SET ROOT_DIR=%1
-SET CONFIG=%2
-SET PLATFORM=%3
-SET PLATFORM_STR=""
 
-SET THIRD_PARTY_DIR=%ROOT_DIR%third_party
+SET ROOT_DIR=%~dp0
+SET CONFIG=%1
+SET PLATFORM=x64
+SET PLATFORM_STR= Win64
+
+SET THIRD_PARTY_DIR=%ROOT_DIR%\third_party
 SET PROTOBUF_DIR=%THIRD_PARTY_DIR%\protobuf
 SET GMOCK_DIR=%THIRD_PARTY_DIR%\googletest\googlemock
 SET GTEST_DIR=%THIRD_PARTY_DIR%\googletest\googletest
 SET CORECLR_DIR=%THIRD_PARTY_DIR%\coreclr
 
-if "%3" == "x64" (
-  SET PLATFORM_STR= Win64
+if "%1" == "" (
+  SET CONFIG=Debug
 )
 
 :: Ensure the submodule are up to date.
