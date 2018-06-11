@@ -229,6 +229,7 @@ bool DbgBreakpoint::TrySetBreakpointInMethod(
   }
 
   il_offset_ = find_seq->il_offset;
+  line_ = find_seq->start_line;
   method_def_ = method.method_def;
   return true;
 }
