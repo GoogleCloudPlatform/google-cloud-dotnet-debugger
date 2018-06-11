@@ -124,7 +124,7 @@
       <AdditionalDependencies>libprotobuf.lib;corguids.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
-      <Command>$(SolutionDir)..\..\build-deps.cmd $(SolutionDir)..\..\ $(Configuration) $(Platform)</Command>
+      <Command>$(SolutionDir)..\..\build-deps.cmd $(Configuration)</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>Copy /Y "$(SolutionDir)..\..\third_party\coreclr\bin\obj\Windows_NT.$(Platform).$(Configuration)\src\dlls\dbgshim\$(Configuration)" "$(TargetDir)"</Command>
