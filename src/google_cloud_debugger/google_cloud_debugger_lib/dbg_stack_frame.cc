@@ -349,6 +349,7 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
     }
   }
 
+  hr = S_OK;
   vector<mdParamDef> method_args(100, 0);
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
