@@ -196,14 +196,6 @@ TEST_F(DbgClassFieldTest, TestInitializeError) {
   class_field_->Initialize(nullptr, nullptr, &object_value_, &debug_class_);
   EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
 
-  class_field_->Initialize(nullptr, &metadataimport_mock_,
-                           nullptr, &debug_class_);
-  EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
-
-  class_field_->Initialize(nullptr, &metadataimport_mock_,
-                           &object_value_, nullptr);
-  EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
-
   // MetaDataImport returns error.
   {
     EXPECT_CALL(metadataimport_mock_,

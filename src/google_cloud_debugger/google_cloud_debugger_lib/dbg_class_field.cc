@@ -56,12 +56,6 @@ void DbgClassField::Initialize(ICorDebugModule *debug_module,
     return;
   }
 
-  if (!obj_factory_) {
-    std::cerr << "Object factory is null.";
-    initialized_hr_ = E_INVALIDARG;
-    return;
-  }
-
   CComPtr<ICorDebugValue> field_value;
   ULONG len_field_name;
 

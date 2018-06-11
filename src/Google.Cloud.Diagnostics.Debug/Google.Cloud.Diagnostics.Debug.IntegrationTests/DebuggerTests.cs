@@ -92,7 +92,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 // Check 'this' arg for the class values.
                 var thisArg = arguments.Where(l => l.Name == "this").Single();
                 Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
-                Assert.Equal(2, thisArg.Members.Count);
+                Assert.Equal(5, thisArg.Members.Count);
 
                 var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
                 Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);
@@ -240,7 +240,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 // Check 'this' arg for the class values.
                 var thisArg = arguments.Where(l => l.Name == "this").Single();
                 Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
-                Assert.Equal(2, thisArg.Members.Count);
+                Assert.Equal(5, thisArg.Members.Count);
 
                 var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
                 Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);
