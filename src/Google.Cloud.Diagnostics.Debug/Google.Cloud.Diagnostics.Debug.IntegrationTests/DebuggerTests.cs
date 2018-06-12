@@ -48,7 +48,31 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }           
         }
 
-         [Fact]
+        [Fact]
+        public async Task BreakpointHit_Comment()
+        {
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass, TestApplication.LoopMiddleComment);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetLoopUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Check that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+
+                // Check that the breakpoint line is at the next line.
+                Assert.Equal(TestApplication.LoopMiddle, newBp.Location.Line);
+            }
+        }
+
+        [Fact]
         public async Task BreakpointHit_Details()
         {
             using (var app = StartTestApp(debugEnabled: true))
