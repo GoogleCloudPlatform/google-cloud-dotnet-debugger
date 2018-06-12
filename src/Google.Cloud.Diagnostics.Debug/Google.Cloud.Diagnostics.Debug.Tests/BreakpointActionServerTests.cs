@@ -25,7 +25,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     public class BreakpointActionServerTests
     {
         // The tolerance for number of calls to the main action.
-        private static readonly int _tolerance = 10;
+        private static readonly int _tolerance = 20;
         private static readonly TimeSpan _minBackOffWaitTime = TimeSpan.FromMilliseconds(10);
         private static readonly TimeSpan _maxBackOffWaitTime = TimeSpan.FromMilliseconds(100);
 
