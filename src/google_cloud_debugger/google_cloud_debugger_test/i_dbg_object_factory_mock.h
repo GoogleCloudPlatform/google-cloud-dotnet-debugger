@@ -50,6 +50,12 @@ class IDbgObjectFactoryMock : public google_cloud_debugger::IDbgObjectFactory {
               google_cloud_debugger::IEvalCoordinator *eval_coordinator,
               std::unique_ptr<google_cloud_debugger::DbgObject> *evaluate_result,
               std::ostream *err_stream));
+
+  MOCK_METHOD5(
+      CreateDbgObjectFromLiteralConst,
+      HRESULT(const CorElementType &value_type, UVCP_CONSTANT literal_value,
+              ULONG literal_value_len, ULONG64 *numerical_value,
+              std::unique_ptr<google_cloud_debugger::DbgObject> *dbg_object));
 };
 
 }  // namespace google_cloud_debugger_test

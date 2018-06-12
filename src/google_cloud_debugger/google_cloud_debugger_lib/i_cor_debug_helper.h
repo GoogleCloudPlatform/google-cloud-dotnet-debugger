@@ -52,6 +52,11 @@ class ICorDebugHelper {
       ICorDebugModule *debug_module, std::vector<WCHAR> *module_name,
       std::ostream *err_stream) = 0;
 
+  // Extracts ICorDebugAppDomain from ICorDebugModule.
+  virtual HRESULT GetAppDomainFromICorDebugModule(
+      ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
+      std::ostream *err_stream) = 0;
+
   // Extracts ICorDebugType from ICorDebug.
   virtual HRESULT GetICorDebugType(ICorDebugValue *debug_value,
                                    ICorDebugType **debug_type,
@@ -182,6 +187,13 @@ class ICorDebugHelper {
                                            std::string *type_name,
                                            std::ostream *err_stream) = 0;
 
+  // Gets name from mdToken type_token.
+  // Currently, this method only supports mdTypeDef and mdTypeRef token.
+  virtual HRESULT GetTypeNameFromMdToken(mdToken type_token,
+                                         IMetaDataImport *metadata_import,
+                                         std::string *type_name,
+                                         std::ostream *err_stream) = 0;
+
   // Given a TypeRef token and its MetaDataImport, this function
   // converts it into a TypeDef token. The function will also return
   // the corresponding MetaDataImport for that token.
@@ -210,8 +222,37 @@ class ICorDebugHelper {
   virtual HRESULT GetInstantiatedClassType(
       ICorDebugClass *debug_class,
       std::vector<CComPtr<ICorDebugType>> *parameter_types,
-      ICorDebugType **result_type,
-      std::ostream *err_stream) = 0;
+      ICorDebugType **result_type, std::ostream *err_stream) = 0;
+
+  // Given an encoded token, decode it and returns
+  // the type name, metadata token and metadata import of the type.
+  virtual HRESULT GetTypeInfoFromEncodedToken(
+      ULONG encoded_token, ICorDebugModule *debug_module,
+      IMetaDataImport *metadata_import, std::string *type_name,
+      mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) = 0;
+
+  // Given a signature blob for a constant, parses the blob
+  // and returns the constant type and value.
+  // If the constant is a string, value_len returns the length of the string.
+  // If the constant is an enum, remaining_bytes will contain the enum
+  // class metadata token.
+  virtual HRESULT ProcessConstantSigBlob(
+      const std::vector<uint8_t> &signature_blob,
+      CorElementType *cor_type,
+      UVCP_CONSTANT *constant_value,
+      ULONG *value_len,
+      std::vector<uint8_t> *remaining_bytes) = 0;
+
+  // Given a metadata signature of an enum field, gets the name, metadata
+  // token and metadata import of the enum class.
+  virtual HRESULT GetEnumInfoFromFieldMetaDataSignature(
+      PCCOR_SIGNATURE metadata_signature,
+      ULONG metadata_signature_len,
+      ICorDebugModule *debug_module,
+      IMetaDataImport *metadata_import,
+      std::string *enum_name,
+      mdTypeDef *enum_token,
+      IMetaDataImport **resolved_metadata_import) = 0;
 
   // Template function to enumerate different ICorDebug enumerations.
   // All the enumerated items will be stored in vector result.

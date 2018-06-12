@@ -53,7 +53,8 @@ class DbgClassFieldTest : public ::testing::Test {
     dbg_object_factory_ =
         std::shared_ptr<IDbgObjectFactory>(new DbgObjectFactory());
     class_field_ = std::unique_ptr<DbgClassField>(
-        new DbgClassField(debug_helper_, dbg_object_factory_));
+        new DbgClassField(field_def_, 1, &type_mock_,
+                          debug_helper_, dbg_object_factory_));
   }
 
   virtual void SetUpField(bool non_static_field, int32_t field_value = 20,
@@ -83,8 +84,8 @@ class DbgClassFieldTest : public ::testing::Test {
       InitializeFieldValue(non_static_field, field_value);
     }
 
-    class_field_->Initialize(field_def_, &metadataimport_mock_, &object_value_,
-                             &debug_class_, &type_mock_, 1);
+    class_field_->Initialize(nullptr, &metadataimport_mock_,
+                             &object_value_, &debug_class_);
 
     HRESULT hr = class_field_->GetInitializeHr();
     EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
@@ -192,16 +193,7 @@ TEST_F(DbgClassFieldTest, TestInitializeBackingField) {
 // Tests error cases for the Initialize function of DbgClassField.
 TEST_F(DbgClassFieldTest, TestInitializeError) {
   // Various null check.
-  class_field_->Initialize(field_def_, nullptr, &object_value_, &debug_class_,
-                           &type_mock_, 1);
-  EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
-
-  class_field_->Initialize(field_def_, &metadataimport_mock_, nullptr,
-                           &debug_class_, &type_mock_, 1);
-  EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
-
-  class_field_->Initialize(field_def_, &metadataimport_mock_, &object_value_,
-                           nullptr, &type_mock_, 1);
+  class_field_->Initialize(nullptr, nullptr, &object_value_, &debug_class_);
   EXPECT_EQ(class_field_->GetInitializeHr(), E_INVALIDARG);
 
   // MetaDataImport returns error.
@@ -216,8 +208,8 @@ TEST_F(DbgClassFieldTest, TestInitializeError) {
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    class_field_->Initialize(field_def_, &metadataimport_mock_, &object_value_,
-                             &debug_class_, nullptr, 1);
+    class_field_->Initialize(nullptr, &metadataimport_mock_,
+                             &object_value_, &debug_class_);
     EXPECT_EQ(class_field_->GetInitializeHr(), META_E_BADMETADATA);
   }
 
@@ -234,8 +226,8 @@ TEST_F(DbgClassFieldTest, TestInitializeError) {
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_FIELD_NOT_AVAILABLE));
 
-  class_field_->Initialize(field_def_, &metadataimport_mock_, &object_value_,
-                           &debug_class_, nullptr, 1);
+  class_field_->Initialize(nullptr, &metadataimport_mock_,
+                           &object_value_, &debug_class_);
 
   EXPECT_EQ(class_field_->GetInitializeHr(), CORDBG_E_FIELD_NOT_AVAILABLE);
 }
@@ -289,8 +281,8 @@ TEST_F(DbgClassFieldTest, TestPopulateVariableValueNonStaticError) {
         .Times(1)
         .WillRepeatedly(Return(META_E_BADMETADATA));
 
-    class_field_->Initialize(field_def_, &metadataimport_mock_, &object_value_,
-                             &debug_class_, nullptr, 1);
+    class_field_->Initialize(nullptr, &metadataimport_mock_,
+                             &object_value_, &debug_class_);
     EXPECT_EQ(class_field_->GetInitializeHr(), META_E_BADMETADATA);
 
     EXPECT_EQ(class_field_->Evaluate(nullptr, &eval_coordinator_, nullptr),

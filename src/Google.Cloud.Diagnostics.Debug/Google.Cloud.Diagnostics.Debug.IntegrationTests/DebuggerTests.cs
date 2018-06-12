@@ -92,7 +92,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 // Check 'this' arg for the class values.
                 var thisArg = arguments.Where(l => l.Name == "this").Single();
                 Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
-                Assert.Equal(2, thisArg.Members.Count);
+                Assert.Equal(5, thisArg.Members.Count);
 
                 var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
                 Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);
@@ -125,6 +125,75 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Assert.Equal(typeof(System.String).ToString(), returnLocal.Type);
             }           
         }
+
+        [Fact]
+        public async Task BreakpointHit_Constant()
+        {
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                var debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                var breakpoint = SetBreakpointAndSleep(debuggee.Id, TestApplication.MainClass,
+                    TestApplication.ConstantBottomLine);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync($"{app.AppConstant}");
+                }
+
+                var newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                Assert.True(newBp.IsFinalState);
+
+                // Only check the first one as it's the only one with information we care about. 
+                var stackframe = newBp.StackFrames[0];
+
+                // Get 'this' arg for the class values so we can check the constant fields.
+                DebuggerVariable thisArg = stackframe.Arguments.Where(l => l.Name == "this").Single();
+                Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
+
+                // Check the constant fields.
+                var fields = thisArg.Members;
+
+                // Check constant int field.
+                DebuggerVariable constantIntField = fields.Where(m => m.Name == "ConstantInt").Single();
+                Assert.Equal(typeof(System.Int32).ToString(), constantIntField.Type);
+                Assert.Equal("10", constantIntField.Value);
+
+                // Check the constant string field.
+                DebuggerVariable constantStringField = fields.Where(m => m.Name == "ConstantString").Single();
+                Assert.Equal(typeof(System.String).ToString(), constantStringField.Type);
+                Assert.Equal("ConstantStringField", constantStringField.Value);
+
+                // Check the constant enum field.
+                DebuggerVariable constantEnumField = fields.Where(m => m.Name == "Tuesday").Single();
+                Assert.Equal(typeof(DayOfWeek).ToString(), constantEnumField.Type);
+                Assert.Equal("Tuesday", constantEnumField.Value);
+
+                // Check the constant variables.
+                var locals = stackframe.Locals;
+
+                // Check the constant integer.
+                DebuggerVariable constantIntVar = locals.Where(m => m.Name == "constInt").Single();
+                Assert.Equal(typeof(System.Int32).ToString(), constantIntVar.Type);
+                Assert.Equal("5", constantIntVar.Value);
+
+                // Check the constant double.
+                DebuggerVariable constantDoubleVar = locals.Where(m => m.Name == "constDouble").Single();
+                Assert.Equal(typeof(System.Double).ToString(), constantDoubleVar.Type);
+                Assert.Equal("3.500000", constantDoubleVar.Value);
+
+                // Check the constant string.
+                DebuggerVariable constantStringVar = locals.Where(m => m.Name == "constString").Single();
+                Assert.Equal(typeof(System.String).ToString(), constantStringVar.Type);
+                Assert.Equal("ConstString", constantStringVar.Value);
+
+                // Check the constant enum.
+                DebuggerVariable constantEnumVar = locals.Where(m => m.Name == "constEnum").Single();
+                Assert.Equal(typeof(DayOfWeek).ToString(), constantEnumVar.Type);
+                Assert.Equal("Monday", constantEnumVar.Value);
+            }
+        }
+
 
         [Fact]
         public async Task BreakpointHit_Async()
@@ -171,7 +240,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 // Check 'this' arg for the class values.
                 var thisArg = arguments.Where(l => l.Name == "this").Single();
                 Assert.Equal(typeof(TestApp.MainController).ToString(), thisArg.Type);
-                Assert.Equal(2, thisArg.Members.Count);
+                Assert.Equal(5, thisArg.Members.Count);
 
                 var privateStaticString = thisArg.Members.Where(m => m.Name == "_privateReadOnlyString").Single();
                 Assert.Equal(typeof(System.String).ToString(), privateStaticString.Type);

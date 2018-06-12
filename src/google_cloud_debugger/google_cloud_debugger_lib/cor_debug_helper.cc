@@ -120,6 +120,23 @@ HRESULT CorDebugHelper::GetModuleNameFromICorDebugModule(
   return hr;
 }
 
+HRESULT CorDebugHelper::GetAppDomainFromICorDebugModule(
+    ICorDebugModule *debug_module, ICorDebugAppDomain **app_domain,
+    std::ostream *err_stream) {
+  if (!debug_module) {
+    return E_INVALIDARG;
+  }
+
+  CComPtr<ICorDebugAssembly> debug_assembly;
+  HRESULT hr = debug_module->GetAssembly(&debug_assembly);
+  if (FAILED(hr)) {
+    *err_stream << "Failed to get ICorDebugAssembly from ICorDebugModule.";
+    return hr;
+  }
+
+  return debug_assembly->GetAppDomain(app_domain);
+}
+
 HRESULT CorDebugHelper::GetICorDebugType(ICorDebugValue *debug_value,
                                          ICorDebugType **debug_type,
                                          ostream *err_stream) {
@@ -580,21 +597,13 @@ HRESULT CorDebugHelper::ParseTypeFromSig(
       // The first 2 least significant bits of the token tells us whether
       // the token is a type def or type ref.
       mdToken token_type = g_tkCorEncodeToken[encoded_token & 0x3];
+      // Remove the last 2 bits of the token and use the token type to
+      // decode it to either a mdTypeDef or mdTypeRef token.
       mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
 
-      mdToken base_token;
       std::string type_name;
-      if (token_type == CorTokenType::mdtTypeDef) {
-        hr = GetTypeNameFromMdTypeDef(decoded_token, metadata_import,
-                                      &type_name, &base_token, &std::cerr);
-      } else if (token_type == CorTokenType::mdtTypeRef) {
-        hr = GetTypeNameFromMdTypeRef(decoded_token, metadata_import,
-                                      &type_name, &std::cerr);
-      } else {
-        // Don't process this.
-        return E_FAIL;
-      }
-
+      hr = GetTypeNameFromMdToken(decoded_token, metadata_import,
+                                  &type_name, &std::cerr);
       if (FAILED(hr)) {
         return hr;
       }
@@ -766,9 +775,8 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
 
   ULONG type_name_len = 0;
   DWORD type_flags = 0;
-  mdToken extend_tokens;
   HRESULT hr = metadata_import->GetTypeDefProps(
-      type_token, nullptr, 0, &type_name_len, &type_flags, &extend_tokens);
+      type_token, nullptr, 0, &type_name_len, &type_flags, base_token);
   if (hr == S_FALSE) {
     hr = E_FAIL;
   }
@@ -781,7 +789,7 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeDef(
   vector<WCHAR> wchar_type_name(type_name_len, 0);
   hr = metadata_import->GetTypeDefProps(type_token, wchar_type_name.data(),
                                         wchar_type_name.size(), &type_name_len,
-                                        &type_flags, &extend_tokens);
+                                        &type_flags, base_token);
   if (FAILED(hr)) {
     *err_stream << "Failed to get type name.";
     return hr;
@@ -821,6 +829,26 @@ HRESULT CorDebugHelper::GetTypeNameFromMdTypeRef(
 
   *type_name = ConvertWCharPtrToString(wchar_type_name);
   return hr;
+}
+
+HRESULT CorDebugHelper::GetTypeNameFromMdToken(
+    mdToken type_token, IMetaDataImport *metadata_import,
+    std::string *type_name, std::ostream *err_stream) {
+  // Retrieves the parent class of the class that implements this field.
+  CorTokenType token_type = (CorTokenType)(TypeFromToken(type_token));
+  mdToken base_token;
+  if (token_type == CorTokenType::mdtTypeDef) {
+    return GetTypeNameFromMdTypeDef(
+        type_token, metadata_import, type_name,
+        &base_token, err_stream);
+  } else if (token_type == CorTokenType::mdtTypeRef) {
+    return GetTypeNameFromMdTypeRef(
+        type_token, metadata_import, type_name, err_stream);
+  }
+
+  *err_stream << "Getting type name from other type of mdToken "
+              << "is not supported.";
+  return E_NOTIMPL;
 }
 
 HRESULT CorDebugHelper::GetMdTypeDefAndMetaDataFromTypeRef(
@@ -961,8 +989,7 @@ HRESULT CorDebugHelper::CountGenericParams(IMetaDataImport *metadata_import,
 HRESULT CorDebugHelper::GetInstantiatedClassType(
     ICorDebugClass *debug_class,
     std::vector<CComPtr<ICorDebugType>> *parameter_types,
-    ICorDebugType **result_type,
-    std::ostream *err_stream) {
+    ICorDebugType **result_type, std::ostream *err_stream) {
   if (!debug_class || !parameter_types) {
     return E_INVALIDARG;
   }
@@ -980,9 +1007,90 @@ HRESULT CorDebugHelper::GetInstantiatedClassType(
                                      parameter_types->end());
 
   return debug_class_2->GetParameterizedType(
-      CorElementType::ELEMENT_TYPE_CLASS,
-      class_generic_type_pointers.size(),
+      CorElementType::ELEMENT_TYPE_CLASS, class_generic_type_pointers.size(),
       class_generic_type_pointers.data(), result_type);
+}
+
+HRESULT CorDebugHelper::GetEnumInfoFromFieldMetaDataSignature(
+    PCCOR_SIGNATURE metadata_signature,
+    ULONG metadata_signature_len,
+    ICorDebugModule *debug_module,
+    IMetaDataImport *metadata_import,
+    std::string *enum_name,
+    mdTypeDef *enum_token,
+    IMetaDataImport **resolved_metadata_import) {
+  // We need to get the enum name. The name of the enum can be retrieved
+  // from the third byte of the metadata signature.
+  if (metadata_signature_len < 3) {
+    return E_FAIL;
+  }
+  ULONG encoded_token = *(metadata_signature + 2);
+
+  // Now we retrieve the name, metadata token and metadata import
+  // for the enum.
+  return GetTypeInfoFromEncodedToken(
+      encoded_token, debug_module, metadata_import,
+      enum_name, enum_token, resolved_metadata_import);
+}
+
+HRESULT CorDebugHelper::GetTypeInfoFromEncodedToken(
+    ULONG encoded_token, ICorDebugModule *debug_module,
+    IMetaDataImport *metadata_import, std::string *type_name,
+    mdTypeDef *type_def, IMetaDataImport **resolved_metadata_import) {
+  mdToken token_type = g_tkCorEncodeToken[encoded_token & 0x3];
+  mdToken decoded_token = TokenFromRid(encoded_token >> 2, token_type);
+  mdToken base_token;
+
+  if (token_type != CorTokenType::mdtTypeDef &&
+      token_type != CorTokenType::mdtTypeRef) {
+    return E_FAIL;
+  }
+
+  if (token_type == CorTokenType::mdtTypeDef) {
+    *resolved_metadata_import = metadata_import;
+    metadata_import->AddRef();
+    *type_def = decoded_token;
+    return GetTypeNameFromMdTypeDef(decoded_token, metadata_import, type_name,
+                                    &base_token, &std::cerr);
+  }
+
+  // We have to get all the assemblies in order to get
+  // the IMetaDataImport and mdTypeDef that corresponds with the
+  // mdTypeRef.
+  CComPtr<ICorDebugAppDomain> app_domain;
+  HRESULT hr =
+      GetAppDomainFromICorDebugModule(debug_module, &app_domain, &std::cerr);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to get ICorDebugAppDomain from ICorDebugAssembly.";
+    return hr;
+  }
+
+  CComPtr<ICorDebugAssemblyEnum> assembly_enum;
+  hr = app_domain->EnumerateAssemblies(&assembly_enum);
+  if (FAILED(hr)) {
+    std::cerr << "Cannot get ICorDebugAssemblyEnum.";
+    return hr;
+  }
+
+  std::vector<CComPtr<ICorDebugAssembly>> debug_assemblies;
+  hr =
+      EnumerateICorDebugSpecifiedType<ICorDebugAssemblyEnum, ICorDebugAssembly>(
+          assembly_enum, &debug_assemblies);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to enumerate assemblies.";
+    return hr;
+  }
+
+  hr = GetMdTypeDefAndMetaDataFromTypeRef(decoded_token, debug_assemblies,
+                                          metadata_import, type_def,
+                                          resolved_metadata_import, &std::cerr);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to get mdTypeDef and MetaDataImport";
+    return hr;
+  }
+
+  return GetTypeNameFromMdTypeDef(*type_def, *resolved_metadata_import,
+                                  type_name, &base_token, &std::cerr);
 }
 
 HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
@@ -1012,6 +1120,81 @@ HRESULT CorDebugHelper::PopulateGenericClassTypesFromClassObject(
 
   return EnumerateICorDebugSpecifiedType<ICorDebugTypeEnum, ICorDebugType>(
       type_enum, generic_types);
+}
+
+HRESULT CorDebugHelper::ProcessConstantSigBlob(
+    const std::vector<uint8_t> &signature_blob,
+    CorElementType *cor_type,
+    UVCP_CONSTANT *constant_value,
+    ULONG *value_len,
+    std::vector<uint8_t> *remaining_bytes) {
+  static std::map<CorElementType, uint32_t> cor_type_to_bytes_size{
+      {CorElementType::ELEMENT_TYPE_BOOLEAN, 1},
+      {CorElementType::ELEMENT_TYPE_I1, 1},
+      {CorElementType::ELEMENT_TYPE_CHAR, 1},
+      {CorElementType::ELEMENT_TYPE_U1, 1},
+      {CorElementType::ELEMENT_TYPE_I2, 2},
+      {CorElementType::ELEMENT_TYPE_U2, 2},
+      {CorElementType::ELEMENT_TYPE_I4, 4},
+      {CorElementType::ELEMENT_TYPE_U4, 4},
+      {CorElementType::ELEMENT_TYPE_I8, 8},
+      {CorElementType::ELEMENT_TYPE_U8, 8},
+      {CorElementType::ELEMENT_TYPE_R4, 4},
+      {CorElementType::ELEMENT_TYPE_R8, 8},
+      {CorElementType::ELEMENT_TYPE_I, 1},
+      {CorElementType::ELEMENT_TYPE_U, 1},
+      {CorElementType::ELEMENT_TYPE_STRING, 0}};
+
+  if (signature_blob.empty()) {
+    cerr << "Signature blob of constant is empty.";
+    return E_INVALIDARG;
+  }
+
+  // First byte is the type of the signature.
+  *cor_type = (CorElementType)signature_blob[0];
+
+  // Next few bytes are the constant value. We have to check that there are
+  // enough bytes.
+  if (cor_type_to_bytes_size.find(*cor_type) ==
+      cor_type_to_bytes_size.end()) {
+    cerr << "Cannot process type of constant.";
+    return E_FAIL;
+  }
+
+  // Check that there are enough bytes in the signature to read
+  // the constant value.
+  uint32_t const_size = cor_type_to_bytes_size[*cor_type];
+  if (signature_blob.size() <= const_size) {
+    cerr << "Not enough bytes to retrieve constant value.";
+    return E_FAIL;
+  }
+
+  // If this is a string, we need the data in the signature to be
+  // divisible by sizeof(WCHAR) and get the length of the string.
+  if (*cor_type == CorElementType::ELEMENT_TYPE_STRING) {
+    if ((signature_blob.size() - 1) % sizeof(WCHAR) != 0) {
+      cerr << "Not enough bytes to read string value for constant.";
+      return E_FAIL;
+    }
+    *value_len = (signature_blob.size() - 1) / sizeof(WCHAR);
+  }
+
+  // The first byte of the blob is the CorElementType and the next
+  // few bytes will be the constant_value.
+  *constant_value = (UVCP_CONSTANT)(signature_blob.data() + 1);
+
+  // If there are bytes left, and the constant is not a string,
+  // then this constant is an Enum and the remaining bytes are the metadata
+  // token for the Enum class.
+  uint32_t bytes_left = signature_blob.size() - 1 - const_size;
+  if (bytes_left == 0 ||
+      *cor_type == CorElementType::ELEMENT_TYPE_STRING) {
+    return S_OK;
+  }
+
+  remaining_bytes->assign(signature_blob.end() - bytes_left,
+                          signature_blob.end());
+  return S_OK;
 }
 
 }  // namespace google_cloud_debugger

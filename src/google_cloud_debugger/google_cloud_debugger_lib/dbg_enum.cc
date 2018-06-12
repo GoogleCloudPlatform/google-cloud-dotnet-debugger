@@ -27,6 +27,8 @@ using std::vector;
 namespace google_cloud_debugger {
 
 const string DbgEnum::kEnumValue = "value__";
+std::map<std::string, std::vector<std::tuple<UVCP_CONSTANT, std::string>>>
+    DbgEnum::enum_values_dict;
 
 HRESULT DbgEnum::PopulateValue(Variable *variable) {
   if (!variable) {
@@ -43,60 +45,49 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
     return S_OK;
   }
 
-  CorElementType enum_type;
-  bool enum_type_found = false;
-  // We have enum type.
-  // First, gets the underlying type. This is from the non-static field __value.
-  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
-    if (*it) {
-      if ((*it)->IsStatic()) {
-        continue;
-      }
-
-      if (kEnumValue.compare((*it)->GetMemberName()) != 0) {
-        continue;
-      }
-
-      PCCOR_SIGNATURE field_signature = (*it)->GetSignature();
-      enum_type = CorSigUncompressElementType(field_signature);
-      enum_type_found = true;
-      break;
-    }
-  }
-
-  if (!enum_type_found) {
+  // enum_type_ is initialized to ELEMENT_TYPE_END so if
+  // it is still ELEMENT_TYPE_END, then we haven't been able to
+  // find the correct enum_type_ yet.
+  if (enum_type_ == CorElementType::ELEMENT_TYPE_END) {
     WriteError("Cannot find the type of the enum.");
     return E_FAIL;
   }
 
-  ULONG64 enum_value = ExtractEnumValue(enum_type, enum_value_array_.data());
-  for (auto it = begin(class_fields_); it != end(class_fields_); ++it) {
-    if (*it) {
-      if (!(*it)->IsStatic() ||
-          kEnumValue.compare((*it)->GetMemberName()) == 0) {
-        continue;
-      }
+  if (enum_values_dict.find(class_name_) == enum_values_dict.end()) {
+    WriteError("Cannot find enum " + class_name_);
+    return E_FAIL;
+  }
 
-      UVCP_CONSTANT raw_default_value = (*it)->GetDefaultValue();
-      ULONG64 const_value =
-          ExtractEnumValue(enum_type, (void *)raw_default_value);
+  // This mutable enum value may be zeroed out during the loop.
+  ULONG64 mutable_enum_value = enum_value_;
+  for (auto &&enum_value_tuple : enum_values_dict[class_name_]) {
+    UVCP_CONSTANT raw_default_value = std::get<0>(enum_value_tuple);
+    ULONG64 const_value =
+        ExtractEnumValue(enum_type_, (void *)raw_default_value);
 
-      // If enum_value is different from const_value, but const_value
-      // corresponds to bits in enum_value, then this const_value string is part
-      // of the enum_value string representation.
-      if (enum_value != const_value &&
-          (const_value == 0 || (const_value & enum_value) != const_value)) {
-        continue;
-      }
+    // If the original_enum_value matches the const_value exactly,
+    // uses that instead of the "|" string.
+    if (enum_value_ == const_value) {
+      enum_string_ = std::get<1>(enum_value_tuple);
+      break;
+    }
 
-      // Zero out the bits of const_value in enum_value;
-      enum_value = enum_value & (~const_value);
+    // If mutable_enum_value is different from const_value, but const_value
+    // corresponds to bits in mutable_enum_value, then this const_value string
+    // is part of the mutable_enum_value string representation.
+    if (mutable_enum_value != const_value &&
+        (const_value == 0 ||
+         (const_value & mutable_enum_value) != const_value)) {
+      continue;
+    }
 
-      if (enum_string_.empty()) {
-        enum_string_.append((*it)->GetMemberName());
-      } else {
-        enum_string_.append(" | " + (*it)->GetMemberName());
-      }
+    // Zero out the bits of const_value in enum_value;
+    mutable_enum_value = mutable_enum_value & (~const_value);
+
+    if (enum_string_.empty()) {
+      enum_string_.append(std::get<1>(enum_value_tuple));
+    } else {
+      enum_string_.append(" | " + std::get<1>(enum_value_tuple));
     }
   }
 
@@ -105,7 +96,6 @@ HRESULT DbgEnum::PopulateValue(Variable *variable) {
 }
 
 HRESULT DbgEnum::ProcessEnum(ICorDebugValue *debug_value,
-                             ICorDebugClass *debug_class,
                              IMetaDataImport *metadata_import) {
   class_type_ = ClassType::ENUM;
   CComPtr<ICorDebugGenericValue> generic_value;
@@ -132,25 +122,63 @@ HRESULT DbgEnum::ProcessEnum(ICorDebugValue *debug_value,
     return hr;
   }
 
-  // To get the different enum values, we have to process the field
-  // of this class.
-  CComPtr<ICorDebugObjectValue> obj_value;
-  hr = debug_value->QueryInterface(__uuidof(ICorDebugObjectValue),
-                                   reinterpret_cast<void **>(&obj_value));
-  if (FAILED(hr)) {
-    WriteError(
-        "Failed to get ICorDebugObjectValue from ICorDebugValue while "
-        "evaluating Enum.");
-    return hr;
-  }
-
-  hr = ProcessFields(metadata_import, obj_value, debug_class);
+  hr = ProcessEnumFields(metadata_import);
   if (FAILED(hr)) {
     WriteError("Failed to populate class fields while evaluating Enum.");
     return hr;
   }
 
+  // Sets the underlying enum type.
+  // This is from the non-static field __value.
+  for (auto &class_field : class_fields_) {
+    if (!class_field || class_field->IsStatic()) {
+      continue;
+    }
+
+    if (kEnumValue.compare(class_field->GetMemberName()) != 0) {
+      continue;
+    }
+
+    PCCOR_SIGNATURE field_signature = class_field->GetSignature();
+    enum_type_ = CorSigUncompressElementType(field_signature);
+    break;
+  }
+
+  if (enum_type_ == CorElementType::ELEMENT_TYPE_END) {
+    initialize_hr_ = E_FAIL;
+  }
+
+  enum_value_ = ExtractEnumValue(enum_type_, enum_value_array_.data());
+
   return S_OK;
+}
+
+HRESULT DbgEnum::ProcessEnumFields(IMetaDataImport *metadata_import) {
+  HRESULT hr = ProcessFields(metadata_import, nullptr, nullptr);
+  if (FAILED(hr)) {
+    WriteError("Failed to process enum fields.");
+    return hr;
+  }
+
+  AddEnumValuesToDict();
+  return S_OK;
+}
+
+void DbgEnum::AddEnumValuesToDict() {
+  if (enum_values_dict.find(class_name_) == enum_values_dict.end()) {
+    std::vector<std::tuple<UVCP_CONSTANT, std::string>> enum_values;
+    for (auto &class_field : class_fields_) {
+      if (!class_field || !class_field->IsStatic()) {
+        continue;
+      }
+
+      UVCP_CONSTANT raw_default_value = class_field->GetDefaultValue();
+      std::string value_name = class_field->GetMemberName();
+      enum_values.push_back(std::make_tuple<UVCP_CONSTANT, std::string>(
+          std::move(raw_default_value), std::move(value_name)));
+    }
+    enum_values_dict[class_name_] = std::move(enum_values);
+  }
 }
 
 ULONG64 DbgEnum::ExtractEnumValue(CorElementType enum_type, void *enum_value) {

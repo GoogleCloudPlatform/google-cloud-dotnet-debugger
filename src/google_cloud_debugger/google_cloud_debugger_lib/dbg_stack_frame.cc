@@ -15,6 +15,7 @@
 #include "dbg_stack_frame.h"
 
 #include <iostream>
+#include <map>
 #include <queue>
 #include <vector>
 
@@ -23,6 +24,7 @@
 #include "dbg_breakpoint.h"
 #include "dbg_class.h"
 #include "dbg_class_property.h"
+#include "dbg_enum.h"
 #include "dbg_reference_object.h"
 #include "debugger_callback.h"
 #include "i_cor_debug_helper.h"
@@ -35,6 +37,7 @@
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
 using google::cloud::diagnostics::debug::Variable;
+using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using std::cerr;
 using std::cout;
@@ -48,8 +51,10 @@ using std::vector;
 namespace google_cloud_debugger {
 
 HRESULT DbgStackFrame::Initialize(
-    ICorDebugILFrame *il_frame, const vector<LocalVariableInfo> &variable_infos,
-    mdMethodDef method_token, IMetaDataImport *metadata_import) {
+    ICorDebugILFrame *il_frame,
+    const std::vector<LocalVariableInfo> &variable_infos,
+    const vector<LocalConstantInfo> &constant_infos, mdMethodDef method_token,
+    IMetaDataImport *metadata_import) {
   if (!il_frame) {
     cerr << "Null IL Frame.";
     return E_INVALIDARG;
@@ -105,11 +110,6 @@ HRESULT DbgStackFrame::Initialize(
     return hr;
   }
 
-  hr = InitializeClassGenericTypeParameters(metadata_import, il_frame);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
   if (!is_async_method_) {
     CComPtr<ICorDebugValueEnum> local_enum;
     hr = il_frame->EnumerateLocalVariables(&local_enum);
@@ -123,6 +123,16 @@ HRESULT DbgStackFrame::Initialize(
     if (FAILED(hr)) {
       return hr;
     }
+  }
+
+  hr = ProcessLocalConstants(constant_infos);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = InitializeClassGenericTypeParameters(metadata_import, il_frame);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   is_processed_il_frame_ = true;
@@ -194,6 +204,115 @@ HRESULT DbgStackFrame::ProcessLocalVariables(
   return S_OK;
 }
 
+HRESULT DbgStackFrame::ProcessLocalConstants(
+    const std::vector<google_cloud_debugger_portable_pdb::LocalConstantInfo>
+        &constant_infos) {
+  HRESULT hr;
+  for (auto &constant_info : constant_infos) {
+    UVCP_CONSTANT const_value;
+    ULONG value_len = 0;
+    CorElementType const_type;
+    vector<uint8_t> remaining_buffer;
+
+    hr = debug_helper_->ProcessConstantSigBlob(
+        constant_info.signature_data, &const_type,
+        &const_value, &value_len, &remaining_buffer);
+    if (FAILED(hr)) {
+      cerr << "Cannot process constant " << constant_info.name;
+      continue;
+    }
+
+    ULONG64 const_numerical_value = 0;
+    std::unique_ptr<DbgObject> const_obj;
+    hr = obj_factory_->CreateDbgObjectFromLiteralConst(
+        const_type, const_value, value_len, &const_numerical_value, &const_obj);
+    if (FAILED(hr)) {
+      cerr << "Failed to create constant " << constant_info.name;
+      continue;
+    }
+
+    // If there are no bytes left or cor type is ELEMENT_TYPE_STRING,
+    // then this constant is not an enum.
+    if (remaining_buffer.size() == 0
+      || const_type == CorElementType::ELEMENT_TYPE_STRING) {
+      variables_.push_back(
+          std::make_tuple(constant_info.name, std::move(const_obj)));
+      continue;
+    }
+
+
+    hr = ProcessLocalEnumConstant(
+        constant_info.name, const_type,
+        const_numerical_value, remaining_buffer);
+    if (FAILED(hr)) {
+      cerr << "Failed to process enum value for constant "
+            << constant_info.name;
+    }
+  }
+  return S_OK;
+}
+
+HRESULT DbgStackFrame::ProcessLocalEnumConstant(
+    const std::string &constant_name, const CorElementType &enum_type,
+    ULONG64 enum_value, const std::vector<uint8_t> &enum_metadata_buffer) {
+  ULONG encoded_token = 0;
+  size_t buffer_size = enum_metadata_buffer.size();
+  switch (buffer_size) {
+    case 1:
+      encoded_token = *((uint8_t *)enum_metadata_buffer.data());
+      break;
+    case 2:
+      encoded_token = *((uint16_t *)enum_metadata_buffer.data());
+      break;
+    case 4:
+      encoded_token = *((uint32_t *)enum_metadata_buffer.data());
+      break;
+    case 8:
+      encoded_token = *((uint64_t *)enum_metadata_buffer.data());
+      break;
+    default:
+      cerr << "Cannot read metadata token for constant enum " << constant_name;
+      return E_FAIL;
+  }
+
+  // Now we retrieve the name, metadata token and metadata import
+  // for the enum.
+  std::string enum_name;
+  CComPtr<IMetaDataImport> resolved_metadata_import;
+  mdTypeDef enum_token;
+
+  CComPtr<IMetaDataImport> metadata_import;
+  HRESULT hr = debug_helper_->GetMetadataImportFromICorDebugModule(
+      debug_module_, &metadata_import, &cerr);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  hr = debug_helper_->GetTypeInfoFromEncodedToken(
+      encoded_token, debug_module_, metadata_import, &enum_name, &enum_token,
+      &resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  std::unique_ptr<DbgObject> dbg_object;
+  dbg_object = std::unique_ptr<DbgObject>(
+      new DbgEnum(1, enum_name, enum_token, enum_value, enum_type,
+                  debug_helper_, obj_factory_));
+  DbgEnum *dbg_enum = dynamic_cast<DbgEnum *>(dbg_object.get());
+  if (!dbg_enum) {
+    return E_FAIL;
+  }
+
+  hr = dbg_enum->ProcessEnumFields(resolved_metadata_import);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  variables_.push_back(std::make_tuple(constant_name, std::move(dbg_object)));
+  return S_OK;
+}
+
 HRESULT DbgStackFrame::ProcessMethodArguments(
     ICorDebugValueEnum *method_arg_enum, mdMethodDef method_token,
     IMetaDataImport *metadata_import) {
@@ -230,6 +349,7 @@ HRESULT DbgStackFrame::ProcessMethodArguments(
     }
   }
 
+  hr = S_OK;
   vector<mdParamDef> method_args(100, 0);
   while (hr == S_OK) {
     ULONG method_args_returned = 0;
