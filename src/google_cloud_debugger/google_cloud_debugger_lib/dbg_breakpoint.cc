@@ -218,18 +218,20 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
 bool DbgBreakpoint::TrySetBreakpointInMethod(
     const google_cloud_debugger_portable_pdb::MethodInfo &method) {
-  for (auto &&sequence_point : method.sequence_points) {
-    if (sequence_point.start_line > line_ || sequence_point.end_line < line_) {
-      continue;
-    }
+  const auto &find_seq = std::find_if(
+      method.sequence_points.begin(), method.sequence_points.end(),
+      [&](const google_cloud_debugger_portable_pdb::SequencePoint &seq) {
+        return !seq.is_hidden && seq.start_line >= line_;
+      });
 
-    il_offset_ = sequence_point.il_offset;
-    method_def_ = method.method_def;
-
-    return true;
+  if (find_seq == method.sequence_points.end()) {
+    return false;
   }
 
-  return false;
+  il_offset_ = find_seq->il_offset;
+  line_ = find_seq->start_line;
+  method_def_ = method.method_def;
+  return true;
 }
 
 }  // namespace google_cloud_debugger

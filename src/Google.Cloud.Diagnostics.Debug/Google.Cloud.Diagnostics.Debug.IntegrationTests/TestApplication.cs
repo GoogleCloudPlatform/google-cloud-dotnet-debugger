@@ -31,9 +31,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         public static readonly int EchoTopLine = 48;
         public static readonly int EchoBottomLine = 59;
         public static readonly int PidLine = 69;
-        public static readonly int LoopMiddle = 77;
-        public static readonly int AsyncBottomLine = 86;
-        public static readonly int ConstantBottomLine = 94;
+        public static readonly int LoopMiddleComment = 77;
+        public static readonly int LoopMiddle = 78;
+        public static readonly int AsyncBottomLine = 87;
+        public static readonly int ConstantBottomLine = 95;
 
         /// <summary>Get the echo url with 'i' appended.</summary>
         public static string GetEchoUrl(TestApplication app, int i) => $"{app.AppUrlEcho}/{i}";

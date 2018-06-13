@@ -74,6 +74,7 @@ namespace Google.Cloud.Diagnostics.Debug.TestApp
             int t = 0;
             for (int i = 0; i < 1_000; i++)
             {
+                // This is a comment.
                 t = i;
             }
             return t;
