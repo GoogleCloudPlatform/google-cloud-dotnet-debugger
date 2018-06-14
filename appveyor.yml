@@ -9,6 +9,10 @@ image: Visual Studio 2017
 # Pull down all submodule code
 init:
   - git config --global core.autocrlf input
+  # This change was recommended by the AppVeyor team to save space.
+  - rmdir C:\cygwin /s /q
+  - rmdir C:\QT /s /q
+
 
 # Cache the third party code as it can take 20+ min to build
 cache:
