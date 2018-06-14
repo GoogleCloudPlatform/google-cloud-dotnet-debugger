@@ -192,7 +192,7 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
       MakeMatchingMethod(line_, method_first_line, method_def, il_offset);
 
   // Gets another method that does not match the breakpoint.
-  MethodInfo method2 = MakeMatchingMethod(line_ * 2, method_first_line * 2,
+  MethodInfo method2 = MakeMatchingMethod(line_ * 2, line_ + 1,
                                           method_def * 2, il_offset * 2);
 
   // Push the methods into the method vector that
@@ -250,13 +250,6 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
   uint32_t il_offset = 99;
   MethodInfo method =
       MakeMatchingMethod(line_ + 10, method_first_line, method_def, il_offset);
-
-  // The method now contains sequence points that does not match
-  // the breakpoint. We now change the method_first_line
-  // so it will be less than the breakpoint_line.
-  // Note that this still mean that this method does not
-  // match the breakpoint since its sequence points do not.
-  method.first_line = line_ - 10;
 
   // Gets another method that does not match the breakpoint.
   uint32_t method2_first_line = line_ + 100;
