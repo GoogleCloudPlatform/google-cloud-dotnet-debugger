@@ -29,6 +29,7 @@ For detailed instructions see the [Stackdriver Debugger documentation for .NET C
 * [gcr.io/dotnet-debugger/aspnetcore:1.0](http://gcr.io/dotnet-debugger/aspnetcore:1.0)
 * [gcr.io/dotnet-debugger/aspnetcore:1.1](http://gcr.io/dotnet-debugger/aspnetcore:1.1)
 * [gcr.io/dotnet-debugger/aspnetcore:2.0](http://gcr.io/dotnet-debugger/aspnetcore:2.0)
+* [gcr.io/dotnet-debugger/aspnetcore:2.1](http://gcr.io/dotnet-debugger/aspnetcore:2.1)
 
 
 ## Usage
