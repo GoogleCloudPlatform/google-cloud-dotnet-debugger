@@ -1,9 +1,2 @@
 runtime: custom
 env: flex
-
-health_check:
-  enable_health_check: True
-  check_interval_sec: 10
-  timeout_sec: 10
-  unhealthy_threshold: 5
-  healthy_threshold: 1
