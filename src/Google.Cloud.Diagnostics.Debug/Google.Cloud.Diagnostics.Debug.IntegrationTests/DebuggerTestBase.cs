@@ -94,8 +94,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 using (HttpClient client = new HttpClient())
                 {
                     // Allow the app a chance to start up as it may not start
-                    // right away.
-                    int attempts = 10;
+                    // right away.  This generally takes less than 5 seconds
+                    // but we give more time as sometimes it can take longer
+                    // and is outside our control in most cases.
+                    int attempts = 30;
                     for (int i = 0; i < attempts; i++)
                     {
                         try
