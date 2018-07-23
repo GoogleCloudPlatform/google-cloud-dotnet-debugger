@@ -39,7 +39,7 @@ This product might be changed in backward-incompatible ways and is not subject t
 It is not guaranteed to move forward to General Availability.
 This product is not intended for real-time usage in critical applications.
 
-For detailed usage instructions see the official [Stackdriver Debugger for .NET Core documentation](https://cloud.google.com/debugger/docs/setup/dotnet)
+For detailed usage instructions see the official [Stackdriver Debugger for .NET Core documentation](https://cloud.google.com/debugger/docs/setup/dotnet).
 
 To be able to use the .NET Core Stackdriver Debugger you will need to deploy PDBs
 with your code.  See the example below:
