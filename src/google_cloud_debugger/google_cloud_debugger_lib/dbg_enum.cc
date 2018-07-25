@@ -27,7 +27,8 @@ using std::vector;
 namespace google_cloud_debugger {
 
 const string DbgEnum::kEnumValue = "value__";
-std::map<std::string, std::vector<std::tuple<UVCP_CONSTANT, std::string>>>
+std::unordered_map<std::string,
+                   std::vector<std::tuple<UVCP_CONSTANT, std::string>>>
     DbgEnum::enum_values_dict;
 
 HRESULT DbgEnum::PopulateValue(Variable *variable) {
