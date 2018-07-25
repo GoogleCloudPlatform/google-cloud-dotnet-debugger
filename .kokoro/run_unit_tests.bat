@@ -5,7 +5,7 @@ cd ..
 
 set GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR/73609_cloud-sharp-jenkins-compute-service-account"
 
-.\build-deps.cmd
-.\build.cmd
+call .\build-deps.cmd
+call .\build.cmd
 
-%~dp0type-shell-output.bat run_unit_tests
+call %~dp0type-shell-output.bat run_unit_tests

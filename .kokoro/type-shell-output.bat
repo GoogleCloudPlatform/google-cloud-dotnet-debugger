@@ -5,7 +5,7 @@
 :: This is needed to be able to see shell output on the
 :: Windows Kokoro machines.
 
-set TEMP_FILE=%~dp0/../%1
+set TEMP_FILE=%~dp0..\%1
 
 del %TEMP_FILE%.txt
 
