@@ -1,3 +1,5 @@
+:: See documentation in type-shell-output.bat
+
 cd %~dp0
 cd ..
 
