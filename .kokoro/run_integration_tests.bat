@@ -8,4 +8,4 @@ set GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR\73609_cloud-sharp-jenki
 call .\build-deps.cmd
 call .\build.cmd
 
-call %~dp0type-shell-output.bat run_integration_tests
+bash -c ./run_integration_tests.sh

@@ -6,4 +6,4 @@ cd ..
 call .\build-deps.cmd
 call .\build.cmd
 
-call %~dp0type-shell-output.bat run_unit_tests
+bash -c ./run_unit_tests.sh
