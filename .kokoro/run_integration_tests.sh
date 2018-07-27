@@ -10,6 +10,10 @@ cd ..
 
 export GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR/73609_cloud-sharp-jenkins-compute-service-account"
 
+sudo ldconfig
+git submodule init
+git submodule update
+
 ./build-deps.sh
 ./build.sh
 ./run_integration_tests.sh
