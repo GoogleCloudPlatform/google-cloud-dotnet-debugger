@@ -9,6 +9,9 @@ ROOT_DIR=$(dirname "$SCRIPT_DIR")
 cd $SCRIPT_DIR
 cd ..
 
+# We need to spawn and kill process and need to be root for this to work.
+sudo su
+
 export GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR/73609_cloud-sharp-jenkins-compute-service-account"
 
 git submodule init
