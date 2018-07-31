@@ -14,7 +14,6 @@ sudo su
 sudo ldconfig
 git submodule init
 git submodule update
->>>>>>> master
 
 ./build-deps.sh
 ./build.sh
