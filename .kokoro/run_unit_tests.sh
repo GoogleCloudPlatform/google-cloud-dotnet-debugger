@@ -11,6 +11,11 @@ cd ..
 # We need to spawn and kill process and need to be root for this to work.
 sudo su
 
+sudo ldconfig
+git submodule init
+git submodule update
+>>>>>>> master
+
 ./build-deps.sh
 ./build.sh
 ./run_unit_tests.sh
