@@ -11,4 +11,4 @@ git submodule update
 call .\build-deps.cmd
 call .\build.cmd
 
-call %~dp0type-shell-output.bat run_integration_tests
+bash run_integration_tests.sh
