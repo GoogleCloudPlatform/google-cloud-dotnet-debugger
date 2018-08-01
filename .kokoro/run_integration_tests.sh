@@ -10,7 +10,7 @@ cd $SCRIPT_DIR
 cd ..
 
 # We need to spawn and kill process and need to be root for this to work.
-sudo su
+sudo -E su <<EOF
 
 export GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR/73609_cloud-sharp-jenkins-compute-service-account"
 
@@ -23,3 +23,4 @@ sudo ldconfig
 
 ./build.sh
 ./run_integration_tests.sh
+EOF
