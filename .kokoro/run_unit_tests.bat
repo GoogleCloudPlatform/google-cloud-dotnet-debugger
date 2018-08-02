@@ -6,7 +6,7 @@ cd ..
 git submodule init
 git submodule update
 
-call .\build-deps.cmd
-call .\build.cmd
+call /k .\build-deps.cmd
+call /k .\build.cmd
 
 "C:\Program Files\Git\bin\bash.exe" run_unit_tests.sh
