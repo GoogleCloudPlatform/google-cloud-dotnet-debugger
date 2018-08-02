@@ -1,4 +1,4 @@
-:: See documentation in type-shell-output.bat
+:: Build the repo's dependencies, the repo and run its integration tests.
 
 set ROOT_DIR=%~dp0..
 cd %ROOT_DIR%
