@@ -38,7 +38,9 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-std::map<std::string, std::map<std::string, std::shared_ptr<IDbgClassMember>>>
+std::unordered_map<
+    std::string,
+    std::unordered_map<std::string, std::shared_ptr<IDbgClassMember>>>
     DbgClass::static_class_members_;
 
 HRESULT DbgClass::GetNonStaticField(const std::string &field_name,
@@ -463,7 +465,7 @@ void DbgClass::StoreStaticClassMember(const string &module_name,
   string key = GetStaticCacheKey(module_name, class_name);
   if (static_class_members_.find(key) == static_class_members_.end()) {
     static_class_members_[key] =
-        std::map<string, shared_ptr<IDbgClassMember>>();
+        std::unordered_map<string, shared_ptr<IDbgClassMember>>();
   }
 
   static_class_members_[key][member_name] = object;

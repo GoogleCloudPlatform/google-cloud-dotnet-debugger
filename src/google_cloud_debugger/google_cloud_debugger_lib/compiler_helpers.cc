@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <map>
+#include <unordered_map>
 
 #include "class_names.h"
 #include "compiler_helpers.h"
@@ -271,7 +271,7 @@ bool TypeCompilerHelper::IsObjectType(const CorElementType &cor_type) {
 
 CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
     const std::string &type_string) {
-  static std::map<std::string, CorElementType> string_to_cor_type{
+  static std::unordered_map<std::string, CorElementType> string_to_cor_type{
       {kCharClassName, CorElementType::ELEMENT_TYPE_BOOLEAN},
       {kSByteClassName, CorElementType::ELEMENT_TYPE_I1},
       {kCharClassName, CorElementType::ELEMENT_TYPE_CHAR},
@@ -311,9 +311,15 @@ CorElementType TypeCompilerHelper::ConvertStringToCorElementType(
   }
 }
 
+struct CorElementTypeHash {
+  std::size_t operator()(CorElementType cor_type) const {
+    return static_cast<std::size_t>(cor_type);
+  }
+};
+
 HRESULT TypeCompilerHelper::ConvertCorElementTypeToString(
     const CorElementType &cor_type, std::string *result) {
-  static std::map<CorElementType, std::string> cor_type_to_string{
+  static std::unordered_map<CorElementType, std::string, CorElementTypeHash> cor_type_to_string{
       {CorElementType::ELEMENT_TYPE_BOOLEAN, kBooleanClassName},
       {CorElementType::ELEMENT_TYPE_I1, kSByteClassName},
       {CorElementType::ELEMENT_TYPE_CHAR, kCharClassName},

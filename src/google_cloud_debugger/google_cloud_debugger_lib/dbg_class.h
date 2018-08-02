@@ -15,8 +15,8 @@
 #ifndef DBG_CLASS_H_
 #define DBG_CLASS_H_
 
-#include <map>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -108,13 +108,19 @@ class DbgClass : public DbgReferenceObject {
   static void ClearStaticCache() { static_class_members_.clear(); }
 
   // Sets the name of the module this class is in.
-  void SetModuleName(const std::string &module_name) { module_name_ = module_name; };
+  void SetModuleName(const std::string &module_name) {
+    module_name_ = module_name;
+  };
 
   // Sets the name of this class.
-  void SetClassName(const std::string &class_name) { class_name_ = class_name; };
+  void SetClassName(const std::string &class_name) {
+    class_name_ = class_name;
+  };
 
   // Sets the class token.
-  void SetClassToken(const mdTypeDef &class_token) { class_token_ = class_token; };
+  void SetClassToken(const mdTypeDef &class_token) {
+    class_token_ = class_token;
+  };
 
   // Gets the class token.
   mdTypeDef GetClassToken() { return class_token_; }
@@ -240,8 +246,9 @@ class DbgClass : public DbgReferenceObject {
   // Cache of static class members.
   // First key is the module name and class name.
   // Second key is the member name.
-  static std::map<std::string,
-                  std::map<std::string, std::shared_ptr<IDbgClassMember>>>
+  static std::unordered_map<
+      std::string,
+      std::unordered_map<std::string, std::shared_ptr<IDbgClassMember>>>
       static_class_members_;
 };
 

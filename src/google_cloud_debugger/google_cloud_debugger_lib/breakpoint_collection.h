@@ -15,7 +15,7 @@
 #ifndef BREAKPOINT_COLLECTION_H_
 #define BREAKPOINT_COLLECTION_H_
 
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -94,7 +94,7 @@ class BreakpointCollection : public IBreakpointCollection {
   // std::vector<std::shared_ptr<DbgBreakpoint>> breakpoints_;
 
   // A map of location to a collection of breakpoint at that location.
-  std::map<std::string, std::unique_ptr<BreakpointLocationCollection>>
+  std::unordered_map<std::string, std::unique_ptr<BreakpointLocationCollection>>
     location_to_breakpoints_;
 
   // Activate a breakpoint in a portable pdb file.

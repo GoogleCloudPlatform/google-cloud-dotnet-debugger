@@ -15,9 +15,9 @@
 #ifndef DBG_ENUM_H_
 #define DBG_ENUM_H_
 
-#include <map>
 #include <memory>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "dbg_class.h"
@@ -85,8 +85,8 @@ class DbgEnum : public DbgClass {
   // Values are the list of possible values of that enum.
   // For example, enum Week { Monday, Tuesday } will have key
   // as Week and values as (0, "Monday") and (1, "Tuesday").
-  static std::map<std::string,
-                  std::vector<std::tuple<UVCP_CONSTANT, std::string>>>
+  static std::unordered_map<std::string,
+                            std::vector<std::tuple<UVCP_CONSTANT, std::string>>>
       enum_values_dict;
 
   // Given a void pointer and type of the enum, extract out the enum
