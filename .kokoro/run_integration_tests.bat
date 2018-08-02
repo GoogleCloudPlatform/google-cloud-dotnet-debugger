@@ -11,4 +11,4 @@ git submodule update
 call .\build-deps.cmd
 call .\build.cmd
 
-bash run_integration_tests.sh
+"C:\Program Files\Git\bin\bash.exe" run_integration_tests.sh
