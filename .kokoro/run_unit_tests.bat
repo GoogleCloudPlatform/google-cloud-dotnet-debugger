@@ -1,11 +1,11 @@
 :: See documentation in type-shell-output.bat
 
-cd %~dp0
-cd ..
+set ROOT_DIR=%~dp0..
+cd %ROOT_DIR%
 
 git submodule init
 git submodule update
 
-.\build-deps.cmd & ^
-.\build.cmd & ^
-"C:\Program Files\Git\bin\bash.exe" run_unit_tests.sh
+%ROOT_DIR%\build-deps.cmd & ^
+%ROOT_DIR%\build.cmd & ^
+"C:\Program Files\Git\bin\bash.exe" %ROOT_DIR%\run_unit_tests.sh
