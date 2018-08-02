@@ -8,6 +8,4 @@ set GOOGLE_APPLICATION_CREDENTIALS="$KOKORO_KEYSTORE_DIR\73609_cloud-sharp-jenki
 git submodule init
 git submodule update
 
-%ROOT_DIR%\build-deps.cmd & ^
-%ROOT_DIR%\build.cmd & ^
-"C:\Program Files\Git\bin\bash.exe" %ROOT_DIR%\run_integration_tests.sh
+%ROOT_DIR%\build-deps.cmd && %ROOT_DIR%\build.cmd && "C:\Program Files\Git\bin\bash.exe" %ROOT_DIR%\run_integration_tests.sh
