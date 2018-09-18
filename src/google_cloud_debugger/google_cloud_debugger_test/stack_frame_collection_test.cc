@@ -16,12 +16,14 @@
 #include <gtest/gtest.h>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 #include "ccomptr.h"
 #include "common_action_mocks.h"
 #include "cor_debug_helper.h"
 #include "dbg_breakpoint.h"
 #include "dbg_object_factory.h"
+#include "dbg_primitive.h"
 #include "i_cor_debug_mocks.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_metadata_import_mock.h"
@@ -30,11 +32,14 @@
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::StackFrame;
+using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::ConvertStringToWCharPtr;
 using google_cloud_debugger::CorDebugHelper;
 using google_cloud_debugger::DbgBreakpoint;
+using google_cloud_debugger::DbgObject;
 using google_cloud_debugger::DbgObjectFactory;
+using google_cloud_debugger::DbgPrimitive;
 using google_cloud_debugger::ICorDebugHelper;
 using google_cloud_debugger::IDbgObjectFactory;
 using google_cloud_debugger::StackFrameCollection;
@@ -563,10 +568,11 @@ TEST_F(StackFrameCollectionTest, TestPopulateStackFramesError) {
 
   Breakpoint breakpoint;
   IEvalCoordinatorMock eval_coordinator;
-  EXPECT_EQ(
-      stack_frame_collection.PopulateStackFrames(nullptr, &eval_coordinator),
-      E_INVALIDARG);
-  EXPECT_EQ(stack_frame_collection.PopulateStackFrames(&breakpoint, nullptr),
+  EXPECT_EQ(stack_frame_collection.PopulateStackFrames(nullptr,
+                                                       &eval_coordinator),
+            E_INVALIDARG);
+  EXPECT_EQ(stack_frame_collection.PopulateStackFrames(&breakpoint,
+                                                       nullptr),
             E_INVALIDARG);
 }
 

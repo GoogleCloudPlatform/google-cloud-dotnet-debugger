@@ -37,14 +37,14 @@ class StackFrameCollection : public IStackFrameCollection {
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &pdb_files,
-      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator);
+      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator) override;
 
   // Populates the stack frames of a breakpoint using stack_frames.
   // eval_coordinator will be used to perform eval coordination during function
   // evaluation if needed.
   HRESULT PopulateStackFrames(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
-      IEvalCoordinator *eval_coordinator);
+      IEvalCoordinator *eval_coordinator) override;
 
  private:
   // Class that contains helper method for ICorDebug objects.
@@ -61,8 +61,8 @@ class StackFrameCollection : public IStackFrameCollection {
   HRESULT PopulateAsyncStackFrameInfo(
       DbgStackFrame *async_frame, ICorDebugStackWalk *stack_walk,
       const std::vector<
-        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-        &parsed_pdb_files);
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files);
 
   // Given a PDB file, this function tries to find the metadata of the function
   // with token target_function_token in the PDB file. If found, this function
@@ -92,11 +92,23 @@ class StackFrameCollection : public IStackFrameCollection {
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &parsed_pdb_files);
 
-  // Helper function to evaluate the condition stored in DbgBreakpoint breakpoint.
-  // IEvalCoordinator is needed to get the active debug thread and frame.
-  // Parsed_pdb_files vector is needed to retrieve local variables names.
+  // Helper function to evaluate the condition stored in DbgBreakpoint
+  // breakpoint. IEvalCoordinator is needed to get the active debug thread and
+  // frame. Parsed_pdb_files vector is needed to retrieve local variables names.
   HRESULT EvaluateBreakpointCondition(
       DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files);
+
+  HRESULT ProcessExpressions(
+      DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
+      const std::vector<
+          std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+          &parsed_pdb_files);
+
+  HRESULT ProcessFirstStack(
+      IEvalCoordinator *eval_coordinator,
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &parsed_pdb_files);
@@ -131,11 +143,6 @@ class StackFrameCollection : public IStackFrameCollection {
 
   // Maximum number of stack frames with populated variables to be parsed.
   static const std::uint32_t kMaximumStackFramesWithVariables = 4;
-
-  // PopulateStackFrames should not fill up breakpoint proto in
-  // PopulateStackFrames with more bytes of information than this number.
-  // (65536 bytes = 64kb).
-  static const std::uint32_t kMaximumBreakpointSize = 65536;
 };
 
 }  //  namespace google_cloud_debugger

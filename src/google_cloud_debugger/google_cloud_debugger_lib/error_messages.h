@@ -60,7 +60,7 @@ static const std::string kTypeNameNotAvailable =
     "Type name is unavailable.";
 
 static const std::string kConditionEvalNeeded =
-    "Method call for condition evaluation is disabled. "
+    "Method call for condition or expression evaluation is disabled. "
     "Run the debugger with --method-evaluation to enable it.";
 }  // namespace google_cloud_debugger
 

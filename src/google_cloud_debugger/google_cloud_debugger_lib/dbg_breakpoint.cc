@@ -16,25 +16,28 @@
 
 #include <algorithm>
 #include <cctype>
+#include <queue>
 
+#include "compiler_helpers.h"
 #include "dbg_stack_frame.h"
 #include "document_index.h"
-#include "expression_util.h"
 #include "expression_evaluator.h"
+#include "expression_util.h"
 #include "i_eval_coordinator.h"
-#include "i_stack_frame_collection.h"
 #include "i_portable_pdb_file.h"
-#include "compiler_helpers.h"
+#include "i_stack_frame_collection.h"
+#include "variable_wrapper.h"
 
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
+using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger_portable_pdb::DocumentIndex;
 using google_cloud_debugger_portable_pdb::LocalConstantRow;
 using google_cloud_debugger_portable_pdb::LocalScopeRow;
 using google_cloud_debugger_portable_pdb::LocalVariableRow;
 using std::string;
-using std::vector;
 using std::unique_ptr;
+using std::vector;
 
 namespace google_cloud_debugger {
 
@@ -44,7 +47,8 @@ void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
 }
 
 void DbgBreakpoint::Initialize(const string &file_name, const string &id,
-                               uint32_t line, uint32_t column, const std::string &condition,
+                               uint32_t line, uint32_t column,
+                               const std::string &condition,
                                const std::vector<std::string> &expressions) {
   file_name_ = file_name;
   id_ = id;
@@ -142,9 +146,49 @@ bool DbgBreakpoint::TrySetBreakpoint(
   return best_match_index != -1;
 }
 
+HRESULT DbgBreakpoint::EvaluateExpressions(DbgStackFrame *stack_frame,
+                                           IEvalCoordinator *eval_coordinator,
+                                           IDbgObjectFactory *obj_factory) {
+  for (auto &expression : expressions_) {
+    CompiledExpression compiled_expression = CompileExpression(expression);
+    if (compiled_expression.evaluator == nullptr) {
+      WriteError("Failed to compile expression: " + expression);
+      return E_FAIL;
+    }
+
+    // I think the frame may change when an expression is evaluated
+    // so we have to get the most recent one every iteration of the loop.
+    CComPtr<ICorDebugILFrame> active_frame;
+    HRESULT hr = eval_coordinator->GetActiveDebugFrame(&active_frame);
+    if (FAILED(hr)) {
+      WriteError("Failed to evaluate expression: " + expression + ".");
+      return hr;
+    }
+
+    hr = compiled_expression.evaluator->Compile(stack_frame, active_frame,
+                                                GetErrorStream());
+    if (FAILED(hr)) {
+      WriteError("Failed to evaluate expression: " + expression + ".");
+      return hr;
+    }
+
+    std::shared_ptr<DbgObject> expression_obj;
+    hr = compiled_expression.evaluator->Evaluate(
+        &expression_obj, eval_coordinator, obj_factory, GetErrorStream());
+    if (FAILED(hr)) {
+      WriteError("Failed to evaluate expression: " + expression + ".");
+      return hr;
+    }
+
+    expressions_map_[expression] = expression_obj;
+  }
+
+  return S_OK;
+}
+
 HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
-    IEvalCoordinator *eval_coordinator,
-    IDbgObjectFactory *obj_factory) {
+                                         IEvalCoordinator *eval_coordinator,
+                                         IDbgObjectFactory *obj_factory) {
   if (condition_.empty()) {
     evaluated_condition_ = true;
     return S_OK;
@@ -168,15 +212,16 @@ HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
     return hr;
   }
 
-  const TypeSignature &type_sig = compiled_expression.evaluator->GetStaticType();
+  const TypeSignature &type_sig =
+      compiled_expression.evaluator->GetStaticType();
   if (type_sig.cor_type != CorElementType::ELEMENT_TYPE_BOOLEAN) {
     WriteError("Condition of the breakpoint must be of type boolean.");
     return E_FAIL;
   }
 
   std::shared_ptr<DbgObject> condition_result;
-  hr = compiled_expression.evaluator->Evaluate(&condition_result,
-      eval_coordinator, obj_factory, GetErrorStream());
+  hr = compiled_expression.evaluator->Evaluate(
+      &condition_result, eval_coordinator, obj_factory, GetErrorStream());
   if (FAILED(hr)) {
     return hr;
   }
@@ -213,7 +258,45 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   location->set_line(line_);
   location->set_path(file_name_);
 
+  if (!expressions_map_.empty()) {
+    HRESULT hr = PopulateExpression(breakpoint, eval_coordinator);
+    if (FAILED(hr)) {
+      return hr;
+    }
+  }
+
   return stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
+}
+
+HRESULT DbgBreakpoint::PopulateExpression(
+    Breakpoint *breakpoint,
+    IEvalCoordinator *eval_coordinator) {
+  std::queue<VariableWrapper> bfs_queue;
+
+  for (auto &&kvp : expressions_map_) {
+    Variable *expression_proto = breakpoint->add_evaluated_expressions();
+
+    expression_proto->set_name(kvp.first);
+    const std::shared_ptr<DbgObject> &expression_value = kvp.second;
+    if (!expression_value) {
+      continue;
+    }
+
+    bfs_queue.push(VariableWrapper(expression_proto, expression_value));
+  }
+
+  if (bfs_queue.size() != 0) {
+    int half_available_breakpoint_size =
+        (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+    return VariableWrapper::PerformBFS(
+        &bfs_queue,
+        [breakpoint, half_available_breakpoint_size]() {
+          return breakpoint->ByteSize() > half_available_breakpoint_size;
+        },
+        eval_coordinator);
+  }
+
+  return S_OK;
 }
 
 bool DbgBreakpoint::TrySetBreakpointInMethod(

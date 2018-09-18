@@ -17,8 +17,8 @@
 #include <cstdlib>
 #include <string>
 
-#include "custom_binary_reader.h"
 #include "ccomptr.h"
+#include "custom_binary_reader.h"
 #include "dbg_breakpoint.h"
 #include "dbg_object.h"
 #include "i_cor_debug_mocks.h"
@@ -26,9 +26,6 @@
 #include "i_portable_pdb_mocks.h"
 #include "i_stack_frame_collection_mock.h"
 
-using ::testing::Const;
-using ::testing::Return;
-using ::testing::ReturnRef;
 using google::cloud::diagnostics::debug::Breakpoint;
 using google_cloud_debugger::CComPtr;
 using google_cloud_debugger::DbgBreakpoint;
@@ -39,6 +36,9 @@ using std::max;
 using std::string;
 using std::unique_ptr;
 using std::vector;
+using ::testing::Const;
+using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace google_cloud_debugger_test {
 
@@ -47,8 +47,8 @@ namespace google_cloud_debugger_test {
 class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    breakpoint_.Initialize(file_name_, id_, line_, column_,
-                           condition_, expressions_);
+    breakpoint_.Initialize(file_name_, id_, line_, column_, condition_,
+                           expressions_);
     // Gives the PDB file the same file name as this breakpoint's file name.
     pdb_file_fixture_.first_doc_.file_name_ = file_name_;
     pdb_file_fixture_.SetUpIPortablePDBFile(&file_mock_);
@@ -192,8 +192,8 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
       MakeMatchingMethod(line_, method_first_line, method_def, il_offset);
 
   // Gets another method that does not match the breakpoint.
-  MethodInfo method2 = MakeMatchingMethod(line_ * 2, line_ + 1,
-                                          method_def * 2, il_offset * 2);
+  MethodInfo method2 =
+      MakeMatchingMethod(line_ * 2, line_ + 1, method_def * 2, il_offset * 2);
 
   // Push the methods into the method vector that
   // the document index matching this Breakpoint will return.
@@ -272,8 +272,9 @@ TEST_F(DbgBreakpointTest, PopulateBreakpoint) {
   IStackFrameCollectionMock stackframe_collection_mock;
   IEvalCoordinatorMock eval_coordinator_mock;
 
-  EXPECT_CALL(stackframe_collection_mock,
-              PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
+  EXPECT_CALL(
+      stackframe_collection_mock,
+      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
@@ -305,8 +306,9 @@ TEST_F(DbgBreakpointTest, PopulateBreakpointError) {
             E_INVALIDARG);
 
   // Makes PopulateStackFrames returns error.
-  EXPECT_CALL(stackframe_collection_mock,
-              PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
+  EXPECT_CALL(
+      stackframe_collection_mock,
+      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
 

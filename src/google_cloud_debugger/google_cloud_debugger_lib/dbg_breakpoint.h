@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "breakpoint.pb.h"
@@ -26,9 +27,9 @@
 #include "string_stream_wrapper.h"
 
 namespace google_cloud_debugger_portable_pdb {
-  class IPortablePdbFile;
-  struct MethodInfo;
-};
+class IPortablePdbFile;
+struct MethodInfo;
+};  // namespace google_cloud_debugger_portable_pdb
 
 namespace google_cloud_debugger {
 
@@ -36,6 +37,7 @@ class IEvalCoordinator;
 class IStackFrameCollection;
 class DbgStackFrame;
 class IDbgObjectFactory;
+class DbgObject;
 
 // This class represents a breakpoint in the Debugger.
 // To use the class, call the Initialize method to populate the
@@ -124,16 +126,16 @@ class DbgBreakpoint : public StringStreamWrapper {
   const std::string &GetCondition() const { return condition_; }
 
   // Sets the condition of the breakpoint.
-  void SetCondition(const std::string &condition) {
-    condition_ = condition;
-  }
+  void SetCondition(const std::string &condition) { condition_ = condition; }
 
   // Gets the result of the evaluated condition.
   // This should only be called after EvaluateCondition is called.
   bool GetEvaluatedCondition() { return evaluated_condition_; }
 
   // Gets the expressions of the breakpoint.
-  const std::vector<std::string> &GetExpressions() const { return expressions_; }
+  const std::vector<std::string> &GetExpressions() const {
+    return expressions_;
+  }
 
   // Sets the expressions of the breakpoint.
   void SetExpressions(const std::vector<std::string> &expressions) {
@@ -152,6 +154,11 @@ class DbgBreakpoint : public StringStreamWrapper {
                             IEvalCoordinator *eval_coordinator,
                             IDbgObjectFactory *obj_factory);
 
+  // Evaluates expressions and returns the result in vector DbgObject.
+  HRESULT EvaluateExpressions(DbgStackFrame *stack_frame,
+                              IEvalCoordinator *eval_coordinator,
+                              IDbgObjectFactory *obj_factory);
+
   // Populate a Breakpoint proto using this breakpoint information.
   // StackFrameCollection stack_frames and EvalCoordinator eval_coordinator
   // are used to evaluate and fill up the stack frames of the breakpoint.
@@ -164,7 +171,17 @@ class DbgBreakpoint : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IStackFrameCollection *stack_frames, IEvalCoordinator *eval_coordinator);
 
+  // Breakpoint proto's size should not contain more bytes of
+  // information than this number. (65536 bytes = 64kb).
+  static const std::uint32_t kMaximumBreakpointSize = 65536;
+
  private:
+  // Populates breakpoint with the evaluated expressions stored
+  // in the dictionary expression_map_.
+  HRESULT PopulateExpression(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+      IEvalCoordinator *eval_coordinator);
+   
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
   bool TrySetBreakpointInMethod(
@@ -196,6 +213,9 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Expressions of a breakpoint.
   std::vector<std::string> expressions_;
+
+  // Map where key is the expression and value is its evaluated value.
+  std::unordered_map<std::string, std::shared_ptr<DbgObject>> expressions_map_;
 
   // True if the condition_ of the breakpoint is empty or evaluated to true.
   bool evaluated_condition_ = true;

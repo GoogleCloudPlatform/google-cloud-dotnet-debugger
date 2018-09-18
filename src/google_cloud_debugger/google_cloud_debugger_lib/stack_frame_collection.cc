@@ -27,6 +27,7 @@
 using google::cloud::diagnostics::debug::Breakpoint;
 using google::cloud::diagnostics::debug::SourceLocation;
 using google::cloud::diagnostics::debug::StackFrame;
+using google::cloud::diagnostics::debug::Variable;
 using google_cloud_debugger_portable_pdb::LocalConstantInfo;
 using google_cloud_debugger_portable_pdb::LocalVariableInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
@@ -40,9 +41,7 @@ namespace google_cloud_debugger {
 StackFrameCollection::StackFrameCollection(
     std::shared_ptr<ICorDebugHelper> debug_helper,
     std::shared_ptr<IDbgObjectFactory> obj_factory)
-    : debug_helper_(debug_helper),
-      obj_factory_(obj_factory) {
-}
+    : debug_helper_(debug_helper), obj_factory_(obj_factory) {}
 
 HRESULT StackFrameCollection::ProcessBreakpoint(
     const vector<
@@ -67,13 +66,21 @@ HRESULT StackFrameCollection::ProcessBreakpoint(
   if (!breakpoint_condition.empty()) {
     hr = EvaluateBreakpointCondition(breakpoint, eval_coordinator, pdb_files);
     if (FAILED(hr)) {
-      breakpoint->WriteError("Failed to evaluate breakpoint condition "
-          + breakpoint_condition);
+      breakpoint->WriteError("Failed to evaluate breakpoint condition " +
+                             breakpoint_condition);
       return hr;
     }
 
     if (!breakpoint->GetEvaluatedCondition()) {
       return S_FALSE;
+    }
+  }
+
+  if (!breakpoint->GetExpressions().empty()) {
+    hr = ProcessExpressions(breakpoint, eval_coordinator, pdb_files);
+    if (FAILED(hr)) {
+      breakpoint->WriteError("Failed to evaluate breakpoint expressions.");
+      return hr;
     }
   }
 
@@ -96,14 +103,17 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   eval_coordinator->WaitForReadySignal();
 
   // Gives the first frame half available kb in the breakpoint.
-  int frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+  int frame_max_size =
+      (DbgBreakpoint::kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   int processed_il_frames_so_far = 0;
+  bool first_frame = true;
 
   for (auto &&dbg_stack_frame : stack_frames_) {
     // If this is the last processed IL frame, just gives it the rest
     // of the size available.
     if (processed_il_frames_so_far == number_of_processed_il_frames_ - 1) {
-      frame_max_size = kMaximumBreakpointSize - breakpoint->ByteSize();
+      frame_max_size =
+          DbgBreakpoint::kMaximumBreakpointSize - breakpoint->ByteSize();
     }
 
     StackFrame *frame = breakpoint->add_stack_frames();
@@ -135,12 +145,13 @@ HRESULT StackFrameCollection::PopulateStackFrames(
       ++processed_il_frames_so_far;
     }
 
-    if (breakpoint->ByteSize() > kMaximumBreakpointSize) {
+    if (breakpoint->ByteSize() > DbgBreakpoint::kMaximumBreakpointSize) {
       break;
     }
 
     // Updates frame_max_size to half of whatever is left.
-    frame_max_size = (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
+    frame_max_size =
+        (DbgBreakpoint::kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   }
 
   return S_OK;
@@ -279,9 +290,9 @@ HRESULT StackFrameCollection::PopulateLocalVarsAndMethodArgs(
                                  local_scope.local_constants.end());
         }
 
-        hr = dbg_stack_frame->Initialize(
-            il_frame, local_variables, local_constants,
-            target_function_token, metadata_import);
+        hr = dbg_stack_frame->Initialize(il_frame, local_variables,
+                                         local_constants, target_function_token,
+                                         metadata_import);
       }
 
       return S_OK;
@@ -437,8 +448,8 @@ HRESULT StackFrameCollection::WalkStackAndProcessStackFrame(
     // <RealMethodName>d__18.MoveNext. PopulateAsyncStackFrameInfo
     // will populate stack_frame with the correct method name and class token.
     if (stack_frame->IsAsyncMethod()) {
-      hr = PopulateAsyncStackFrameInfo(
-          stack_frame.get(), debug_stack_walk, parsed_pdb_files);
+      hr = PopulateAsyncStackFrameInfo(stack_frame.get(), debug_stack_walk,
+                                       parsed_pdb_files);
       if (FAILED(hr)) {
         cerr << "Failed to get async stack frame's information.";
         return hr;
@@ -462,6 +473,52 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     const std::vector<
         std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
         &parsed_pdb_files) {
+  HRESULT hr = ProcessFirstStack(eval_coordinator, parsed_pdb_files);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to process the first stack.";
+    return hr;
+  }
+
+  if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
+    std::cerr << "Conditional breakpoint are not "
+              << "supported on non-IL frame.";
+    return E_NOTIMPL;
+  }
+
+  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,
+                                       obj_factory_.get());
+}
+
+HRESULT StackFrameCollection::ProcessExpressions(
+    DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files) {
+  HRESULT hr = ProcessFirstStack(eval_coordinator, parsed_pdb_files);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to process the first stack.";
+    return hr;
+  }
+
+  if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
+    std::cerr << "Expressions are not "
+              << "supported on non-IL frame.";
+    return E_NOTIMPL;
+  }
+
+  return breakpoint->EvaluateExpressions(first_stack_.get(), eval_coordinator,
+                                         obj_factory_.get());
+}
+
+HRESULT StackFrameCollection::ProcessFirstStack(
+    IEvalCoordinator *eval_coordinator,
+    const std::vector<
+        std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
+        &parsed_pdb_files) {
+  if (first_stack_) {
+    return S_OK;
+  }
+
   CComPtr<ICorDebugThread> debug_thread;
   HRESULT hr = eval_coordinator->GetActiveDebugThread(&debug_thread);
   if (FAILED(hr)) {
@@ -476,21 +533,14 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     return hr;
   }
 
-  if (!first_stack_) {
-    first_stack_ = std::shared_ptr<DbgStackFrame>(
-        new DbgStackFrame(debug_helper_, obj_factory_));
-    hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
-                                     first_stack_.get(), true);
-    if (FAILED(hr)) {
-      std::cerr << "Failed to process stack frame.";
-      return hr;
-    }
-  }
-
-  if (first_stack_->IsEmpty() || !first_stack_->IsProcessedIlFrame()) {
-    std::cerr << "Conditional breakpoint and expressions are not "
-              << "supported on non-IL frame.";
-    return E_NOTIMPL;
+  first_stack_ = std::shared_ptr<DbgStackFrame>(
+      new DbgStackFrame(debug_helper_, obj_factory_));
+  hr = PopulateDbgStackFrameHelper(parsed_pdb_files, debug_frame,
+                                   first_stack_.get(), true);
+  if (FAILED(hr)) {
+    std::cerr << "Failed to process stack frame.";
+    first_stack_.reset();
+    return hr;
   }
 
   // If this is an async frame, the method name would be something like
@@ -501,19 +551,20 @@ HRESULT StackFrameCollection::EvaluateBreakpointCondition(
     HRESULT hr = eval_coordinator->CreateStackWalk(&debug_stack_walk);
     if (FAILED(hr)) {
       cerr << "Failed to create stack walk.";
+      first_stack_.reset();
       return hr;
     }
 
-    hr = PopulateAsyncStackFrameInfo(
-        first_stack_.get(), debug_stack_walk, parsed_pdb_files);
+    hr = PopulateAsyncStackFrameInfo(first_stack_.get(), debug_stack_walk,
+                                     parsed_pdb_files);
     if (FAILED(hr)) {
       cerr << "Failed to get async stack frame's information.";
+      first_stack_.reset();
       return hr;
     }
   }
 
-  return breakpoint->EvaluateCondition(first_stack_.get(), eval_coordinator,
-                                       obj_factory_.get());
+  return S_OK;
 }
 
 HRESULT StackFrameCollection::PopulateDbgStackFrameHelper(
