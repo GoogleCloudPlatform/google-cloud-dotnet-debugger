@@ -156,8 +156,9 @@ HRESULT DbgBreakpoint::EvaluateExpressions(DbgStackFrame *stack_frame,
       return E_FAIL;
     }
 
-    // I think the frame may change when an expression is evaluated
-    // so we have to get the most recent one every iteration of the loop.
+    // When we call compiled_expression.evaluator->Evaluate below,
+    // this may affect variables in the frame.
+    // Because of that, we gets a fresh active frame for each iteration.
     CComPtr<ICorDebugILFrame> active_frame;
     HRESULT hr = eval_coordinator->GetActiveDebugFrame(&active_frame);
     if (FAILED(hr)) {
@@ -286,13 +287,11 @@ HRESULT DbgBreakpoint::PopulateExpression(
   }
 
   if (bfs_queue.size() != 0) {
-    int half_available_breakpoint_size =
-        (kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
     return VariableWrapper::PerformBFS(
         &bfs_queue,
-        [breakpoint, half_available_breakpoint_size]() {
-          return breakpoint->ByteSize() > half_available_breakpoint_size;
-        },
+        // No terminating condition so the BFS will
+        // only end when all items in the queue is processed.
+        []() { return false; },
         eval_coordinator);
   }
 

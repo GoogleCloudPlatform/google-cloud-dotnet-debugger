@@ -101,12 +101,16 @@ class StackFrameCollection : public IStackFrameCollection {
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &parsed_pdb_files);
 
+  // Given a breakpoint, evaluates the expressions in the breakpoint using
+  // the first stack of this stack frame collection.
   HRESULT ProcessExpressions(
       DbgBreakpoint *breakpoint, IEvalCoordinator *eval_coordinator,
       const std::vector<
           std::shared_ptr<google_cloud_debugger_portable_pdb::IPortablePdbFile>>
           &parsed_pdb_files);
 
+  // Processes information in the first stack of this stack frame collection
+  // and caches the result in first_stack_.
   HRESULT ProcessFirstStack(
       IEvalCoordinator *eval_coordinator,
       const std::vector<

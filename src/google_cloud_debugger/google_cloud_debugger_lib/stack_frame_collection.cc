@@ -106,7 +106,6 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   int frame_max_size =
       (DbgBreakpoint::kMaximumBreakpointSize - breakpoint->ByteSize()) / 2;
   int processed_il_frames_so_far = 0;
-  bool first_frame = true;
 
   for (auto &&dbg_stack_frame : stack_frames_) {
     // If this is the last processed IL frame, just gives it the rest

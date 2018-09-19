@@ -154,7 +154,7 @@ class DbgBreakpoint : public StringStreamWrapper {
                             IEvalCoordinator *eval_coordinator,
                             IDbgObjectFactory *obj_factory);
 
-  // Evaluates expressions and returns the result in vector DbgObject.
+  // Evaluates expressions and stores the result in expression_map_.
   HRESULT EvaluateExpressions(DbgStackFrame *stack_frame,
                               IEvalCoordinator *eval_coordinator,
                               IDbgObjectFactory *obj_factory);
