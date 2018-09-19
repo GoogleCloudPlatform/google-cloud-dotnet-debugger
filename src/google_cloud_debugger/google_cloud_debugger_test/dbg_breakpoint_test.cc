@@ -363,7 +363,7 @@ TEST_F(DbgBreakpointTest, PopulateBreakpointExpression) {
 
   EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
     .Times(expressions_.size())
-    .WillOnce(DoAll(SetArgPointee<0>(&active_frame_mock_), Return(S_OK)));
+    .WillRepeatedly(DoAll(SetArgPointee<0>(&active_frame_mock_), Return(S_OK)));
 
   HRESULT hr = breakpoint_.EvaluateExpressions(&dbg_stack_frame_, &eval_coordinator_mock_, &object_factory_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
