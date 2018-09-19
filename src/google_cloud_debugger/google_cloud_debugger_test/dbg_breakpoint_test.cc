@@ -382,10 +382,18 @@ TEST_F(DbgBreakpointTest, PopulateBreakpointExpression) {
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   EXPECT_EQ(proto_breakpoint.evaluated_expressions_size(), 2);
-  EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).name(), "1");
-  EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).value(), "1");
-  EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).name(), "2");
-  EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).value(), "2");
+  if (proto_breakpoint.evaluated_expressions(0).name() == "1") {
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).name(), "1");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).value(), "1");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).name(), "2");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).value(), "2");
+  }
+  else {
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).name(), "2");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).value(), "2");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).name(), "1");
+    EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).value(), "1");
+  }
 }
 
 }  // namespace google_cloud_debugger_test
