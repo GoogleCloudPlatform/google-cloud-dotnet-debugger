@@ -34,6 +34,7 @@ class DbgArray : public DbgReferenceObject {
                            std::shared_ptr<IDbgObjectFactory>()) {
     dimensions_ = dimensions;
     cor_element_type_ = CorElementType::ELEMENT_TYPE_ARRAY;
+
   }
    
   DbgArray(ICorDebugType *debug_type, int depth,
@@ -109,8 +110,7 @@ class DbgArray : public DbgReferenceObject {
   std::vector<ULONG32> dimensions_;
 
   // The maximum amount of items to retrieve in an array.
-  // Defaults to 10.
-  std::uint32_t max_items_to_retrieved_ = DbgObject::collection_size_;
+  std::uint32_t max_items_to_retrieved_ = 0;
 };
 
 }  //  namespace google_cloud_debugger

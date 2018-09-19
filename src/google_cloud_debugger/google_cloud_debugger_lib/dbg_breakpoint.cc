@@ -41,6 +41,9 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
+std::int32_t DbgBreakpoint::current_max_collection_size_ =
+    DbgBreakpoint::kMaximumCollectionSize;
+
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
   Initialize(other.file_name_, other.id_, other.line_, other.column_,
              other.condition_, other.expressions_);
@@ -269,9 +272,8 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   return stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
 }
 
-HRESULT DbgBreakpoint::PopulateExpression(
-    Breakpoint *breakpoint,
-    IEvalCoordinator *eval_coordinator) {
+HRESULT DbgBreakpoint::PopulateExpression(Breakpoint *breakpoint,
+                                          IEvalCoordinator *eval_coordinator) {
   std::queue<VariableWrapper> bfs_queue;
 
   for (auto &&kvp : expressions_map_) {
@@ -287,12 +289,15 @@ HRESULT DbgBreakpoint::PopulateExpression(
   }
 
   if (bfs_queue.size() != 0) {
-    return VariableWrapper::PerformBFS(
+    current_max_collection_size_ = kMaximumCollectionExpressionSize;
+    HRESULT hr = VariableWrapper::PerformBFS(
         &bfs_queue,
-        // No terminating condition so the BFS will
-        // only end when all items in the queue is processed.
-        []() { return false; },
+        [breakpoint]() {
+          return breakpoint->ByteSize() > DbgBreakpoint::kMaximumBreakpointSize;
+        },
         eval_coordinator);
+    current_max_collection_size_ = kMaximumCollectionSize;
+    return hr;
   }
 
   return S_OK;

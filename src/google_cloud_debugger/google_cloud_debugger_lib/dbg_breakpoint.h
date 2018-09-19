@@ -175,9 +175,15 @@ class DbgBreakpoint : public StringStreamWrapper {
   // information than this number. (65536 bytes = 64kb).
   static const std::uint32_t kMaximumBreakpointSize = 65536;
 
+  // Gets the maximum collection size for breakpoints.
+  static std::uint32_t GetMaximumCollectionSize() {
+    return current_max_collection_size_;
+  }
+
  private:
   // Populates breakpoint with the evaluated expressions stored
   // in the dictionary expression_map_.
+  // This will sets the maximum collection size of DbgBreakpoint to 1000.
   HRESULT PopulateExpression(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IEvalCoordinator *eval_coordinator);
@@ -231,6 +237,17 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // True if this breakpoint should kill the server it was sent to.
   bool kill_server_ = false;
+
+  // The current maximum number of items in a collection that we will expand.
+  static std::int32_t current_max_collection_size_;
+
+  // Maximum amount of items returned in a collection when not evaluating
+  // an expression.
+  static const std::uint32_t kMaximumCollectionSize = 10;
+
+  // Maximum amount of items returned in a collection when evaluating
+  // an expression.
+  static const std::uint32_t kMaximumCollectionExpressionSize = 1000;
 };
 
 }  // namespace google_cloud_debugger
