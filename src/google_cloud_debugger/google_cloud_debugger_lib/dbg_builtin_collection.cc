@@ -205,8 +205,8 @@ HRESULT DbgBuiltinCollection::PopulateHashSetOrDictionary(
   // Start fetching items from the hash set or dictionary.
   HRESULT hr;
   int32_t index = 0;
-  int32_t max_items_to_fetch =
-      min(count_, DbgBreakpoint::GetMaximumCollectionSize());
+  int32_t current_max_size = DbgBreakpoint::GetMaximumCollectionSize();
+  int32_t max_items_to_fetch = min(count_, current_max_size);
   int32_t items_fetched_so_far = 0;
   // Casts the collection_items_ to an array.
   DbgArray *slots_array = reinterpret_cast<DbgArray *>(collection_items_.get());
