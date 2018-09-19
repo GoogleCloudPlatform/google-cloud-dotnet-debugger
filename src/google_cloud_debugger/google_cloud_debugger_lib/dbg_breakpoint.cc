@@ -19,10 +19,11 @@
 #include <queue>
 
 #include "compiler_helpers.h"
-#include "dbg_stack_frame.h"
 #include "document_index.h"
 #include "expression_evaluator.h"
 #include "expression_util.h"
+#include "dbg_class_property.h"
+#include "i_dbg_stack_frame.h"
 #include "i_eval_coordinator.h"
 #include "i_portable_pdb_file.h"
 #include "i_stack_frame_collection.h"
@@ -149,7 +150,7 @@ bool DbgBreakpoint::TrySetBreakpoint(
   return best_match_index != -1;
 }
 
-HRESULT DbgBreakpoint::EvaluateExpressions(DbgStackFrame *stack_frame,
+HRESULT DbgBreakpoint::EvaluateExpressions(IDbgStackFrame *stack_frame,
                                            IEvalCoordinator *eval_coordinator,
                                            IDbgObjectFactory *obj_factory) {
   for (auto &expression : expressions_) {
@@ -190,7 +191,7 @@ HRESULT DbgBreakpoint::EvaluateExpressions(DbgStackFrame *stack_frame,
   return S_OK;
 }
 
-HRESULT DbgBreakpoint::EvaluateCondition(DbgStackFrame *stack_frame,
+HRESULT DbgBreakpoint::EvaluateCondition(IDbgStackFrame *stack_frame,
                                          IEvalCoordinator *eval_coordinator,
                                          IDbgObjectFactory *obj_factory) {
   if (condition_.empty()) {
@@ -261,6 +262,8 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
   location->set_line(line_);
   location->set_path(file_name_);
+
+  eval_coordinator->WaitForReadySignal();
 
   if (!expressions_map_.empty()) {
     HRESULT hr = PopulateExpression(breakpoint, eval_coordinator);

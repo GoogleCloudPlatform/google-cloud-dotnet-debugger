@@ -22,6 +22,8 @@
 #include "dbg_breakpoint.h"
 #include "dbg_object.h"
 #include "i_cor_debug_mocks.h"
+#include "i_dbg_object_factory_mock.h"
+#include "i_dbg_stack_frame_mock.h"
 #include "i_eval_coordinator_mock.h"
 #include "i_portable_pdb_mocks.h"
 #include "i_stack_frame_collection_mock.h"
@@ -36,9 +38,11 @@ using std::max;
 using std::string;
 using std::unique_ptr;
 using std::vector;
+using ::testing::_;
 using ::testing::Const;
 using ::testing::Return;
 using ::testing::ReturnRef;
+using ::testing::SetArgPointee;
 
 namespace google_cloud_debugger_test {
 
@@ -46,7 +50,7 @@ namespace google_cloud_debugger_test {
 // Sets up a default DbgBreakpoint for the test.
 class DbgBreakpointTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {
+  virtual void SetUpBreakpoint() {
     breakpoint_.Initialize(file_name_, id_, line_, column_, condition_,
                            expressions_);
     // Gives the PDB file the same file name as this breakpoint's file name.
@@ -84,10 +88,19 @@ class DbgBreakpointTest : public ::testing::Test {
 
   // Fixture for the PDB File.
   PortablePDBFileFixture pdb_file_fixture_;
+
+  // Mock stackframe, eval coordinator and object factory.
+  IDbgStackFrameMock dbg_stack_frame_;
+  IEvalCoordinatorMock eval_coordinator_mock_;
+  IDbgObjectFactoryMock object_factory_;
+
+  // Mock active debug frame.
+  ICorDebugILFrameMock active_frame_mock_;
 };
 
 // Tests that the Initialize function sets up the correct fields.
 TEST_F(DbgBreakpointTest, Initialize) {
+  SetUpBreakpoint();
   // The names stored should be lower case.
   EXPECT_EQ(breakpoint_.GetFileName(), lower_case_file_name_);
   EXPECT_EQ(breakpoint_.GetId(), id_);
@@ -108,12 +121,14 @@ TEST_F(DbgBreakpointTest, Initialize) {
 // Tests that the Set/GetMethodToken function sets up the correct fields.
 TEST_F(DbgBreakpointTest, SetGetMethodToken) {
   mdMethodDef method_token = 10;
+  SetUpBreakpoint();
   breakpoint_.SetMethodToken(method_token);
   EXPECT_EQ(breakpoint_.GetMethodToken(), method_token);
 }
 
 // Tests that Set/GetICorDebugBreakpoint function works.
 TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpoint) {
+  SetUpBreakpoint();
   breakpoint_.SetCorDebugBreakpoint(&cordebug_breakpoint_);
 
   CComPtr<ICorDebugBreakpoint> cordebug_breakpoint2;
@@ -123,6 +138,7 @@ TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpoint) {
 
 // Tests the error cases of Set/GetICorDebugBreakpoint function.
 TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpointError) {
+  SetUpBreakpoint();
   // Null argument.
   EXPECT_EQ(breakpoint_.GetCorDebugBreakpoint(nullptr), E_INVALIDARG);
 
@@ -184,6 +200,8 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
 
 // Test the TrySetBreakpoint function of DbgBreakpoint.
 TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
+  SetUpBreakpoint();
+
   // Gets a method that matches the breakpoint.
   uint32_t method_first_line = rand() % line_;
   uint32_t method_def = 100;
@@ -208,6 +226,8 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
 // Test the TrySetBreakpoint function of DbgBreakpoint
 // when there are multiple methods in the Document Index.
 TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
+  SetUpBreakpoint();
+
   // Gets a method that matches the breakpoint.
   uint32_t method_first_line = line_ - 10;
   uint32_t method_def = 100;
@@ -244,6 +264,8 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
 
 // Tests the case where no matching methods are found.
 TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
+  SetUpBreakpoint();
+
   // Gets a method that does not match the breakpoint.
   uint32_t method_first_line = line_ + 5;
   uint32_t method_def = 100;
@@ -268,18 +290,19 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointWithNoMatching) {
 
 // Tests the PopulateBreakpoint function of DbgBreakpoint.
 TEST_F(DbgBreakpointTest, PopulateBreakpoint) {
+  SetUpBreakpoint();
+
   Breakpoint proto_breakpoint;
   IStackFrameCollectionMock stackframe_collection_mock;
-  IEvalCoordinatorMock eval_coordinator_mock;
 
   EXPECT_CALL(
       stackframe_collection_mock,
-      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
+      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock_))
       .Times(1)
       .WillRepeatedly(Return(S_OK));
 
   HRESULT hr = breakpoint_.PopulateBreakpoint(
-      &proto_breakpoint, &stackframe_collection_mock, &eval_coordinator_mock);
+      &proto_breakpoint, &stackframe_collection_mock, &eval_coordinator_mock_);
   EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
 
   // Checks that the proto breakpoint's properties are set.
@@ -290,16 +313,17 @@ TEST_F(DbgBreakpointTest, PopulateBreakpoint) {
 
 // Tests the error cases of PopulateBreakpoint function of DbgBreakpoint.
 TEST_F(DbgBreakpointTest, PopulateBreakpointError) {
+  SetUpBreakpoint();
+
   Breakpoint proto_breakpoint;
   IStackFrameCollectionMock stackframe_collection_mock;
-  IEvalCoordinatorMock eval_coordinator_mock;
 
   // Checks for null error.
   EXPECT_EQ(breakpoint_.PopulateBreakpoint(nullptr, &stackframe_collection_mock,
-                                           &eval_coordinator_mock),
+                                           &eval_coordinator_mock_),
             E_INVALIDARG);
   EXPECT_EQ(breakpoint_.PopulateBreakpoint(&proto_breakpoint, nullptr,
-                                           &eval_coordinator_mock),
+                                           &eval_coordinator_mock_),
             E_INVALIDARG);
   EXPECT_EQ(breakpoint_.PopulateBreakpoint(
                 &proto_breakpoint, &stackframe_collection_mock, nullptr),
@@ -308,14 +332,60 @@ TEST_F(DbgBreakpointTest, PopulateBreakpointError) {
   // Makes PopulateStackFrames returns error.
   EXPECT_CALL(
       stackframe_collection_mock,
-      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock))
+      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock_))
       .Times(1)
       .WillRepeatedly(Return(CORDBG_E_BAD_REFERENCE_VALUE));
 
   EXPECT_EQ(breakpoint_.PopulateBreakpoint(&proto_breakpoint,
                                            &stackframe_collection_mock,
-                                           &eval_coordinator_mock),
+                                           &eval_coordinator_mock_),
             CORDBG_E_BAD_REFERENCE_VALUE);
+}
+
+// Tests the EvaluateExpressions function of DbgBreakpoint.
+TEST_F(DbgBreakpointTest, EvaluateExpressions) {
+  expressions_ = { "1", "2" };
+  SetUpBreakpoint();
+
+  EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
+    .Times(expressions_.size())
+    .WillOnce(DoAll(SetArgPointee<0>(&active_frame_mock_), Return(S_OK)));
+
+  HRESULT hr = breakpoint_.EvaluateExpressions(&dbg_stack_frame_, &eval_coordinator_mock_, &object_factory_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+}
+
+// Tests that after EvaluateExpressions is called, PopulateBreakpoint
+// populates breakpoint proto with expressions.
+TEST_F(DbgBreakpointTest, PopulateBreakpointExpression) {
+  expressions_ = { "1", "2" };
+  SetUpBreakpoint();
+
+  EXPECT_CALL(eval_coordinator_mock_, GetActiveDebugFrame(_))
+    .Times(expressions_.size())
+    .WillOnce(DoAll(SetArgPointee<0>(&active_frame_mock_), Return(S_OK)));
+
+  HRESULT hr = breakpoint_.EvaluateExpressions(&dbg_stack_frame_, &eval_coordinator_mock_, &object_factory_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  Breakpoint proto_breakpoint;
+  IStackFrameCollectionMock stackframe_collection_mock;
+
+  EXPECT_CALL(
+      stackframe_collection_mock,
+      PopulateStackFrames(&proto_breakpoint, &eval_coordinator_mock_))
+      .Times(1)
+      .WillRepeatedly(Return(S_OK));
+
+  hr = breakpoint_.PopulateBreakpoint(
+      &proto_breakpoint, &stackframe_collection_mock, &eval_coordinator_mock_);
+  EXPECT_TRUE(SUCCEEDED(hr)) << "Failed with hr: " << hr;
+
+  EXPECT_EQ(proto_breakpoint.evaluated_expressions_size(), 2);
+  EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).name(), "1");
+  EXPECT_EQ(proto_breakpoint.evaluated_expressions(0).value(), "1");
+  EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).name(), "2");
+  EXPECT_EQ(proto_breakpoint.evaluated_expressions(1).value(), "2");
 }
 
 }  // namespace google_cloud_debugger_test

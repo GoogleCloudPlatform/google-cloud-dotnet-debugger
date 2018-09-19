@@ -49,12 +49,6 @@ class ConditionalOperatorEvaluatorTest : public ::testing::Test {
     false_ = shared_ptr<DbgObject>(new DbgPrimitive<bool>(false));
   }
 
-  // Mock of IEvalCoordinator used for evaluate.
-  IEvalCoordinatorMock eval_coordinator_mock_;
-
-  // Mock used for object creation.
-  IDbgObjectFactoryMock object_factory_mock_;
-
   // Error stream used by the evaluator.
   std::ostringstream err_stream_;
 

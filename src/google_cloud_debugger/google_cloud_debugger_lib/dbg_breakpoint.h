@@ -35,7 +35,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class IStackFrameCollection;
-class DbgStackFrame;
+class IDbgStackFrame;
 class IDbgObjectFactory;
 class DbgObject;
 
@@ -150,12 +150,12 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Evaluates condition condition_ using the provided stack frame
   // and eval coordinator. Sets the result to evaluated_condition_.
-  HRESULT EvaluateCondition(DbgStackFrame *stack_frame,
+  HRESULT EvaluateCondition(IDbgStackFrame *stack_frame,
                             IEvalCoordinator *eval_coordinator,
                             IDbgObjectFactory *obj_factory);
 
   // Evaluates expressions and stores the result in expression_map_.
-  HRESULT EvaluateExpressions(DbgStackFrame *stack_frame,
+  HRESULT EvaluateExpressions(IDbgStackFrame *stack_frame,
                               IEvalCoordinator *eval_coordinator,
                               IDbgObjectFactory *obj_factory);
 

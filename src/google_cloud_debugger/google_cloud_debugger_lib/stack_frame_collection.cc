@@ -100,7 +100,6 @@ HRESULT StackFrameCollection::PopulateStackFrames(
   }
 
   HRESULT hr = S_OK;
-  eval_coordinator->WaitForReadySignal();
 
   // Gives the first frame half available kb in the breakpoint.
   int frame_max_size =

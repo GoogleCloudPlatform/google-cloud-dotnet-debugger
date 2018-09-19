@@ -22,7 +22,6 @@
 #include "constants.h"
 #include "dbg_breakpoint.h"
 #include "dbg_class.h"
-#include "dbg_class_property.h"
 #include "dbg_enum.h"
 #include "dbg_reference_object.h"
 #include "debugger_callback.h"
