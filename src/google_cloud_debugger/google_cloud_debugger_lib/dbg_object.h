@@ -117,13 +117,6 @@ class DbgObject : public StringStreamWrapper {
   // Sets the address of the object.
   void SetAddress(const CORDB_ADDRESS &address) { address_ = address; }
 
- protected:
-  // The CorElementType of the underlying .NET object.
-  CorElementType cor_element_type_;
-
-  // Contains helper methods used for ICorDebug objects.
-  std::shared_ptr<ICorDebugHelper> debug_helper_;
-
  private:
   // The underlying type of the object.
   CComPtr<ICorDebugType> debug_type_;
@@ -148,11 +141,14 @@ class DbgObject : public StringStreamWrapper {
   int depth_;
 
  protected:
+  // The CorElementType of the underlying .NET object.
+  CorElementType cor_element_type_;
+
+  // Contains helper methods used for ICorDebug objects.
+  std::shared_ptr<ICorDebugHelper> debug_helper_;
+
   // The HRESULT when Initialize is called.
   HRESULT initialize_hr_ = S_OK;
-
-  // The maximum number of items in a collection that we will expand.
-  static const std::int32_t collection_size_;
 };
 
 }  //  namespace google_cloud_debugger

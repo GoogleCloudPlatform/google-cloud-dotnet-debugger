@@ -15,6 +15,7 @@
 #ifndef I_STACK_FRAME_COLLECTION_H_
 #define I_STACK_FRAME_COLLECTION_H_
 
+#include <unordered_map>
 #include <vector>
 
 #include "breakpoint.pb.h"
@@ -26,6 +27,7 @@ namespace google_cloud_debugger {
 
 class IEvalCoordinator;
 class DbgBreakpoint;
+class DbgObject;
 
 class IStackFrameCollection {
  public:

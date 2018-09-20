@@ -41,9 +41,10 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// The wait will ensure the breakpoint is picked up by the agent.
         /// </summary>
         public Debugger.V2.Breakpoint SetBreakpointAndSleep(
-            string debuggeeId, string path, int line, string condition = null)
+            string debuggeeId, string path, int line,
+            string condition = null, string[] expressions = null)
         {
-            var breakpoint = SetBreakpoint(debuggeeId, path, line, condition);
+            var breakpoint = SetBreakpoint(debuggeeId, path, line, condition, expressions);
             Thread.Sleep(TimeSpan.FromSeconds(1));
             return breakpoint;
         }
@@ -52,7 +53,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         /// Set a breakpoint at a file and line for a given debuggee.
         /// </summary>
         public Debugger.V2.Breakpoint SetBreakpoint(
-            string debuggeeId, string path, int line, string condition = null)
+            string debuggeeId, string path, int line,
+            string condition = null, string[] expressions = null)
         {
             SetBreakpointRequest request = new SetBreakpointRequest
             {
@@ -63,7 +65,8 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                     {
                         Path = path,
                         Line = line,
-                    }
+                    },
+                    Expressions = { expressions }
                 }
             };
 
@@ -71,6 +74,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             {
                 request.Breakpoint.Condition = condition;
             }
+
             return Polling.Client.GrpcClient.SetBreakpoint(request).Breakpoint;
         }
 

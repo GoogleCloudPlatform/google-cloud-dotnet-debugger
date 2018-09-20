@@ -77,7 +77,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
         [Option("method-evaluation",
             HelpText = "If set, the debugger will perform method calls when" +
-            " evaluating breakpoint's condition.")]
+            " evaluating breakpoint's condition or expression.")]
         public bool MethodEvaluation { get; set; }
 
         [Option("source-context",

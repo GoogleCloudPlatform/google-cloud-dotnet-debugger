@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "dbg_class_property.h"
 #include "i_dbg_stack_frame.h"
 
 namespace google_cloud_debugger_test {

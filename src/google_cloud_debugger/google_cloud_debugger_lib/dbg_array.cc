@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "class_names.h"
+#include "dbg_breakpoint.h"
 #include "i_dbg_object_factory.h"
 #include "i_cor_debug_helper.h"
 #include "type_signature.h"
@@ -166,6 +167,12 @@ HRESULT DbgArray::PopulateMembers(
   vector<ULONG32> dimensions_tracker(dimensions_.size(), 0);
 
   int current_index = 0;
+  // If this was not set yet, use the current maximum collection size
+  // from DbgBreakpoint.
+  if (max_items_to_retrieved_ == 0) {
+    max_items_to_retrieved_ = DbgBreakpoint::GetMaximumCollectionSize();
+  }
+
   // In this while loop, we visit all possible combinations of the dimensions_
   // array to print out all the items. For example, let's assume that the array
   // has dimensions 2x3x4, then the while loop will go in this direction:

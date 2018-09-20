@@ -23,8 +23,6 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-const std::int32_t DbgObject::collection_size_ = 10;
-
 DbgObject::DbgObject(ICorDebugType *debug_type, int depth,
     std::shared_ptr<ICorDebugHelper> debug_helper) {
   debug_type_ = debug_type;

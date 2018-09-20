@@ -29,15 +29,16 @@ class IStackFrameCollectionMock
  public:
   MOCK_METHOD3(
       ProcessBreakpoint,
-      HRESULT(const std::vector<std::shared_ptr<
-                  google_cloud_debugger_portable_pdb::IPortablePdbFile>>
-                  &pdb_files,
-              google_cloud_debugger::DbgBreakpoint *breakpoint,
-              google_cloud_debugger::IEvalCoordinator *eval_coordinator));
+      HRESULT(
+          const std::vector<std::shared_ptr<
+              google_cloud_debugger_portable_pdb::IPortablePdbFile>> &pdb_files,
+          google_cloud_debugger::DbgBreakpoint *breakpoint,
+          google_cloud_debugger::IEvalCoordinator *eval_coordinator));
   MOCK_METHOD2(
       PopulateStackFrames,
-      HRESULT(google::cloud::diagnostics::debug::Breakpoint *breakpoint,
-              google_cloud_debugger::IEvalCoordinator *eval_coordinator));
+      HRESULT(
+          google::cloud::diagnostics::debug::Breakpoint *breakpoint,
+          google_cloud_debugger::IEvalCoordinator *eval_coordinator));
 };
 
 }  // namespace google_cloud_debugger_test

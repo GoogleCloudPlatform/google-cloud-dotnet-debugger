@@ -327,6 +327,69 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
         }
 
         [Fact]
+        public async Task BreakpointHit_Expression()
+        {
+            string[] expressions = { "testList[3]" };
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, null, expressions);
+
+                // Checks that the breakpoint has evaluated expression.
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetEchoUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Checks that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+
+                // Checks that the expression has a value.
+                Assert.Single(newBp.EvaluatedExpressions);
+                Assert.Equal(expressions[0], newBp.EvaluatedExpressions[0].Name);
+                Assert.Equal("List103", newBp.EvaluatedExpressions[0].Value);
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_MultipleExpressions()
+        {
+            string[] expressions = { "testList[3]", "testDictionary[\"Key103\"]" };
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.EchoBottomLine, null, expressions);
+
+                // Checks that the breakpoint has evaluated expression.
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetEchoUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Checks that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+
+                // Checks that the expressions have correct values.
+                Assert.Equal(2, newBp.EvaluatedExpressions.Count);
+                Assert.Equal(expressions[1], newBp.EvaluatedExpressions[0].Name);
+                Assert.Equal("3", newBp.EvaluatedExpressions[0].Value);
+
+                Assert.Equal(expressions[0], newBp.EvaluatedExpressions[1].Name);
+                Assert.Equal("List103", newBp.EvaluatedExpressions[1].Value);
+            }
+        }
+
+        [Fact]
         public async Task BreakpointHit_AsyncCondition()
         {
             string testString = "TestMessage";
@@ -367,6 +430,39 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
 
                 Assert.True(retrievedThirdBp.IsFinalState);
                 Assert.Null(retrievedThirdBp.Status);
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_AsyncExpression()
+        {
+            string[] expressions = { "testString", "PublicString", "Hello()" };
+            string testString = "TestMessage";
+            using (var app = StartTestApp(debugEnabled: true, methodEvaluation: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.AsyncBottomLine, null, expressions);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync($"{app.AppUrlAsync}/{testString}");
+                }
+
+                DebuggerBreakpoint retrievedBp =
+                    Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Checks that the expressions have correct values.
+                Assert.Equal(3, retrievedBp.EvaluatedExpressions.Count);
+                Assert.Equal(expressions[2], retrievedBp.EvaluatedExpressions[0].Name);
+                Assert.Equal("Hello, World!", retrievedBp.EvaluatedExpressions[0].Value);
+
+                Assert.Equal(expressions[0], retrievedBp.EvaluatedExpressions[1].Name);
+                Assert.Equal(testString, retrievedBp.EvaluatedExpressions[1].Value);
+
+                Assert.Equal(expressions[1], retrievedBp.EvaluatedExpressions[2].Name);
+                Assert.Equal((new TestApp.MainController()).PublicString, retrievedBp.EvaluatedExpressions[2].Value);
             }
         }
 
@@ -425,7 +521,34 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
                 Assert.True(newBp.IsFinalState);
                 // However, it should have error status set to true.
                 Assert.True(newBp.Status.IsError);
-                Assert.Contains("Method call for condition evaluation is disabled.", newBp.Status.Description.Format);
+                Assert.Contains("Method call for condition or expression evaluation is disabled.", newBp.Status.Description.Format);
+                Assert.Empty(newBp.StackFrames);
+            }
+        }
+
+        [Fact]
+        public async Task BreakpointHit_FunctionEvaluationNotPerformedForExpression()
+        {
+            string[] expression = { "Hello()" };
+            using (var app = StartTestApp(debugEnabled: true))
+            {
+                Debuggee debuggee = Polling.GetDebuggee(app.Module, app.Version);
+                DebuggerBreakpoint breakpoint = SetBreakpointAndSleep(
+                    debuggee.Id, TestApplication.MainClass,
+                    TestApplication.LoopMiddle, null, expression);
+
+                using (HttpClient client = new HttpClient())
+                {
+                    await client.GetAsync(TestApplication.GetLoopUrl(app, 10));
+                }
+
+                DebuggerBreakpoint newBp = Polling.GetBreakpoint(debuggee.Id, breakpoint.Id);
+
+                // Checks that the breakpoint has been hit.
+                Assert.True(newBp.IsFinalState);
+                // However, it should have error status set to true.
+                Assert.True(newBp.Status.IsError);
+                Assert.Contains("Method call for condition or expression evaluation is disabled.", newBp.Status.Description.Format);
                 Assert.Empty(newBp.StackFrames);
             }
         }
