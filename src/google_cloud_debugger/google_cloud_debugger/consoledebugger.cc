@@ -8,9 +8,9 @@
 #include <thread>
 #include <vector>
 
-#include "string_stream_wrapper.h"
 #include "debugger.h"
 #include "optionparser.h"
+#include "string_stream_wrapper.h"
 #include "winerror.h"
 
 using google_cloud_debugger::ConvertStringToWCharPtr;
@@ -69,10 +69,11 @@ const option::Descriptor usage[] = {
     {METHODEVALUATION, 0, "", kMethodEvaluation.c_str(), option::Arg::None,
      "  --method-evaluation  \tIf used, the debugger will attempt to "
      "perform method calls (including property getter) when evaluating "
-     "conditions of a breakpoint. This may modify the state of the application."},
-     {PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
-	   "  --pipe-name  \tThe name of the pipe the debugger will use to"
-	   "communicate with the agent."},
+     "conditions or expressions of a breakpoint. This may modify the state of "
+     "the application."},
+    {PIPENAME, 0, "", kPipeNameOption.c_str(), option::Arg::Optional,
+     "  --pipe-name  \tThe name of the pipe the debugger will use to"
+     "communicate with the agent."},
     {0, 0, 0, 0, 0, 0}  // Needs this, otherwise the parser throws error.
 };
 
@@ -106,8 +107,10 @@ int main(int argc, char *argv[]) {
   bool method_evaluation = options[METHODEVALUATION].count();
 
   // Has to supply either path or ID, not both.
-  if ((options[APPLICATIONSTARTCOMMAND].count() && options[APPLICATIONID].count()) ||
-      (!options[APPLICATIONSTARTCOMMAND].count() && !options[APPLICATIONID].count())) {
+  if ((options[APPLICATIONSTARTCOMMAND].count() &&
+       options[APPLICATIONID].count()) ||
+      (!options[APPLICATIONSTARTCOMMAND].count() &&
+       !options[APPLICATIONID].count())) {
     cerr << "The debugger can only take in either the application path or the "
             "process ID of the running application, not both.";
     return -1;
@@ -121,7 +124,7 @@ int main(int argc, char *argv[]) {
   string pipe_name = string(options[PIPENAME].arg);
   Debugger debugger(pipe_name);
   HRESULT hr;
-  
+
   if (options[APPLICATIONSTARTCOMMAND].count()) {
     string command_line = string(options[APPLICATIONSTARTCOMMAND].arg);
     std::vector<WCHAR> wchar_command_line =

@@ -71,13 +71,6 @@ namespace Google.Cloud.Diagnostics.Debug
                     breakpoint.IsFinalState = true;
                     _client.UpdateBreakpoint(breakpoint);
                 }
-                else if (breakpoint.Expressions?.Count > 0)
-                {
-                    breakpoint.Status = Common.CreateStatusMessage(
-                        Messages.ExpressionsNotSupported, isError: true);
-                    breakpoint.IsFinalState = true;
-                    _client.UpdateBreakpoint(breakpoint);
-                }
                 else
                 {
                     _server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
