@@ -96,7 +96,7 @@ Once the repository and dependencies are built you can run the debugger with:
 
 ### Linux
   ```
-  dotnet ./Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp1.1/Google.Cloud.Diagnostics.Debug.dll \
+  dotnet ./Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp2.0/Google.Cloud.Diagnostics.Debug.dll \
     --debugger=./google_cloud_debugger/google_cloud_debugger \
     --application-id=<Process ID of a running .NET Core application to debug> \
     --project-id=<Google Cloud Console project id> \
@@ -106,7 +106,7 @@ Once the repository and dependencies are built you can run the debugger with:
 
 ### Windows
   ```
-  dotnet .\Google.Cloud.Diagnostics.Debug\bin\Debug\netcoreapp1.1\Google.Cloud.Diagnostics.Debug.dll ^
+  dotnet .\Google.Cloud.Diagnostics.Debug\bin\Debug\netcoreapp2.0\Google.Cloud.Diagnostics.Debug.dll ^
     --debugger=.\x64\Debug\google_cloud_debugger.exe ^
     --application-id=<Process ID of a running .NET Core application to debug> ^
     --project-id=<Google Cloud Console project id> ^
