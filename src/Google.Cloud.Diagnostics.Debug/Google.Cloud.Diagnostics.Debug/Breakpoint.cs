@@ -23,7 +23,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChBicmVha3BvaW50LnByb3RvEh5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3Mu",
-            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8izgMKCkJy",
+            "ZGVidWcaH2dvb2dsZS9wcm90b2J1Zi90aW1lc3RhbXAucHJvdG8i4QMKCkJy",
             "ZWFrcG9pbnQSCgoCaWQYASABKAkSQAoIbG9jYXRpb24YAiABKAsyLi5nb29n",
             "bGUuY2xvdWQuZGlhZ25vc3RpY3MuZGVidWcuU291cmNlTG9jYXRpb24SQAoM",
             "c3RhY2tfZnJhbWVzGAMgAygLMiouZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNz",
@@ -34,22 +34,22 @@ namespace Google.Cloud.Diagnostics.Debug {
             "b25kaXRpb24YCSABKAkSRwoVZXZhbHVhdGVkX2V4cHJlc3Npb25zGAogAygL",
             "MiguZ29vZ2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlZhcmlhYmxlEjYK",
             "BnN0YXR1cxgLIAEoCzImLmdvb2dsZS5jbG91ZC5kaWFnbm9zdGljcy5kZWJ1",
-            "Zy5TdGF0dXMi2gEKClN0YWNrRnJhbWUSEwoLbWV0aG9kX25hbWUYASABKAkS",
-            "QAoIbG9jYXRpb24YAiABKAsyLi5nb29nbGUuY2xvdWQuZGlhZ25vc3RpY3Mu",
-            "ZGVidWcuU291cmNlTG9jYXRpb24SOwoJYXJndW1lbnRzGAMgAygLMiguZ29v",
-            "Z2xlLmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlZhcmlhYmxlEjgKBmxvY2Fs",
+            "Zy5TdGF0dXMSEQoJbG9nX3BvaW50GAwgASgIItoBCgpTdGFja0ZyYW1lEhMK",
+            "C21ldGhvZF9uYW1lGAEgASgJEkAKCGxvY2F0aW9uGAIgASgLMi4uZ29vZ2xl",
+            "LmNsb3VkLmRpYWdub3N0aWNzLmRlYnVnLlNvdXJjZUxvY2F0aW9uEjsKCWFy",
+            "Z3VtZW50cxgDIAMoCzIoLmdvb2dsZS5jbG91ZC5kaWFnbm9zdGljcy5kZWJ1",
+            "Zy5WYXJpYWJsZRI4CgZsb2NhbHMYBCADKAsyKC5nb29nbGUuY2xvdWQuZGlh",
+            "Z25vc3RpY3MuZGVidWcuVmFyaWFibGUiLAoOU291cmNlTG9jYXRpb24SDAoE",
+            "cGF0aBgBIAEoCRIMCgRsaW5lGAIgASgFIqgBCghWYXJpYWJsZRIMCgRuYW1l",
+            "GAEgASgJEgwKBHR5cGUYAiABKAkSDQoFdmFsdWUYAyABKAkSOQoHbWVtYmVy",
             "cxgEIAMoCzIoLmdvb2dsZS5jbG91ZC5kaWFnbm9zdGljcy5kZWJ1Zy5WYXJp",
-            "YWJsZSIsCg5Tb3VyY2VMb2NhdGlvbhIMCgRwYXRoGAEgASgJEgwKBGxpbmUY",
-            "AiABKAUiqAEKCFZhcmlhYmxlEgwKBG5hbWUYASABKAkSDAoEdHlwZRgCIAEo",
-            "CRINCgV2YWx1ZRgDIAEoCRI5CgdtZW1iZXJzGAQgAygLMiguZ29vZ2xlLmNs",
-            "b3VkLmRpYWdub3N0aWNzLmRlYnVnLlZhcmlhYmxlEjYKBnN0YXR1cxgFIAEo",
-            "CzImLmdvb2dsZS5jbG91ZC5kaWFnbm9zdGljcy5kZWJ1Zy5TdGF0dXMiKgoG",
-            "U3RhdHVzEg8KB2lzZXJyb3IYASABKAgSDwoHbWVzc2FnZRgCIAEoCWIGcHJv",
-            "dG8z"));
+            "YWJsZRI2CgZzdGF0dXMYBSABKAsyJi5nb29nbGUuY2xvdWQuZGlhZ25vc3Rp",
+            "Y3MuZGVidWcuU3RhdHVzIioKBlN0YXR1cxIPCgdpc2Vycm9yGAEgASgIEg8K",
+            "B21lc3NhZ2UYAiABKAliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime", "KillServer", "Expressions", "Condition", "EvaluatedExpressions", "Status" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Breakpoint), global::Google.Cloud.Diagnostics.Debug.Breakpoint.Parser, new[]{ "Id", "Location", "StackFrames", "Activated", "CreateTime", "FinalTime", "KillServer", "Expressions", "Condition", "EvaluatedExpressions", "Status", "LogPoint" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.StackFrame), global::Google.Cloud.Diagnostics.Debug.StackFrame.Parser, new[]{ "MethodName", "Location", "Arguments", "Locals" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.SourceLocation), global::Google.Cloud.Diagnostics.Debug.SourceLocation.Parser, new[]{ "Path", "Line" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Google.Cloud.Diagnostics.Debug.Variable), global::Google.Cloud.Diagnostics.Debug.Variable.Parser, new[]{ "Name", "Type", "Value", "Members", "Status" }, null, null, null),
@@ -95,6 +95,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       condition_ = other.condition_;
       evaluatedExpressions_ = other.evaluatedExpressions_.Clone();
       Status = other.status_ != null ? other.Status.Clone() : null;
+      logPoint_ = other.logPoint_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -220,6 +221,17 @@ namespace Google.Cloud.Diagnostics.Debug {
       }
     }
 
+    /// <summary>Field number for the "log_point" field.</summary>
+    public const int LogPointFieldNumber = 12;
+    private bool logPoint_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool LogPoint {
+      get { return logPoint_; }
+      set {
+        logPoint_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as Breakpoint);
@@ -244,6 +256,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (Condition != other.Condition) return false;
       if(!evaluatedExpressions_.Equals(other.evaluatedExpressions_)) return false;
       if (!object.Equals(Status, other.Status)) return false;
+      if (LogPoint != other.LogPoint) return false;
       return true;
     }
 
@@ -261,6 +274,7 @@ namespace Google.Cloud.Diagnostics.Debug {
       if (Condition.Length != 0) hash ^= Condition.GetHashCode();
       hash ^= evaluatedExpressions_.GetHashCode();
       if (status_ != null) hash ^= Status.GetHashCode();
+      if (LogPoint != false) hash ^= LogPoint.GetHashCode();
       return hash;
     }
 
@@ -306,6 +320,10 @@ namespace Google.Cloud.Diagnostics.Debug {
         output.WriteRawTag(90);
         output.WriteMessage(Status);
       }
+      if (LogPoint != false) {
+        output.WriteRawTag(96);
+        output.WriteBool(LogPoint);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -337,6 +355,9 @@ namespace Google.Cloud.Diagnostics.Debug {
       size += evaluatedExpressions_.CalculateSize(_repeated_evaluatedExpressions_codec);
       if (status_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Status);
+      }
+      if (LogPoint != false) {
+        size += 1 + 1;
       }
       return size;
     }
@@ -384,6 +405,9 @@ namespace Google.Cloud.Diagnostics.Debug {
           status_ = new global::Google.Cloud.Diagnostics.Debug.Status();
         }
         Status.MergeFrom(other.Status);
+      }
+      if (other.LogPoint != false) {
+        LogPoint = other.LogPoint;
       }
     }
 
@@ -449,6 +473,10 @@ namespace Google.Cloud.Diagnostics.Debug {
               status_ = new global::Google.Cloud.Diagnostics.Debug.Status();
             }
             input.ReadMessage(status_);
+            break;
+          }
+          case 96: {
+            LogPoint = input.ReadBool();
             break;
           }
         }
