@@ -267,11 +267,11 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   bool kill_server() const;
   void set_kill_server(bool value);
 
-  // bool logging = 12;
-  void clear_logging();
-  static const int kLoggingFieldNumber = 12;
-  bool logging() const;
-  void set_logging(bool value);
+  // bool log_point = 12;
+  void clear_log_point();
+  static const int kLogPointFieldNumber = 12;
+  bool log_point() const;
+  void set_log_point(bool value);
 
   // @@protoc_insertion_point(class_scope:google.cloud.diagnostics.debug.Breakpoint)
  private:
@@ -288,7 +288,7 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::cloud::diagnostics::debug::Status* status_;
   bool activated_;
   bool kill_server_;
-  bool logging_;
+  bool log_point_;
   mutable int _cached_size_;
   friend struct protobuf_breakpoint_2eproto::TableStruct;
 };
@@ -1184,18 +1184,18 @@ inline void Breakpoint::set_allocated_status(::google::cloud::diagnostics::debug
   // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.status)
 }
 
-// bool logging = 12;
-inline void Breakpoint::clear_logging() {
-  logging_ = false;
+// bool log_point = 12;
+inline void Breakpoint::clear_log_point() {
+  log_point_ = false;
 }
-inline bool Breakpoint::logging() const {
-  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.logging)
-  return logging_;
+inline bool Breakpoint::log_point() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.log_point)
+  return log_point_;
 }
-inline void Breakpoint::set_logging(bool value) {
+inline void Breakpoint::set_log_point(bool value) {
   
-  logging_ = value;
-  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.logging)
+  log_point_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_point)
 }
 
 // -------------------------------------------------------------------

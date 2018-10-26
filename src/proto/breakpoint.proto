@@ -16,7 +16,7 @@ message Breakpoint {
   string condition = 9;
   repeated Variable evaluated_expressions = 10;
   Status status = 11;
-  bool logging = 12;
+  bool log_point = 12;
 }
 
 message StackFrame {
