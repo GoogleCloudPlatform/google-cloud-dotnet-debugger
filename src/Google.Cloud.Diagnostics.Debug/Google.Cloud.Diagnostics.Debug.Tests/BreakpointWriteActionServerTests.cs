@@ -94,8 +94,9 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _server.MainAction();
 
             _mockDebuggerClient.Verify(c => c.ListBreakpoints(), Times.Once);
-            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(
-                Match.Create(GetErrorMatcher("0", Messages.LogPointNotSupported))), Times.Once);
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(It.IsAny<StackdriverBreakpoint>()), Times.Never);
+            _mockBreakpointServer.Verify(s => s.WriteBreakpointAsync(
+                breakpoints.Single().Convert(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

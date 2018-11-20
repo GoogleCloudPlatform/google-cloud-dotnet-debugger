@@ -47,18 +47,21 @@ std::int32_t DbgBreakpoint::current_max_collection_size_ =
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
   Initialize(other.file_name_, other.id_, other.line_, other.column_,
-             other.condition_, other.expressions_);
+             other.log_point_, other.condition_, other.expressions_);
 }
 
 void DbgBreakpoint::Initialize(const string &file_name, const string &id,
                                uint32_t line, uint32_t column,
+                               const bool &log_point,
                                const std::string &condition,
                                const std::vector<std::string> &expressions) {
   file_name_ = file_name;
-  id_ = id;
   std::transform(
       file_name_.begin(), file_name_.end(), file_name_.begin(),
       [](unsigned char c) -> unsigned char { return std::tolower(c); });
+  std::string underlying_file_name;
+  id_ = id;
+  log_point_ = log_point;
   line_ = line;
   column_ = column;
   condition_ = condition;
@@ -244,6 +247,8 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   }
 
   breakpoint->set_id(id_);
+  breakpoint->set_log_point(log_point_);
+
   if (!stack_frames) {
     std::cerr << "Stack frame collection is null.";
     return E_INVALIDARG;

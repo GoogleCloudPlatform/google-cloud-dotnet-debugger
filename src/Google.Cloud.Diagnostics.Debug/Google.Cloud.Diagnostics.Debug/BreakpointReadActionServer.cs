@@ -54,7 +54,10 @@ namespace Google.Cloud.Diagnostics.Debug
                 return;
             }
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
-            breakpoint.IsFinalState = true;
+            if (breakpoint.Action != StackdriverBreakpoint.Types.Action.Log)
+            {
+                breakpoint.IsFinalState = true;
+            }
             _client.UpdateBreakpoint(breakpoint);
         }
     }

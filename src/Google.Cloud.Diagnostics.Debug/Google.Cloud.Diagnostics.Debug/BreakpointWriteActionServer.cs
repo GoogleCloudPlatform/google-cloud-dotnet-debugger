@@ -64,17 +64,7 @@ namespace Google.Cloud.Diagnostics.Debug
 
             foreach (var breakpoint in bpmResponse.New)
             {
-                if (breakpoint.Action == Debugger.V2.Breakpoint.Types.Action.Log)
-                {
-                    breakpoint.Status = Common.CreateStatusMessage(
-                        Messages.LogPointNotSupported, isError: true);
-                    breakpoint.IsFinalState = true;
-                    _client.UpdateBreakpoint(breakpoint);
-                }
-                else
-                {
-                    _server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
-                }
+                _server.WriteBreakpointAsync(breakpoint.Convert()).Wait();
             }
         }
     }

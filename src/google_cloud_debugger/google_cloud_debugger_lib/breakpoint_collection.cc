@@ -35,9 +35,6 @@ using std::vector;
 
 namespace google_cloud_debugger {
 
-const std::string BreakpointCollection::kSplit = ":";
-const std::string BreakpointCollection::kDelimiter = ";";
-
 HRESULT BreakpointCollection::SetDebuggerCallback(
     DebuggerCallback *debugger_callback) {
   if (!debugger_callback) {
@@ -163,6 +160,7 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   // For now, we don't have a use for column so we just assign it to 0.
   breakpoint->Initialize(
       location.path(), breakpoint_read.id(), location.line(), 0,
+      breakpoint_read.log_point(),
       breakpoint_read.condition(),
       std::vector<std::string>(breakpoint_read.expressions().begin(),
                                breakpoint_read.expressions().end()));
