@@ -19,10 +19,10 @@
 #include <queue>
 
 #include "compiler_helpers.h"
+#include "dbg_class_property.h"
 #include "document_index.h"
 #include "expression_evaluator.h"
 #include "expression_util.h"
-#include "dbg_class_property.h"
 #include "i_dbg_stack_frame.h"
 #include "i_eval_coordinator.h"
 #include "i_portable_pdb_file.h"
@@ -46,19 +46,24 @@ std::int32_t DbgBreakpoint::current_max_collection_size_ =
     DbgBreakpoint::kMaximumCollectionSize;
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
-  Initialize(other.file_name_, other.id_, other.line_, other.column_,
+  Initialize(other.file_path_, other.id_, other.line_, other.column_,
              other.condition_, other.expressions_);
 }
 
-void DbgBreakpoint::Initialize(const string &file_name, const string &id,
+void DbgBreakpoint::Initialize(const string &file_path, const string &id,
                                uint32_t line, uint32_t column,
                                const std::string &condition,
                                const std::vector<std::string> &expressions) {
-  file_name_ = file_name;
-  id_ = id;
+  file_path_ = file_path;
   std::transform(
-      file_name_.begin(), file_name_.end(), file_name_.begin(),
+      file_path_.begin(), file_path_.end(), file_path_.begin(),
       [](unsigned char c) -> unsigned char { return std::tolower(c); });
+  size_t separator_location = file_path_.rfind('/');
+  file_name_ = separator_location == string::npos
+                   ? file_path_
+                   : file_path_.substr(separator_location + 1);
+
+  id_ = id;
   line_ = line;
   column_ = column;
   condition_ = condition;
@@ -86,9 +91,9 @@ bool DbgBreakpoint::TrySetBreakpoint(
     return false;
   }
 
-  uint32_t current_doc_index_index = -1;
-  uint32_t best_match_index = current_doc_index_index;
-  size_t best_file_name_location_matched = UINT32_MAX;
+  int32_t current_doc_index_index = -1;
+  int32_t best_match_doc_index = -1;
+  int32_t longest_match = -1;
 
   // Loop through all the documents and try to find the one that
   // best matches the breakpoint's file name.
@@ -98,56 +103,81 @@ bool DbgBreakpoint::TrySetBreakpoint(
     // Normalize path separators. The PDB may use either Unix or Windows-style
     // paths, but the Cloud Debugger only uses Unix.
     std::replace(document_name.begin(), document_name.end(), '\\', '/');
-    if (document_name.size() < file_name_.size()) {
-      continue;
-    }
-
     std::transform(
         document_name.begin(), document_name.end(), document_name.begin(),
         [](unsigned char c) -> unsigned char { return std::tolower(c); });
 
     size_t file_name_location = document_name.rfind(file_name_);
-    // Has to matched from the end.
+    // The file name has to be in the last part of the document_name.
     if (file_name_location + file_name_.size() != document_name.size()) {
       continue;
     }
 
-    // Try to find the best match.
-    // Best match here means the file with the longest path that matches
-    // the file name so file_name_location should be as small as possible.
-    if (file_name_location < best_file_name_location_matched) {
-      // Try to find the best matched method.
-      // This is because the breakpoint can be inside method A but if
-      // method A is defined inside method B then we should use method A
-      // to get the local variables instead of method B. An example is a
-      // delegate function that is defined inside a normal function.
-      bool found_breakpoint = false;
-      uint32_t best_matched_method_first_line = 0;
-      for (auto &&method : document_index->GetMethods()) {
-        if (method.first_line > line_ || method.last_line < line_) {
-          continue;
-        }
+    // Loop from the end and sees how many character matches.
+    // We will only count the match length at certain "checkpoints" (see logic
+    // below). Otherwise, we may see diff_file_name.cs as equivalent to
+    // file_name.cs.
+    int document_name_pos = document_name.length() - 1;
+    int file_path_pos = file_path_.length() - 1;
+    int length_matched = 0;
+    while (document_name_pos >= 0 && file_path_pos >= 0) {
+      if (document_name[document_name_pos] != file_path_[file_path_pos]) {
+        break;
+      }
 
-        // If this method's first line is greater than the previous one,
-        // this means that this method is inside it.
-        if (method.first_line > best_matched_method_first_line) {
-          // If this is false, it means no sequence points in the method
-          // corresponds to this breakpoint.
-          if (TrySetBreakpointInMethod(method)) {
-            best_matched_method_first_line = method.first_line;
-            found_breakpoint = true;
-          }
+      if ((length_matched > longest_match)) {
+        // 4 scenarios (file_path vs document_name):
+        if (document_name[document_name_pos] == '/'  // ab/blah.cs vs cd/blah.cs
+            || (file_path_pos == 0 &&
+                document_name_pos == 0)  // blah.cs vs blah.cs
+            || (file_path_pos == 0 && document_name[document_name_pos - 1] ==
+                                          '/')  // ab/blah.cs vs cd/ab/blah.cs
+            ||
+            (document_name_pos == 0 && file_path_[file_path_pos - 1] ==
+                                           '/')  // cd/ab/blah.cs vs ab/blah.cs
+        ) {
+          longest_match = length_matched;
+          best_match_doc_index = current_doc_index_index;
         }
       }
 
-      if (found_breakpoint) {
-        best_file_name_location_matched = file_name_location;
-        best_match_index = current_doc_index_index;
+      length_matched += 1;
+      document_name_pos -= 1;
+      file_path_pos -= 1;
+    }
+  }
+
+  if (best_match_doc_index == -1) {
+    return false;
+  }
+
+  auto &&best_document_index =
+      pdb_file->GetDocumentIndexTable()[best_match_doc_index];
+  // Try to find the best matched method.
+  // This is because the breakpoint can be inside method A but if
+  // method A is defined inside method B then we should use method A
+  // to get the local variables instead of method B. An example is a
+  // delegate function that is defined inside a normal function.
+  bool found_breakpoint = false;
+  uint32_t best_matched_method_first_line = 0;
+  for (auto &&method : best_document_index->GetMethods()) {
+    if (method.first_line > line_ || method.last_line < line_) {
+      continue;
+    }
+
+    // If this method's first line is greater than the previous one,
+    // this means that this method is inside it.
+    if (method.first_line > best_matched_method_first_line) {
+      // If this is false, it means no sequence points in the method
+      // corresponds to this breakpoint.
+      if (TrySetBreakpointInMethod(method)) {
+        best_matched_method_first_line = method.first_line;
+        found_breakpoint = true;
       }
     }
   }
 
-  return best_match_index != -1;
+  return found_breakpoint;
 }
 
 HRESULT DbgBreakpoint::EvaluateExpressions(IDbgStackFrame *stack_frame,
@@ -261,7 +291,7 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   }
 
   location->set_line(line_);
-  location->set_path(file_name_);
+  location->set_path(file_path_);
 
   eval_coordinator->WaitForReadySignal();
 

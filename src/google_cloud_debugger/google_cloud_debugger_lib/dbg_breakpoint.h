@@ -51,7 +51,7 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Populate this breakpoint's file name, id, line, column, condition
   // and expressions.
-  void Initialize(const std::string &file_name, const std::string &id,
+  void Initialize(const std::string &file_path, const std::string &id,
                   uint32_t line, uint32_t column, const std::string &condition,
                   const std::vector<std::string> &expressions);
 
@@ -83,7 +83,7 @@ class DbgBreakpoint : public StringStreamWrapper {
   }
 
   // Returns the name of the file this breakpoint is in.
-  const std::string &GetFileName() const { return file_name_; }
+  const std::string &GetFilePath() const { return file_path_; }
 
   // Returns the name of the method this breakpoint is in.
   const std::vector<WCHAR> &GetMethodName() const { return method_name_; }
@@ -145,7 +145,7 @@ class DbgBreakpoint : public StringStreamWrapper {
   // Returns a string representation of the breakpoint location
   // by concatenating file name and line number.
   std::string GetBreakpointLocation() const {
-    return file_name_ + "##" + std::to_string(line_);
+    return file_path_ + "##" + std::to_string(line_);
   }
 
   // Evaluates condition condition_ using the provided stack frame
@@ -187,7 +187,7 @@ class DbgBreakpoint : public StringStreamWrapper {
   HRESULT PopulateExpression(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IEvalCoordinator *eval_coordinator);
-   
+
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
   bool TrySetBreakpointInMethod(
@@ -198,6 +198,9 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // The column number of the breakpoint.
   uint32_t column_;
+
+  // The file path of the breakpoint.
+  std::string file_path_;
 
   // The file name of the breakpoint.
   std::string file_name_;
