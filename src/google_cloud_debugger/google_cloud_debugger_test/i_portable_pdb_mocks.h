@@ -113,8 +113,7 @@ class PortablePDBFileFixture {
   std::string module_name_ = "My module";
 
   // Documents contained in document_indices.
-  IDocumentIndexFixture first_doc_;
-  IDocumentIndexFixture second_doc_;
+  std::vector<IDocumentIndexFixture> documents_;
 
   // Document Indices that the file_mock_ contains.
   // Only contains 1 document index that has file_name_ file path.
