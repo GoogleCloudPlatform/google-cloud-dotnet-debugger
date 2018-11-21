@@ -298,6 +298,25 @@ class StackFrameCollectionTest : public ::testing::Test {
   }
 
   virtual void SetUpPDBFile() {
+    MethodInfo method;
+    // Method def can just be some random number, not important here.
+    method.method_def = 4000;
+
+    // Gives the method a sequence point that matches the IP Offset of the
+    // first frame.
+    SequencePoint seq_point;
+    seq_point.start_line = 30;
+    seq_point.il_offset = first_frame_.ip_offset_;
+
+    method.sequence_points.push_back(seq_point);
+    first_doc_.methods_.push_back(method);
+
+    // Sets up the name of the file for the first doc.
+    first_frame_.file_name_ = "First file";
+    first_doc_.file_name_ = first_frame_.file_name_;
+
+    pdb_file_fixture_.documents_.push_back(first_doc_);
+
     // Creates a Portable PDB file, sets up mock calls
     // and pushes it into the pdb_files_.
     unique_ptr<IPortablePdbFileMock> pdb_file =
@@ -306,10 +325,6 @@ class StackFrameCollectionTest : public ::testing::Test {
     pdb_file_fixture_.SetUpIPortablePDBFile(pdb_file.get());
 
     pdb_files_.push_back(std::move(pdb_file));
-
-    MethodInfo method;
-    // Method def can just be some random number, not important here.
-    method.method_def = 4000;
 
     // Makes this method the same as the first frame's method by giving
     // them the same function name and virtual address.
@@ -320,19 +335,6 @@ class StackFrameCollectionTest : public ::testing::Test {
                   SetArgPointee<4>(first_frame_.wchar_function_name_.size()),
                   SetArgPointee<8>(first_frame_.frame_func_virtual_addr_),
                   Return(S_OK)));
-
-    // Gives the method a sequence point that matches the IP Offset of the
-    // first frame.
-    SequencePoint seq_point;
-    seq_point.start_line = 30;
-    seq_point.il_offset = first_frame_.ip_offset_;
-
-    method.sequence_points.push_back(seq_point);
-    pdb_file_fixture_.first_doc_.methods_.push_back(method);
-
-    // Sets up the name of the file for the first doc.
-    first_frame_.file_name_ = "First file";
-    pdb_file_fixture_.first_doc_.file_name_ = first_frame_.file_name_;
   }
 
   // ICorDebugHelper used for StackFrameCollection constructor.
@@ -348,6 +350,9 @@ class StackFrameCollectionTest : public ::testing::Test {
 
   // The PDB file fixture for the first PDB file in pdb_files_ vector.
   PortablePDBFileFixture pdb_file_fixture_;
+
+  // First document in the PDB file fixture.
+  IDocumentIndexFixture first_doc_;
 
   // Stack walk used by the stack frame collection.
   ICorDebugStackWalkMock debug_stack_walk_;
@@ -534,12 +539,12 @@ TEST_F(StackFrameCollectionTest, TestPopulateStackFrames) {
             first_frame_.GetFullMethodName(module_name_));
   // Path is set based on the first document index's file name.
   EXPECT_EQ(first_proto_frame.location().path(),
-            pdb_file_fixture_.first_doc_.file_name_);
+            first_doc_.file_name_);
   // First frame function corresponds to the first sequence point of the first
   // method of the first document index.
   EXPECT_EQ(
       first_proto_frame.location().line(),
-      pdb_file_fixture_.first_doc_.methods_[0].sequence_points[0].start_line);
+      first_doc_.methods_[0].sequence_points[0].start_line);
 
   // No path or line number set for the second and third frames.
   StackFrame second_proto_frame = breakpoint.stack_frames(1);
