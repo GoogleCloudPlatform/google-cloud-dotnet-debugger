@@ -124,7 +124,7 @@ class DbgBreakpoint : public StringStreamWrapper {
   void SetKillServer(bool kill_server) { kill_server_ = kill_server; }
 
   // Returns whether this breakpoint is a logpoint.
-  bool GetLogPoint() const { return log_point_; }
+  bool IsLogPoint() const { return log_point_; }
 
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }

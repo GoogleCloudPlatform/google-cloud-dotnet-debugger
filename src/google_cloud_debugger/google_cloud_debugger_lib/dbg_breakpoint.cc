@@ -59,7 +59,6 @@ void DbgBreakpoint::Initialize(const string &file_name, const string &id,
   std::transform(
       file_name_.begin(), file_name_.end(), file_name_.begin(),
       [](unsigned char c) -> unsigned char { return std::tolower(c); });
-  std::string underlying_file_name;
   id_ = id;
   log_point_ = log_point;
   line_ = line;

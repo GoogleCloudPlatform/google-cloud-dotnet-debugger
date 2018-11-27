@@ -108,7 +108,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint_.GetId(), id_);
   EXPECT_EQ(breakpoint_.GetLine(), line_);
   EXPECT_EQ(breakpoint_.GetColumn(), column_);
-  EXPECT_EQ(breakpoint_.GetLogPoint(), log_point_);
+  EXPECT_EQ(breakpoint_.IsLogPoint(), log_point_);
 
   // Now we use the other Initialize function,
   // file name, ID, line and column should be copied over.
@@ -119,7 +119,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint2.GetId(), breakpoint_.GetId());
   EXPECT_EQ(breakpoint2.GetLine(), breakpoint_.GetLine());
   EXPECT_EQ(breakpoint2.GetColumn(), breakpoint_.GetColumn());
-  EXPECT_EQ(breakpoint2.GetLogPoint(), breakpoint_.GetLogPoint());
+  EXPECT_EQ(breakpoint2.IsLogPoint(), breakpoint_.IsLogPoint());
 }
 
 // Tests that the Set/GetMethodToken function sets up the correct fields.

@@ -271,7 +271,7 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
                 << "\" with HRESULT: " << std::hex << hr;
       Breakpoint error_breakpoint;
       error_breakpoint.set_id(breakpoint->GetId());
-      error_breakpoint.set_log_point(breakpoint->GetLogPoint());
+      error_breakpoint.set_log_point(breakpoint->IsLogPoint());
 
       SetErrorStatusMessage(&error_breakpoint, breakpoint->GetErrorString());
 

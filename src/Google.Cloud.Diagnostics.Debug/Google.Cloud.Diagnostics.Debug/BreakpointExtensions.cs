@@ -76,11 +76,6 @@ namespace Google.Cloud.Diagnostics.Debug
                     breakpoint.EvaluatedExpressions?.Select(variable => variable.Convert()).ToList()
                 },
 
-                Expressions =
-                {
-                    breakpoint.EvaluatedExpressions?.Select(variable => variable.Name).ToList()
-                },
-
                 Action = breakpoint.LogPoint ? StackdriverBreakpoint.Types.Action.Log
                     : StackdriverBreakpoint.Types.Action.Capture
             };
