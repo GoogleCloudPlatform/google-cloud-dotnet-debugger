@@ -51,8 +51,8 @@ namespace google_cloud_debugger_test {
 class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUpBreakpoint() {
-    breakpoint_.Initialize(file_name_, id_, line_, column_, condition_,
-                           expressions_);
+    breakpoint_.Initialize(file_name_, id_, line_, column_,
+                           log_point_, condition_, expressions_);
     // Gives the PDB file the same file name as this breakpoint's file name.
     pdb_file_fixture_.first_doc_.file_name_ = file_name_;
     pdb_file_fixture_.SetUpIPortablePDBFile(&file_mock_);
@@ -71,6 +71,8 @@ class DbgBreakpointTest : public ::testing::Test {
   string lower_case_file_name_ = "my file";
 
   string condition_;
+
+  bool log_point_;
 
   std::vector<string> expressions_;
 
@@ -106,6 +108,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint_.GetId(), id_);
   EXPECT_EQ(breakpoint_.GetLine(), line_);
   EXPECT_EQ(breakpoint_.GetColumn(), column_);
+  EXPECT_EQ(breakpoint_.IsLogPoint(), log_point_);
 
   // Now we use the other Initialize function,
   // file name, ID, line and column should be copied over.
@@ -116,6 +119,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint2.GetId(), breakpoint_.GetId());
   EXPECT_EQ(breakpoint2.GetLine(), breakpoint_.GetLine());
   EXPECT_EQ(breakpoint2.GetColumn(), breakpoint_.GetColumn());
+  EXPECT_EQ(breakpoint2.IsLogPoint(), breakpoint_.IsLogPoint());
 }
 
 // Tests that the Set/GetMethodToken function sets up the correct fields.

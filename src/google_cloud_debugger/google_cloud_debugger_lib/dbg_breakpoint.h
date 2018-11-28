@@ -50,9 +50,10 @@ class DbgBreakpoint : public StringStreamWrapper {
   void Initialize(const DbgBreakpoint &other);
 
   // Populate this breakpoint's file name, id, line, column, condition
-  // and expressions.
+  // expressions and whether it is a log point.
   void Initialize(const std::string &file_name, const std::string &id,
-                  uint32_t line, uint32_t column, const std::string &condition,
+                  uint32_t line, uint32_t column, const bool &log_point,
+                  const std::string &condition,
                   const std::vector<std::string> &expressions);
 
   // Given a PortablePdbFile, try to see whether we can set this breakpoint.
@@ -121,6 +122,9 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Sets whether this breakpoint should kill the server.
   void SetKillServer(bool kill_server) { kill_server_ = kill_server; }
+
+  // Returns whether this breakpoint is a logpoint.
+  bool IsLogPoint() const { return log_point_; }
 
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }
@@ -237,6 +241,9 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // True if this breakpoint should kill the server it was sent to.
   bool kill_server_ = false;
+
+  // True if this breakpoint is a log point.
+  bool log_point_ = false;
 
   // The current maximum number of items in a collection that we will expand.
   static std::int32_t current_max_collection_size_;

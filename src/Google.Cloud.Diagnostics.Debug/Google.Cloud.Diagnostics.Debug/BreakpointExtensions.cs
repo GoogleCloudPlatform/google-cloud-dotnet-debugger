@@ -41,7 +41,8 @@ namespace Google.Cloud.Diagnostics.Debug
                     Path = breakpoint.Location?.Path,
                 },
                 Condition = breakpoint.Condition,
-                Expressions = { breakpoint.Expressions }
+                Expressions = { breakpoint.Expressions },
+                LogPoint = breakpoint.Action == StackdriverBreakpoint.Types.Action.Log
             };
         }
 
@@ -73,7 +74,10 @@ namespace Google.Cloud.Diagnostics.Debug
                 EvaluatedExpressions =
                 {
                     breakpoint.EvaluatedExpressions?.Select(variable => variable.Convert()).ToList()
-                }
+                },
+
+                Action = breakpoint.LogPoint ? StackdriverBreakpoint.Types.Action.Log
+                    : StackdriverBreakpoint.Types.Action.Capture
             };
         }
     }

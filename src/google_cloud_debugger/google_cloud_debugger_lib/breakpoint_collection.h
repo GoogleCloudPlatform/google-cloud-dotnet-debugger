@@ -34,14 +34,6 @@ class IEvalCoordinator;
 // Class for managing a collection of breakpoints.
 class BreakpointCollection : public IBreakpointCollection {
  public:
-  // The character that is used to split up different parts
-  // of a breakpoint string. For example, a breakpoint string is
-  // Program.cs:35:breakpoint-id.
-  static const std::string kSplit;
-
-  // Delimiter for separating different breakpoint strings.
-  static const std::string kDelimiter;
-
   // Sets the Debugger Callback field, which is used to get a list of
   // Portable PDB files applicable to this collection.
   HRESULT SetDebuggerCallback(DebuggerCallback *debugger_callback) override;
