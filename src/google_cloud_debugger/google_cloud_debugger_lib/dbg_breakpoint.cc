@@ -59,10 +59,7 @@ void DbgBreakpoint::Initialize(const string &file_path, const string &id,
   std::transform(
       file_path_.begin(), file_path_.end(), file_path_.begin(),
       [](unsigned char c) -> unsigned char { return std::tolower(c); });
-  size_t separator_location = file_path_.rfind('/');
-  file_name_ = separator_location == string::npos
-                   ? file_path_
-                   : file_path_.substr(separator_location + 1);
+  file_path_segments_ = SplitFilePath(file_path_);
 
   id_ = id;
   log_point_ = log_point;
@@ -109,43 +106,25 @@ bool DbgBreakpoint::TrySetBreakpoint(
         document_name.begin(), document_name.end(), document_name.begin(),
         [](unsigned char c) -> unsigned char { return std::tolower(c); });
 
-    size_t file_name_location = document_name.rfind(file_name_);
-    // The file name has to be in the last part of the document_name.
-    if (file_name_location + file_name_.size() != document_name.size()) {
-      continue;
-    }
+    std::vector<std::string> document_name_segments = SplitFilePath(document_name);
 
-    // Loop from the end and sees how many character matches.
-    // We will only count the match length at certain "checkpoints" (see logic
-    // below). Otherwise, we may see diff_file_name.cs as equivalent to
-    // file_name.cs.
-    int document_name_pos = document_name.length() - 1;
-    int file_path_pos = file_path_.length() - 1;
-    int length_matched = 0;
-    while (document_name_pos >= 0 && file_path_pos >= 0) {
-      if (document_name[document_name_pos] != file_path_[file_path_pos]) {
+    // Loop and see how many segments matches.
+    int segments_matches = 0;
+    int document_segment_idx = 0;
+    for (auto &&segment : file_path_segments_) {
+      if (document_segment_idx == document_name_segments.size()) {
         break;
       }
 
-      if ((length_matched > longest_match)) {
-        // 4 scenarios (file_path vs document_name):
-        if (document_name[document_name_pos] == '/'  // ab/blah.cs vs cd/blah.cs
-            || (file_path_pos == 0 &&
-                document_name_pos == 0)  // blah.cs vs blah.cs
-            || (file_path_pos == 0 && document_name[document_name_pos - 1] ==
-                                          '/')  // ab/blah.cs vs cd/ab/blah.cs
-            ||
-            (document_name_pos == 0 && file_path_[file_path_pos - 1] ==
-                                           '/')  // cd/ab/blah.cs vs ab/blah.cs
-        ) {
-          longest_match = length_matched;
-          best_match_doc_index = current_doc_index_index;
-        }
+      if (segment.compare(document_name_segments[document_segment_idx]) == 0) {
+        segments_matches += 1;
       }
 
-      length_matched += 1;
-      document_name_pos -= 1;
-      file_path_pos -= 1;
+      document_segment_idx += 1;
+    }
+
+    if (segments_matches > 0 && segments_matches > longest_match) {
+      best_match_doc_index = current_doc_index_index;
     }
   }
 
@@ -356,6 +335,24 @@ bool DbgBreakpoint::TrySetBreakpointInMethod(
   line_ = find_seq->start_line;
   method_def_ = method.method_def;
   return true;
+}
+
+std::vector<std::string> DbgBreakpoint::SplitFilePath(const std::string &path) {
+  std::vector<std::string> result;
+
+  static const std::string delimiter = "/";
+  size_t delimiter_position = path.find(delimiter);
+  size_t start_offset = 0;
+
+  while (delimiter_position != std::string::npos) {
+    result.push_back(path.substr(start_offset, delimiter_position - start_offset));
+    start_offset = delimiter_position + delimiter.length();
+    delimiter_position = path.find(delimiter, start_offset);
+  }
+
+  result.push_back(path.substr(start_offset, delimiter_position));
+  std::reverse(result.begin(), result.end());
+  return result;
 }
 
 }  // namespace google_cloud_debugger

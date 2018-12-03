@@ -113,12 +113,14 @@ class DbgBreakpointTest : public ::testing::Test {
 
   // Tests that document with similar file name are not chosen.
   void TestMatchingFileName(const std::string &chosen_file_name,
-                            const std::string &similar_file_name) {
-    // Sets up the second document that has similar file name.
-    IDocumentIndexFixture second_document;
-    second_document.file_name_ = similar_file_name;
+                            const std::vector<std::string> &similar_file_names) {
+    // Sets up the other documents that has similar file names.
+    for (auto &&file_name : similar_file_names) {
+      IDocumentIndexFixture new_document;
+      new_document.file_name_ = file_name;
 
-    pdb_file_fixture_.documents_.push_back(second_document);
+      pdb_file_fixture_.documents_.push_back(new_document);
+    }
 
     // Sets up the first document that should have the chosen name.
     file_path_ = chosen_file_name;
@@ -272,19 +274,28 @@ TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
 // Test the TrySetBreakpoint function of DbgBreakpoint when there are
 // multiple documents.
 TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesOne) {
-  TestMatchingFileName("program.cs", "different_program.cs");
+  std::vector<std::string> other_file_names;
+  other_file_names.push_back("different_program.cs");
+  other_file_names.push_back("test/aprogram.cs");
+  TestMatchingFileName("program.cs", other_file_names);
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint when there are
 // multiple documents.
 TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesTwo) {
-  TestMatchingFileName("test/program.cs", "program.cs");
+  std::vector<std::string> other_file_names;
+  other_file_names.push_back("blah/program.cs");
+  other_file_names.push_back("program.cs");
+  TestMatchingFileName("test/program.cs", other_file_names);
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint when there are
 // multiple documents.
 TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesThree) {
-  TestMatchingFileName("src/test/program.cs", "blah/test/program.cs");
+  std::vector<std::string> other_file_names;
+  other_file_names.push_back("wrong_src/test/program.cs");
+  other_file_names.push_back("blah/test/program.cs");
+  TestMatchingFileName("src/test/program.cs", other_file_names);
 }
 
 // Test the TrySetBreakpoint function of DbgBreakpoint
