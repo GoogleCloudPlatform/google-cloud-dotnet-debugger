@@ -17,6 +17,13 @@ message Breakpoint {
   repeated Variable evaluated_expressions = 10;
   Status status = 11;
   bool log_point = 12;
+  string log_message_format = 13;
+  enum LogLevel {
+    INFO = 0;
+    WARNING = 1;
+    ERR = 2;
+  }
+  LogLevel log_level = 14;
 }
 
 message StackFrame {

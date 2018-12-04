@@ -161,6 +161,8 @@ HRESULT BreakpointCollection::ReadAndParseBreakpoint(
   breakpoint->Initialize(
       location.path(), breakpoint_read.id(), location.line(), 0,
       breakpoint_read.log_point(),
+      breakpoint_read.log_message_format(),
+      breakpoint_read.log_level(),
       breakpoint_read.condition(),
       std::vector<std::string>(breakpoint_read.expressions().begin(),
                                breakpoint_read.expressions().end()));

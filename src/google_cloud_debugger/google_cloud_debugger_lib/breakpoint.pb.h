@@ -28,6 +28,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
+#include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/unknown_field_set.h>
 #include <google/protobuf/timestamp.pb.h>
 // @@protoc_insertion_point(includes)
@@ -79,6 +80,28 @@ void AddDescriptors();
 void InitDefaults();
 }  // namespace protobuf_breakpoint_2eproto
 
+enum Breakpoint_LogLevel {
+  Breakpoint_LogLevel_INFO = 0,
+  Breakpoint_LogLevel_WARNING = 1,
+  Breakpoint_LogLevel_ERR = 2,
+  Breakpoint_LogLevel_Breakpoint_LogLevel_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
+  Breakpoint_LogLevel_Breakpoint_LogLevel_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
+};
+bool Breakpoint_LogLevel_IsValid(int value);
+const Breakpoint_LogLevel Breakpoint_LogLevel_LogLevel_MIN = Breakpoint_LogLevel_INFO;
+const Breakpoint_LogLevel Breakpoint_LogLevel_LogLevel_MAX = Breakpoint_LogLevel_ERR;
+const int Breakpoint_LogLevel_LogLevel_ARRAYSIZE = Breakpoint_LogLevel_LogLevel_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* Breakpoint_LogLevel_descriptor();
+inline const ::std::string& Breakpoint_LogLevel_Name(Breakpoint_LogLevel value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    Breakpoint_LogLevel_descriptor(), value);
+}
+inline bool Breakpoint_LogLevel_Parse(
+    const ::std::string& name, Breakpoint_LogLevel* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<Breakpoint_LogLevel>(
+    Breakpoint_LogLevel_descriptor(), name, value);
+}
 // ===================================================================
 
 class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:google.cloud.diagnostics.debug.Breakpoint) */ {
@@ -142,6 +165,34 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
 
   // nested types ----------------------------------------------------
+
+  typedef Breakpoint_LogLevel LogLevel;
+  static const LogLevel INFO =
+    Breakpoint_LogLevel_INFO;
+  static const LogLevel WARNING =
+    Breakpoint_LogLevel_WARNING;
+  static const LogLevel ERR =
+    Breakpoint_LogLevel_ERR;
+  static inline bool LogLevel_IsValid(int value) {
+    return Breakpoint_LogLevel_IsValid(value);
+  }
+  static const LogLevel LogLevel_MIN =
+    Breakpoint_LogLevel_LogLevel_MIN;
+  static const LogLevel LogLevel_MAX =
+    Breakpoint_LogLevel_LogLevel_MAX;
+  static const int LogLevel_ARRAYSIZE =
+    Breakpoint_LogLevel_LogLevel_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  LogLevel_descriptor() {
+    return Breakpoint_LogLevel_descriptor();
+  }
+  static inline const ::std::string& LogLevel_Name(LogLevel value) {
+    return Breakpoint_LogLevel_Name(value);
+  }
+  static inline bool LogLevel_Parse(const ::std::string& name,
+      LogLevel* value) {
+    return Breakpoint_LogLevel_Parse(name, value);
+  }
 
   // accessors -------------------------------------------------------
 
@@ -219,6 +270,20 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::std::string* release_condition();
   void set_allocated_condition(::std::string* condition);
 
+  // string log_message_format = 13;
+  void clear_log_message_format();
+  static const int kLogMessageFormatFieldNumber = 13;
+  const ::std::string& log_message_format() const;
+  void set_log_message_format(const ::std::string& value);
+  #if LANG_CXX11
+  void set_log_message_format(::std::string&& value);
+  #endif
+  void set_log_message_format(const char* value);
+  void set_log_message_format(const char* value, size_t size);
+  ::std::string* mutable_log_message_format();
+  ::std::string* release_log_message_format();
+  void set_allocated_log_message_format(::std::string* log_message_format);
+
   // .google.cloud.diagnostics.debug.SourceLocation location = 2;
   bool has_location() const;
   void clear_location();
@@ -273,6 +338,12 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   bool log_point() const;
   void set_log_point(bool value);
 
+  // .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+  void clear_log_level();
+  static const int kLogLevelFieldNumber = 14;
+  ::google::cloud::diagnostics::debug::Breakpoint_LogLevel log_level() const;
+  void set_log_level(::google::cloud::diagnostics::debug::Breakpoint_LogLevel value);
+
   // @@protoc_insertion_point(class_scope:google.cloud.diagnostics.debug.Breakpoint)
  private:
 
@@ -282,6 +353,7 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable > evaluated_expressions_;
   ::google::protobuf::internal::ArenaStringPtr id_;
   ::google::protobuf::internal::ArenaStringPtr condition_;
+  ::google::protobuf::internal::ArenaStringPtr log_message_format_;
   ::google::cloud::diagnostics::debug::SourceLocation* location_;
   ::google::protobuf::Timestamp* create_time_;
   ::google::protobuf::Timestamp* final_time_;
@@ -289,6 +361,7 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   bool activated_;
   bool kill_server_;
   bool log_point_;
+  int log_level_;
   mutable int _cached_size_;
   friend struct protobuf_breakpoint_2eproto::TableStruct;
 };
@@ -1198,6 +1271,73 @@ inline void Breakpoint::set_log_point(bool value) {
   // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_point)
 }
 
+// string log_message_format = 13;
+inline void Breakpoint::clear_log_message_format() {
+  log_message_format_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Breakpoint::log_message_format() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  return log_message_format_.GetNoArena();
+}
+inline void Breakpoint::set_log_message_format(const ::std::string& value) {
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+#if LANG_CXX11
+inline void Breakpoint::set_log_message_format(::std::string&& value) {
+  
+  log_message_format_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+#endif
+inline void Breakpoint::set_log_message_format(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+inline void Breakpoint::set_log_message_format(const char* value, size_t size) {
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+inline ::std::string* Breakpoint::mutable_log_message_format() {
+  
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  return log_message_format_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Breakpoint::release_log_message_format() {
+  // @@protoc_insertion_point(field_release:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  
+  return log_message_format_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Breakpoint::set_allocated_log_message_format(::std::string* log_message_format) {
+  if (log_message_format != NULL) {
+    
+  } else {
+    
+  }
+  log_message_format_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), log_message_format);
+  // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+
+// .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+inline void Breakpoint::clear_log_level() {
+  log_level_ = 0;
+}
+inline ::google::cloud::diagnostics::debug::Breakpoint_LogLevel Breakpoint::log_level() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.log_level)
+  return static_cast< ::google::cloud::diagnostics::debug::Breakpoint_LogLevel >(log_level_);
+}
+inline void Breakpoint::set_log_level(::google::cloud::diagnostics::debug::Breakpoint_LogLevel value) {
+  
+  log_level_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_level)
+}
+
 // -------------------------------------------------------------------
 
 // StackFrame
@@ -1745,6 +1885,20 @@ inline void Status::set_allocated_message(::std::string* message) {
 }  // namespace diagnostics
 }  // namespace cloud
 }  // namespace google
+
+#ifndef SWIG
+namespace google {
+namespace protobuf {
+
+template <> struct is_proto_enum< ::google::cloud::diagnostics::debug::Breakpoint_LogLevel> : ::google::protobuf::internal::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::google::cloud::diagnostics::debug::Breakpoint_LogLevel>() {
+  return ::google::cloud::diagnostics::debug::Breakpoint_LogLevel_descriptor();
+}
+
+}  // namespace protobuf
+}  // namespace google
+#endif  // SWIG
 
 // @@protoc_insertion_point(global_scope)
 

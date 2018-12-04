@@ -21,6 +21,7 @@
 #include "custom_binary_reader.h"
 #include "dbg_breakpoint.h"
 #include "dbg_object.h"
+#include "breakpoint.pb.h"
 #include "i_cor_debug_mocks.h"
 #include "i_dbg_object_factory_mock.h"
 #include "i_dbg_stack_frame_mock.h"
@@ -34,6 +35,7 @@ using google_cloud_debugger::DbgBreakpoint;
 using google_cloud_debugger_portable_pdb::IDocumentIndex;
 using google_cloud_debugger_portable_pdb::MethodInfo;
 using google_cloud_debugger_portable_pdb::SequencePoint;
+using google::cloud::diagnostics::debug::Breakpoint_LogLevel;
 using std::max;
 using std::string;
 using std::unique_ptr;
@@ -103,7 +105,8 @@ class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUpBreakpoint() {
     breakpoint_.Initialize(file_path_, id_, line_, column_,
-                           log_point_, condition_, expressions_);
+                           log_point_, log_message_format_,
+                           log_level_, condition_, expressions_);
 
     // Gives the PDB file the same file name as this breakpoint's file name.
     first_doc_.file_name_ = file_path_;
@@ -166,6 +169,10 @@ class DbgBreakpointTest : public ::testing::Test {
 
   bool log_point_;
 
+  string log_message_format_ = "log message";
+
+  Breakpoint_LogLevel log_level_ = Breakpoint_LogLevel::Breakpoint_LogLevel_WARNING;
+
   std::vector<string> expressions_;
 
   // Id of the breakpoint.
@@ -204,6 +211,8 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint_.GetLine(), line_);
   EXPECT_EQ(breakpoint_.GetColumn(), column_);
   EXPECT_EQ(breakpoint_.IsLogPoint(), log_point_);
+  EXPECT_EQ(breakpoint_.LogMessageFormat(), log_message_format_);
+  EXPECT_EQ(breakpoint_.LogLevel(), log_level_);
 
   // Now we use the other Initialize function,
   // file name, ID, line and column should be copied over.
@@ -215,6 +224,8 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint2.GetLine(), breakpoint_.GetLine());
   EXPECT_EQ(breakpoint2.GetColumn(), breakpoint_.GetColumn());
   EXPECT_EQ(breakpoint2.IsLogPoint(), breakpoint_.IsLogPoint());
+  EXPECT_EQ(breakpoint2.LogMessageFormat(), log_message_format_);
+  EXPECT_EQ(breakpoint2.LogLevel(), log_level_);
 }
 
 // Tests that the Set/GetMethodToken function sets up the correct fields.

@@ -53,6 +53,8 @@ class DbgBreakpoint : public StringStreamWrapper {
   // and expressions and whether it is a log point.
   void Initialize(const std::string &file_path, const std::string &id,
                   uint32_t line, uint32_t column, const bool &log_point,
+                  const std::string &log_message_format,
+                  const google::cloud::diagnostics::debug::Breakpoint_LogLevel &log_level,
                   const std::string &condition,
                   const std::vector<std::string> &expressions);
 
@@ -125,6 +127,12 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Returns whether this breakpoint is a logpoint.
   bool IsLogPoint() const { return log_point_; }
+
+  // The log message format of the breakpoint.
+  std::string LogMessageFormat() const { return log_message_format_; }
+
+  // The log level of the breakpoint.
+  google::cloud::diagnostics::debug::Breakpoint_LogLevel LogLevel() const { return log_level_; }
 
   // Returns the condition of the breakpoint.
   const std::string &GetCondition() const { return condition_; }
@@ -253,6 +261,12 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // True if this breakpoint is a log point.
   bool log_point_ = false;
+
+  // The format of the log message of this breakpoint.
+  std::string log_message_format_;
+
+  // Log level of the breakpoint.
+  google::cloud::diagnostics::debug::Breakpoint_LogLevel log_level_;
 
   // The current maximum number of items in a collection that we will expand.
   static std::int32_t current_max_collection_size_;
