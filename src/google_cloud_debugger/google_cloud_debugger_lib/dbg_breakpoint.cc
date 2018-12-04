@@ -47,12 +47,14 @@ std::int32_t DbgBreakpoint::current_max_collection_size_ =
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
   Initialize(other.file_path_, other.id_, other.line_, other.column_,
-             other.log_point_, other.condition_, other.expressions_);
+             other.log_point_, other.log_message_format_,
+             other.condition_, other.expressions_);
 }
 
 void DbgBreakpoint::Initialize(const string &file_path, const string &id,
                                uint32_t line, uint32_t column,
                                const bool &log_point,
+                               const std::string &log_message_format,
                                const std::string &condition,
                                const std::vector<std::string> &expressions) {
   file_path_ = file_path;
@@ -67,6 +69,7 @@ void DbgBreakpoint::Initialize(const string &file_path, const string &id,
   column_ = column;
   condition_ = condition;
   expressions_ = expressions;
+  log_message_format_ = log_message_format;
 }
 
 HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
@@ -257,6 +260,7 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
 
   breakpoint->set_id(id_);
   breakpoint->set_log_point(log_point_);
+  breakpoint->set_log_message_format(log_message_format_);
 
   if (!stack_frames) {
     std::cerr << "Stack frame collection is null.";

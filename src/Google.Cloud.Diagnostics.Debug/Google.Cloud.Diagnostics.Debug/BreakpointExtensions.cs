@@ -42,7 +42,8 @@ namespace Google.Cloud.Diagnostics.Debug
                 },
                 Condition = breakpoint.Condition,
                 Expressions = { breakpoint.Expressions },
-                LogPoint = breakpoint.Action == StackdriverBreakpoint.Types.Action.Log
+                LogPoint = breakpoint.Action == StackdriverBreakpoint.Types.Action.Log,
+                LogMessageFormat = breakpoint.LogMessageFormat
             };
         }
 
@@ -58,6 +59,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 CreateTime = breakpoint.CreateTime,
                 FinalTime = breakpoint.FinalTime,
                 Id = breakpoint.Id,
+                LogMessageFormat = breakpoint.LogMessageFormat,
                 Location = new StackdriverSourceLocation
                 {
                     // Change path to Unix style before reporting to the server.

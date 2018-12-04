@@ -103,7 +103,8 @@ class DbgBreakpointTest : public ::testing::Test {
  protected:
   virtual void SetUpBreakpoint() {
     breakpoint_.Initialize(file_path_, id_, line_, column_,
-                           log_point_, condition_, expressions_);
+                           log_point_, log_message_format_,
+                           condition_, expressions_);
 
     // Gives the PDB file the same file name as this breakpoint's file name.
     first_doc_.file_name_ = file_path_;
@@ -166,6 +167,8 @@ class DbgBreakpointTest : public ::testing::Test {
 
   bool log_point_;
 
+  string log_message_format_ = "log message";
+
   std::vector<string> expressions_;
 
   // Id of the breakpoint.
@@ -204,6 +207,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint_.GetLine(), line_);
   EXPECT_EQ(breakpoint_.GetColumn(), column_);
   EXPECT_EQ(breakpoint_.IsLogPoint(), log_point_);
+  EXPECT_EQ(breakpoint_.LogMessageFormat(), log_message_format_);
 
   // Now we use the other Initialize function,
   // file name, ID, line and column should be copied over.
@@ -215,6 +219,7 @@ TEST_F(DbgBreakpointTest, Initialize) {
   EXPECT_EQ(breakpoint2.GetLine(), breakpoint_.GetLine());
   EXPECT_EQ(breakpoint2.GetColumn(), breakpoint_.GetColumn());
   EXPECT_EQ(breakpoint2.IsLogPoint(), breakpoint_.IsLogPoint());
+  EXPECT_EQ(breakpoint2.LogMessageFormat(), log_message_format_);
 }
 
 // Tests that the Set/GetMethodToken function sets up the correct fields.

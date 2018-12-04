@@ -219,6 +219,20 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::std::string* release_condition();
   void set_allocated_condition(::std::string* condition);
 
+  // string log_message_format = 13;
+  void clear_log_message_format();
+  static const int kLogMessageFormatFieldNumber = 13;
+  const ::std::string& log_message_format() const;
+  void set_log_message_format(const ::std::string& value);
+  #if LANG_CXX11
+  void set_log_message_format(::std::string&& value);
+  #endif
+  void set_log_message_format(const char* value);
+  void set_log_message_format(const char* value, size_t size);
+  ::std::string* mutable_log_message_format();
+  ::std::string* release_log_message_format();
+  void set_allocated_log_message_format(::std::string* log_message_format);
+
   // .google.cloud.diagnostics.debug.SourceLocation location = 2;
   bool has_location() const;
   void clear_location();
@@ -282,6 +296,7 @@ class Breakpoint : public ::google::protobuf::Message /* @@protoc_insertion_poin
   ::google::protobuf::RepeatedPtrField< ::google::cloud::diagnostics::debug::Variable > evaluated_expressions_;
   ::google::protobuf::internal::ArenaStringPtr id_;
   ::google::protobuf::internal::ArenaStringPtr condition_;
+  ::google::protobuf::internal::ArenaStringPtr log_message_format_;
   ::google::cloud::diagnostics::debug::SourceLocation* location_;
   ::google::protobuf::Timestamp* create_time_;
   ::google::protobuf::Timestamp* final_time_;
@@ -1196,6 +1211,59 @@ inline void Breakpoint::set_log_point(bool value) {
   
   log_point_ = value;
   // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_point)
+}
+
+// string log_message_format = 13;
+inline void Breakpoint::clear_log_message_format() {
+  log_message_format_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& Breakpoint::log_message_format() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  return log_message_format_.GetNoArena();
+}
+inline void Breakpoint::set_log_message_format(const ::std::string& value) {
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+#if LANG_CXX11
+inline void Breakpoint::set_log_message_format(::std::string&& value) {
+  
+  log_message_format_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+#endif
+inline void Breakpoint::set_log_message_format(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+inline void Breakpoint::set_log_message_format(const char* value, size_t size) {
+  
+  log_message_format_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+inline ::std::string* Breakpoint::mutable_log_message_format() {
+  
+  // @@protoc_insertion_point(field_mutable:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  return log_message_format_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* Breakpoint::release_log_message_format() {
+  // @@protoc_insertion_point(field_release:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+  
+  return log_message_format_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void Breakpoint::set_allocated_log_message_format(::std::string* log_message_format) {
+  if (log_message_format != NULL) {
+    
+  } else {
+    
+  }
+  log_message_format_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), log_message_format);
+  // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
 }
 
 // -------------------------------------------------------------------
