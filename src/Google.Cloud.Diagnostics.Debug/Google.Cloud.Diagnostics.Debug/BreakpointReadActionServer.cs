@@ -13,8 +13,12 @@
 // limitations under the License.
 
 using Google.Api.Gax;
+using Google.Cloud.Logging.V2;
+using Google.Cloud.Logging.Type;
 using System.Threading;
 using StackdriverBreakpoint = Google.Cloud.Debugger.V2.Breakpoint;
+using Google.Api;
+using System.Collections.Generic;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -24,7 +28,8 @@ namespace Google.Cloud.Diagnostics.Debug
     /// </summary>
     public class BreakpointReadActionServer : BreakpointActionServer
     {
-        private readonly IDebuggerClient _client;
+        private readonly IDebuggerClient _debuggerClient;
+        private readonly ILoggingClient _loggingClient;
         private readonly BreakpointManager _breakpointManager;
 
         /// <summary>
@@ -35,9 +40,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <param name="client">The debugger client to send updated breakpoints to.</param>
         /// <param name="breakpointManager">A shared breakpoint manager.</param>
         public BreakpointReadActionServer(IBreakpointServer server, CancellationTokenSource cts,
-            IDebuggerClient client, BreakpointManager breakpointManager) : base(server, cts)
+            IDebuggerClient debuggerClient, ILoggingClient loggingClient,
+            BreakpointManager breakpointManager) : base(server, cts)
         {
-            _client = GaxPreconditions.CheckNotNull(client, nameof(client));
+            _debuggerClient = GaxPreconditions.CheckNotNull(debuggerClient, nameof(debuggerClient));
+            _loggingClient = GaxPreconditions.CheckNotNull(loggingClient, nameof(loggingClient));
             _breakpointManager = GaxPreconditions.CheckNotNull(breakpointManager, nameof(breakpointManager));
         }
 
@@ -54,11 +61,15 @@ namespace Google.Cloud.Diagnostics.Debug
                 return;
             }
             StackdriverBreakpoint breakpoint = readBreakpoint.Convert();
-            if (breakpoint.Action != StackdriverBreakpoint.Types.Action.Log)
+            if (breakpoint.Action == StackdriverBreakpoint.Types.Action.Log)
+            {
+                _loggingClient.WriteLogEntry(breakpoint);
+            }
+            else
             {
                 breakpoint.IsFinalState = true;
             }
-            _client.UpdateBreakpoint(breakpoint);
+            _debuggerClient.UpdateBreakpoint(breakpoint);
         }
     }
 }

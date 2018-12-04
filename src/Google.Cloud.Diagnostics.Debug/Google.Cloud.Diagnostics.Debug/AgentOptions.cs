@@ -85,6 +85,11 @@ namespace Google.Cloud.Diagnostics.Debug
             "https://cloud.google.com/debugger/docs/source-context")]
         public string SourceContextFile { get; set; }
 
+        [Option("log-name",
+            HelpText = "The name of the log where logpoint output will be written to. See: " +
+            "https://cloud.google.com/debugger/docs/using/logpoints")]
+        public string LogName { get; set; }
+
         /// <summary>The parsed source context from the <see cref="SourceContextFile"/>.</summary>
         public SourceContext SourceContext { get; set; }
 
