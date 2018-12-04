@@ -125,6 +125,7 @@ bool DbgBreakpoint::TrySetBreakpoint(
 
     if (segments_matches > 0 && segments_matches > longest_match) {
       best_match_doc_index = current_doc_index_index;
+      longest_match = segments_matches;
     }
   }
 

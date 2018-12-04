@@ -298,6 +298,24 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesThree) {
   TestMatchingFileName("src/test/program.cs", other_file_names);
 }
 
+// Test the TrySetBreakpoint function of DbgBreakpoint when there are
+// multiple documents.
+TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesFour) {
+  std::vector<std::string> other_file_names;
+  other_file_names.push_back("src/program.cs");
+  other_file_names.push_back("program.cs");
+  TestMatchingFileName("/test/program.cs", other_file_names);
+}
+
+// Test the TrySetBreakpoint function of DbgBreakpoint when there are
+// multiple documents.
+TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesFive) {
+  std::vector<std::string> other_file_names;
+  other_file_names.push_back("src/test/program.cs");
+  other_file_names.push_back("d:/src/test/program.cs");
+  TestMatchingFileName("c:/src/test/program.cs", other_file_names);
+}
+
 // Test the TrySetBreakpoint function of DbgBreakpoint
 // when there are multiple methods in the Document Index.
 TEST_F(DbgBreakpointTest, TrySetBreakpointWithMultipleMethods) {
