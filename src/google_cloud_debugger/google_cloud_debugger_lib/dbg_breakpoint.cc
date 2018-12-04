@@ -36,6 +36,7 @@ using google_cloud_debugger_portable_pdb::DocumentIndex;
 using google_cloud_debugger_portable_pdb::LocalConstantRow;
 using google_cloud_debugger_portable_pdb::LocalScopeRow;
 using google_cloud_debugger_portable_pdb::LocalVariableRow;
+using google::cloud::diagnostics::debug::Breakpoint_LogLevel;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -47,7 +48,7 @@ std::int32_t DbgBreakpoint::current_max_collection_size_ =
 
 void DbgBreakpoint::Initialize(const DbgBreakpoint &other) {
   Initialize(other.file_path_, other.id_, other.line_, other.column_,
-             other.log_point_, other.log_message_format_,
+             other.log_point_, other.log_message_format_, other.log_level_,
              other.condition_, other.expressions_);
 }
 
@@ -55,6 +56,7 @@ void DbgBreakpoint::Initialize(const string &file_path, const string &id,
                                uint32_t line, uint32_t column,
                                const bool &log_point,
                                const std::string &log_message_format,
+                               const Breakpoint_LogLevel &log_level,
                                const std::string &condition,
                                const std::vector<std::string> &expressions) {
   file_path_ = file_path;
@@ -70,6 +72,7 @@ void DbgBreakpoint::Initialize(const string &file_path, const string &id,
   condition_ = condition;
   expressions_ = expressions;
   log_message_format_ = log_message_format;
+  log_level_ = log_level;
 }
 
 HRESULT DbgBreakpoint::GetCorDebugBreakpoint(
@@ -261,6 +264,7 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   breakpoint->set_id(id_);
   breakpoint->set_log_point(log_point_);
   breakpoint->set_log_message_format(log_message_format_);
+  breakpoint->set_log_level(log_level_);
 
   if (!stack_frames) {
     std::cerr << "Stack frame collection is null.";

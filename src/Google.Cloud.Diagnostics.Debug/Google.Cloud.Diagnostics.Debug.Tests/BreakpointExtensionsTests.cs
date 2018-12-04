@@ -47,7 +47,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 CreateTime = Timestamp.FromDateTime(DateTime.UtcNow),
                 Condition = _condition,
                 Expressions = { _expressions },
-                LogMessageFormat = "Message format"
+                LogMessageFormat = "Message format",
+                LogLevel = StackdriverBreakpoint.Types.LogLevel.Error
             };
 
             var breakpoint = sdBreakpoint.Convert();
@@ -59,6 +60,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Equal(_condition, breakpoint.Condition);
             Assert.Equal(_expressions, breakpoint.Expressions);
             Assert.Equal(breakpoint.LogMessageFormat, sdBreakpoint.LogMessageFormat);
+            Assert.Equal(Breakpoint.Types.LogLevel.Err, breakpoint.LogLevel);
         }
 
         [Fact]
@@ -111,7 +113,8 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                         Name = "second-expression"
                     }
                 },
-                LogMessageFormat = "Log Message Format"
+                LogMessageFormat = "Log Message Format",
+                LogLevel = Breakpoint.Types.LogLevel.Warning
             };
 
             var sdBreakpoint = breakpoint.Convert();
@@ -130,6 +133,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             Assert.Single(
                 sdBreakpoint.EvaluatedExpressions.Where(ee => ee.Name.Equals("second-expression")));
             Assert.Equal(breakpoint.LogMessageFormat, sdBreakpoint.LogMessageFormat);
+            Assert.Equal(StackdriverBreakpoint.Types.LogLevel.Warning, sdBreakpoint.LogLevel);
         }
 
         [Fact]

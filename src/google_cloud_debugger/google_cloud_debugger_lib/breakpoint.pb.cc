@@ -38,6 +38,7 @@ namespace protobuf_breakpoint_2eproto {
 namespace {
 
 ::google::protobuf::Metadata file_level_metadata[5];
+const ::google::protobuf::EnumDescriptor* file_level_enum_descriptors[1];
 
 }  // namespace
 
@@ -78,6 +79,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, status_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, log_point_),
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, log_message_format_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Breakpoint, log_level_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StackFrame, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -115,10 +117,10 @@ const ::google::protobuf::uint32 TableStruct::offsets[] = {
 
 static const ::google::protobuf::internal::MigrationSchema schemas[] = {
   { 0, -1, sizeof(Breakpoint)},
-  { 18, -1, sizeof(StackFrame)},
-  { 27, -1, sizeof(SourceLocation)},
-  { 34, -1, sizeof(Variable)},
-  { 44, -1, sizeof(Status)},
+  { 19, -1, sizeof(StackFrame)},
+  { 28, -1, sizeof(SourceLocation)},
+  { 35, -1, sizeof(Variable)},
+  { 45, -1, sizeof(Status)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -136,7 +138,7 @@ void protobuf_AssignDescriptors() {
   ::google::protobuf::MessageFactory* factory = NULL;
   AssignDescriptors(
       "breakpoint.proto", schemas, file_default_instances, TableStruct::offsets, factory,
-      file_level_metadata, NULL, NULL);
+      file_level_metadata, file_level_enum_descriptors, NULL);
 }
 
 void protobuf_AssignDescriptorsOnce() {
@@ -198,7 +200,7 @@ void AddDescriptorsImpl() {
   static const char descriptor[] = {
       "\n\020breakpoint.proto\022\036google.cloud.diagnos"
       "tics.debug\032\037google/protobuf/timestamp.pr"
-      "oto\"\375\003\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
+      "oto\"\361\004\n\nBreakpoint\022\n\n\002id\030\001 \001(\t\022@\n\010locati"
       "on\030\002 \001(\0132..google.cloud.diagnostics.debu"
       "g.SourceLocation\022@\n\014stack_frames\030\003 \003(\0132*"
       ".google.cloud.diagnostics.debug.StackFra"
@@ -210,23 +212,26 @@ void AddDescriptorsImpl() {
       "ions\030\n \003(\0132(.google.cloud.diagnostics.de"
       "bug.Variable\0226\n\006status\030\013 \001(\0132&.google.cl"
       "oud.diagnostics.debug.Status\022\021\n\tlog_poin"
-      "t\030\014 \001(\010\022\032\n\022log_message_format\030\r \001(\t\"\332\001\n\n"
-      "StackFrame\022\023\n\013method_name\030\001 \001(\t\022@\n\010locat"
-      "ion\030\002 \001(\0132..google.cloud.diagnostics.deb"
-      "ug.SourceLocation\022;\n\targuments\030\003 \003(\0132(.g"
-      "oogle.cloud.diagnostics.debug.Variable\0228"
-      "\n\006locals\030\004 \003(\0132(.google.cloud.diagnostic"
-      "s.debug.Variable\",\n\016SourceLocation\022\014\n\004pa"
-      "th\030\001 \001(\t\022\014\n\004line\030\002 \001(\005\"\250\001\n\010Variable\022\014\n\004n"
-      "ame\030\001 \001(\t\022\014\n\004type\030\002 \001(\t\022\r\n\005value\030\003 \001(\t\0229"
-      "\n\007members\030\004 \003(\0132(.google.cloud.diagnosti"
-      "cs.debug.Variable\0226\n\006status\030\005 \001(\0132&.goog"
-      "le.cloud.diagnostics.debug.Status\"*\n\006Sta"
-      "tus\022\017\n\007iserror\030\001 \001(\010\022\017\n\007message\030\002 \001(\tb\006p"
-      "roto3"
+      "t\030\014 \001(\010\022\032\n\022log_message_format\030\r \001(\t\022F\n\tl"
+      "og_level\030\016 \001(\01623.google.cloud.diagnostic"
+      "s.debug.Breakpoint.LogLevel\"*\n\010LogLevel\022"
+      "\010\n\004INFO\020\000\022\013\n\007WARNING\020\001\022\007\n\003ERR\020\002\"\332\001\n\nStac"
+      "kFrame\022\023\n\013method_name\030\001 \001(\t\022@\n\010location\030"
+      "\002 \001(\0132..google.cloud.diagnostics.debug.S"
+      "ourceLocation\022;\n\targuments\030\003 \003(\0132(.googl"
+      "e.cloud.diagnostics.debug.Variable\0228\n\006lo"
+      "cals\030\004 \003(\0132(.google.cloud.diagnostics.de"
+      "bug.Variable\",\n\016SourceLocation\022\014\n\004path\030\001"
+      " \001(\t\022\014\n\004line\030\002 \001(\005\"\250\001\n\010Variable\022\014\n\004name\030"
+      "\001 \001(\t\022\014\n\004type\030\002 \001(\t\022\r\n\005value\030\003 \001(\t\0229\n\007me"
+      "mbers\030\004 \003(\0132(.google.cloud.diagnostics.d"
+      "ebug.Variable\0226\n\006status\030\005 \001(\0132&.google.c"
+      "loud.diagnostics.debug.Status\"*\n\006Status\022"
+      "\017\n\007iserror\030\001 \001(\010\022\017\n\007message\030\002 \001(\tb\006proto"
+      "3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 1085);
+      descriptor, 1201);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "breakpoint.proto", &protobuf_RegisterTypes);
   ::google::protobuf::protobuf_google_2fprotobuf_2ftimestamp_2eproto::AddDescriptors();
@@ -246,6 +251,29 @@ struct StaticDescriptorInitializer {
 
 }  // namespace protobuf_breakpoint_2eproto
 
+const ::google::protobuf::EnumDescriptor* Breakpoint_LogLevel_descriptor() {
+  protobuf_breakpoint_2eproto::protobuf_AssignDescriptorsOnce();
+  return protobuf_breakpoint_2eproto::file_level_enum_descriptors[0];
+}
+bool Breakpoint_LogLevel_IsValid(int value) {
+  switch (value) {
+    case 0:
+    case 1:
+    case 2:
+      return true;
+    default:
+      return false;
+  }
+}
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const Breakpoint_LogLevel Breakpoint::INFO;
+const Breakpoint_LogLevel Breakpoint::WARNING;
+const Breakpoint_LogLevel Breakpoint::ERR;
+const Breakpoint_LogLevel Breakpoint::LogLevel_MIN;
+const Breakpoint_LogLevel Breakpoint::LogLevel_MAX;
+const int Breakpoint::LogLevel_ARRAYSIZE;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 // ===================================================================
 
@@ -263,6 +291,7 @@ const int Breakpoint::kEvaluatedExpressionsFieldNumber;
 const int Breakpoint::kStatusFieldNumber;
 const int Breakpoint::kLogPointFieldNumber;
 const int Breakpoint::kLogMessageFormatFieldNumber;
+const int Breakpoint::kLogLevelFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 Breakpoint::Breakpoint()
@@ -314,8 +343,8 @@ Breakpoint::Breakpoint(const Breakpoint& from)
     status_ = NULL;
   }
   ::memcpy(&activated_, &from.activated_,
-    reinterpret_cast<char*>(&log_point_) -
-    reinterpret_cast<char*>(&activated_) + sizeof(log_point_));
+    reinterpret_cast<char*>(&log_level_) -
+    reinterpret_cast<char*>(&activated_) + sizeof(log_level_));
   // @@protoc_insertion_point(copy_constructor:google.cloud.diagnostics.debug.Breakpoint)
 }
 
@@ -323,8 +352,8 @@ void Breakpoint::SharedCtor() {
   id_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   condition_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   log_message_format_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  ::memset(&location_, 0, reinterpret_cast<char*>(&log_point_) -
-    reinterpret_cast<char*>(&location_) + sizeof(log_point_));
+  ::memset(&location_, 0, reinterpret_cast<char*>(&log_level_) -
+    reinterpret_cast<char*>(&location_) + sizeof(log_level_));
   _cached_size_ = 0;
 }
 
@@ -398,8 +427,8 @@ void Breakpoint::Clear() {
     delete status_;
   }
   status_ = NULL;
-  ::memset(&activated_, 0, reinterpret_cast<char*>(&log_point_) -
-    reinterpret_cast<char*>(&activated_) + sizeof(log_point_));
+  ::memset(&activated_, 0, reinterpret_cast<char*>(&log_level_) -
+    reinterpret_cast<char*>(&activated_) + sizeof(log_level_));
 }
 
 bool Breakpoint::MergePartialFromCodedStream(
@@ -591,6 +620,21 @@ bool Breakpoint::MergePartialFromCodedStream(
         break;
       }
 
+      // .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+      case 14: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(112u)) {
+          int value;
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   int, ::google::protobuf::internal::WireFormatLite::TYPE_ENUM>(
+                 input, &value)));
+          set_log_level(static_cast< ::google::cloud::diagnostics::debug::Breakpoint_LogLevel >(value));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
       default: {
       handle_unusual:
         if (tag == 0 ||
@@ -709,6 +753,12 @@ void Breakpoint::SerializeWithCachedSizes(
       13, this->log_message_format(), output);
   }
 
+  // .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+  if (this->log_level() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      14, this->log_level(), output);
+  }
+
   // @@protoc_insertion_point(serialize_end:google.cloud.diagnostics.debug.Breakpoint)
 }
 
@@ -818,6 +868,12 @@ void Breakpoint::SerializeWithCachedSizes(
         13, this->log_message_format(), target);
   }
 
+  // .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+  if (this->log_level() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      14, this->log_level(), target);
+  }
+
   // @@protoc_insertion_point(serialize_to_array_end:google.cloud.diagnostics.debug.Breakpoint)
   return target;
 }
@@ -920,6 +976,12 @@ size_t Breakpoint::ByteSizeLong() const {
     total_size += 1 + 1;
   }
 
+  // .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+  if (this->log_level() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::EnumSize(this->log_level());
+  }
+
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = cached_size;
@@ -985,6 +1047,9 @@ void Breakpoint::MergeFrom(const Breakpoint& from) {
   if (from.log_point() != 0) {
     set_log_point(from.log_point());
   }
+  if (from.log_level() != 0) {
+    set_log_level(from.log_level());
+  }
 }
 
 void Breakpoint::CopyFrom(const ::google::protobuf::Message& from) {
@@ -1023,6 +1088,7 @@ void Breakpoint::InternalSwap(Breakpoint* other) {
   std::swap(activated_, other->activated_);
   std::swap(kill_server_, other->kill_server_);
   std::swap(log_point_, other->log_point_);
+  std::swap(log_level_, other->log_level_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
@@ -1528,6 +1594,20 @@ void Breakpoint::set_allocated_log_message_format(::std::string* log_message_for
   }
   log_message_format_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), log_message_format);
   // @@protoc_insertion_point(field_set_allocated:google.cloud.diagnostics.debug.Breakpoint.log_message_format)
+}
+
+// .google.cloud.diagnostics.debug.Breakpoint.LogLevel log_level = 14;
+void Breakpoint::clear_log_level() {
+  log_level_ = 0;
+}
+::google::cloud::diagnostics::debug::Breakpoint_LogLevel Breakpoint::log_level() const {
+  // @@protoc_insertion_point(field_get:google.cloud.diagnostics.debug.Breakpoint.log_level)
+  return static_cast< ::google::cloud::diagnostics::debug::Breakpoint_LogLevel >(log_level_);
+}
+void Breakpoint::set_log_level(::google::cloud::diagnostics::debug::Breakpoint_LogLevel value) {
+  
+  log_level_ = value;
+  // @@protoc_insertion_point(field_set:google.cloud.diagnostics.debug.Breakpoint.log_level)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
