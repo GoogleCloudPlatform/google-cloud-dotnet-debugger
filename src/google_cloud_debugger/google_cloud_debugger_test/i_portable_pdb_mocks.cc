@@ -17,9 +17,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using std::unique_ptr;
 using ::testing::Return;
 using ::testing::ReturnRef;
-using std::unique_ptr;
 
 namespace google_cloud_debugger_test {
 
@@ -28,18 +28,16 @@ void PortablePDBFileFixture::SetUpIPortablePDBFile(
   ON_CALL(*file_mock, ParsePdbFile()).WillByDefault(Return(true));
 
   // Makes a vector with a Document Index mock
-  unique_ptr<IDocumentIndexMock> first_doc_index(new (std::nothrow)
-                                                     IDocumentIndexMock());
+  for (auto &&document_fixture : documents_) {
+    unique_ptr<IDocumentIndexMock> doc_index(new (std::nothrow)
+                                                 IDocumentIndexMock());
+    ON_CALL(*doc_index, GetMethods())
+        .WillByDefault(ReturnRef(document_fixture.methods_));
+    ON_CALL(*doc_index, GetFilePath())
+        .WillByDefault(ReturnRef(document_fixture.file_name_));
 
-  // Makes the Document Index Mock returns method_ when GetMethod is called.
-  ON_CALL(*first_doc_index, GetMethods())
-      .WillByDefault(ReturnRef(first_doc_.methods_));
-
-  // Document Index should have the same file path as breakpoint.
-  ON_CALL(*first_doc_index, GetFilePath())
-      .WillByDefault(ReturnRef(first_doc_.file_name_));
-
-  document_indices_.push_back(std::move(first_doc_index));
+    document_indices_.push_back(std::move(doc_index));
+  }
 
   // The portable PDB file will return a list of Document Indices.
   ON_CALL(*file_mock, GetDocumentIndexTable())

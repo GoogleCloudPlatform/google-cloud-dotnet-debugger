@@ -45,19 +45,19 @@ class DbgObject;
 // To actually set the breakpoint, the TrySetBreakpoint method must be called.
 class DbgBreakpoint : public StringStreamWrapper {
  public:
-  // Populate this breakpoint with the other breakpoint's file name,
+  // Populate this breakpoint with the other breakpoint's file path,
   // id, line and column.
   void Initialize(const DbgBreakpoint &other);
 
-  // Populate this breakpoint's file name, id, line, column, condition
-  // expressions and whether it is a log point.
-  void Initialize(const std::string &file_name, const std::string &id,
+  // Populate this breakpoint's file path, id, line, column, condition
+  // and expressions and whether it is a log point.
+  void Initialize(const std::string &file_path, const std::string &id,
                   uint32_t line, uint32_t column, const bool &log_point,
                   const std::string &condition,
                   const std::vector<std::string> &expressions);
 
   // Given a PortablePdbFile, try to see whether we can set this breakpoint.
-  // We do this by searching the PortablePdbFile for the file name and
+  // We do this by searching the PortablePdbFile for the file path and
   // line number that matches the breakpoint. We then try to get the
   // sequence point that corresponds to this breakpoint.
   bool TrySetBreakpoint(
@@ -83,8 +83,8 @@ class DbgBreakpoint : public StringStreamWrapper {
     method_token_ = method_token;
   }
 
-  // Returns the name of the file this breakpoint is in.
-  const std::string &GetFileName() const { return file_name_; }
+  // Returns the path of the file this breakpoint is in.
+  const std::string &GetFilePath() const { return file_path_; }
 
   // Returns the name of the method this breakpoint is in.
   const std::vector<WCHAR> &GetMethodName() const { return method_name_; }
@@ -147,9 +147,9 @@ class DbgBreakpoint : public StringStreamWrapper {
   }
 
   // Returns a string representation of the breakpoint location
-  // by concatenating file name and line number.
+  // by concatenating file path and line number.
   std::string GetBreakpointLocation() const {
-    return file_name_ + "##" + std::to_string(line_);
+    return file_path_ + "##" + std::to_string(line_);
   }
 
   // Evaluates condition condition_ using the provided stack frame
@@ -191,11 +191,16 @@ class DbgBreakpoint : public StringStreamWrapper {
   HRESULT PopulateExpression(
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IEvalCoordinator *eval_coordinator);
-   
+
   // Given a method, try to see whether we can set this breakpoint in
   // the method.
   bool TrySetBreakpointInMethod(
       const google_cloud_debugger_portable_pdb::MethodInfo &method);
+
+  // Split up file path into segments (using '/' as delimiter).
+  // The returned vector will be reversed with the file name
+  // as the first item.
+  std::vector<std::string> SplitFilePath(const std::string &path);
 
   // The line number of the breakpoint.
   uint32_t line_;
@@ -203,8 +208,12 @@ class DbgBreakpoint : public StringStreamWrapper {
   // The column number of the breakpoint.
   uint32_t column_;
 
-  // The file name of the breakpoint.
-  std::string file_name_;
+  // The file path of the breakpoint.
+  std::string file_path_;
+
+  // Segments of the file path (when file_path_ is split by '/').
+  // First item is the file name and last item is the root.
+  std::vector<std::string> file_path_segments_;
 
   // The unique ID of the breakpoint.
   std::string id_;
