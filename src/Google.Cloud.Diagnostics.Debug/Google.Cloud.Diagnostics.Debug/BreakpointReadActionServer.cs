@@ -68,8 +68,8 @@ namespace Google.Cloud.Diagnostics.Debug
             else
             {
                 breakpoint.IsFinalState = true;
+                _debuggerClient.UpdateBreakpoint(breakpoint);
             }
-            _debuggerClient.UpdateBreakpoint(breakpoint);
         }
     }
 }

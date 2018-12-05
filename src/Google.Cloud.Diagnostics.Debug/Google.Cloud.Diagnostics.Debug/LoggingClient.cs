@@ -27,11 +27,9 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         private static readonly Dictionary<StackdriverBreakpoint.Types.LogLevel, LogSeverity> _logSeverityConversion
             = new Dictionary<StackdriverBreakpoint.Types.LogLevel, LogSeverity>()
-        {
-                { StackdriverBreakpoint.Types.LogLevel.Info, LogSeverity.Info },
-                {StackdriverBreakpoint.Types.LogLevel.Warning, LogSeverity.Warning },
-                {StackdriverBreakpoint.Types.LogLevel.Error, LogSeverity.Error }
-        };
+        { { StackdriverBreakpoint.Types.LogLevel.Info, LogSeverity.Info },
+          {StackdriverBreakpoint.Types.LogLevel.Warning, LogSeverity.Warning },
+          {StackdriverBreakpoint.Types.LogLevel.Error, LogSeverity.Error } };
 
         private readonly LoggingServiceV2Client _logClient;
         private readonly AgentOptions _options;
@@ -49,15 +47,18 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Substitutes the log message format in breakpoint and writes
         /// the result as a log entry to the log _logName.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>WriteLogEntriesResponse from the API.</returns>
         public WriteLogEntriesResponse WriteLogEntry(StackdriverBreakpoint breakpoint)
         {
             LogEntry logEntry = new LogEntry
             {
                 LogName = _logName.ToString(),
                 Severity = _logSeverityConversion[breakpoint.LogLevel],
-                TextPayload = SubstituteLogMessageFormat(breakpoint.LogMessageFormat, breakpoint.EvaluatedExpressions.ToList())
+                TextPayload = SubstituteLogMessageFormat(
+                    breakpoint.LogMessageFormat,
+                    breakpoint.EvaluatedExpressions.ToList())
             };
+            // TODO(quoct): Detect whether we are on gke and use gke_container.
             MonitoredResource resource = new MonitoredResource { Type = "global" };
             return _logClient.WriteLogEntries(LogNameOneof.From(_logName), resource, null, new[] { logEntry });
         }
@@ -66,10 +67,10 @@ namespace Google.Cloud.Diagnostics.Debug
         /// Substitutes the $0, $1, etc. in messageFormat with expressions
         /// from evaluatedExpressions.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Formatted log message with expressions substituted.</returns>
         private string SubstituteLogMessageFormat(string messageFormat, List<Debugger.V2.Variable> evaluatedExpressions)
         {
-            string result = "";
+            string result = "LOGPOINT: ";
             int offset = 0;
             int i = 0;
             while (i < messageFormat.Length)
@@ -100,7 +101,7 @@ namespace Google.Cloud.Diagnostics.Debug
                     continue;
                 }
 
-                // We have a number followed a $. Time to substitute!
+                // We have a number followed by a $. Time to substitute!
                 string currentNumberString = "";
                 i += 1;
                 while (i < messageFormat.Length && Char.IsDigit(messageFormat[i]))

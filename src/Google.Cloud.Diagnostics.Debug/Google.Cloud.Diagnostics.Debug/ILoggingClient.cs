@@ -24,9 +24,9 @@ namespace Google.Cloud.Diagnostics.Debug
     {
         /// <summary>
         /// Formats and writes the log message in breakpoint to the
-        /// Stackdriver Logging server.
+        /// Stackdriver Logging API.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>WriteLogEntriesResponse from the API.</returns>
         WriteLogEntriesResponse WriteLogEntry(StackdriverBreakpoint breakpoint);
     }
 }
