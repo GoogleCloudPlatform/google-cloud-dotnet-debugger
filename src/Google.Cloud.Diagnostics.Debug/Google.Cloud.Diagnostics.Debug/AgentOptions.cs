@@ -87,7 +87,9 @@ namespace Google.Cloud.Diagnostics.Debug
 
         [Option("log-name",
             HelpText = "The name of the log where logpoint output will be written to. See: " +
-            "https://cloud.google.com/debugger/docs/using/logpoints")]
+            "https://cloud.google.com/debugger/docs/using/logpoints " +
+            "If not provided, default log name will be a combination of " +
+            "module name, version followed by '-debug-log'")]
         public string LogName { get; set; }
 
         /// <summary>The parsed source context from the <see cref="SourceContextFile"/>.</summary>

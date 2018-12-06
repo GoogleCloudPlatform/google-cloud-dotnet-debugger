@@ -96,6 +96,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _server.MainAction();
 
             var sdBreakpoint = breakpoint.Convert();
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(sdBreakpoint), Times.Once);
             _mockLoggingClient.Verify(c => c.WriteLogEntry(sdBreakpoint), Times.Once);
         }
     }
