@@ -23,6 +23,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
     {
         private readonly Mock<IBreakpointServer> _mockBreakpointServer;
         private readonly Mock<IDebuggerClient> _mockDebuggerClient;
+        private readonly Mock<ILoggingClient> _mockLoggingClient;
         private readonly CancellationTokenSource _cts;
         private readonly BreakpointReadActionServer _server;
         private readonly BreakpointManager _breakpointManager;
@@ -31,10 +32,12 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         {
             _mockBreakpointServer = new Mock<IBreakpointServer>();
             _mockDebuggerClient = new Mock<IDebuggerClient>();
+            _mockLoggingClient = new Mock<ILoggingClient>();
             _cts = new CancellationTokenSource();
             _breakpointManager = new BreakpointManager();
             _server = new BreakpointReadActionServer(_mockBreakpointServer.Object,
-                _cts, _mockDebuggerClient.Object, _breakpointManager);
+                _cts, _mockDebuggerClient.Object, _mockLoggingClient.Object,
+                _breakpointManager);
         }
 
         [Fact]
@@ -73,6 +76,28 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(
                 It.IsAny<Debugger.V2.Breakpoint>()), Times.Never);
             Assert.True(_cts.IsCancellationRequested);
+        }
+
+        [Fact]
+        public void MainAction_LogPoint()
+        {
+            var breakpoint = new Breakpoint
+            {
+                Id = "some-id",
+                Location = new SourceLocation
+                {
+                    Line = 1,
+                    Path = "some-path"
+                },
+                LogPoint = true
+            };
+            _mockBreakpointServer.Setup(s => s.ReadBreakpointAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(breakpoint));
+            _server.MainAction();
+
+            var sdBreakpoint = breakpoint.Convert();
+            _mockDebuggerClient.Verify(c => c.UpdateBreakpoint(sdBreakpoint), Times.Once);
+            _mockLoggingClient.Verify(c => c.WriteLogEntry(sdBreakpoint), Times.Once);
         }
     }
 }

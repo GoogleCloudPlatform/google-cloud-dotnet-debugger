@@ -18,6 +18,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Cloud.Logging.V2;
 
 namespace Google.Cloud.Diagnostics.Debug
 {
@@ -32,7 +33,8 @@ namespace Google.Cloud.Diagnostics.Debug
     internal sealed class Agent : IDisposable
     {
         private readonly AgentOptions _agentOptions;
-        private readonly DebuggerClient _client;
+        private readonly DebuggerClient _debuggerClient;
+        private readonly LoggingClient _loggingClient;
         private readonly CancellationTokenSource _cts;
         private readonly TaskCompletionSource<bool> _tcs;
         private readonly BreakpointManager _breakpointManager;
@@ -43,10 +45,12 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <summary>
         /// Create a new <see cref="Agent"/>.
         /// </summary>
-        public Agent(AgentOptions options, Controller2Client controlClient = null)
+        public Agent(AgentOptions options, Controller2Client controlClient = null,
+            LoggingServiceV2Client loggingClient = null)
         {
             _agentOptions = GaxPreconditions.CheckNotNull(options, nameof(options));
-            _client = new DebuggerClient(options, controlClient);
+            _debuggerClient = new DebuggerClient(options, controlClient);
+            _loggingClient = new LoggingClient(options, loggingClient);
             _cts = new CancellationTokenSource();
             _tcs = new TaskCompletionSource<bool>();
             _breakpointManager = new BreakpointManager();
@@ -59,7 +63,7 @@ namespace Google.Cloud.Diagnostics.Debug
         public void StartAndBlock()
         {
             // Register the debuggee.
-            TryAction(() => _client.Register());
+            TryAction(() => _debuggerClient.Register());
 
             // Start the debugger.
             ProcessStartInfo startInfo = ProcessUtils.GetStartInfoForInteractiveProcess(
@@ -93,7 +97,7 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
-                using (var server = new BreakpointWriteActionServer(breakpointServer, _cts, _client, _breakpointManager))
+                using (var server = new BreakpointWriteActionServer(breakpointServer, _cts, _debuggerClient, _breakpointManager))
                 {
                     TryAction(() =>
                     {
@@ -122,7 +126,8 @@ namespace Google.Cloud.Diagnostics.Debug
             new Thread(() =>
             {
                 var breakpointServer = new BreakpointServer(new NamedPipeServer(_debuggerOptions.PipeName));
-                using (var server = new BreakpointReadActionServer(breakpointServer, _cts, _client, _breakpointManager))
+                using (var server = new BreakpointReadActionServer(
+                    breakpointServer, _cts, _debuggerClient, _loggingClient, _breakpointManager))
                 {
                     TryAction(() => 
                     { 
