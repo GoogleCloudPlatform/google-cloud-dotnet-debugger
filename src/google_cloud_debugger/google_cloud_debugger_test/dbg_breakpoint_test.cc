@@ -296,7 +296,7 @@ TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesOne) {
 TEST_F(DbgBreakpointTest, TrySetBreakpointMultipleFilesTwo) {
   std::vector<std::string> other_file_names;
   other_file_names.push_back("blah/program.cs");
-  other_file_names.push_back("src/program.cs");
+  other_file_names.push_back("program.cs");
   TestMatchingFileName("test/program.cs", other_file_names);
 }
 
