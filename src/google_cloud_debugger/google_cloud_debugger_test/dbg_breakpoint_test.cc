@@ -73,8 +73,8 @@ MethodInfo MakeMatchingMethod(uint32_t breakpoint_line,
   seq_point.start_line = method.first_line;
   // End line is between the start line of the method and breakpoint_line.
   seq_point.end_line =
-      method.first_line + (rand() % (breakpoint_line - method.first_line));
-  seq_point.il_offset = rand() % il_offset;
+      method.first_line + (10 % (breakpoint_line - method.first_line));
+  seq_point.il_offset = 20 % il_offset;
   method.sequence_points.push_back(seq_point);
 
   assert(seq_point.end_line < breakpoint_line);
@@ -130,7 +130,7 @@ class DbgBreakpointTest : public ::testing::Test {
     lower_case_file_path_ = chosen_file_name;
 
     // Gets a method that matches the breakpoint.
-    uint32_t method_first_line = rand() % line_;
+    uint32_t method_first_line = (line_ - 2) % line_;
     uint32_t method_def = 100;
     uint32_t il_offset = 99;
     MethodInfo method =
@@ -260,7 +260,7 @@ TEST_F(DbgBreakpointTest, SetGetICorDebugBreakpointError) {
 // Test the TrySetBreakpoint function of DbgBreakpoint.
 TEST_F(DbgBreakpointTest, TrySetBreakpoint) {
   // Gets a method that matches the breakpoint.
-  uint32_t method_first_line = rand() % line_;
+  uint32_t method_first_line = (line_ - 4) % line_;
   uint32_t method_def = 100;
   uint32_t il_offset = 99;
   MethodInfo method =
