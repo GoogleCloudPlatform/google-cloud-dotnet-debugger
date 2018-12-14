@@ -273,11 +273,11 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Maximum amount of items returned in a collection when not evaluating
   // an expression.
-  static const std::uint32_t kMaximumCollectionSize = 10;
+  static const std::int32_t kMaximumCollectionSize = 10;
 
   // Maximum amount of items returned in a collection when evaluating
   // an expression.
-  static const std::uint32_t kMaximumCollectionExpressionSize = UINT32_MAX;
+  static const std::int32_t kMaximumCollectionExpressionSize = INT32_MAX;
 };
 
 }  // namespace google_cloud_debugger

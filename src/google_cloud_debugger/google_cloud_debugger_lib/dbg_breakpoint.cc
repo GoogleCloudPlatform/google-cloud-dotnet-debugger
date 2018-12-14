@@ -266,6 +266,13 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   breakpoint->set_log_message_format(log_message_format_);
   breakpoint->set_log_level(log_level_);
 
+  if (expressions_.size() != 0) {
+    for (auto &&expression : expressions_) {
+      std::string *expression_proto = breakpoint->add_expressions();
+      *expression_proto = expression;
+    }
+  }
+
   if (!stack_frames) {
     std::cerr << "Stack frame collection is null.";
     return E_INVALIDARG;

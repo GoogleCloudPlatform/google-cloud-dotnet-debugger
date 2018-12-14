@@ -115,7 +115,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 if (currentNumber < evaluatedExpressions.Count)
                 {
                     // TODO(quoct): Handles collections and nested objects?
-                    result += evaluatedExpressions[currentNumber].Value;
+                    result += FormatVariable(evaluatedExpressions[currentNumber]);
                 }
                 else
                 {
@@ -127,6 +127,29 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 result += messageFormat.Substring(offset);
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Formats the variable into a more readable string,
+        /// especially if the variable only has members and no value.
+        /// </summary>
+        /// <returns>Formatted string representing the variable.</returns>
+        private string FormatVariable(Debugger.V2.Variable variable)
+        {
+            if (!string.IsNullOrWhiteSpace(variable.Value))
+            {
+                return variable.Value;
+            }
+
+            string result = "[ ";
+            foreach (Debugger.V2.Variable member in variable.Members)
+            {
+                result += $"{member.Name}: {FormatVariable(member)}, ";
+            }
+            result = result.TrimEnd(new char[] { ',', ' ' });
+            result += "]";
 
             return result;
         }

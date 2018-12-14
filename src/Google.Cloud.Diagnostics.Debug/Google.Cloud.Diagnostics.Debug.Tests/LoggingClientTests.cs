@@ -138,5 +138,67 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 client.WriteLogEntries(LogNameOneof.From(_logNameObj), _resource, null, new[] { logEntry }, null),
                 Times.Once());
         }
+
+        [Fact]
+        public void WriteLogEntry_MessageWithNestedMembers()
+        {
+            string logMessageFormat = "$0 and $1.";
+            StackdriverVariable[] evaluatedExpressions = new StackdriverVariable[]
+            {
+                new StackdriverVariable()
+                {
+                    Members =
+                    {
+                        new StackdriverVariable
+                        {
+                            Name = "Key1",
+                            Value = "Value1"
+                        },
+                        new StackdriverVariable
+                        {
+                            Name = "Key2",
+                            Value = "Value2"
+                        }
+                    }
+                },
+                new StackdriverVariable()
+                {
+                    Members =
+                    {
+                        new StackdriverVariable
+                        {
+                            Name = "AnotherLevel",
+                            Members =
+                            {
+                                new StackdriverVariable
+                                {
+                                    Name = "Name",
+                                    Value = "Nested"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            Debugger.V2.Breakpoint breakpoint = new Debugger.V2.Breakpoint()
+            {
+                LogLevel = Debugger.V2.Breakpoint.Types.LogLevel.Warning,
+                LogMessageFormat = logMessageFormat,
+                EvaluatedExpressions = { evaluatedExpressions },
+            };
+
+            LogEntry logEntry = new LogEntry
+            {
+                LogName = _logNameObj.ToString(),
+                Severity = Logging.Type.LogSeverity.Warning,
+                TextPayload = $"LOGPOINT: [ Key1: Value1, Key2: Value2] and [ AnotherLevel: [ Name: Nested]]."
+            };
+
+            _client.WriteLogEntry(breakpoint);
+            _mockLoggingClient.Verify(client =>
+                client.WriteLogEntries(LogNameOneof.From(_logNameObj), _resource, null, new[] { logEntry }, null),
+                Times.Once());
+        }
     }
 }
