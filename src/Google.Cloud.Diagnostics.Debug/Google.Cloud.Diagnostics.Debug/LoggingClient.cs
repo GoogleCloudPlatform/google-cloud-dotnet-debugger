@@ -54,10 +54,20 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 LogName = _logName.ToString(),
                 Severity = _logSeverityConversion[breakpoint.LogLevel],
-                TextPayload = SubstituteLogMessageFormat(
-                    breakpoint.LogMessageFormat,
-                    breakpoint.EvaluatedExpressions.ToList())
             };
+
+            if (breakpoint.Status?.IsError ?? false)
+            {
+                // The .NET Debugger does not use parameters field so we can just use format directly.
+                logEntry.TextPayload = $"LOGPOINT: Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
+            }
+            else
+            {
+                logEntry.TextPayload = SubstituteLogMessageFormat(
+                    breakpoint.LogMessageFormat,
+                    breakpoint.EvaluatedExpressions.ToList());
+            }
+
             // TODO(quoct): Detect whether we are on gke and use gke_container.
             MonitoredResource resource = new MonitoredResource { Type = "global" };
             return _logClient.WriteLogEntries(LogNameOneof.From(_logName), resource, null, new[] { logEntry });

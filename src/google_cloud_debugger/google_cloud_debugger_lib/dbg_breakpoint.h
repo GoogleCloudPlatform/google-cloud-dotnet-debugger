@@ -183,6 +183,11 @@ class DbgBreakpoint : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IStackFrameCollection *stack_frames, IEvalCoordinator *eval_coordinator);
 
+  // Populate a Breakpoitn proto using this breakpoint information.
+  // This won't populate the stack frames or evaluated expressions.
+  HRESULT PopulateBreakpoint(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint);
+
   // Breakpoint proto's size should not contain more bytes of
   // information than this number. (65536 bytes = 64kb).
   static const std::uint32_t kMaximumBreakpointSize = 65536;

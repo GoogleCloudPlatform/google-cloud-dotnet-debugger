@@ -72,7 +72,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
-        public void WriteLogEntry_Error()
+        public void WriteLogEntry_ErrorVariable()
         {
             string logMessageFormat = "This is a log $0";
             StackdriverVariable[] evaluatedExpressions = new StackdriverVariable[]
@@ -103,6 +103,38 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                 LogName = _logNameObj.ToString(),
                 Severity = Logging.Type.LogSeverity.Warning,
                 TextPayload = "LOGPOINT: This is a log \"Error evaluating ErrorVariable: This is an error\""
+            };
+
+            _client.WriteLogEntry(breakpoint);
+            _mockLoggingClient.Verify(client =>
+                client.WriteLogEntries(LogNameOneof.From(_logNameObj), _resource, null, new[] { logEntry }, null),
+                Times.Once());
+        }
+
+        [Fact]
+        public void WriteLogEntry_ErrorBreakpoint()
+        {
+            string logMessageFormat = "This is a log $0";
+
+            Debugger.V2.Breakpoint breakpoint = new Debugger.V2.Breakpoint()
+            {
+                LogLevel = Debugger.V2.Breakpoint.Types.LogLevel.Warning,
+                LogMessageFormat = logMessageFormat,
+                Status = new Debugger.V2.StatusMessage()
+                {
+                    Description = new Debugger.V2.FormatMessage
+                    {
+                        Format = "This is an error"
+                    },
+                    IsError = true
+                }
+            };
+
+            LogEntry logEntry = new LogEntry
+            {
+                LogName = _logNameObj.ToString(),
+                Severity = Logging.Type.LogSeverity.Warning,
+                TextPayload = "LOGPOINT: Error evaluating logpoint \"This is a log $0\": This is an error."
             };
 
             _client.WriteLogEntry(breakpoint);

@@ -256,19 +256,9 @@ HRESULT DbgBreakpoint::EvaluateCondition(IDbgStackFrame *stack_frame,
 HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
                                           IStackFrameCollection *stack_frames,
                                           IEvalCoordinator *eval_coordinator) {
-  if (!breakpoint) {
-    std::cerr << "Breakpoint proto is null";
-    return E_INVALIDARG;
-  }
-
-  breakpoint->set_id(id_);
-  breakpoint->set_log_point(log_point_);
-  breakpoint->set_log_message_format(log_message_format_);
-  breakpoint->set_log_level(log_level_);
-
-  for (auto &&expression : expressions_) {
-    std::string *expression_proto = breakpoint->add_expressions();
-    *expression_proto = expression;
+  HRESULT hr = PopulateBreakpoint(breakpoint);
+  if (FAILED(hr)) {
+    return hr;
   }
 
   if (!stack_frames) {
@@ -281,15 +271,6 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
     return E_INVALIDARG;
   }
 
-  SourceLocation *location = breakpoint->mutable_location();
-  if (!location) {
-    std::cerr << "Mutable location returns null.";
-    return E_FAIL;
-  }
-
-  location->set_line(line_);
-  location->set_path(file_path_);
-
   eval_coordinator->WaitForReadySignal();
 
   if (!expressions_map_.empty()) {
@@ -300,6 +281,39 @@ HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint,
   }
 
   return stack_frames->PopulateStackFrames(breakpoint, eval_coordinator);
+}
+
+HRESULT DbgBreakpoint::PopulateBreakpoint(Breakpoint *breakpoint) {
+  if (!breakpoint) {
+    std::cerr << "Breakpoint proto is null";
+    return E_INVALIDARG;
+  }
+
+  breakpoint->set_id(id_);
+  breakpoint->set_log_point(log_point_);
+  breakpoint->set_log_message_format(log_message_format_);
+  breakpoint->set_log_level(log_level_);
+
+  std::string error_string = GetErrorString();
+  if (!error_string.empty()) {
+    SetErrorStatusMessage(breakpoint, GetErrorString());
+    ResetErrorStream();
+  }
+
+  for (auto &&expression : expressions_) {
+    std::string *expression_proto = breakpoint->add_expressions();
+    *expression_proto = expression;
+  }
+
+  SourceLocation *location = breakpoint->mutable_location();
+  if (!location) {
+    std::cerr << "Mutable location returns null.";
+    return E_FAIL;
+  }
+
+  location->set_line(line_);
+  location->set_path(file_path_);
+  return S_OK;
 }
 
 HRESULT DbgBreakpoint::PopulateExpression(Breakpoint *breakpoint,
