@@ -35,6 +35,10 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly AgentOptions _options;
         private readonly LogName _logName;
 
+        // Logpoint message should start with "LOGPOINT: " so when user selects
+        // "View Logs" on the Stackdriver Debug client, this will show up.
+        private static readonly string LogpointMessageStart = "LOGPOINT: ";
+
         internal LoggingClient(AgentOptions options, LoggingServiceV2Client loggingClient = null)
         {
             _logClient = loggingClient ?? LoggingServiceV2Client.Create();
@@ -59,7 +63,7 @@ namespace Google.Cloud.Diagnostics.Debug
             if (breakpoint.Status?.IsError ?? false)
             {
                 // The .NET Debugger does not use parameters field so we can just use format directly.
-                logEntry.TextPayload = $"LOGPOINT: Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
+                logEntry.TextPayload = $"{LogpointMessageStart}: Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
             }
             else
             {
@@ -80,7 +84,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>Formatted log message with expressions substituted.</returns>
         private string SubstituteLogMessageFormat(string messageFormat, List<Debugger.V2.Variable> evaluatedExpressions)
         {
-            string result = "LOGPOINT: ";
+            string result = LogpointMessageStart;
             int offset = 0;
             int i = 0;
             while (i < messageFormat.Length)
