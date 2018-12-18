@@ -114,7 +114,6 @@ namespace Google.Cloud.Diagnostics.Debug
                 int currentNumber = Int32.Parse(currentNumberString);
                 if (currentNumber < evaluatedExpressions.Count)
                 {
-                    // TODO(quoct): Handles collections and nested objects?
                     result += FormatVariable(evaluatedExpressions[currentNumber]);
                 }
                 else
@@ -138,6 +137,11 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>Formatted string representing the variable.</returns>
         private string FormatVariable(Debugger.V2.Variable variable)
         {
+            if (variable.Status?.IsError ?? false)
+            {
+                return $"\"Error evaluating {variable.Name}: {variable.Status?.Description?.Format}\"";
+            }
+
             if (!string.IsNullOrWhiteSpace(variable.Value))
             {
                 return variable.Value;
@@ -146,7 +150,7 @@ namespace Google.Cloud.Diagnostics.Debug
             string result = "[ ";
             foreach (Debugger.V2.Variable member in variable.Members)
             {
-                result += $"{member.Name}: {FormatVariable(member)}, ";
+                result += $"{member.Name} ({member.Type}): {FormatVariable(member)}, ";
             }
             result = result.TrimEnd(new char[] { ',', ' ' });
             result += "]";

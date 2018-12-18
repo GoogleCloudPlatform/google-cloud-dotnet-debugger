@@ -72,6 +72,46 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
         }
 
         [Fact]
+        public void WriteLogEntry_Error()
+        {
+            string logMessageFormat = "This is a log $0";
+            StackdriverVariable[] evaluatedExpressions = new StackdriverVariable[]
+            {
+                new StackdriverVariable()
+                {
+                    Name = "ErrorVariable",
+                    Status = new Debugger.V2.StatusMessage()
+                    {
+                        Description = new Debugger.V2.FormatMessage
+                        {
+                            Format = "This is an error"
+                        },
+                        IsError = true
+                    }
+                }
+            };
+
+            Debugger.V2.Breakpoint breakpoint = new Debugger.V2.Breakpoint()
+            {
+                LogLevel = Debugger.V2.Breakpoint.Types.LogLevel.Warning,
+                LogMessageFormat = logMessageFormat,
+                EvaluatedExpressions = { evaluatedExpressions },
+            };
+
+            LogEntry logEntry = new LogEntry
+            {
+                LogName = _logNameObj.ToString(),
+                Severity = Logging.Type.LogSeverity.Warning,
+                TextPayload = "LOGPOINT: This is a log \"Error evaluating ErrorVariable: This is an error\""
+            };
+
+            _client.WriteLogEntry(breakpoint);
+            _mockLoggingClient.Verify(client =>
+                client.WriteLogEntries(LogNameOneof.From(_logNameObj), _resource, null, new[] { logEntry }, null),
+                Times.Once());
+        }
+
+        [Fact]
         public void WriteLogEntry_MessageWithSubstitution()
         {
             string logMessageFormat = "This is a log $0";
@@ -152,12 +192,14 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                         new StackdriverVariable
                         {
                             Name = "Key1",
-                            Value = "Value1"
+                            Value = "Value1",
+                            Type = "System.String"
                         },
                         new StackdriverVariable
                         {
                             Name = "Key2",
-                            Value = "Value2"
+                            Value = "Value2",
+                            Type = "System.String"
                         }
                     }
                 },
@@ -168,12 +210,14 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
                         new StackdriverVariable
                         {
                             Name = "AnotherLevel",
+                            Type = "Nested",
                             Members =
                             {
                                 new StackdriverVariable
                                 {
                                     Name = "Name",
-                                    Value = "Nested"
+                                    Value = "Nested",
+                                    Type = "System.String"
                                 }
                             }
                         }
@@ -192,7 +236,7 @@ namespace Google.Cloud.Diagnostics.Debug.Tests
             {
                 LogName = _logNameObj.ToString(),
                 Severity = Logging.Type.LogSeverity.Warning,
-                TextPayload = $"LOGPOINT: [ Key1: Value1, Key2: Value2] and [ AnotherLevel: [ Name: Nested]]."
+                TextPayload = $"LOGPOINT: [ Key1 (System.String): Value1, Key2 (System.String): Value2] and [ AnotherLevel (Nested): [ Name (System.String): Nested]]."
             };
 
             _client.WriteLogEntry(breakpoint);
