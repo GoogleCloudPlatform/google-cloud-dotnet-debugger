@@ -63,7 +63,7 @@ namespace Google.Cloud.Diagnostics.Debug
             if (breakpoint.Status?.IsError ?? false)
             {
                 // The .NET Debugger does not use parameters field so we can just use format directly.
-                logEntry.TextPayload = $"{LogpointMessageStart}: Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
+                logEntry.TextPayload = $"{LogpointMessageStart}Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
             }
             else
             {
