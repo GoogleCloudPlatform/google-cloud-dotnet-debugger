@@ -183,6 +183,11 @@ class DbgBreakpoint : public StringStreamWrapper {
       google::cloud::diagnostics::debug::Breakpoint *breakpoint,
       IStackFrameCollection *stack_frames, IEvalCoordinator *eval_coordinator);
 
+  // Populate a Breakpoitn proto using this breakpoint information.
+  // This won't populate the stack frames or evaluated expressions.
+  HRESULT PopulateBreakpoint(
+      google::cloud::diagnostics::debug::Breakpoint *breakpoint);
+
   // Breakpoint proto's size should not contain more bytes of
   // information than this number. (65536 bytes = 64kb).
   static const std::uint32_t kMaximumBreakpointSize = 65536;
@@ -273,11 +278,11 @@ class DbgBreakpoint : public StringStreamWrapper {
 
   // Maximum amount of items returned in a collection when not evaluating
   // an expression.
-  static const std::uint32_t kMaximumCollectionSize = 10;
+  static const std::int32_t kMaximumCollectionSize = 10;
 
   // Maximum amount of items returned in a collection when evaluating
   // an expression.
-  static const std::uint32_t kMaximumCollectionExpressionSize = UINT32_MAX;
+  static const std::int32_t kMaximumCollectionExpressionSize = INT32_MAX;
 };
 
 }  // namespace google_cloud_debugger

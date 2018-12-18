@@ -35,6 +35,10 @@ namespace Google.Cloud.Diagnostics.Debug
         private readonly AgentOptions _options;
         private readonly LogName _logName;
 
+        // Logpoint message should start with "LOGPOINT: " so when user selects
+        // "View Logs" on the Stackdriver Debug client, this will show up.
+        private static readonly string LogpointMessageStart = "LOGPOINT: ";
+
         internal LoggingClient(AgentOptions options, LoggingServiceV2Client loggingClient = null)
         {
             _logClient = loggingClient ?? LoggingServiceV2Client.Create();
@@ -54,10 +58,20 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 LogName = _logName.ToString(),
                 Severity = _logSeverityConversion[breakpoint.LogLevel],
-                TextPayload = SubstituteLogMessageFormat(
-                    breakpoint.LogMessageFormat,
-                    breakpoint.EvaluatedExpressions.ToList())
             };
+
+            if (breakpoint.Status?.IsError ?? false)
+            {
+                // The .NET Debugger does not use parameters field so we can just use format directly.
+                logEntry.TextPayload = $"{LogpointMessageStart}Error evaluating logpoint \"{breakpoint.LogMessageFormat}\": {breakpoint.Status?.Description?.Format}.";
+            }
+            else
+            {
+                logEntry.TextPayload = SubstituteLogMessageFormat(
+                    breakpoint.LogMessageFormat,
+                    breakpoint.EvaluatedExpressions.ToList());
+            }
+
             // TODO(quoct): Detect whether we are on gke and use gke_container.
             MonitoredResource resource = new MonitoredResource { Type = "global" };
             return _logClient.WriteLogEntries(LogNameOneof.From(_logName), resource, null, new[] { logEntry });
@@ -70,7 +84,7 @@ namespace Google.Cloud.Diagnostics.Debug
         /// <returns>Formatted log message with expressions substituted.</returns>
         private string SubstituteLogMessageFormat(string messageFormat, List<Debugger.V2.Variable> evaluatedExpressions)
         {
-            string result = "LOGPOINT: ";
+            string result = LogpointMessageStart;
             int offset = 0;
             int i = 0;
             while (i < messageFormat.Length)
@@ -114,8 +128,7 @@ namespace Google.Cloud.Diagnostics.Debug
                 int currentNumber = Int32.Parse(currentNumberString);
                 if (currentNumber < evaluatedExpressions.Count)
                 {
-                    // TODO(quoct): Handles collections and nested objects?
-                    result += evaluatedExpressions[currentNumber].Value;
+                    result += FormatVariable(evaluatedExpressions[currentNumber]);
                 }
                 else
                 {
@@ -127,6 +140,34 @@ namespace Google.Cloud.Diagnostics.Debug
             {
                 result += messageFormat.Substring(offset);
             }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Formats the variable into a more readable string,
+        /// especially if the variable only has members and no value.
+        /// </summary>
+        /// <returns>Formatted string representing the variable.</returns>
+        private string FormatVariable(Debugger.V2.Variable variable)
+        {
+            if (variable.Status?.IsError ?? false)
+            {
+                return $"\"Error evaluating {variable.Name}: {variable.Status?.Description?.Format}\"";
+            }
+
+            if (!string.IsNullOrWhiteSpace(variable.Value))
+            {
+                return variable.Value;
+            }
+
+            string result = "[ ";
+            foreach (Debugger.V2.Variable member in variable.Members)
+            {
+                result += $"{member.Name} ({member.Type}): {FormatVariable(member)}, ";
+            }
+            result = result.TrimEnd(new char[] { ',', ' ' });
+            result += "]";
 
             return result;
         }

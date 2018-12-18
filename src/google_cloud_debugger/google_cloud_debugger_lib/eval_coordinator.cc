@@ -270,10 +270,7 @@ HRESULT EvalCoordinator::ProcessBreakpointsTask(
       std::cerr << "Failed to process breakpoint \"" << breakpoint->GetId()
                 << "\" with HRESULT: " << std::hex << hr;
       Breakpoint error_breakpoint;
-      error_breakpoint.set_id(breakpoint->GetId());
-      error_breakpoint.set_log_point(breakpoint->IsLogPoint());
-
-      SetErrorStatusMessage(&error_breakpoint, breakpoint->GetErrorString());
+      breakpoint->PopulateBreakpoint(&error_breakpoint);
 
       hr = breakpoint_collection->WriteBreakpoint(error_breakpoint);
       if (FAILED(hr)) {
