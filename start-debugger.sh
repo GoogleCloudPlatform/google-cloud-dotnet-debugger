@@ -3,7 +3,7 @@
 # Script to help start the users application along with
 # the .NET Core Stackdriver Debugger.
 #
-# Input should be the command to start the users donet
+# Input should be the command to start the users .NET Core
 # application as they normally would.  For example if
 # they would call 'dotnet HelloWorld.dll' they would
 # just run ''./start-debugger.sh dotnet HelloWorld.dll'
