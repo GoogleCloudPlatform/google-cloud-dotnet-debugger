@@ -55,9 +55,9 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             }
             catch (InvalidOperationException)
             {
-                return Combine(GetRootDirectory(), 
-                    "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp2.0", 
-                    "publish", "Google.Cloud.Diagnostics.Debug.TestApp.dll");                
+                return Combine(GetRootDirectory(),
+                    "Google.Cloud.Diagnostics.Debug.TestApp", "bin", _mode, "netcoreapp3.1",
+                    "publish", "Google.Cloud.Diagnostics.Debug.TestApp.dll");
             }
         }
 
@@ -74,7 +74,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             catch (InvalidOperationException)
             {
                 return Combine(GetRootDirectory(),
-                    "Google.Cloud.Diagnostics.Debug", "bin", _mode, "netcoreapp2.0",
+                    "Google.Cloud.Diagnostics.Debug", "bin", _mode, "netcoreapp3.1",
                     "publish", "Google.Cloud.Diagnostics.Debug.dll");
             }
         }
@@ -118,7 +118,7 @@ namespace Google.Cloud.Diagnostics.Debug.IntegrationTests
             Path.GetFullPath(Combine(Directory.GetCurrentDirectory(), "..", "..", "..", ".."));
 
         /// <summary>
-        /// Combine any number of path parts with correct path separators. 
+        /// Combine any number of path parts with correct path separators.
         /// </summary>
         private static string Combine(params string[] pathParts)
         {

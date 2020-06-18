@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  # first you must run
+  #  git submodule init
+  #  git submodule update
+  debugger:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
