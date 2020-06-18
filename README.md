@@ -7,7 +7,7 @@
 
 Stackdriver Debugger is a feature of the Google Cloud Platform that lets you inspect the state
 of an application at any code location without using logging statements and without stopping or
-slowing down your applications. 
+slowing down your applications.
 
 ## Overview
 The .NET Core Stackdriver Debugger is comprised of four major parts
@@ -15,7 +15,7 @@ The .NET Core Stackdriver Debugger is comprised of four major parts
 * **Debuggee** - The _Debuggee_ is the .NET Core application being debugged.
 * **Stackdriver Debugger** - The _Stackdriver Debugger_ is a web application that allows
 users to view source code and set snapshots on _Debuggees_.
-* **.NET Debugger** - The _.NET Core Debugger_ is an implementation of the 
+* **.NET Debugger** - The _.NET Core Debugger_ is an implementation of the
 [`ICorDebug`](https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/debugging/icordebug-interface)
 interface used to debug the _Debugee_.
 * **Debugging Agent** - The _Debugging Agent_ will run alongside the _.NET Core Debugger_.  It is responsible for
@@ -47,7 +47,7 @@ with your code.  See the example below:
 ```
 ...
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <DebugType>portable</DebugType>
   </PropertyGroup>
 ...
@@ -61,7 +61,7 @@ This debugger has been tested with the following .NET Core versions:
 * .NET Core 1.0.x
 * .NET Core 1.1.x
 * .NET Core 2.0.x
- 
+
 This debugger has been tested on the following runtimes:
 * win-x64
 * debian.8-x64
@@ -80,7 +80,7 @@ The repository and dependencies can be built with the following:
   ```
   ./build-deps.sh
   ./build.sh
-  ``` 
+  ```
 
 ### Windows
 
@@ -88,7 +88,7 @@ The dependencies can be built with the following:
   ```
   .\build-deps.cmd
   .\build.sh
-  ``` 
+  ```
 
 ## Running
 
@@ -96,7 +96,7 @@ Once the repository and dependencies are built you can run the debugger with:
 
 ### Linux
   ```
-  dotnet ./Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp2.0/Google.Cloud.Diagnostics.Debug.dll \
+  dotnet ./Google.Cloud.Diagnostics.Debug/bin/Debug/netcoreapp3.1/Google.Cloud.Diagnostics.Debug.dll \
     --debugger=./google_cloud_debugger/google_cloud_debugger \
     --application-id=<Process ID of a running .NET Core application to debug> \
     --project-id=<Google Cloud Console project id> \
@@ -106,7 +106,7 @@ Once the repository and dependencies are built you can run the debugger with:
 
 ### Windows
   ```
-  dotnet .\Google.Cloud.Diagnostics.Debug\bin\Debug\netcoreapp2.0\Google.Cloud.Diagnostics.Debug.dll ^
+  dotnet .\Google.Cloud.Diagnostics.Debug\bin\Debug\netcoreapp3.1\Google.Cloud.Diagnostics.Debug.dll ^
     --debugger=.\x64\Debug\google_cloud_debugger.exe ^
     --application-id=<Process ID of a running .NET Core application to debug> ^
     --project-id=<Google Cloud Console project id> ^
