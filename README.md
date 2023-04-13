@@ -1,4 +1,4 @@
-Note:  Cloud Debugger is deprecated and this repository is unsupported.
+***Note:  Cloud Debugger is deprecated with a shutdown date of 31 May 2023.  This repository is unsupported.***
 
 # Stackdriver Debugger for .NET Core - [Alpha](https://cloud.google.com/terms/launch-stages)
 [![release level](https://img.shields.io/badge/release%20level-alpha-orange.svg?style&#x3D;flat)](https://cloud.google.com/terms/launch-stages)
